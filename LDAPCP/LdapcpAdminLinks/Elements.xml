@@ -1,0 +1,11 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Elements xmlns="http://schemas.microsoft.com/sharepoint/">
+  <CustomAction
+      Id="LdapcpAdminLink"
+      GroupId="GeneralSecurity"
+      Location="Microsoft.SharePoint.Administration.Security"
+      Sequence="500"
+      Title="Configure LDAP Claim Provider">
+    <UrlAction Url="/_admin/ldapcp/LdapcpSettings.aspx" />
+  </CustomAction>
+</Elements>
