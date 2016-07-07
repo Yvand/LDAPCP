@@ -1032,7 +1032,7 @@ namespace ldapcp
 
         protected override void FillClaimsForEntity(Uri context, SPClaim entity, List<SPClaim> claims)
         {
-            throw new NotImplementedException();
+            Augment(context, entity, null, claims);
         }
 
         protected override void FillClaimsForEntity(Uri context, SPClaim entity, SPClaimProviderContext claimProviderContext, List<SPClaim> claims)
@@ -1044,8 +1044,8 @@ namespace ldapcp
         /// Perform augmentation of entity supplied
         /// </summary>
         /// <param name="context"></param>
-        /// <param name="entity"></param>
-        /// <param name="claimProviderContext"></param>
+        /// <param name="entity">entity to augment</param>
+        /// <param name="claimProviderContext">Can be null</param>
         /// <param name="claims"></param>
         protected virtual void Augment(Uri context, SPClaim entity, SPClaimProviderContext claimProviderContext, List<SPClaim> claims)
         {
@@ -1057,7 +1057,7 @@ namespace ldapcp
                 this.Lock_Config.EnterReadLock();
                 try
                 {
-                    LdapcpLogging.LogDebug(String.Format("[{0}] AugmentationEnabledProp: {1}.", ProviderInternalName, CurrentConfiguration.AugmentationEnabledProp.ToString()));
+                    LdapcpLogging.LogDebug(String.Format("[{0}] Original entity to augment: '{1}', augmentation enabled: {2}.", ProviderInternalName, entity.Value, CurrentConfiguration.AugmentationEnabledProp));
                     if (!this.CurrentConfiguration.AugmentationEnabledProp) return;
                     if (String.IsNullOrEmpty(this.CurrentConfiguration.AugmentationClaimTypeProp))
                     {
@@ -1074,17 +1074,22 @@ namespace ldapcp
                     }
 
                     SPClaim decodedEntity;
-                    //SPClaimProviderManager cpm = SPClaimProviderManager.Local;
-                    //if (!SPClaimProviderManager.IsEncodedClaim(entity.Value)) decodedEntity = entity;
-                    //else decodedEntity = cpm.DecodeClaimFromFormsSuffix(entity.Value);
                     if (SPClaimProviderManager.IsUserIdentifierClaim(entity))
                         decodedEntity = SPClaimProviderManager.DecodeUserIdentifierClaim(entity);
                     else
-                        decodedEntity = SPClaimProviderManager.Local.DecodeClaim(entity.Value);
+                    {
+                        if (SPClaimProviderManager.IsEncodedClaim(entity.Value))
+                            decodedEntity = SPClaimProviderManager.Local.DecodeClaim(entity.Value);
+                        else
+                            decodedEntity = entity;
+                    }
 
                     SPOriginalIssuerType loginType = SPOriginalIssuers.GetIssuerType(decodedEntity.OriginalIssuer);
                     if (loginType != SPOriginalIssuerType.TrustedProvider && loginType != SPOriginalIssuerType.ClaimProvider)
+                    {
+                        LdapcpLogging.LogDebug(String.Format("[{0}] Not trying to augment '{1}' because OriginalIssuer is '{2}'.", ProviderInternalName, decodedEntity.Value, decodedEntity.OriginalIssuer));
                         return;
+                    }
 
                     RequestInformation infos = new RequestInformation(CurrentConfiguration, RequestType.Augmentation, ProcessedAttributes, null, decodedEntity, context, null, null, Int32.MaxValue);
                     DirectoryEntry[] directories = GetLDAPServers(infos);
