@@ -561,6 +561,9 @@ namespace ldapcp
         [Persisted]
         public string Metadata;
 
+        [Persisted]
+        public string NetBiosDomainName;
+
         /// <summary>
         /// Specifies the types of authentication
         /// http://msdn.microsoft.com/en-us/library/system.directoryservices.authenticationtypes(v=vs.110).aspx
