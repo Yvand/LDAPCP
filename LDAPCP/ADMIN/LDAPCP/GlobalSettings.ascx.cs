@@ -398,7 +398,7 @@ namespace ldapcp.ControlTemplates
         var directoryPath = directoryEntry.Path;
         var provider = directoryPath.Split(new[] { @"://" }, StringSplitOptions.None)[0];
         var directory = directoryPath.Split(new[] { @"://" }, StringSplitOptions.None)[1];
-        var dnsDomainName = String.Empty;
+        var dnsDomainName = string.Empty;
 
         dnsDomainName = ResolveDomainFromDirectoryPath(directory);
 
@@ -450,7 +450,7 @@ namespace ldapcp.ControlTemplates
       {
         // distinguished name contains OU (Organizational Units), so we need to parse to only have DC (Domain Components) elements in our DirectoryEntry path
         var domainComponents = ResolveDnsDomainName(distinguishedName).Split('.');
-        distinguishedName = String.Empty;
+        distinguishedName = string.Empty;
         var componentCount = 1;
         foreach (var component in domainComponents)
         {
@@ -461,8 +461,6 @@ namespace ldapcp.ControlTemplates
 
       // Every AD forest does have Configuration Node. Here is how we target it e.g. LDAP://contoso.com/cn=Partitions,cn=Configuration,dn=contoso,dn=com
       searchRoot = new DirectoryEntry(String.Format("{0}://{1}/cn=Partitions,cn=Configuration,{2}", provider, dnsDomainName,distinguishedName), username, password, authenticationType);
-
-      
 
       var searcher = new DirectorySearcher(searchRoot);
       return searcher;
