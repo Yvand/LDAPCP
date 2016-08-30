@@ -16,6 +16,7 @@ namespace ldapcp
     {
         List<LDAPConnection> LDAPConnectionsProp { get; set; }
         List<AttributeHelper> AttributesListProp { get; set; }
+        //List<string> ResolvedNetBiosDomainNames { get; set; }
         bool AlwaysResolveUserInputProp { get; set; }
         bool AddWildcardInFrontOfQueryProp { get; set; }
         bool DisplayLdapMatchForIdentityClaimTypeProp { get; set; }
@@ -33,7 +34,7 @@ namespace ldapcp
     {
         public const string LDAPCPCONFIG_ID = "5D306A02-A262-48AC-8C44-BDB927620227";
         public const string LDAPCPCONFIG_NAME = "LdapcpConfig";
-        public const string LDAPCPCONFIG_TOKENDOMAINNAME = "{domain}";
+        public const string LDAPCPCONFIG_TOKENDOMAINNAME = "{domain}"; //NETBIOS DOMAIN NAME
         public const string LDAPCPCONFIG_TOKENDOMAINFQDN = "{fqdn}";
         public const int LDAPCPCONFIG_TIMEOUT = 10;
     }
@@ -53,7 +54,8 @@ namespace ldapcp
             get { return AttributesList; }
             set { AttributesList = value; }
         }
-        [Persisted]
+
+      [Persisted]
         private List<AttributeHelper> AttributesList;
 
         public bool AlwaysResolveUserInputProp
@@ -101,6 +103,7 @@ namespace ldapcp
             get { return FilterSecurityGroupsOnly; }
             set { FilterSecurityGroupsOnly = value; }
         }
+
         [Persisted]
         private bool FilterSecurityGroupsOnly;
 
@@ -562,7 +565,7 @@ namespace ldapcp
         public string Metadata;
 
         [Persisted]
-        public string NetBiosDomainName;
+        public List<string> ResolvedNetBiosDomainNames;
 
         /// <summary>
         /// Specifies the types of authentication
@@ -598,6 +601,7 @@ namespace ldapcp
                 AuthenticationTypes = this.AuthenticationTypes,
                 UserServerDirectoryEntry = this.UserServerDirectoryEntry,
                 AugmentationEnabled = this.AugmentationEnabled,
+                ResolvedNetBiosDomainNames = this.ResolvedNetBiosDomainNames
             };
             return copy;
         }
@@ -696,6 +700,7 @@ namespace ldapcp
             if (Attribute.PrefixToAddToValueReturnedProp != null && (
                     Attribute.PrefixToAddToValueReturnedProp.Contains(Constants.LDAPCPCONFIG_TOKENDOMAINNAME) ||
                     Attribute.PrefixToAddToValueReturnedProp.Contains(Constants.LDAPCPCONFIG_TOKENDOMAINFQDN)
+                    
                 ))
                 Input = GetAccountFromFullAccountName(Input);
 
@@ -806,6 +811,7 @@ namespace ldapcp
                 }
             }
             domainName = String.Empty;
+            
             if (directory.Properties.Contains("name")) domainName = directory.Properties["name"].Value.ToString();
             else if (directory.Properties.Contains("cn")) domainName = directory.Properties["cn"].Value.ToString(); // Tivoli sets domain name in cn property (property name does not exist)
         }
@@ -821,6 +827,7 @@ namespace ldapcp
     public class LDAPConnectionSettings
     {
         public DirectoryEntry Directory;
+        public List<string> NetBiosDomainNames;
         public string Filter;
     }
 }

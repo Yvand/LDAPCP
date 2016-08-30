@@ -297,6 +297,7 @@ namespace ldapcp.ControlTemplates
               Username = this.TxtLdapUsername.Text,
               Password = this.TxtLdapPassword.Text,
               AuthenticationTypes = authNType,
+              ResolvedNetBiosDomainNames = ResolveNetBiosDomainName()
             }
         );
       }
@@ -355,6 +356,36 @@ namespace ldapcp.ControlTemplates
 
     }
 
+    protected List<string> ResolveNetBiosDomainName()
+    {
+      var results = new List<string>();
+      if (TxtLdapConnectionString.Text == String.Empty || TxtLdapPassword.Text == String.Empty || TxtLdapUsername.Text == String.Empty)
+      {
+        LabelErrorTestLdapConnection.Text = TextErrorLDAPFieldsMissing;
+        return null;
+      }
+
+      DirectoryEntry de = null;
+      
+      try
+      {
+        AuthenticationTypes authNTypes = GetSelectedAuthenticationTypes(false);
+        de = new DirectoryEntry(this.TxtLdapConnectionString.Text, this.TxtLdapUsername.Text, this.TxtLdapPassword.Text, authNTypes);
+        results = ResolveNetBiosDomainName(de, TxtLdapUsername.Text, TxtLdapPassword.Text, authNTypes);
+      }
+      catch (Exception ex)
+      {
+        LdapcpLogging.LogException(LDAPCP._ProviderInternalName, "while testing LDAP connection", LdapcpLogging.Categories.Configuration, ex);
+        LabelErrorTestLdapConnection.Text = String.Format(TextErrorTestLdapConnection, ex.Message);
+      }
+      finally
+      {
+        if (de != null) de.Dispose();
+      }
+
+      return results;
+    }
+
     protected List<string> ResolveNetBiosDomainName(DirectoryEntry directoryEntry, string username, string password, AuthenticationTypes authenticationType)
     {
       var netbiosDomainNames = new List<string>();
@@ -371,7 +402,7 @@ namespace ldapcp.ControlTemplates
 
         dnsDomainName = ResolveDomainFromDirectoryPath(directory);
 
-        searcher = ResolveRootDirectorySearcher(directoryEntry, distinguishedName, provider, dnsDomainName);
+        searcher = ResolveRootDirectorySearcher(directoryEntry, distinguishedName, provider, dnsDomainName, username, password, authenticationType);
         searcher.SearchScope = SearchScope.OneLevel;
         searcher.PropertiesToLoad.Add("netbiosname");
         searcher.Filter = "netBIOSName=*";
@@ -406,7 +437,7 @@ namespace ldapcp.ControlTemplates
       return netbiosDomainNames;
     }
 
-    private DirectorySearcher ResolveRootDirectorySearcher(DirectoryEntry directoryEntry, string distinguishedName, string provider, string dnsDomainName)
+    private DirectorySearcher ResolveRootDirectorySearcher(DirectoryEntry directoryEntry, string distinguishedName, string provider, string dnsDomainName, string username, string password, AuthenticationTypes authenticationType )
     {
       DirectoryEntry searchRoot = null;
 
@@ -429,9 +460,9 @@ namespace ldapcp.ControlTemplates
       }
 
       // Every AD forest does have Configuration Node. Here is how we target it e.g. LDAP://contoso.com/cn=Partitions,cn=Configuration,dn=contoso,dn=com
-      searchRoot =
-        new DirectoryEntry(String.Format("{0}://{1}/cn=Partitions,cn=Configuration,{2}", provider, dnsDomainName,
-          distinguishedName));
+      searchRoot = new DirectoryEntry(String.Format("{0}://{1}/cn=Partitions,cn=Configuration,{2}", provider, dnsDomainName,distinguishedName), username, password, authenticationType);
+
+      
 
       var searcher = new DirectorySearcher(searchRoot);
       return searcher;
@@ -443,16 +474,17 @@ namespace ldapcp.ControlTemplates
 
       if (directory.Contains("/"))
       {
+          var domainConfiguration = directory.Split('/')[0];
         // example for validating connection string similar to following: <domain>/ou=<some_value>,ou=<some_value>,dc=<subdomain>,dc=<domain>,dc=<ch>
-        if (!IsValidDomain(directory.Split('/')[0]))
+        if (!IsValidDomain(domainConfiguration) && (domainConfiguration.Contains("DC") || (domainConfiguration.Contains("dc"))))
         {
           // it is not a domain name, resolve all DC (Domain Component) parameters as a valid domain and ignore all the rest
-          dnsDomainName = ResolveDnsDomainName(directory.Split('/')[0]);
+          dnsDomainName = ResolveDnsDomainName(domainConfiguration);
         }
         else
         {
           // it is valid domain name, extract it
-          dnsDomainName = directory.Split('/')[0];
+          dnsDomainName = domainConfiguration;
         }
       }
       else
@@ -460,12 +492,12 @@ namespace ldapcp.ControlTemplates
         if (!IsValidDomain(directory))
         {
           // it is not a domain name, resolve all DC (Domain Component) parameters as a valid domain and ignore all the rest
-          dnsDomainName = ResolveDnsDomainName(directory.Split('/')[0]);
+          dnsDomainName = ResolveDnsDomainName(directory);
         }
         else
         {
           // it is valid domain name, extract it
-          dnsDomainName = directory.Split('/')[0];
+          dnsDomainName = directory;
         }
       }
       return dnsDomainName;
