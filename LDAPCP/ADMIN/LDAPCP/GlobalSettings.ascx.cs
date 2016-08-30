@@ -474,16 +474,17 @@ namespace ldapcp.ControlTemplates
 
       if (directory.Contains("/"))
       {
+          var domainConfiguration = directory.Split('/')[0];
         // example for validating connection string similar to following: <domain>/ou=<some_value>,ou=<some_value>,dc=<subdomain>,dc=<domain>,dc=<ch>
-        if (!IsValidDomain(directory.Split('/')[0]))
+        if (!IsValidDomain(domainConfiguration) && (domainConfiguration.Contains("DC") || (domainConfiguration.Contains("dc"))))
         {
           // it is not a domain name, resolve all DC (Domain Component) parameters as a valid domain and ignore all the rest
-          dnsDomainName = ResolveDnsDomainName(directory.Split('/')[0]);
+          dnsDomainName = ResolveDnsDomainName(domainConfiguration);
         }
         else
         {
           // it is valid domain name, extract it
-          dnsDomainName = directory.Split('/')[0];
+          dnsDomainName = domainConfiguration;
         }
       }
       else
@@ -491,12 +492,12 @@ namespace ldapcp.ControlTemplates
         if (!IsValidDomain(directory))
         {
           // it is not a domain name, resolve all DC (Domain Component) parameters as a valid domain and ignore all the rest
-          dnsDomainName = ResolveDnsDomainName(directory.Split('/')[0]);
+          dnsDomainName = ResolveDnsDomainName(directory);
         }
         else
         {
           // it is valid domain name, extract it
-          dnsDomainName = directory.Split('/')[0];
+          dnsDomainName = directory;
         }
       }
       return dnsDomainName;
