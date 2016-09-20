@@ -1,7 +1,7 @@
 # LDAPCP
 This claims provider for SharePoint queries Active Directory and LDAP servers to enhance people picker with a great search experience in trusted authentication (typically ADFS).
 
-# Features
+## Features
 - Works with SharePoint 2013 and SharePoint 2016. 
 - Easy to configure with administration pages added in Central administration > Security. 
 - Queries multiple servers in parallel (multi-threaded connections). 

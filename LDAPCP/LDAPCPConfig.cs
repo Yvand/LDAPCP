@@ -30,15 +30,7 @@ namespace ldapcp
         string AugmentationClaimTypeProp { get; set; }
     }
 
-    //public class Constants
-    //{
-    //    public const string LDAPCPCONFIG_ID = "5D306A02-A262-48AC-8C44-BDB927620227";
-    //    public const string LDAPCPCONFIG_NAME = "LdapcpConfig";
-    //    public const string LDAPCPCONFIG_TOKENDOMAINNAME = "{domain}"; //NETBIOS DOMAIN NAME
-    //    public const string LDAPCPCONFIG_TOKENDOMAINFQDN = "{fqdn}";
-    //    public const int LDAPCPCONFIG_TIMEOUT = 10;
-    //}
-
+    
     public class LDAPCPConfig : SPPersistedObject, ILDAPCPConfiguration
     {
         public List<LDAPConnection> LDAPConnectionsProp
