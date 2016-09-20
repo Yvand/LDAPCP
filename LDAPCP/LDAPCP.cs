@@ -1730,7 +1730,7 @@ namespace ldapcp
         public string Value;
         public string DomainName;
         public string DomainFQDN;
-      //public string DEBUG;
+        //public string DEBUG;
     }
 
     public class LDAPSearchResultWrapper

@@ -38,14 +38,6 @@ namespace ldapcp.ControlTemplates
             set { AugmentationSection.Visible = value; }
         }
 
-        string TextErrorNoGroupClaimType = "There is no claim type associated with an entity type 'FormsRole' or 'SecurityGroup'.";
-        string TextErrorLDAPFieldsMissing = "Some mandatory fields are missing.";
-        string TextErrorTestLdapConnection = "Unable to connect to LDAP for following reason:<br/>{0}<br/>It may be expected if w3wp process of central admin has intentionally no access to LDAP server.";
-        string TextErrorNetBiosDomainName = "Unable to resolve NetBios domain name for following reason:<br/>{0}<br/>";
-        string TextConnectionSuccessful = "Connection successful.";
-        string TextSharePointDomain = "Connect to SharePoint domain";
-        string TextUpdateAdditionalLdapFilterOk = "LDAP filter was successfully applied to all LDAP attributes of class 'user'.";
-
         protected void Page_Load(object sender, EventArgs e)
         {
             ViewState["IsDefaultADConnectionCreated"] = false;
@@ -84,7 +76,7 @@ namespace ldapcp.ControlTemplates
             IEnumerable<AttributeHelper> potentialGroupClaimTypes = PersistedObject.AttributesListProp.Where(x => x.ClaimEntityType == SPClaimEntityTypes.FormsRole || x.ClaimEntityType == SPClaimEntityTypes.SecurityGroup);
             if (potentialGroupClaimTypes == null || potentialGroupClaimTypes.Count() == 0)
             {
-                LabelErrorMessage.Text = TextErrorNoGroupClaimType;
+                LabelErrorMessage.Text = Constant.TextErrorNoGroupClaimType;
                 return;
             }
 
@@ -100,7 +92,7 @@ namespace ldapcp.ControlTemplates
 
             // Initialize grid for LDAP connections
             var spDomainCoco = PersistedObject.LDAPConnectionsProp.FirstOrDefault(x => x.UserServerDirectoryEntry);
-            if (spDomainCoco != null) spDomainCoco.Path = TextSharePointDomain;
+            if (spDomainCoco != null) spDomainCoco.Path = Constant.TextSharePointDomain;
 
             GridLdapConnections.DataSource = PersistedObject.LDAPConnectionsProp;
             GridLdapConnections.DataKeyNames = new string[] { "IdProp" };
@@ -118,7 +110,7 @@ namespace ldapcp.ControlTemplates
                     {
                         ViewState["IsDefaultADConnectionCreated"] = true;
 
-                        pcb.AddRow(coco.Id, TextSharePointDomain, "Process account");
+                        pcb.AddRow(coco.Id, Constant.TextSharePointDomain, "Process account");
                     }
                     else
                     {
@@ -250,7 +242,7 @@ namespace ldapcp.ControlTemplates
                 userAttr.AdditionalLDAPFilterProp = this.TxtAdditionalUserLdapFilter.Text;
             }
             this.CommitChanges();
-            LabelUpdateAdditionalLdapFilterOk.Text = this.TextUpdateAdditionalLdapFilterOk;
+            LabelUpdateAdditionalLdapFilterOk.Text = Constant.TextUpdateAdditionalLdapFilterOk;
         }
 
         protected void BtnTestLdapConnection_Click(Object sender, EventArgs e)
@@ -279,7 +271,7 @@ namespace ldapcp.ControlTemplates
 
             if (this.RbUseCustomConnection.Checked && (this.TxtLdapConnectionString.Text == String.Empty || this.TxtLdapUsername.Text == String.Empty || this.TxtLdapPassword.Text == String.Empty))
             {
-                this.LabelErrorTestLdapConnection.Text = TextErrorLDAPFieldsMissing;
+                this.LabelErrorTestLdapConnection.Text = Constant.TextErrorLDAPFieldsMissing;
                 return;
             }
 
@@ -324,7 +316,7 @@ namespace ldapcp.ControlTemplates
             ViewState["ForceCheckCustomLdapConnection"] = true;
             if (this.TxtLdapConnectionString.Text == String.Empty || this.TxtLdapPassword.Text == String.Empty || this.TxtLdapUsername.Text == String.Empty)
             {
-                this.LabelErrorTestLdapConnection.Text = TextErrorLDAPFieldsMissing;
+                this.LabelErrorTestLdapConnection.Text = Constant.TextErrorLDAPFieldsMissing;
                 return;
             }
 
@@ -336,13 +328,13 @@ namespace ldapcp.ControlTemplates
                 de = new DirectoryEntry(this.TxtLdapConnectionString.Text, this.TxtLdapUsername.Text, this.TxtLdapPassword.Text, authNTypes);
                 deSearch.SearchRoot = de;
                 deSearch.FindOne();
-                this.LabelTestLdapConnectionOK.Text = TextConnectionSuccessful;
+                this.LabelTestLdapConnectionOK.Text = Constant.TextConnectionSuccessful;
                 ResolveNetBiosDomainName(de, TxtLdapUsername.Text, TxtLdapPassword.Text, authNTypes);
             }
             catch (Exception ex)
             {
                 LdapcpLogging.LogException(LDAPCP._ProviderInternalName, "while testing LDAP connection", LdapcpLogging.Categories.Configuration, ex);
-                this.LabelErrorTestLdapConnection.Text = String.Format(TextErrorTestLdapConnection, ex.Message);
+                this.LabelErrorTestLdapConnection.Text = String.Format(Constant.TextErrorTestLdapConnection, ex.Message);
             }
             finally
             {
