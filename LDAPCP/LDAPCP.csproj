@@ -80,6 +80,7 @@
     <Compile Include="ADMIN\LDAPCP\GlobalSettings.ascx.designer.cs">
       <DependentUpon>GlobalSettings.ascx.cs</DependentUpon>
     </Compile>
+    <Compile Include="Constant.cs" />
     <Compile Include="LdapcpLoggingService.cs" />
     <Compile Include="Features\LDAPCP\LDAPCP.EventReceiver.cs">
       <DependentUpon>LDAPCP.feature</DependentUpon>
@@ -116,7 +117,9 @@
       <DependentUpon>Package.package</DependentUpon>
     </None>
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <Folder Include="Helpers\" />
+  </ItemGroup>
   <ItemGroup>
     <Content Include="ADMIN\LDAPCP\ClaimsTable.aspx" />
     <Content Include="ADMIN\LDAPCP\LdapcpSettings.aspx" />

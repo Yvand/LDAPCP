@@ -7,6 +7,7 @@ using System.DirectoryServices;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Web;
+using ldapcp.Constants;
 using WIF = System.Security.Claims;
 using WIF3_5 = Microsoft.IdentityModel.Claims;
 
@@ -16,7 +17,6 @@ namespace ldapcp
     {
         List<LDAPConnection> LDAPConnectionsProp { get; set; }
         List<AttributeHelper> AttributesListProp { get; set; }
-        //List<string> ResolvedNetBiosDomainNames { get; set; }
         bool AlwaysResolveUserInputProp { get; set; }
         bool AddWildcardInFrontOfQueryProp { get; set; }
         bool DisplayLdapMatchForIdentityClaimTypeProp { get; set; }
@@ -30,14 +30,14 @@ namespace ldapcp
         string AugmentationClaimTypeProp { get; set; }
     }
 
-    public class Constants
-    {
-        public const string LDAPCPCONFIG_ID = "5D306A02-A262-48AC-8C44-BDB927620227";
-        public const string LDAPCPCONFIG_NAME = "LdapcpConfig";
-        public const string LDAPCPCONFIG_TOKENDOMAINNAME = "{domain}"; //NETBIOS DOMAIN NAME
-        public const string LDAPCPCONFIG_TOKENDOMAINFQDN = "{fqdn}";
-        public const int LDAPCPCONFIG_TIMEOUT = 10;
-    }
+    //public class Constants
+    //{
+    //    public const string LDAPCPCONFIG_ID = "5D306A02-A262-48AC-8C44-BDB927620227";
+    //    public const string LDAPCPCONFIG_NAME = "LdapcpConfig";
+    //    public const string LDAPCPCONFIG_TOKENDOMAINNAME = "{domain}"; //NETBIOS DOMAIN NAME
+    //    public const string LDAPCPCONFIG_TOKENDOMAINFQDN = "{fqdn}";
+    //    public const int LDAPCPCONFIG_TIMEOUT = 10;
+    //}
 
     public class LDAPCPConfig : SPPersistedObject, ILDAPCPConfiguration
     {
@@ -54,8 +54,7 @@ namespace ldapcp
             get { return AttributesList; }
             set { AttributesList = value; }
         }
-
-      [Persisted]
+        [Persisted]
         private List<AttributeHelper> AttributesList;
 
         public bool AlwaysResolveUserInputProp
@@ -103,7 +102,6 @@ namespace ldapcp
             get { return FilterSecurityGroupsOnly; }
             set { FilterSecurityGroupsOnly = value; }
         }
-
         [Persisted]
         private bool FilterSecurityGroupsOnly;
 
@@ -153,7 +151,7 @@ namespace ldapcp
         [Persisted]
         private string AugmentationClaimType;
 
-        public LDAPCPConfig(SPPersistedObject parent) : base(Constants.LDAPCPCONFIG_NAME, parent)
+        public LDAPCPConfig(SPPersistedObject parent) : base(Constant.LDAPCPCONFIG_NAME, parent)
         { }
 
         public LDAPCPConfig(string name, SPPersistedObject parent) : base(name, parent)
@@ -172,7 +170,7 @@ namespace ldapcp
             SPPersistedObject parent = SPFarm.Local;
             try
             {
-                LDAPCPConfig persistedObject = parent.GetChild<LDAPCPConfig>(Constants.LDAPCPCONFIG_NAME);
+                LDAPCPConfig persistedObject = parent.GetChild<LDAPCPConfig>(Constant.LDAPCPCONFIG_NAME);
                 if (persistedObject != null)
                 {
                     if (persistedObject.LDAPConnectionsProp == null)
@@ -181,7 +179,7 @@ namespace ldapcp
                         // This can happen if LDAPCP was migrated from a previous version and LDAPConnections didn't exist yet in persisted object
                         persistedObject.LDAPConnectionsProp = GetDefaultLDAPConnection();
                         LdapcpLogging.Log(
-                            String.Format("LDAP connections array is missing in the persisted object {0} and default connection was used. Visit LDAPCP admin page and validate it to create the array.", Constants.LDAPCPCONFIG_NAME),
+                            String.Format("LDAP connections array is missing in the persisted object {0} and default connection was used. Visit LDAPCP admin page and validate it to create the array.", Constant.LDAPCPCONFIG_NAME),
                             TraceSeverity.High,
                             EventSeverity.Information,
                             LdapcpLogging.Categories.Configuration);
@@ -191,7 +189,7 @@ namespace ldapcp
             }
             catch (Exception ex)
             {
-                LdapcpLogging.LogException(LDAPCP._ProviderInternalName, String.Format("Error while retrieving SPPersistedObject {0}", Constants.LDAPCPCONFIG_NAME), LdapcpLogging.Categories.Core, ex);
+                LdapcpLogging.LogException(LDAPCP._ProviderInternalName, String.Format("Error while retrieving SPPersistedObject {0}", Constant.LDAPCPCONFIG_NAME), LdapcpLogging.Categories.Core, ex);
             }
             return null;
         }
@@ -206,7 +204,7 @@ namespace ldapcp
                 persistedObject.Update();
 
                 LdapcpLogging.Log(
-                    String.Format("Claims list of PersistedObject {0} was successfully reset to default relationship table", Constants.LDAPCPCONFIG_NAME),
+                    String.Format("Claims list of PersistedObject {0} was successfully reset to default relationship table", Constant.LDAPCPCONFIG_NAME),
                     TraceSeverity.High, EventSeverity.Information, LdapcpLogging.Categories.Core);
             }
             return;
@@ -220,7 +218,7 @@ namespace ldapcp
         public static LDAPCPConfig CreatePersistedObject()
         {
             LDAPCPConfig PersistedObject = GetDefaultConfiguration();
-            PersistedObject.Id = new Guid(Constants.LDAPCPCONFIG_ID);
+            PersistedObject.Id = new Guid(Constant.LDAPCPCONFIG_ID);
             try
             {
                 PersistedObject.Update();
@@ -228,13 +226,13 @@ namespace ldapcp
             catch (NullReferenceException nullex)
             {
                 // This exception occurs if an older version of the persisted object lives in the config database with a schema that doesn't match current one
-                string stsadmcmd = String.Format("SELECT * FROM Objects WHERE Id LIKE '{0}'", Constants.LDAPCPCONFIG_ID);
+                string stsadmcmd = String.Format("SELECT * FROM Objects WHERE Id LIKE '{0}'", Constant.LDAPCPCONFIG_ID);
                 string error = String.Format("Unable to create PersistedObject {0}. This usually occurs because a persisted object with the same Id is used by another assembly (could be a previous version). Object is impossible to update or delete from Object Model unless you add the missing assembly to the GAC. You can see this object by running this query: \"{1}\"", PersistedObject.Name, stsadmcmd);
 
                 LdapcpLogging.Log(error, TraceSeverity.Unexpected, EventSeverity.Error, LdapcpLogging.Categories.Core);
 
                 // Tyy to delete it... but OM doesn't manage to get the object
-                SPPersistedObject staleObject = SPFarm.Local.GetObject(new Guid(Constants.LDAPCPCONFIG_ID));
+                SPPersistedObject staleObject = SPFarm.Local.GetObject(new Guid(Constant.LDAPCPCONFIG_ID));
                 if (staleObject != null)
                 {
                     staleObject.Delete();
@@ -275,7 +273,7 @@ namespace ldapcp
             PersistedObject.FilterSecurityGroupsOnly = false;
             //PersistedObject.LDAPCPIssuerType = SPOriginalIssuerType.TrustedProvider;
             PersistedObject.FilterExactMatchOnly = false;
-            PersistedObject.Timeout = Constants.LDAPCPCONFIG_TIMEOUT;
+            PersistedObject.Timeout = Constant.LDAPCPCONFIG_TIMEOUT;
             PersistedObject.AugmentationEnabled = false;
             PersistedObject.AugmentationClaimType = String.Empty;
             return PersistedObject;
@@ -698,9 +696,8 @@ namespace ldapcp
 
             // When working with domain tokens remove the domain part of the input so it can be found in AD
             if (Attribute.PrefixToAddToValueReturnedProp != null && (
-                    Attribute.PrefixToAddToValueReturnedProp.Contains(Constants.LDAPCPCONFIG_TOKENDOMAINNAME) ||
-                    Attribute.PrefixToAddToValueReturnedProp.Contains(Constants.LDAPCPCONFIG_TOKENDOMAINFQDN)
-                    
+                    Attribute.PrefixToAddToValueReturnedProp.Contains(Constant.LDAPCPCONFIG_TOKENDOMAINNAME) ||
+                    Attribute.PrefixToAddToValueReturnedProp.Contains(Constant.LDAPCPCONFIG_TOKENDOMAINFQDN)
                 ))
                 Input = GetAccountFromFullAccountName(Input);
 
@@ -811,9 +808,137 @@ namespace ldapcp
                 }
             }
             domainName = String.Empty;
-            
             if (directory.Properties.Contains("name")) domainName = directory.Properties["name"].Value.ToString();
             else if (directory.Properties.Contains("cn")) domainName = directory.Properties["cn"].Value.ToString(); // Tivoli sets domain name in cn property (property name does not exist)
+        }
+
+        public static DirectorySearcher ResolveRootDirectorySearcher(DirectoryEntry directoryEntry, string distinguishedName, string provider, string dnsDomainName, string username, string password, AuthenticationTypes authenticationType)
+        {
+            DirectoryEntry searchRoot = null;
+
+            if (directoryEntry.Properties["distinguishedName"].Value != null)
+            {
+                distinguishedName = directoryEntry.Properties["distinguishedName"].Value.ToString();
+            }
+
+            if (distinguishedName.ToUpper().Contains("OU="))
+            {
+                // distinguished name contains OU (Organizational Units), so we need to parse to only have DC (Domain Components) elements in our DirectoryEntry path
+                var domainComponents = ResolveDnsDomainName(distinguishedName).Split('.');
+                distinguishedName = string.Empty;
+                var componentCount = 1;
+                foreach (var component in domainComponents)
+                {
+                    distinguishedName += "DC=" + component + (componentCount < domainComponents.Length ? "," : "");
+                    componentCount++;
+                }
+            }
+
+            // Every AD forest does have Configuration Node. Here is how we target it e.g. LDAP://contoso.com/cn=Partitions,cn=Configuration,dn=contoso,dn=com
+            searchRoot = new DirectoryEntry(String.Format("{0}://{1}/cn=Partitions,cn=Configuration,{2}", provider, dnsDomainName, distinguishedName), username, password, authenticationType);
+
+            var searcher = new DirectorySearcher(searchRoot);
+            return searcher;
+        }
+
+        public static string ResolveDomainFromDirectoryPath(string directory)
+        {
+            var dnsDomainName = String.Empty;
+
+            if (directory.Contains("/"))
+            {
+                var domainConfiguration = directory.Split('/')[0];
+                // example for validating connection string similar to following: <domain>/ou=<some_value>,ou=<some_value>,dc=<subdomain>,dc=<domain>,dc=<ch>
+                if (!IsValidDomain(domainConfiguration) && (domainConfiguration.Contains("DC") || (domainConfiguration.Contains("dc"))))
+                {
+                    // it is not a domain name, resolve all DC (Domain Component) parameters as a valid domain and ignore all the rest
+                    dnsDomainName = ResolveDnsDomainName(domainConfiguration);
+                }
+                else
+                {
+                    // it is valid domain name, extract it
+                    dnsDomainName = domainConfiguration;
+                }
+            }
+            else
+            {
+                if (!IsValidDomain(directory))
+                {
+                    // it is not a domain name, resolve all DC (Domain Component) parameters as a valid domain and ignore all the rest
+                    dnsDomainName = ResolveDnsDomainName(directory);
+                }
+                else
+                {
+                    // it is valid domain name, extract it
+                    dnsDomainName = directory;
+                }
+            }
+            return dnsDomainName;
+        }
+
+        public static bool IsValidDomain(string directoryPath)
+        {
+            if (Regex.IsMatch(directoryPath, @" # Rev:2013-03-26
+                      # Match DNS host domain having one or more subdomains.
+                      # Top level domain subset taken from IANA.ORG. See:
+                      # http://data.iana.org/TLD/tlds-alpha-by-domain.txt
+                      ^                  # Anchor to start of string.
+                      (?!.{256})         # Whole domain must be 255 or less.
+                      (?:                # Group for one or more sub-domains.
+                        [a-z0-9]         # Either subdomain length from 2-63.
+                        [a-z0-9-]{0,61}  # Middle part may have dashes.
+                        [a-z0-9]         # Starts and ends with alphanum.
+                        \.               # Dot separates subdomains.
+                      | [a-z0-9]         # or subdomain length == 1 char.
+                        \.               # Dot separates subdomains.
+                      )+                 # One or more sub-domains.
+                      (?:                # Top level domain alternatives.
+                        [a-z]{2}         # Either any 2 char country code,
+                      | AERO|ARPA|ASIA|BIZ|CAT|COM|COOP|EDU|  # or TLD 
+                        GOV|INFO|INT|JOBS|MIL|MOBI|MUSEUM|    # from list.
+                        NAME|NET|ORG|POST|PRO|TEL|TRAVEL  # IANA.ORG
+                      )                  # End group of TLD alternatives.
+                      $                  # Anchor to end of string.",
+                RegexOptions.IgnoreCase | RegexOptions.IgnorePatternWhitespace))
+            {
+                return true;
+            }
+            return false;
+        }
+
+        private static string ResolveDnsDomainName(string configuration)
+        {
+            string pattern = @"(s*)dc=([^,]+)";
+            string output = string.Empty;
+
+            MatchCollection matches = Regex.Matches(configuration, pattern, RegexOptions.IgnoreCase);
+
+            var matchCount = 1;
+            foreach (Match match in matches)
+            {
+                output += match.Value.Split(new[] { "Dc=", "DC=", "dc=", "dC=" }, StringSplitOptions.None)[1] + (matchCount < matches.Count ? "," : "");
+                matchCount++;
+            }
+
+            if (output.Contains(","))
+            {
+                var components = output.Split(',');
+                var domain = string.Empty;
+
+                var componentCount = 1;
+                foreach (var component in components)
+                {
+                    domain += component + (componentCount < components.Length ? "." : "");
+                    componentCount++;
+                }
+
+                if (!string.IsNullOrEmpty(domain))
+                {
+                    output = domain;
+                }
+            }
+
+            return output;
         }
     }
 
