@@ -659,8 +659,8 @@ namespace ldapcp
             List<LDAPConnectionSettings> LDAPServers = GetLDAPServers(requestInfo);
             if (LDAPServers == null || LDAPServers.Count == 0)
             {
-              LdapcpLogging.Log(String.Format("[{0}] No LDAP server is configured.", ProviderInternalName), TraceSeverity.Unexpected, EventSeverity.Error, LdapcpLogging.Categories.Configuration);
-              return;
+                LdapcpLogging.Log(String.Format("[{0}] No LDAP server is configured.", ProviderInternalName), TraceSeverity.Unexpected, EventSeverity.Error, LdapcpLogging.Categories.Configuration);
+                return;
             }
             
             GetLDAPFilter(requestInfo, ref LDAPServers);
@@ -881,7 +881,6 @@ namespace ldapcp
                     LdapcpLogging.Log(String.Format("[{0}] Skipping query on LDAP Server \"{1}\" because it doesn't have any filter, this usually indicates a problem in method GetLDAPFilter.", ProviderInternalName, LDAPServer.Directory.Path), TraceSeverity.Unexpected, EventSeverity.Information, LdapcpLogging.Categories.LDAP_Lookup);
                     return;
                 }
-                
                 DirectoryEntry directory = LDAPServer.Directory;
                 DirectorySearcher ds = new DirectorySearcher(LDAPServer.Filter);
                 ds.SearchRoot = directory;
