@@ -15,7 +15,6 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using ldapcp.Constants;
 
 /*
  * DO NOT directly edit LDAPCP class. It is designed to be inherited to customize it as desired.
@@ -690,12 +689,12 @@ namespace ldapcp
                     // Extract just the domain from the input
                     bool tokenFound = false;
                     string domainOnly = String.Empty;
-                    if (requestInfo.Attribute.PrefixToAddToValueReturnedProp.Contains(Constant.LDAPCPCONFIG_TOKENDOMAINNAME))
+                    if (requestInfo.Attribute.PrefixToAddToValueReturnedProp.Contains(Constants.LDAPCPCONFIG_TOKENDOMAINNAME))
                     {
                         tokenFound = true;
                         domainOnly = RequestInformation.GetDomainFromFullAccountName(requestInfo.IncomingEntity.Value);
                     }
-                    else if (requestInfo.Attribute.PrefixToAddToValueReturnedProp.Contains(Constant.LDAPCPCONFIG_TOKENDOMAINFQDN))
+                    else if (requestInfo.Attribute.PrefixToAddToValueReturnedProp.Contains(Constants.LDAPCPCONFIG_TOKENDOMAINFQDN))
                     {
                         tokenFound = true;
                         string fqdn = RequestInformation.GetDomainFromFullAccountName(requestInfo.IncomingEntity.Value);
@@ -791,8 +790,8 @@ namespace ldapcp
 
                     // When token domain is present, then ensure we do compare with the actual domain name
                     // There are 2 scenarios to
-                    bool compareWithDomain = HasPrefixToken(attr.PrefixToAddToValueReturnedProp, Constant.LDAPCPCONFIG_TOKENDOMAINNAME) ? true : this.CurrentConfiguration.CompareResultsWithDomainNameProp;
-                    if (!compareWithDomain) compareWithDomain = HasPrefixToken(attr.PrefixToAddToValueReturnedProp, Constant.LDAPCPCONFIG_TOKENDOMAINFQDN) ? true : this.CurrentConfiguration.CompareResultsWithDomainNameProp;
+                    bool compareWithDomain = HasPrefixToken(attr.PrefixToAddToValueReturnedProp, Constants.LDAPCPCONFIG_TOKENDOMAINNAME) ? true : this.CurrentConfiguration.CompareResultsWithDomainNameProp;
+                    if (!compareWithDomain) compareWithDomain = HasPrefixToken(attr.PrefixToAddToValueReturnedProp, Constants.LDAPCPCONFIG_TOKENDOMAINFQDN) ? true : this.CurrentConfiguration.CompareResultsWithDomainNameProp;
                     if (results.Contains(LDAPresult, objCompare, compareWithDomain))
                         continue;
 
@@ -1199,10 +1198,10 @@ namespace ldapcp
                                 string groupDomainName, groupDomainFqdn;
                                 RequestInformation.GetDomainInformation(group.DistinguishedName, out groupDomainName, out groupDomainFqdn);
                                 string claimValue = group.Name;
-                                if (!String.IsNullOrEmpty(groupAttribute.PrefixToAddToValueReturnedProp) && groupAttribute.PrefixToAddToValueReturnedProp.Contains(Constant.LDAPCPCONFIG_TOKENDOMAINNAME))
-                                    claimValue = groupAttribute.PrefixToAddToValueReturnedProp.Replace(Constant.LDAPCPCONFIG_TOKENDOMAINNAME, groupDomainName) + group.Name;
-                                else if (!String.IsNullOrEmpty(groupAttribute.PrefixToAddToValueReturnedProp) && groupAttribute.PrefixToAddToValueReturnedProp.Contains(Constant.LDAPCPCONFIG_TOKENDOMAINFQDN))
-                                    claimValue = groupAttribute.PrefixToAddToValueReturnedProp.Replace(Constant.LDAPCPCONFIG_TOKENDOMAINFQDN, groupDomainFqdn) + group.Name;
+                                if (!String.IsNullOrEmpty(groupAttribute.PrefixToAddToValueReturnedProp) && groupAttribute.PrefixToAddToValueReturnedProp.Contains(Constants.LDAPCPCONFIG_TOKENDOMAINNAME))
+                                    claimValue = groupAttribute.PrefixToAddToValueReturnedProp.Replace(Constants.LDAPCPCONFIG_TOKENDOMAINNAME, groupDomainName) + group.Name;
+                                else if (!String.IsNullOrEmpty(groupAttribute.PrefixToAddToValueReturnedProp) && groupAttribute.PrefixToAddToValueReturnedProp.Contains(Constants.LDAPCPCONFIG_TOKENDOMAINFQDN))
+                                    claimValue = groupAttribute.PrefixToAddToValueReturnedProp.Replace(Constants.LDAPCPCONFIG_TOKENDOMAINFQDN, groupDomainFqdn) + group.Name;
                                 SPClaim claim = CreateClaim(groupAttribute.ClaimType, claimValue, groupAttribute.ClaimValueType, false);
                                 groups.Add(claim);
                             }
@@ -1375,8 +1374,8 @@ namespace ldapcp
             var attr = ProcessedAttributes.FirstOrDefault(x => String.Equals(x.ClaimType, type, StringComparison.InvariantCultureIgnoreCase));
             //if (inputHasKeyword && attr.DoNotAddPrefixIfInputHasKeywordProp)
             if ((!inputHasKeyword || !attr.DoNotAddPrefixIfInputHasKeywordProp) &&
-                !HasPrefixToken(attr.PrefixToAddToValueReturnedProp, Constant.LDAPCPCONFIG_TOKENDOMAINNAME) &&
-                !HasPrefixToken(attr.PrefixToAddToValueReturnedProp, Constant.LDAPCPCONFIG_TOKENDOMAINFQDN)
+                !HasPrefixToken(attr.PrefixToAddToValueReturnedProp, Constants.LDAPCPCONFIG_TOKENDOMAINNAME) &&
+                !HasPrefixToken(attr.PrefixToAddToValueReturnedProp, Constants.LDAPCPCONFIG_TOKENDOMAINFQDN)
             )
                 claimValue = attr.PrefixToAddToValueReturnedProp;
 
@@ -1482,11 +1481,11 @@ namespace ldapcp
             string value = claimValue;
 
             var attr = ProcessedAttributes.FirstOrDefault(x => String.Equals(x.ClaimType, claimType, StringComparison.InvariantCultureIgnoreCase));
-            if (HasPrefixToken(attr.PrefixToAddToValueReturnedProp, Constant.LDAPCPCONFIG_TOKENDOMAINNAME))
-                value = string.Format("{0}{1}", attr.PrefixToAddToValueReturnedProp.Replace(Constant.LDAPCPCONFIG_TOKENDOMAINNAME, domainName), value);
+            if (HasPrefixToken(attr.PrefixToAddToValueReturnedProp, Constants.LDAPCPCONFIG_TOKENDOMAINNAME))
+                value = string.Format("{0}{1}", attr.PrefixToAddToValueReturnedProp.Replace(Constants.LDAPCPCONFIG_TOKENDOMAINNAME, domainName), value);
 
-            if (HasPrefixToken(attr.PrefixToAddToValueReturnedProp, Constant.LDAPCPCONFIG_TOKENDOMAINFQDN))
-                value = string.Format("{0}{1}", attr.PrefixToAddToValueReturnedProp.Replace(Constant.LDAPCPCONFIG_TOKENDOMAINFQDN, domainFQDN), value);
+            if (HasPrefixToken(attr.PrefixToAddToValueReturnedProp, Constants.LDAPCPCONFIG_TOKENDOMAINFQDN))
+                value = string.Format("{0}{1}", attr.PrefixToAddToValueReturnedProp.Replace(Constants.LDAPCPCONFIG_TOKENDOMAINFQDN, domainFQDN), value);
 
             return value;
         }
@@ -1520,11 +1519,11 @@ namespace ldapcp
             //    else return String.Format(PickerEntityDisplayText, claimTypeToResolve.ClaimTypeMappingName, claimValue);
             //}
             var attr = result.Attribute;
-            if (HasPrefixToken(attr.PrefixToAddToValueReturnedProp, Constant.LDAPCPCONFIG_TOKENDOMAINNAME))
-                prefixToAdd = string.Format("{0}", attr.PrefixToAddToValueReturnedProp.Replace(Constant.LDAPCPCONFIG_TOKENDOMAINNAME, result.DomainName));
+            if (HasPrefixToken(attr.PrefixToAddToValueReturnedProp, Constants.LDAPCPCONFIG_TOKENDOMAINNAME))
+                prefixToAdd = string.Format("{0}", attr.PrefixToAddToValueReturnedProp.Replace(Constants.LDAPCPCONFIG_TOKENDOMAINNAME, result.DomainName));
 
-            if (HasPrefixToken(attr.PrefixToAddToValueReturnedProp, Constant.LDAPCPCONFIG_TOKENDOMAINFQDN))
-                prefixToAdd = string.Format("{0}", attr.PrefixToAddToValueReturnedProp.Replace(Constant.LDAPCPCONFIG_TOKENDOMAINFQDN, result.DomainFQDN));
+            if (HasPrefixToken(attr.PrefixToAddToValueReturnedProp, Constants.LDAPCPCONFIG_TOKENDOMAINFQDN))
+                prefixToAdd = string.Format("{0}", attr.PrefixToAddToValueReturnedProp.Replace(Constants.LDAPCPCONFIG_TOKENDOMAINFQDN, result.DomainFQDN));
 
             if (isIdentityClaimType) displayLdapMatchForIdentityClaimType = this.CurrentConfiguration.DisplayLdapMatchForIdentityClaimTypeProp;
 

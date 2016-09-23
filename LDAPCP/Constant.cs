@@ -4,9 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace ldapcp.Constants
+namespace ldapcp
 {
-    public static class Constant
+    public static class Constants
     {
         public const string LDAPCPCONFIG_ID = "5D306A02-A262-48AC-8C44-BDB927620227";
         public const string LDAPCPCONFIG_NAME = "LdapcpConfig";

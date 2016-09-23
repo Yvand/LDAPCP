@@ -8,7 +8,6 @@ using System.DirectoryServices;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Web.UI.WebControls;
-using ldapcp.Constants;
 
 namespace ldapcp.ControlTemplates
 {
@@ -76,7 +75,7 @@ namespace ldapcp.ControlTemplates
             IEnumerable<AttributeHelper> potentialGroupClaimTypes = PersistedObject.AttributesListProp.Where(x => x.ClaimEntityType == SPClaimEntityTypes.FormsRole || x.ClaimEntityType == SPClaimEntityTypes.SecurityGroup);
             if (potentialGroupClaimTypes == null || potentialGroupClaimTypes.Count() == 0)
             {
-                LabelErrorMessage.Text = Constant.TextErrorNoGroupClaimType;
+                LabelErrorMessage.Text = Constants.TextErrorNoGroupClaimType;
                 return;
             }
 
@@ -92,7 +91,7 @@ namespace ldapcp.ControlTemplates
 
             // Initialize grid for LDAP connections
             var spDomainCoco = PersistedObject.LDAPConnectionsProp.FirstOrDefault(x => x.UserServerDirectoryEntry);
-            if (spDomainCoco != null) spDomainCoco.Path = Constant.TextSharePointDomain;
+            if (spDomainCoco != null) spDomainCoco.Path = Constants.TextSharePointDomain;
 
             GridLdapConnections.DataSource = PersistedObject.LDAPConnectionsProp;
             GridLdapConnections.DataKeyNames = new string[] { "IdProp" };
@@ -110,7 +109,7 @@ namespace ldapcp.ControlTemplates
                     {
                         ViewState["IsDefaultADConnectionCreated"] = true;
 
-                        pcb.AddRow(coco.Id, Constant.TextSharePointDomain, "Process account");
+                        pcb.AddRow(coco.Id, Constants.TextSharePointDomain, "Process account");
                     }
                     else
                     {
@@ -190,7 +189,7 @@ namespace ldapcp.ControlTemplates
 
             int timeOut;
             if (!Int32.TryParse(this.txtTimeout.Text, out timeOut) || timeOut < 0)
-                timeOut = Constant.LDAPCPCONFIG_TIMEOUT; //set to default if unable to parse
+                timeOut = Constants.LDAPCPCONFIG_TIMEOUT; //set to default if unable to parse
             PersistedObject.TimeoutProp = timeOut;
         }
 
@@ -242,7 +241,7 @@ namespace ldapcp.ControlTemplates
                 userAttr.AdditionalLDAPFilterProp = this.TxtAdditionalUserLdapFilter.Text;
             }
             this.CommitChanges();
-            LabelUpdateAdditionalLdapFilterOk.Text = Constant.TextUpdateAdditionalLdapFilterOk;
+            LabelUpdateAdditionalLdapFilterOk.Text = Constants.TextUpdateAdditionalLdapFilterOk;
         }
 
         protected void BtnTestLdapConnection_Click(Object sender, EventArgs e)
@@ -271,7 +270,7 @@ namespace ldapcp.ControlTemplates
 
             if (this.RbUseCustomConnection.Checked && (this.TxtLdapConnectionString.Text == String.Empty || this.TxtLdapUsername.Text == String.Empty || this.TxtLdapPassword.Text == String.Empty))
             {
-                this.LabelErrorTestLdapConnection.Text = Constant.TextErrorLDAPFieldsMissing;
+                this.LabelErrorTestLdapConnection.Text = Constants.TextErrorLDAPFieldsMissing;
                 return;
             }
 
@@ -298,7 +297,7 @@ namespace ldapcp.ControlTemplates
             // Update object in database
             CommitChanges();
             LdapcpLogging.Log(
-                   String.Format("Added a new LDAP connection in PersistedObject {0}", Constant.LDAPCPCONFIG_NAME),
+                   String.Format("Added a new LDAP connection in PersistedObject {0}", Constants.LDAPCPCONFIG_NAME),
                    TraceSeverity.Medium,
                    EventSeverity.Information,
                    LdapcpLogging.Categories.Configuration);
@@ -316,7 +315,7 @@ namespace ldapcp.ControlTemplates
             ViewState["ForceCheckCustomLdapConnection"] = true;
             if (this.TxtLdapConnectionString.Text == String.Empty || this.TxtLdapPassword.Text == String.Empty || this.TxtLdapUsername.Text == String.Empty)
             {
-                this.LabelErrorTestLdapConnection.Text = Constant.TextErrorLDAPFieldsMissing;
+                this.LabelErrorTestLdapConnection.Text = Constants.TextErrorLDAPFieldsMissing;
                 return;
             }
 
@@ -328,13 +327,13 @@ namespace ldapcp.ControlTemplates
                 de = new DirectoryEntry(this.TxtLdapConnectionString.Text, this.TxtLdapUsername.Text, this.TxtLdapPassword.Text, authNTypes);
                 deSearch.SearchRoot = de;
                 deSearch.FindOne();
-                this.LabelTestLdapConnectionOK.Text = Constant.TextConnectionSuccessful;
+                this.LabelTestLdapConnectionOK.Text = Constants.TextConnectionSuccessful;
                 ResolveNetBiosDomainName(de, TxtLdapUsername.Text, TxtLdapPassword.Text, authNTypes);
             }
             catch (Exception ex)
             {
                 LdapcpLogging.LogException(LDAPCP._ProviderInternalName, "while testing LDAP connection", LdapcpLogging.Categories.Configuration, ex);
-                this.LabelErrorTestLdapConnection.Text = String.Format(Constant.TextErrorTestLdapConnection, ex.Message);
+                this.LabelErrorTestLdapConnection.Text = String.Format(Constants.TextErrorTestLdapConnection, ex.Message);
             }
             finally
             {
@@ -351,7 +350,7 @@ namespace ldapcp.ControlTemplates
             var results = new List<string>();
             if (TxtLdapConnectionString.Text == String.Empty || TxtLdapPassword.Text == String.Empty || TxtLdapUsername.Text == String.Empty)
             {
-                LabelErrorTestLdapConnection.Text = TextErrorLDAPFieldsMissing;
+                LabelErrorTestLdapConnection.Text = Constants.TextErrorLDAPFieldsMissing;
                 return null;
             }
 
@@ -366,7 +365,7 @@ namespace ldapcp.ControlTemplates
             catch (Exception ex)
             {
                 LdapcpLogging.LogException(LDAPCP._ProviderInternalName, "while testing LDAP connection", LdapcpLogging.Categories.Configuration, ex);
-                LabelErrorTestLdapConnection.Text = String.Format(TextErrorTestLdapConnection, ex.Message);
+                LabelErrorTestLdapConnection.Text = String.Format(Constants.TextErrorTestLdapConnection, ex.Message);
             }
             finally
             {
@@ -417,7 +416,7 @@ namespace ldapcp.ControlTemplates
             catch (Exception ex)
             {
                 LdapcpLogging.LogException(LDAPCP._ProviderInternalName, "in ResolveNetBiosDomainName", LdapcpLogging.Categories.Configuration, ex);
-                LabelErrorTestLdapConnection.Text = String.Format(TextErrorNetBiosDomainName, ex.Message);
+                LabelErrorTestLdapConnection.Text = String.Format(Constants.TextErrorNetBiosDomainName, ex.Message);
             }
             finally
             {
@@ -439,7 +438,7 @@ namespace ldapcp.ControlTemplates
             // Update object in database
             CommitChanges();
             LdapcpLogging.Log(
-                    String.Format("Removed a LDAP connection in PersistedObject {0}", Constant.LDAPCPCONFIG_NAME),
+                    String.Format("Removed a LDAP connection in PersistedObject {0}", Constants.LDAPCPCONFIG_NAME),
                     TraceSeverity.Medium,
                     EventSeverity.Information,
                     LdapcpLogging.Categories.Configuration);
