@@ -11,7 +11,6 @@ This claims provider for SharePoint queries Active Directory and LDAP servers to
 - Implements SharePoint logging infrastructure and logs messages in Area/Product "LDAPCP". 
 - Ensures thread safety. 
 - Implements augmentation to add group membership to security tokens.
-- Resolves NetBiosName for LDAP connection
 
 ## Customization capabilities
 - Customize list of claim types, and their mapping with LDAP objects. 
