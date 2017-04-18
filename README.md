@@ -73,6 +73,7 @@ Remove-SPClaimProvider LDAPCP
 LDAPCP has a default mapping between claim types and LDAP attributes, but this can be customized in “Claims table” page available in Central Administration/Security.
 
 Default list:
+
 | Claim type                                                                 | LDAP attribute name        | LDAP object class |
 |----------------------------------------------------------------------------|----------------------------|-------------------|
 | http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress         | mail                       | user              |
