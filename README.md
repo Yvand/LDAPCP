@@ -23,7 +23,7 @@ This claims provider for SharePoint 2013 and 2016 queries Active Directory and L
 - Hide disabled users and distribution lists. 
 - Developers can easily do a lot more by inheriting base class.
 
-## Installation
+## Important - Limitations
 Due to limitations of SharePoint API, do not associate LDAPCP with more than 1 SPTrustedIdentityTokenIssuer. Developers can bypass this limitation by inheriting LDAPCP to create new claims providers (with different names). Read “Developers section” below for further information.
 
 You must manually deploy ldapcp.dll on SharePoint servers that do not have SharePoint service "Microsoft SharePoint Foundation Web Application" started. You can use this PowerShell script:
@@ -34,12 +34,13 @@ $publish.GacInstall("C:\Data\Dev\ldapcp.dll")
 ```
 
 ## How to install LDAPCP
-- Install and deploy the solution (that will automatically activate the “LDAPCP” farm-scoped feature)
+- Download [latest release of LDAPCP.wsp](https://github.com/Yvand/LDAPCP/releases).
+- Install and deploy the solution (that will automatically activate the "LDAPCP" farm-scoped feature):
 ```powershell
 Add-SPSolution -LiteralPath "PATH TO WSP FILE"
 Install-SPSolution -Identity "LDAPCP.wsp" -GACDeployment
 ```
-- At this point claim provider is inactive and it must be associated to an SPTrustedIdentityTokenIssuer to work
+- At this point claim provider is inactive and it must be associated to an SPTrustedIdentityTokenIssuer to work:
 ```powershell
 $trust = Get-SPTrustedIdentityTokenIssuer "SPTRUST NAME"
 $trust.ClaimProviderName = "LDAPCP"
