@@ -1,9 +1,8 @@
-# LDAPCP
-This claims provider for SharePoint 2013 and 2016 queries Active Directory and LDAP servers to enhance people picker with a great search experience in trusted authentication (typically ADFS).
+ # LDAPCP for SharePoint 2013 and 2016
+This claims provider queries Active Directory and LDAP servers to enhance people picker with a great search experience in trusted authentication (typically ADFS).
 <br>It was formerly hosted on [Codeplex](https://ldapcp.codeplex.com/).
 
 ## Features
-- Works with SharePoint 2013 and SharePoint 2016. 
 - Easy to configure with administration pages added in Central administration > Security. 
 - Queries multiple servers in parallel (multi-threaded connections). 
 - Populates properties (e.g. email, SIP, display name) upon permission creation. 
@@ -52,10 +51,10 @@ Run Update-SPSolution cmdlet to start a timer job that that will deploy the upda
 ```powershell
 Update-SPSolution -GACDeployment -Identity "LDAPCP.wsp" -LiteralPath "C:\Data\Dev\LDAPCP.wsp"
 ```
-You can monitor the progression in farm solutions page in central administration.
+You can monitor the progress in farm solutions page in central administration.
 
 ## How to remove LDAPCP
-For an unknown reason, randomly SharePoint 2013 doesn’t uninstall correctly the solution because it removes assembly from the GAC before calling the feature receiver... When this happens, the claims provider is not removed and that causes issues when you re-install it.
+For an unknown reason, randomly SharePoint doesn’t uninstall the solution correctly: it removes the assembly too early and fails to calling the feature receiver... When this happens, the claims provider is not removed and that causes issues when you re-install it.
 To uninstall safely, **deactivate the farm feature before retracting the solution**:
 ```powershell
 Disable-SPFeature -identity "LDAPCP"
