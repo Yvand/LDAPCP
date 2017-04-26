@@ -1,5 +1,7 @@
 # LDAPCP for SharePoint 2013 and 2016
-This claims provider queries Active Directory and LDAP servers to enhance people picker with a great search experience in trusted authentication (typically ADFS). It was formerly hosted on [Codeplex](https://ldapcp.codeplex.com/).
+This is now the main site for this project that was formerly hosted on [Codeplex](https://ldapcp.codeplex.com/).
+
+![People picker with LDAPCP](https://cloud.githubusercontent.com/assets/8788631/25440203/f57202f2-2a9e-11e7-819e-30e2f5361cb4.PNG)
 
 ## Features
 - Easy to configure with administration pages added in Central administration > Security. 
