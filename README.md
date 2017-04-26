@@ -1,7 +1,7 @@
 # LDAPCP for SharePoint 2013 and 2016
 This is now the main site for this project that was formerly hosted on [Codeplex](https://ldapcp.codeplex.com/).
 
-![People picker with LDAPCP](https://cloud.githubusercontent.com/assets/8788631/25440203/f57202f2-2a9e-11e7-819e-30e2f5361cb4.PNG)
+![People picker with LDAPCP](https://cloud.githubusercontent.com/assets/8788631/25440961/3b8db40a-2aa1-11e7-9070-aee808950f38.PNG)
 
 ## Features
 - Easy to configure with administration pages added in Central administration > Security. 
