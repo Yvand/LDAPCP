@@ -2,9 +2,10 @@ LDAPCP for SharePoint 2013 and 2016
 ===================
 ![People picker with LDAPCP](https://cloud.githubusercontent.com/assets/8788631/25440961/3b8db40a-2aa1-11e7-9070-aee808950f38.PNG)
 
-> **Notes:** 
-> - This project was originally hosted on [Codeplex](https://ldapcp.codeplex.com/) but it was moved here since Codeplex is shutting down.
-> - Please [click here](https://github.com/Yvand/LDAPCP/wiki/How-to-install-LDAPCP) to see how to install LDAPCP and [visit the wiki](https://github.com/Yvand/LDAPCP/wiki) to find documentation.
+Notes
+-------------
+- This project was originally hosted on [Codeplex](https://ldapcp.codeplex.com/) but I moved it here since Codeplex is [shutting down](https://blogs.msdn.microsoft.com/bharry/2017/03/31/shutting-down-codeplex/).
+- Please [click here](https://github.com/Yvand/LDAPCP/wiki/How-to-install-LDAPCP) to see how to install LDAPCP and [visit the wiki](https://github.com/Yvand/LDAPCP/wiki) to find documentation.
 
 Features
 -------------
