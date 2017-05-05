@@ -1,8 +1,14 @@
-# LDAPCP
-This claims provider for SharePoint queries Active Directory and LDAP servers to enhance people picker with a great search experience in trusted authentication (typically ADFS).
+LDAPCP for SharePoint 2013 and 2016
+===================
+![People picker with LDAPCP](https://cloud.githubusercontent.com/assets/8788631/25440961/3b8db40a-2aa1-11e7-9070-aee808950f38.PNG)
 
-## Features
-- Works with SharePoint 2013 and SharePoint 2016. 
+Notes
+-------------
+- This project was originally hosted on [Codeplex](https://ldapcp.codeplex.com/) but I moved it here since Codeplex is [shutting down](https://blogs.msdn.microsoft.com/bharry/2017/03/31/shutting-down-codeplex/).
+- Please [click here](https://github.com/Yvand/LDAPCP/wiki/How-to-install-LDAPCP) to see how to install LDAPCP and [visit the wiki](https://github.com/Yvand/LDAPCP/wiki) to find documentation.
+
+Features
+-------------
 - Easy to configure with administration pages added in Central administration > Security. 
 - Queries multiple servers in parallel (multi-threaded connections). 
 - Populates properties (e.g. email, SIP, display name) upon permission creation. 
@@ -12,7 +18,8 @@ This claims provider for SharePoint queries Active Directory and LDAP servers to
 - Ensures thread safety. 
 - Implements augmentation to add group membership to security tokens.
 
-## Customization capabilities
+Customization capabilities
+-------------
 - Customize list of claim types, and their mapping with LDAP objects. 
 - Enable/disable augmentation globally or per LDAP connection. 
 - Customize display of permissions. 
@@ -22,5 +29,3 @@ This claims provider for SharePoint queries Active Directory and LDAP servers to
 - Hide disabled users and distribution lists. 
 - Developers can easily do a lot more by inheriting base class.
 
-## Installation
-This repo hosts the source code, please visit [project site on Codeplex](https://ldapcp.codeplex.com/) to download latest SharePoint solution package, find documentation and seek for assistance.
