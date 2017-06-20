@@ -255,12 +255,13 @@ namespace ldapcp.ControlTemplates
             this.ValidateLdapConnection();
         }
 
-        private TableCell GetTableCell(string Value)
-        {
-            TableCell tc = new TableCell();
-            tc.Text = Value;
-            return tc;
-        }
+		// FORTIFY WARNING
+        //private TableCell GetTableCell(string Value)
+        //{
+        //    TableCell tc = new TableCell();
+        //    tc.Text = Value;
+        //    return tc;
+        //}
 
         protected void BtnAddLdapConnection_Click(object sender, EventArgs e)
         {
