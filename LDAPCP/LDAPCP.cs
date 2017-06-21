@@ -197,8 +197,7 @@ namespace ldapcp
                         this.CurrentConfiguration.LDAPConnectionsProp.Add(currentCoco.CopyPersistedProperties());
                     }
 
-                    // FORTIFY WARNING: removed since this code path didn't seem to be used
-                    //SetCustomConfiguration(context, entityTypes);
+                    SetCustomConfiguration(context, entityTypes);
                     if (this.CurrentConfiguration.AttributesListProp == null)
                     {
                         // this.CurrentConfiguration.AttributesListProp was set to null in SetCustomConfiguration, which is bad
