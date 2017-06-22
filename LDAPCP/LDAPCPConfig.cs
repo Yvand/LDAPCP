@@ -806,6 +806,21 @@ namespace ldapcp
             if (directory.Properties.Contains("name")) domainName = directory.Properties["name"].Value.ToString();
             else if (directory.Properties.Contains("cn")) domainName = directory.Properties["cn"].Value.ToString(); // Tivoli sets domain name in cn property (property name does not exist)
         }
+
+        /// <summary>
+        /// Return the value from a distinguished name, or an empty string if not found.
+        /// </summary>
+        /// <param name="distinguishedNameValue">e.g. "CN=group1,CN=Users,DC=contoso,DC=local"</param>
+        /// <returns>e.g. "group1", or an empty string if not found</returns>
+        public static string GetValueFromDistinguishedName(string distinguishedNameValue)
+        {
+            int equalsIndex = distinguishedNameValue.IndexOf("=", 1);
+            int commaIndex = distinguishedNameValue.IndexOf(",", 1);
+            if (equalsIndex != -1 && commaIndex != -1)
+                return distinguishedNameValue.Substring(equalsIndex + 1, commaIndex - equalsIndex - 1);
+            else
+                return String.Empty;
+        }
     }
 
     public enum RequestType

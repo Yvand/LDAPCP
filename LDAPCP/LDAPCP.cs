@@ -756,17 +756,17 @@ namespace ldapcp
                 foreach (var attr in attributes)
                 {
                     // Check if current attribute object class matches the current LDAP result
-					// Changed to a case insensitive search of the ldap properties
+                    // Changed to a case insensitive search of the ldap properties
                     if (!resultPropertyCollection[LDAPObjectClassName].Cast<string>().Contains(attr.LDAPObjectClassProp, StringComparer.InvariantCultureIgnoreCase)) continue;
 
-					// Added to use for case insensitive search of ldap properties
+                    // Added to use for case insensitive search of ldap properties
                     var resultPropertyCollectionPropertyNames = resultPropertyCollection.PropertyNames.Cast<string>();
                     // Check if current LDAP result contains LDAP attribute of current attribute
-					// Changed to a case insensitve search
+                    // Changed to a case insensitve search
                     if (!resultPropertyCollectionPropertyNames.Contains(attr.LDAPAttribute, StringComparer.InvariantCultureIgnoreCase)) continue;
 
                     // TODO: investigate http://ldapcp.codeplex.com/discussions/648655
-					// Changed to a case insensitve search of properties
+                    // Changed to a case insensitve search of properties
                     string value = resultPropertyCollection[resultPropertyCollectionPropertyNames.Where(x => x.ToLowerInvariant() == attr.LDAPAttribute.ToLowerInvariant()).First()][0].ToString();
                     // Check if current attribute matches the input
                     if (requestInfo.ExactSearch)
@@ -777,7 +777,7 @@ namespace ldapcp
                     {
                         if (this.CurrentConfiguration.AddWildcardInFrontOfQueryProp)
                         {
-							// Changed to a case insensitive search
+                            // Changed to a case insensitive search
                             if (value.IndexOf(requestInfo.Input, StringComparison.InvariantCultureIgnoreCase) != -1) continue;
                         }
                         else
@@ -790,7 +790,7 @@ namespace ldapcp
                     AttributeHelper objCompare;
                     if (attr.CreateAsIdentityClaim && (String.Equals(attr.LDAPObjectClassProp, IdentityAttribute.LDAPObjectClassProp, StringComparison.InvariantCultureIgnoreCase)))
                     {
-						// Changed to a case insensitive search
+                        // Changed to a case insensitive search
                         if (!resultPropertyCollectionPropertyNames.Contains(attr.LDAPAttribute, StringComparer.InvariantCultureIgnoreCase)) continue;
                         // If exactSearch is true, then IdentityAttribute.LDAPAttribute value should be also equals to input, otherwise igno
                         objCompare = IdentityAttribute;
@@ -910,7 +910,7 @@ namespace ldapcp
                         if (!ds.PropertiesToLoad.Contains(metadataAttribute.LDAPAttribute)) ds.PropertiesToLoad.Add(metadataAttribute.LDAPAttribute);
                     }
 
-					// FORTIFY WARNING: added a using statement
+                    // FORTIFY WARNING: added a using statement
                     using (new SPMonitoredScope(String.Format("[{0}] Connecting to \"{1}\" with AuthenticationType \"{2}\" and filter \"{3}\"", ProviderInternalName, directory.Path, directory.AuthenticationType.ToString(), ds.Filter), 3000)) // threshold of 3 seconds before it's considered too much. If exceeded it is recorded in a higher logging level
                     {
                         try
@@ -1180,70 +1180,62 @@ namespace ldapcp
                             }
 
                             string groupDN;
-                            int equalsIndex, commaIndex;
-
                             for (int propertyCounter = 0; propertyCounter < propertyCount; propertyCounter++)
                             {
                                 groupDN = (string)groupCollection[propertyCounter];
+                                string claimValue = RequestInformation.GetValueFromDistinguishedName(groupDN);
+                                if (String.IsNullOrEmpty(claimValue)) continue;
 
-                                equalsIndex = groupDN.IndexOf("=", 1);
-                                commaIndex = groupDN.IndexOf(",", 1);
-
-                                if (equalsIndex != -1 && commaIndex != -1)
-                                {
-                                    groupDN = groupDN.Substring(equalsIndex + 1, commaIndex - equalsIndex - 1);
-                                    string groupDomainName, groupDomainFqdn;
-                                    RequestInformation.GetDomainInformation(groupDN, out groupDomainName, out groupDomainFqdn);
-                                    string claimValue = groupDN;
-                                    if (!String.IsNullOrEmpty(groupAttribute.PrefixToAddToValueReturnedProp) && groupAttribute.PrefixToAddToValueReturnedProp.Contains(Constants.LDAPCPCONFIG_TOKENDOMAINNAME))
-                                        claimValue = groupAttribute.PrefixToAddToValueReturnedProp.Replace(Constants.LDAPCPCONFIG_TOKENDOMAINNAME, groupDomainName) + groupDN;
-                                    else if (!String.IsNullOrEmpty(groupAttribute.PrefixToAddToValueReturnedProp) && groupAttribute.PrefixToAddToValueReturnedProp.Contains(Constants.LDAPCPCONFIG_TOKENDOMAINFQDN))
-                                        claimValue = groupAttribute.PrefixToAddToValueReturnedProp.Replace(Constants.LDAPCPCONFIG_TOKENDOMAINFQDN, groupDomainFqdn) + groupDN;
-                                    SPClaim claim = CreateClaim(groupAttribute.ClaimType, claimValue, groupAttribute.ClaimValueType, false);
-                                    groups.Add(claim);
-                                }
-                            }
-                        }
-                    }
-                    catch (Exception ex) 
-                    {
-                        LdapcpLogging.LogException(ProviderInternalName, String.Format("while getting group membership of user {0} in {1}. This is likely due to a bug in .NET framework in UserPrincipal.GetAuthorizationGroups (as of v4.6.1), especially if user is member (directly or not) of a group either in a child domain that was migrated, or a group that has special (deny) permissions.", requestInfo.IncomingEntity.Value, directory.Path), LdapcpLogging.Categories.Augmentation, ex);
-                    }
-
-                        /*
-                        PrincipalContext principalContext = new PrincipalContext(ContextType.Domain, directoryDomainFqdn);
-                        UserPrincipal adUser = UserPrincipal.FindByIdentity(principalContext, requestInfo.IncomingEntity.Value);
-
-                        if (adUser == null) return;
-                        lock (lockResults)
-                        {
-                            IEnumerable<Principal> ADGroups = adUser.GetAuthorizationGroups().Where(x => !String.IsNullOrEmpty(x.DistinguishedName));
-                            LdapcpLogging.Log(String.Format("[{0}] Domain {1} returned {2} groups for user {3}", ProviderInternalName, directoryDomainFqdn, ADGroups.Count().ToString(), requestInfo.IncomingEntity.Value),
-                                TraceSeverity.Verbose, EventSeverity.Information, LdapcpLogging.Categories.Augmentation);
-                            foreach (Principal group in ADGroups)
-                            {
                                 string groupDomainName, groupDomainFqdn;
-                                RequestInformation.GetDomainInformation(group.DistinguishedName, out groupDomainName, out groupDomainFqdn);
-                                string claimValue = group.Name;
+                                RequestInformation.GetDomainInformation(groupDN, out groupDomainName, out groupDomainFqdn);
                                 if (!String.IsNullOrEmpty(groupAttribute.PrefixToAddToValueReturnedProp) && groupAttribute.PrefixToAddToValueReturnedProp.Contains(Constants.LDAPCPCONFIG_TOKENDOMAINNAME))
-                                    claimValue = groupAttribute.PrefixToAddToValueReturnedProp.Replace(Constants.LDAPCPCONFIG_TOKENDOMAINNAME, groupDomainName) + group.Name;
+                                    claimValue = groupAttribute.PrefixToAddToValueReturnedProp.Replace(Constants.LDAPCPCONFIG_TOKENDOMAINNAME, groupDomainName) + claimValue;
                                 else if (!String.IsNullOrEmpty(groupAttribute.PrefixToAddToValueReturnedProp) && groupAttribute.PrefixToAddToValueReturnedProp.Contains(Constants.LDAPCPCONFIG_TOKENDOMAINFQDN))
-                                    claimValue = groupAttribute.PrefixToAddToValueReturnedProp.Replace(Constants.LDAPCPCONFIG_TOKENDOMAINFQDN, groupDomainFqdn) + group.Name;
+                                    claimValue = groupAttribute.PrefixToAddToValueReturnedProp.Replace(Constants.LDAPCPCONFIG_TOKENDOMAINFQDN, groupDomainFqdn) + claimValue;
                                 SPClaim claim = CreateClaim(groupAttribute.ClaimType, claimValue, groupAttribute.ClaimValueType, false);
                                 groups.Add(claim);
                             }
                         }
                     }
-                    catch (PrincipalOperationException ex)
+                    catch (Exception ex)
                     {
                         LdapcpLogging.LogException(ProviderInternalName, String.Format("while getting group membership of user {0} in {1}. This is likely due to a bug in .NET framework in UserPrincipal.GetAuthorizationGroups (as of v4.6.1), especially if user is member (directly or not) of a group either in a child domain that was migrated, or a group that has special (deny) permissions.", requestInfo.IncomingEntity.Value, directory.Path), LdapcpLogging.Categories.Augmentation, ex);
                     }
-                    catch (Exception ex)
+
+                    /*
+                    PrincipalContext principalContext = new PrincipalContext(ContextType.Domain, directoryDomainFqdn);
+                    UserPrincipal adUser = UserPrincipal.FindByIdentity(principalContext, requestInfo.IncomingEntity.Value);
+
+                    if (adUser == null) return;
+                    lock (lockResults)
                     {
-                        LdapcpLogging.LogException(ProviderInternalName, String.Format("while getting group membership of user {0} in {1}", requestInfo.IncomingEntity.Value, directory.Path), LdapcpLogging.Categories.Augmentation, ex);
+                        IEnumerable<Principal> ADGroups = adUser.GetAuthorizationGroups().Where(x => !String.IsNullOrEmpty(x.DistinguishedName));
+                        LdapcpLogging.Log(String.Format("[{0}] Domain {1} returned {2} groups for user {3}", ProviderInternalName, directoryDomainFqdn, ADGroups.Count().ToString(), requestInfo.IncomingEntity.Value),
+                            TraceSeverity.Verbose, EventSeverity.Information, LdapcpLogging.Categories.Augmentation);
+                        foreach (Principal group in ADGroups)
+                        {
+                            string groupDomainName, groupDomainFqdn;
+                            RequestInformation.GetDomainInformation(group.DistinguishedName, out groupDomainName, out groupDomainFqdn);
+                            string claimValue = group.Name;
+                            if (!String.IsNullOrEmpty(groupAttribute.PrefixToAddToValueReturnedProp) && groupAttribute.PrefixToAddToValueReturnedProp.Contains(Constants.LDAPCPCONFIG_TOKENDOMAINNAME))
+                                claimValue = groupAttribute.PrefixToAddToValueReturnedProp.Replace(Constants.LDAPCPCONFIG_TOKENDOMAINNAME, groupDomainName) + group.Name;
+                            else if (!String.IsNullOrEmpty(groupAttribute.PrefixToAddToValueReturnedProp) && groupAttribute.PrefixToAddToValueReturnedProp.Contains(Constants.LDAPCPCONFIG_TOKENDOMAINFQDN))
+                                claimValue = groupAttribute.PrefixToAddToValueReturnedProp.Replace(Constants.LDAPCPCONFIG_TOKENDOMAINFQDN, groupDomainFqdn) + group.Name;
+                            SPClaim claim = CreateClaim(groupAttribute.ClaimType, claimValue, groupAttribute.ClaimValueType, false);
+                            groups.Add(claim);
+                        }
                     }
-                    finally { }
-                         */
+                }
+                catch (PrincipalOperationException ex)
+                {
+                    LdapcpLogging.LogException(ProviderInternalName, String.Format("while getting group membership of user {0} in {1}. This is likely due to a bug in .NET framework in UserPrincipal.GetAuthorizationGroups (as of v4.6.1), especially if user is member (directly or not) of a group either in a child domain that was migrated, or a group that has special (deny) permissions.", requestInfo.IncomingEntity.Value, directory.Path), LdapcpLogging.Categories.Augmentation, ex);
+                }
+                catch (Exception ex)
+                {
+                    LdapcpLogging.LogException(ProviderInternalName, String.Format("while getting group membership of user {0} in {1}", requestInfo.IncomingEntity.Value, directory.Path), LdapcpLogging.Categories.Augmentation, ex);
+                }
+                finally { }
+                     */
                 }
             });
             stopWatch.Stop();
