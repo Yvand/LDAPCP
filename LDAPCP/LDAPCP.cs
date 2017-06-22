@@ -1170,6 +1170,8 @@ namespace ldapcp
                             searcher.PropertiesToLoad.Add("uniquememberof");
 
                             SearchResult result = searcher.FindOne();
+                            if (result == null) return;  // user was not found in this directory
+
                             int propertyCount = result.Properties["memberOf"].Count;
                             var groupCollection = result.Properties["memberOf"];
 

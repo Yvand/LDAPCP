@@ -786,25 +786,43 @@ namespace ldapcp
 
         public static void GetDomainInformation(DirectoryEntry directory, out string domainName, out string domainFQDN)
         {
-            // Retrieve FQDN and domain name of current DirectoryEntry
             string distinguishedName = String.Empty;
-            domainFQDN = String.Empty;
+            domainName = domainFQDN = String.Empty;
             if (directory.Properties.Contains("distinguishedName"))
             {
                 distinguishedName = directory.Properties["distinguishedName"].Value.ToString();
-                if (distinguishedName.Contains("DC="))
-                {
-                    int start = distinguishedName.IndexOf("DC=", StringComparison.InvariantCultureIgnoreCase);
-                    string[] dnSplitted = distinguishedName.Substring(start).Split(new string[] { "DC=" }, StringSplitOptions.RemoveEmptyEntries);
-                    foreach (string dc in dnSplitted)
-                    {
-                        domainFQDN += dc.Replace(',', '.');
-                    }
-                }
+                GetDomainInformation(distinguishedName, out domainName, out domainFQDN);
             }
-            domainName = String.Empty;
-            if (directory.Properties.Contains("name")) domainName = directory.Properties["name"].Value.ToString();
-            else if (directory.Properties.Contains("cn")) domainName = directory.Properties["cn"].Value.ToString(); // Tivoli sets domain name in cn property (property name does not exist)
+            else
+            {
+                // This logic to get the domainName may not work with AD LDS:
+                // if distinguishedName = "CN=Partition1,DC=MyLDS,DC=local", then both "name" and "cn" = "Partition1", while we want to get "MyLDS"
+                // So now it's only made if the distinguishedName is not available (very unlikely)
+                if (directory.Properties.Contains("name")) domainName = directory.Properties["name"].Value.ToString();
+                else if (directory.Properties.Contains("cn")) domainName = directory.Properties["cn"].Value.ToString(); // Tivoli sets domain name in cn property (property name does not exist)
+            }
+
+            // OLD LOGIC
+            //// Retrieve FQDN and domain name of current DirectoryEntry
+            //domainFQDN = String.Empty;
+            //if (directory.Properties.Contains("distinguishedName"))
+            //{
+            //    distinguishedName = directory.Properties["distinguishedName"].Value.ToString();
+            //    if (distinguishedName.Contains("DC="))
+            //    {
+            //        int start = distinguishedName.IndexOf("DC=", StringComparison.InvariantCultureIgnoreCase);
+            //        string[] dnSplitted = distinguishedName.Substring(start).Split(new string[] { "DC=" }, StringSplitOptions.RemoveEmptyEntries);
+            //        foreach (string dc in dnSplitted)
+            //        {
+            //            domainFQDN += dc.Replace(',', '.');
+            //        }
+            //    }
+            //}
+
+            //// This change is in order to implement the same logic as in LDAPCP.SearchOrValidateWithLDAP()
+            //domainName = RequestInformation.GetFirstSubString(domainFQDN, ".");
+            ////if (directory.Properties.Contains("name")) domainName = directory.Properties["name"].Value.ToString();
+            ////else if (directory.Properties.Contains("cn")) domainName = directory.Properties["cn"].Value.ToString(); // Tivoli sets domain name in cn property (property name does not exist)
         }
 
         /// <summary>
