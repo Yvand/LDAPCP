@@ -242,7 +242,7 @@
 	</template_inputformcontrols>
 </wssuc:InputFormSection>
 
-<wssuc:inputformsection ID="AugmentationSection" runat="server" Visible="<%# ShowAugmentationSection %>" title="Augmentation" description="Configure augmentation to append groups of which users are members during logon.<br/><br/><b>Important:</b> at the time of the augmentation LDAPCP has very little information about the user: it only knows his identity claim.<br/>For this reason it's highly recommended to use an identity claim with a value guaranteed to be unique between all LDAP servers, like the email or the UPN.">
+<wssuc:inputformsection ID="AugmentationSection" runat="server" Visible="<%# ShowAugmentationSection %>" title="Augmentation" description="Enable augmentation to let LDAPCP get group membership of federated users.<br/><br/><b>Important:</b> at the time of the augmentation LDAPCP has very little information about the user: it only knows his identity claim.<br/>For this reason it's highly recommended to use an identity claim with a value guaranteed to be unique between all LDAP servers, like the email or the UPN.">
     <template_inputformcontrols>
         <p class="ms-error"><asp:Label ID="Label1" runat="server" EnableViewState="False" /></p>
         <asp:Checkbox Checked="false" Runat="server" Name="ChkEnableAugmentation" ID="ChkEnableAugmentation" OnClick="window.Ldapcp.AdminGlobalSettingsControl.InitAugmentationControls();" Text="Enable augmentation" />
@@ -253,21 +253,22 @@
                 <asp:ListItem Selected="True" Value="None"></asp:ListItem>
             </asp:DropDownList>
 			<tr><td>
-			<wssawc:EncodedLiteral runat="server" text="Select which LDAP path to query for augmentation:" EncodeMethod='HtmlEncodeAllowSimpleTextFormatting'/>
+			<wssawc:EncodedLiteral runat="server" text="Select which servers to query. If the server is an Active Directory server, check the 2nd box to use <a href='https://msdn.microsoft.com/en-us/library/system.directoryservices.accountmanagement.userprincipal.getauthorizationgroups.aspx' target='_blank'>UserPrincipal.GetAuthorizationGroups()</a>. <br/>It works only with Active Directory." EncodeMethod='NoEncode'/>
             <br />
 			<div id="AugmentationControlsGrid">
             <wssawc:SPGridView ID="GridLdapConnections" runat="server" AutoGenerateColumns="False" ShowHeader="false">
+                <RowStyle BorderWidth="1" />
                 <Columns>
-                    <asp:TemplateField ItemStyle-Width="10">
+                    <asp:TemplateField ControlStyle-BorderWidth="1">
                         <ItemTemplate>
-                            <asp:CheckBox ID="ChkAugmentationEnableOnCoco" runat="server" Checked='<%# Bind("AugmentationEnabledProp") %>' />
-							<asp:TextBox ID="IdPropHidden" runat="server" Text='<%# Bind("IdProp") %>' Visible="false" />
-                            <br />
-                            <asp:CheckBox ID="ChkGetGroupMembershipAsADDomain" runat="server" Checked='<%# Bind("GetGroupMembershipAsADDomainProp") %>' />
-                            <span>Get group membership using <a href="https://msdn.microsoft.com/en-us/library/system.directoryservices.accountmanagement.userprincipal.getauthorizationgroups.aspx" target="_blank">UserPrincipal.GetAuthorizationGroups()</a> (works only with Active Directory servers</span>
+                            <asp:TextBox ID="IdPropHidden" runat="server" Text='<%# Bind("IdProp") %>' Visible="false" />
+                            <div><asp:CheckBox ID="ChkAugmentationEnableOnCoco" runat="server" Checked='<%# Bind("AugmentationEnabledProp") %>' />
+                            <asp:Label ID="TextPath" runat="server" Text='<%# Bind("PathProp") %>' />
+							</div>
+                            <div><asp:CheckBox ID="ChkGetGroupMembershipAsADDomain" runat="server" Checked='<%# Bind("GetGroupMembershipAsADDomainProp") %>' />
+                            <span>Get groups using <a href="https://msdn.microsoft.com/en-us/library/system.directoryservices.accountmanagement.userprincipal.getauthorizationgroups.aspx" target="_blank">UserPrincipal.GetAuthorizationGroups()</a>.</span></div>
                         </ItemTemplate>
                     </asp:TemplateField>
-                    <asp:BoundField DataField="PathProp" HeaderText="" />
                 </Columns>
             </wssawc:SPGridView>
 			</div>
