@@ -540,27 +540,30 @@ namespace ldapcp
         public Guid Id = Guid.NewGuid();
 
         [Persisted]
-        public string Path;
+        internal string Path;
 
         [Persisted]
-        public string Username;
+        internal string Username;
 
         [Persisted]
-        public string Password;
+        internal string Password;
 
         [Persisted]
-        public string Metadata;
+        internal string Metadata;
 
         /// <summary>
         /// Specifies the types of authentication
         /// http://msdn.microsoft.com/en-us/library/system.directoryservices.authenticationtypes(v=vs.110).aspx
         /// </summary>
         [Persisted]
-        public AuthenticationTypes AuthenticationTypes;
+        internal AuthenticationTypes AuthenticationTypes;
 
         [Persisted]
-        public bool UserServerDirectoryEntry;
+        internal bool UserServerDirectoryEntry;
 
+        /// <summary>
+        /// If true: this server will be queried to perform augmentation
+        /// </summary>
         [Persisted]
         public bool AugmentationEnabled;
 
@@ -569,7 +572,12 @@ namespace ldapcp
         /// If false: get group membership with LDAP queries
         /// </summary>
         [Persisted]
-        public bool GetGroupMembershipAsADDomain;
+        public bool GetGroupMembershipAsADDomain = true;
+
+        /// <summary>
+        /// DirectoryEntry used to make LDAP queries
+        /// </summary>
+        public DirectoryEntry directoryEntry;
 
         public LDAPConnection()
         {
@@ -590,6 +598,7 @@ namespace ldapcp
             };
             return copy;
         }
+
     }
 
     /// <summary>

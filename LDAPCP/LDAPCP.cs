@@ -655,17 +655,18 @@ namespace ldapcp
         /// <returns></returns>
         protected virtual void SearchOrValidateWithLDAP(RequestInformation requestInfo, ref List<PickerEntity> permissions)
         {
-            DirectoryEntry[] directories = GetLDAPServers(requestInfo);
-            if (directories == null || directories.Length == 0)
+            //DirectoryEntry[] directories = GetLDAPServers(requestInfo);
+            LDAPConnection[] connections = GetLDAPServers(requestInfo);
+            if (connections == null || connections.Length == 0)
             {
                 LdapcpLogging.Log(String.Format("[{0}] No LDAP server is configured.", ProviderInternalName), TraceSeverity.Unexpected, EventSeverity.Error, LdapcpLogging.Categories.Configuration);
                 return;
             }
 
-            List<LDAPConnectionSettings> LDAPServers = new List<LDAPConnectionSettings>(directories.Length);
-            foreach (DirectoryEntry directory in directories)
+            List<LDAPConnectionSettings> LDAPServers = new List<LDAPConnectionSettings>(connections.Length);
+            foreach (LDAPConnection coco in connections)
             {
-                LDAPServers.Add(new LDAPConnectionSettings() { Directory = directory });
+                LDAPServers.Add(new LDAPConnectionSettings() { Directory = coco.directoryEntry });
             }
             GetLDAPFilter(requestInfo, ref LDAPServers);
 
@@ -965,40 +966,30 @@ namespace ldapcp
         /// </summary>
         /// <param name="requestInfo">Information about current context and operation</param>
         /// <returns>Array of LDAP servers to query</returns>
-        protected virtual DirectoryEntry[] GetLDAPServers(RequestInformation requestInfo)
+        protected virtual LDAPConnection[] GetLDAPServers(RequestInformation requestInfo)
         {
             if (this.CurrentConfiguration.LDAPConnectionsProp == null) return null;
             IEnumerable<LDAPConnection> ldapConnections = this.CurrentConfiguration.LDAPConnectionsProp;
             if (requestInfo.RequestType == RequestType.Augmentation) ldapConnections = this.CurrentConfiguration.LDAPConnectionsProp.Where(x => x.AugmentationEnabled);
+            LDAPConnection[] connections = new LDAPConnection[ldapConnections.Count()];
 
-            DirectoryEntry[] directoryEntries = new DirectoryEntry[ldapConnections.Count()];
             int i = 0;
             foreach (var ldapConnection in ldapConnections)
             {
-                directoryEntries[i++] = GetDirectoryEntry(ldapConnection);
+                LDAPConnection connection = new LDAPConnection();
+                if (!ldapConnection.UserServerDirectoryEntry)
+                {
+                    connection.directoryEntry = new DirectoryEntry(ldapConnection.Path, ldapConnection.Username, ldapConnection.Password, ldapConnection.AuthenticationTypes);
+                    LdapcpLogging.Log(String.Format("[{0}] Add \"{1}\" with AuthenticationType \"{2}\" and credentials \"{3}\".", ProviderInternalName, ldapConnection.Path, ldapConnection.AuthenticationTypes.ToString(), ldapConnection.Username), TraceSeverity.Verbose, EventSeverity.Information, LdapcpLogging.Categories.LDAP_Lookup);
+                }
+                else
+                {
+                    connection.directoryEntry = Domain.GetComputerDomain().GetDirectoryEntry();
+                    LdapcpLogging.Log(String.Format("[{0}] Add \"{1}\" with AuthenticationType \"{2}\" and credentials of application pool account.", ProviderInternalName, connection.directoryEntry.Path, connection.directoryEntry.AuthenticationType.ToString()), TraceSeverity.Verbose, EventSeverity.Information, LdapcpLogging.Categories.LDAP_Lookup);
+                }
+                connections[i++] = connection;
             }
-            return directoryEntries;
-        }
-
-        /// <summary>
-        /// Return a DirectoryEntry based on the LDAPConnection supplied
-        /// </summary>
-        /// <param name="ldapConnection"></param>
-        /// <returns></returns>
-        protected virtual DirectoryEntry GetDirectoryEntry(LDAPConnection ldapConnection)
-        {
-            DirectoryEntry de = null;
-            if (!ldapConnection.UserServerDirectoryEntry)
-            {
-                de = new DirectoryEntry(ldapConnection.Path, ldapConnection.Username, ldapConnection.Password, ldapConnection.AuthenticationTypes);
-                LdapcpLogging.Log(String.Format("[{0}] Add \"{1}\" with AuthenticationType \"{2}\" and credentials \"{3}\".", ProviderInternalName, ldapConnection.Path, ldapConnection.AuthenticationTypes.ToString(), ldapConnection.Username), TraceSeverity.Verbose, EventSeverity.Information, LdapcpLogging.Categories.LDAP_Lookup);
-            }
-            else
-            {
-                de = Domain.GetComputerDomain().GetDirectoryEntry();
-                LdapcpLogging.Log(String.Format("[{0}] Add \"{1}\" with AuthenticationType \"{2}\" and credentials of application pool account.", ProviderInternalName, de.Path, de.AuthenticationType.ToString()), TraceSeverity.Verbose, EventSeverity.Information, LdapcpLogging.Categories.LDAP_Lookup);
-            }
-            return de;
+            return connections;
         }
 
         protected override void FillClaimTypes(List<string> claimTypes)
@@ -1053,12 +1044,12 @@ namespace ldapcp
 
         protected override void FillClaimsForEntity(Uri context, SPClaim entity, List<SPClaim> claims)
         {
-            Augment(context, entity, null, claims);
+            AugmentEntity(context, entity, null, claims);
         }
 
         protected override void FillClaimsForEntity(Uri context, SPClaim entity, SPClaimProviderContext claimProviderContext, List<SPClaim> claims)
         {
-            Augment(context, entity, claimProviderContext, claims);
+            AugmentEntity(context, entity, claimProviderContext, claims);
         }
 
         /// <summary>
@@ -1068,7 +1059,7 @@ namespace ldapcp
         /// <param name="entity">entity to augment</param>
         /// <param name="claimProviderContext">Can be null</param>
         /// <param name="claims"></param>
-        protected virtual void Augment(Uri context, SPClaim entity, SPClaimProviderContext claimProviderContext, List<SPClaim> claims)
+        protected virtual void AugmentEntity(Uri context, SPClaim entity, SPClaimProviderContext claimProviderContext, List<SPClaim> claims)
         {
             SPSecurity.RunWithElevatedPrivileges(delegate ()
             {
@@ -1113,10 +1104,8 @@ namespace ldapcp
                     }
 
                     RequestInformation infos = new RequestInformation(CurrentConfiguration, RequestType.Augmentation, ProcessedAttributes, null, decodedEntity, context, null, null, Int32.MaxValue);
-                    //IEnumerable<LDAPConnection> ldapConnections = this.CurrentConfiguration.LDAPConnectionsProp.Where(x => x.AugmentationEnabled);
-                    //if (ldapConnections.Count() == 0)
-                    DirectoryEntry[] directories = GetLDAPServers(infos);
-                    if (directories == null || directories.Length == 0)
+                    LDAPConnection[] connections = GetLDAPServers(infos);
+                    if (connections == null || connections.Length == 0)
                     {
                         LdapcpLogging.Log(String.Format("[{0}] No LDAP server is enabled for augmentation", ProviderInternalName), TraceSeverity.High, EventSeverity.Error, LdapcpLogging.Categories.Augmentation);
                         return;
@@ -1127,22 +1116,13 @@ namespace ldapcp
                     object lockResults = new object(); ;
                     Stopwatch stopWatch = new Stopwatch();
                     stopWatch.Start();
-                    Parallel.ForEach(directories, directory =>
+                    Parallel.ForEach(connections, coco =>
                     {
                         List<SPClaim> directoryGroups;
-
-                        //TODO: implement logic to detect if directory is AD or not
-                        // http://ldapwiki.com/wiki/Determine%20LDAP%20Server%20Vendor#section-Determine+LDAP+Server+Vendor-ActiveDirectory
-
-                        //bool getGroupMembershipAsADDomain = this.CurrentConfiguration.LDAPConnectionsProp.First(x => String.Equals(x.Path, directory.Path, StringComparison.InvariantCultureIgnoreCase)).GetGroupMembershipAsADDomain;
-                        //DirectoryEntry de = GetDirectoryEntry(ldapConnection);
-                        //if (ldapConnection.GetGroupMembershipAsADDomain)
-                        //    directoryGroups = GetGroupsFromADDirectory(de, infos, groupAttribute);
-                        //else
-                        //    directoryGroups = GetGroupsFromLDAPDirectory(de, infos, groupAttribute);
-
-                        //directoryGroups = GetGroupsFromLDAPDirectory(directory, infos, groupAttribute);
-                        directoryGroups = GetGroupsFromADDirectory(directory, infos, groupAttribute);
+                        if (coco.GetGroupMembershipAsADDomain)
+                            directoryGroups = GetGroupsFromADDirectory(coco.directoryEntry, infos, groupAttribute);
+                        else
+                            directoryGroups = GetGroupsFromLDAPDirectory(coco.directoryEntry, infos, groupAttribute);
 
                         lock (lockResults)
                         {
@@ -1150,6 +1130,10 @@ namespace ldapcp
                         }
                     });
                     stopWatch.Stop();
+                    LdapcpLogging.Log(String.Format("[{0}] LDAP queries to get group membership on all servers completed in {1}ms",
+                        ProviderInternalName, stopWatch.ElapsedMilliseconds.ToString()),
+                        TraceSeverity.Medium, EventSeverity.Information, LdapcpLogging.Categories.Augmentation);
+
 
                     // method 1: UserPrincipal.GetAuthorizationGroups
                     // Another method would be to get memberof attribute with a LDAP query
@@ -1195,14 +1179,18 @@ namespace ldapcp
                 {
                     string directoryDomainName, directoryDomainFqdn;
                     RequestInformation.GetDomainInformation(directory, out directoryDomainName, out directoryDomainFqdn);
+                    Stopwatch stopWatch = new Stopwatch();
+                    stopWatch.Start();
                     using (PrincipalContext principalContext = new PrincipalContext(ContextType.Domain, directoryDomainFqdn))
                     {
                         using (UserPrincipal adUser = UserPrincipal.FindByIdentity(principalContext, requestInfo.IncomingEntity.Value))
                         {
                             if (adUser == null) return groups;
                             IEnumerable<Principal> ADGroups = adUser.GetAuthorizationGroups().Where(x => !String.IsNullOrEmpty(x.DistinguishedName));
+
                             LdapcpLogging.Log(String.Format("[{0}] Domain {1} returned {2} groups for user {3}", ProviderInternalName, directoryDomainFqdn, ADGroups.Count().ToString(), requestInfo.IncomingEntity.Value),
                                 TraceSeverity.Verbose, EventSeverity.Information, LdapcpLogging.Categories.Augmentation);
+
                             foreach (Principal group in ADGroups)
                             {
                                 string groupDomainName, groupDomainFqdn;
@@ -1217,6 +1205,10 @@ namespace ldapcp
                             }
                         }
                     }
+                    stopWatch.Stop();
+                    LdapcpLogging.Log(String.Format("[{0}] LDAP queries to get group membership on server {1} completed in {2}ms",
+                        ProviderInternalName, directory.Path, stopWatch.ElapsedMilliseconds.ToString()),
+                        TraceSeverity.Medium, EventSeverity.Information, LdapcpLogging.Categories.Augmentation);
                 }
                 catch (PrincipalOperationException ex)
                 {
@@ -1251,11 +1243,19 @@ namespace ldapcp
 
                     using (DirectorySearcher searcher = new DirectorySearcher(directory))
                     {
+                        searcher.ClientTimeout = new TimeSpan(0, 0, this.CurrentConfiguration.TimeoutProp); // Set the timeout of the query
                         searcher.Filter = string.Format("(&(ObjectClass={0})({1}={2}){3})", IdentityAttribute.LDAPObjectClassProp, IdentityAttribute.LDAPAttribute, requestInfo.IncomingEntity.Value, IdentityAttribute.AdditionalLDAPFilterProp);
                         searcher.PropertiesToLoad.Add("memberOf");
                         searcher.PropertiesToLoad.Add("uniquememberof");
 
+                        Stopwatch stopWatch = new Stopwatch();
+                        stopWatch.Start();
                         SearchResult result = searcher.FindOne();
+                        stopWatch.Stop();
+                        LdapcpLogging.Log(String.Format("[{0}] LDAP queries to get group membership on server {1} completed in {2}ms",
+                            ProviderInternalName, directory.Path, stopWatch.ElapsedMilliseconds.ToString()),
+                            TraceSeverity.Medium, EventSeverity.Information, LdapcpLogging.Categories.Augmentation);
+
                         if (result == null) return groups;  // user was not found in this directory
 
                         int propertyCount = result.Properties["memberOf"].Count;
