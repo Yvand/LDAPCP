@@ -538,19 +538,9 @@ namespace ldapcp
     {
         [Persisted]
         public Guid Id = Guid.NewGuid();
-        public Guid IdProp
-        {
-            get { return Id; }
-            set { Id = value; }
-        }
 
         [Persisted]
         public string Path;
-        public string PathProp
-        {
-            get { return Path; }
-            set { Path = value; }
-        }
 
         [Persisted]
         public string Username;
@@ -573,11 +563,13 @@ namespace ldapcp
 
         [Persisted]
         public bool AugmentationEnabled;
-        public bool AugmentationEnabledProp
-        {
-            get { return AugmentationEnabled; }
-            set { AugmentationEnabled = value; }
-        }
+
+        /// <summary>
+        /// If true: get group membership with UserPrincipal.GetAuthorizationGroups()
+        /// If false: get group membership with LDAP queries
+        /// </summary>
+        [Persisted]
+        public bool GetGroupMembershipAsADDomain;
 
         public LDAPConnection()
         {
@@ -747,6 +739,11 @@ namespace ldapcp
             return Regex.Replace(fullAccountName, RegexAccountFromFullAccountName, "$1", RegexOptions.None);
         }
 
+        /// <summary>
+        /// Returns the string before the '\'
+        /// </summary>
+        /// <param name="fullAccountName">e.g. "mylds.local\ldsgroup1"</param>
+        /// <returns>e.g. "mylds.local"</returns>
         public static string GetDomainFromFullAccountName(string fullAccountName)
         {
             return Regex.Replace(fullAccountName, RegexDomainFromFullAccountName, "$1", RegexOptions.None);
