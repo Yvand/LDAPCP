@@ -262,6 +262,9 @@
                         <ItemTemplate>
                             <asp:CheckBox ID="ChkAugmentationEnableOnCoco" runat="server" Checked='<%# Bind("AugmentationEnabledProp") %>' />
 							<asp:TextBox ID="IdPropHidden" runat="server" Text='<%# Bind("IdProp") %>' Visible="false" />
+                            <br />
+                            <asp:CheckBox ID="ChkGetGroupMembershipAsADDomain" runat="server" Checked='<%# Bind("GetGroupMembershipAsADDomainProp") %>' />
+                            <span>Get group membership using <a href="https://msdn.microsoft.com/en-us/library/system.directoryservices.accountmanagement.userprincipal.getauthorizationgroups.aspx" target="_blank">UserPrincipal.GetAuthorizationGroups()</a> (works only with Active Directory servers</span>
                         </ItemTemplate>
                     </asp:TemplateField>
                     <asp:BoundField DataField="PathProp" HeaderText="" />

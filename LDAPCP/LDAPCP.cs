@@ -976,7 +976,7 @@ namespace ldapcp
             int i = 0;
             foreach (var ldapConnection in ldapConnections)
             {
-                LDAPConnection connection = new LDAPConnection();
+                LDAPConnection connection = ldapConnection.CopyPersistedProperties();
                 if (!ldapConnection.UserServerDirectoryEntry)
                 {
                     connection.directoryEntry = new DirectoryEntry(ldapConnection.Path, ldapConnection.Username, ldapConnection.Password, ldapConnection.AuthenticationTypes);
@@ -1132,28 +1132,24 @@ namespace ldapcp
                     stopWatch.Stop();
                     LdapcpLogging.Log(String.Format("[{0}] LDAP queries to get group membership on all servers completed in {1}ms",
                         ProviderInternalName, stopWatch.ElapsedMilliseconds.ToString()),
-                        TraceSeverity.Medium, EventSeverity.Information, LdapcpLogging.Categories.Augmentation);
+                        TraceSeverity.Verbose, EventSeverity.Information, LdapcpLogging.Categories.Augmentation);
 
-
-                    // method 1: UserPrincipal.GetAuthorizationGroups
-                    // Another method would be to get memberof attribute with a LDAP query
-                    //List<SPClaim> groups = AugmentWithGroups(directories, infos, groupAttribute);
                     foreach (SPClaim group in groups)
                     {
                         claims.Add(group);
                         LdapcpLogging.Log(String.Format("[{0}] Added group \"{1}\" to user \"{2}\"", ProviderInternalName, group.Value, infos.IncomingEntity.Value),
-                            TraceSeverity.Medium, EventSeverity.Information, LdapcpLogging.Categories.Augmentation);
+                            TraceSeverity.Verbose, EventSeverity.Information, LdapcpLogging.Categories.Augmentation);
                     }
                     if (groups.Count > 0)
                         LdapcpLogging.Log(String.Format("[{0}] User '{1}' was augmented with {2} groups of claim type '{3}'", ProviderInternalName, infos.IncomingEntity.Value, groups.Count.ToString(), groupAttribute.ClaimType),
                             TraceSeverity.Medium, EventSeverity.Information, LdapcpLogging.Categories.Augmentation);
                     else
-                        LdapcpLogging.Log(String.Format("[{0}] No group found for user '{1}' during augmentation process", ProviderInternalName, infos.IncomingEntity.Value),
+                        LdapcpLogging.Log(String.Format("[{0}] No group found for user '{1}' during augmentation", ProviderInternalName, infos.IncomingEntity.Value),
                             TraceSeverity.Medium, EventSeverity.Information, LdapcpLogging.Categories.Augmentation);
                 }
                 catch (Exception ex)
                 {
-                    LdapcpLogging.LogException(ProviderInternalName, "in Augment", LdapcpLogging.Categories.Augmentation, ex);
+                    LdapcpLogging.LogException(ProviderInternalName, "in AugmentEntity", LdapcpLogging.Categories.Augmentation, ex);
                 }
                 finally
                 {
@@ -1187,9 +1183,7 @@ namespace ldapcp
                         {
                             if (adUser == null) return groups;
                             IEnumerable<Principal> ADGroups = adUser.GetAuthorizationGroups().Where(x => !String.IsNullOrEmpty(x.DistinguishedName));
-
-                            LdapcpLogging.Log(String.Format("[{0}] Domain {1} returned {2} groups for user {3}", ProviderInternalName, directoryDomainFqdn, ADGroups.Count().ToString(), requestInfo.IncomingEntity.Value),
-                                TraceSeverity.Verbose, EventSeverity.Information, LdapcpLogging.Categories.Augmentation);
+                            stopWatch.Stop();
 
                             foreach (Principal group in ADGroups)
                             {
@@ -1205,9 +1199,8 @@ namespace ldapcp
                             }
                         }
                     }
-                    stopWatch.Stop();
-                    LdapcpLogging.Log(String.Format("[{0}] LDAP queries to get group membership on server {1} completed in {2}ms",
-                        ProviderInternalName, directory.Path, stopWatch.ElapsedMilliseconds.ToString()),
+                    LdapcpLogging.Log(String.Format("[{0}] Domain {1} returned {2} groups for user {3}. Lookup took {4}ms on AD server '{5}'",
+                        ProviderInternalName, directoryDomainFqdn, groups.Count, requestInfo.IncomingEntity.Value, stopWatch.ElapsedMilliseconds.ToString(), directory.Path),
                         TraceSeverity.Medium, EventSeverity.Information, LdapcpLogging.Categories.Augmentation);
                 }
                 catch (PrincipalOperationException ex)
@@ -1240,6 +1233,7 @@ namespace ldapcp
                 {
                     string directoryDomainName, directoryDomainFqdn;
                     RequestInformation.GetDomainInformation(directory, out directoryDomainName, out directoryDomainFqdn);
+                    Stopwatch stopWatch = new Stopwatch();
 
                     using (DirectorySearcher searcher = new DirectorySearcher(directory))
                     {
@@ -1248,14 +1242,10 @@ namespace ldapcp
                         searcher.PropertiesToLoad.Add("memberOf");
                         searcher.PropertiesToLoad.Add("uniquememberof");
 
-                        Stopwatch stopWatch = new Stopwatch();
                         stopWatch.Start();
                         SearchResult result = searcher.FindOne();
                         stopWatch.Stop();
-                        LdapcpLogging.Log(String.Format("[{0}] LDAP queries to get group membership on server {1} completed in {2}ms",
-                            ProviderInternalName, directory.Path, stopWatch.ElapsedMilliseconds.ToString()),
-                            TraceSeverity.Medium, EventSeverity.Information, LdapcpLogging.Categories.Augmentation);
-
+                        
                         if (result == null) return groups;  // user was not found in this directory
 
                         int propertyCount = result.Properties["memberOf"].Count;
@@ -1284,6 +1274,9 @@ namespace ldapcp
                             groups.Add(claim);
                         }
                     }
+                    LdapcpLogging.Log(String.Format("[{0}] Domain {1} returned {2} groups for user {3}. Lookup took {4}ms on LDAP server '{5}'",
+                        ProviderInternalName, directoryDomainFqdn, groups.Count, requestInfo.IncomingEntity.Value, stopWatch.ElapsedMilliseconds.ToString(), directory.Path),
+                        TraceSeverity.Medium, EventSeverity.Information, LdapcpLogging.Categories.Augmentation);
                 }
                 catch (Exception ex)
                 {

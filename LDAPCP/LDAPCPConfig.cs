@@ -537,10 +537,20 @@ namespace ldapcp
     public class LDAPConnection : SPAutoSerializingObject
     {
         [Persisted]
-        public Guid Id = Guid.NewGuid();
+        internal Guid Id = Guid.NewGuid();
+        public Guid IdProp
+        {
+            get { return Id; }
+            set { Id = value; }
+        }
 
         [Persisted]
         internal string Path;
+        public string PathProp
+        {
+            get { return Path; }
+            set { Path = value; }
+        }
 
         [Persisted]
         internal string Username;
@@ -566,6 +576,12 @@ namespace ldapcp
         /// </summary>
         [Persisted]
         public bool AugmentationEnabled;
+        public bool AugmentationEnabledProp
+        {
+            get { return AugmentationEnabled; }
+            set { AugmentationEnabled = value; }
+        }
+
 
         /// <summary>
         /// If true: get group membership with UserPrincipal.GetAuthorizationGroups()
@@ -573,6 +589,11 @@ namespace ldapcp
         /// </summary>
         [Persisted]
         public bool GetGroupMembershipAsADDomain = true;
+        public bool GetGroupMembershipAsADDomainProp
+        {
+            get { return GetGroupMembershipAsADDomain; }
+            set { GetGroupMembershipAsADDomain = value; }
+        }
 
         /// <summary>
         /// DirectoryEntry used to make LDAP queries
@@ -595,6 +616,7 @@ namespace ldapcp
                 AuthenticationTypes = this.AuthenticationTypes,
                 UserServerDirectoryEntry = this.UserServerDirectoryEntry,
                 AugmentationEnabled = this.AugmentationEnabled,
+                GetGroupMembershipAsADDomain = this.GetGroupMembershipAsADDomain,
             };
             return copy;
         }

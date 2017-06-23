@@ -204,9 +204,12 @@ namespace ldapcp.ControlTemplates
             foreach (GridViewRow item in GridLdapConnections.Rows)
             {
                 CheckBox chkAugEn = (CheckBox)item.FindControl("ChkAugmentationEnableOnCoco");
+                CheckBox chkIsADDomain = (CheckBox)item.FindControl("ChkGetGroupMembershipAsADDomain");
                 TextBox txtId = (TextBox)item.FindControl("IdPropHidden");
 
-                PersistedObject.LDAPConnectionsProp.First(x => x.Id == new Guid(txtId.Text)).AugmentationEnabled = chkAugEn.Checked;
+                var coco = PersistedObject.LDAPConnectionsProp.First(x => x.IdProp == new Guid(txtId.Text));
+                coco.AugmentationEnabledProp = chkAugEn.Checked;
+                coco.GetGroupMembershipAsADDomainProp = chkIsADDomain.Checked;
             }
         }
 
