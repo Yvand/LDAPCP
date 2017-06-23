@@ -677,12 +677,7 @@ namespace ldapcp
                 resultsfound = QueryLDAPServers(LDAPServers, requestInfo, ref LDAPSearchResultWrappers);
             }
 
-            if (!resultsfound)
-            {
-                LdapcpLogging.Log(String.Format("[{0}] This LDAP query did not return any result: \"{1}\"", ProviderInternalName, LDAPServers[0].Filter), TraceSeverity.Medium, EventSeverity.Information, LdapcpLogging.Categories.LDAP_Lookup);
-                return;
-            }
-            LdapcpLogging.Log(String.Format("[{0}] Got {1} result(s) from all LDAP server(s) with query \"{2}\"", ProviderInternalName, LDAPSearchResultWrappers.Count, LDAPServers[0].Filter), TraceSeverity.Medium, EventSeverity.Information, LdapcpLogging.Categories.LDAP_Lookup);
+            if (!resultsfound) return;
             ConsolidatedResultCollection results = ProcessLdapResults(requestInfo, ref LDAPSearchResultWrappers);
 
             if (results.Count > 0)
@@ -880,10 +875,11 @@ namespace ldapcp
         /// <returns>true if a result was found</returns>
         protected bool QueryLDAPServers(List<LDAPConnectionSettings> LDAPServers, RequestInformation requestInfo, ref List<LDAPSearchResultWrapper> LDAPSearchResults)
         {
-            object lockResults = new object(); ;
+            if (LDAPServers == null || LDAPServers.Count == 0) return false;
+            object lockResults = new object();
             List<LDAPSearchResultWrapper> results = new List<LDAPSearchResultWrapper>();
-            Stopwatch stopWatch = new Stopwatch();
-            stopWatch.Start();
+            Stopwatch globalStopWatch = new Stopwatch();
+            globalStopWatch.Start();
 
             Parallel.ForEach(LDAPServers, LDAPServer =>
             {
@@ -911,16 +907,17 @@ namespace ldapcp
                         if (!ds.PropertiesToLoad.Contains(metadataAttribute.LDAPAttribute)) ds.PropertiesToLoad.Add(metadataAttribute.LDAPAttribute);
                     }
 
-                    // FORTIFY WARNING: added a using statement
                     using (new SPMonitoredScope(String.Format("[{0}] Connecting to \"{1}\" with AuthenticationType \"{2}\" and filter \"{3}\"", ProviderInternalName, directory.Path, directory.AuthenticationType.ToString(), ds.Filter), 3000)) // threshold of 3 seconds before it's considered too much. If exceeded it is recorded in a higher logging level
                     {
                         try
                         {
-                            LdapcpLogging.Log(String.Format("[{0}] Connecting to \"{1}\" with AuthenticationType \"{2}\" and filter \"{3}\"", ProviderInternalName, directory.Path, directory.AuthenticationType.ToString(), ds.Filter), TraceSeverity.Medium, EventSeverity.Information, LdapcpLogging.Categories.LDAP_Lookup);
-                            // Send LDAP query to server
+                            LdapcpLogging.Log(String.Format("[{0}] Connecting to \"{1}\" with AuthenticationType \"{2}\" and filter \"{3}\"", ProviderInternalName, directory.Path, directory.AuthenticationType.ToString(), ds.Filter), TraceSeverity.Verbose, EventSeverity.Information, LdapcpLogging.Categories.LDAP_Lookup);
+                            Stopwatch stopWatch = new Stopwatch();
+                            stopWatch.Start();
                             using (SearchResultCollection directoryResults = ds.FindAll())
                             {
-                                LdapcpLogging.Log(String.Format("[{0}] \"{1}\" returned {2} result(s)", ProviderInternalName, directory.Path, directoryResults.Count.ToString()), TraceSeverity.Medium, EventSeverity.Information, LdapcpLogging.Categories.LDAP_Lookup);
+                                stopWatch.Stop();
+                                LdapcpLogging.Log(String.Format("[{0}] Got {1} result(s) in {2}ms from \"{3}\" with query \"{4}\"", ProviderInternalName, directoryResults.Count.ToString(), stopWatch.ElapsedMilliseconds.ToString(), directory.Path, ds.Filter), TraceSeverity.Medium, EventSeverity.Information, LdapcpLogging.Categories.LDAP_Lookup);
                                 if (directoryResults != null && directoryResults.Count > 0)
                                 {
                                     lock (lockResults)
@@ -938,7 +935,6 @@ namespace ldapcp
                                             });
                                         }
                                     }
-                                    LdapcpLogging.Log(String.Format("[{0}] Got {1} result(s) from {2}", ProviderInternalName, directoryResults.Count.ToString(), directory.Path), TraceSeverity.Verbose, EventSeverity.Information, LdapcpLogging.Categories.LDAP_Lookup);
                                 }
                             }
                         }
@@ -954,10 +950,9 @@ namespace ldapcp
                 }
             });
 
-            stopWatch.Stop();
-            LdapcpLogging.Log(String.Format("[{0}] LDAP queries on all servers completed in {1}ms (current timeout is {2}ms)", ProviderInternalName, stopWatch.ElapsedMilliseconds.ToString(), (uint)this.CurrentConfiguration.TimeoutProp * 1000), TraceSeverity.Medium, EventSeverity.Information, LdapcpLogging.Categories.LDAP_Lookup);
-
+            globalStopWatch.Stop();
             LDAPSearchResults = results;
+            LdapcpLogging.Log(String.Format("[{0}] Got {1} result(s) in {2}ms from all servers with query \"{3}\"", ProviderInternalName, LDAPSearchResults.Count, globalStopWatch.ElapsedMilliseconds.ToString(), LDAPServers[0].Filter), TraceSeverity.Verbose, EventSeverity.Information, LdapcpLogging.Categories.LDAP_Lookup);
             return LDAPSearchResults.Count > 0;
         }
 
