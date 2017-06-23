@@ -250,7 +250,7 @@
             <wssawc:EncodedLiteral runat="server" text="Select the claim type to use for the groups:" EncodeMethod='HtmlEncodeAllowSimpleTextFormatting'/>
             <br />
             <asp:DropDownList ID="DdlClaimTypes" runat="server">
-                <asp:ListItem Selected="True" Value="None"></asp:ListItem>
+            <asp:ListItem Selected="True" Value="None"></asp:ListItem>
             </asp:DropDownList>
 			<tr><td>
 			<wssawc:EncodedLiteral runat="server" text="Select which servers to query. If the server is an Active Directory server, check the 2nd box to use <a href='https://msdn.microsoft.com/en-us/library/system.directoryservices.accountmanagement.userprincipal.getauthorizationgroups.aspx' target='_blank'>UserPrincipal.GetAuthorizationGroups()</a>. <br/>It works only with Active Directory." EncodeMethod='NoEncode'/>
