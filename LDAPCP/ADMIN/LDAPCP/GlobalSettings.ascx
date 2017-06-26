@@ -23,25 +23,22 @@
         IsDefaultADConnectionCreated = <%= ViewState["IsDefaultADConnectionCreated"].ToString().ToLower() %>;
         ForceCheckCustomLdapConnection = <%= ViewState["ForceCheckCustomLdapConnection"].ToString().ToLower() %>;
 			
-        if (IsDefaultADConnectionCreated)
-        {
+        if (IsDefaultADConnectionCreated) {
             // Disable radio button to create default connection and select other one.
             $('#<%= RbUseServerDomain.ClientID %>').prop('disabled', true);
             $('#<%= RbUseCustomConnection.ClientID %>').prop('checked', true);
             // Needed to trigger the click to display the button that tests connection
             $('#<%= RbUseCustomConnection.ClientID %>').trigger('click');
         }
-        else
-        {
+        else {
             // No default connection, give possibility to create one.
             $('#<%= RbUseServerDomain.ClientID %>').prop('enabled', true);
             $('#<%= RbUseServerDomain.ClientID %>').prop('checked', true);
             // Hide asterisk in custom LDAP connection fields
             $('#divNewLdapConnection').find('em').hide();
         }
-			
-        if (ForceCheckCustomLdapConnection)
-        {
+
+        if (ForceCheckCustomLdapConnection) {
             $('#<%= RbUseCustomConnection.ClientID %>').prop('checked', true);
             // Needed to trigger the click to display the button that tests connection
             $('#<%= RbUseCustomConnection.ClientID %>').trigger('click');
@@ -53,13 +50,13 @@
         var enableAugmentationControls = $('#<%= ChkEnableAugmentation.ClientID %>').is(":checked");
         if (enableAugmentationControls) {
             $("#AugmentationControls").children().prop('disabled', false);
-			$("#AugmentationControlsGrid").children().removeAttr('disabled');
-			$("#AugmentationControlsGrid").children().prop('disabled', null);
+            $("#AugmentationControlsGrid").children().removeAttr('disabled');
+            $("#AugmentationControlsGrid").children().prop('disabled', null);
         }
         else {
             $("#AugmentationControls").children().prop('disabled', true);
-			$("#AugmentationControlsGrid").children().attr('disabled', '');
-			$("#AugmentationControlsGrid").children().prop('disabled');
+            $("#AugmentationControlsGrid").children().attr('disabled', '');
+            $("#AugmentationControlsGrid").children().prop('disabled');
         }
     }
 
@@ -72,7 +69,7 @@
         $('#<%= BtnTestLdapConnection.ClientID %>').show('fast');
         $('#divNewLdapConnection').find('em').show();
     }
-		
+
     window.Ldapcp.AdminGlobalSettingsControl.CheckDefaultADConnection = function () {
         $('#divNewLdapConnection').find('em').hide();
         $('#<%= BtnTestLdapConnection.ClientID %>').hide('fast');
@@ -88,72 +85,73 @@
 </script>
 
 <style>
-	/* Maximaze space available for description text */
-	.ms-inputformdescription {
-		width: 100%;
-	}
+    /* Maximaze space available for description text */
+    .ms-inputformdescription {
+        width: 100%;
+    }
 
-	/* corev15.css set it to 0.9em, which makes it too small */
-	.ms-descriptiontext {
-		font-size: 1em;
-	}
-	/* Set the size of the right part with all input controls */
-	.ms-inputformcontrols {
-		width: 650px;
-	}
+    /* corev15.css set it to 0.9em, which makes it too small */
+    .ms-descriptiontext {
+        font-size: 1em;
+    }
+    /* Set the size of the right part with all input controls */
+    .ms-inputformcontrols {
+        width: 650px;
+    }
 
-	/* Set the display of the title of each section */
-	.ms-standardheader {
-		color: #0072c6;
-		font-weight: bold;
-		font-size: 1.15em;
-	}
+    /* Set the display of the title of each section */
+    .ms-standardheader {
+        color: #0072c6;
+        font-weight: bold;
+        font-size: 1.15em;
+    }
 
-	/* Only used in td elements in grid view that displays LDAP connections */
-	.ms-vb2 {
-		vertical-align: middle;
-	}
+    /* Only used in td elements in grid view that displays LDAP connections */
+    .ms-vb2 {
+        vertical-align: middle;
+    }
 
-	.ldapcp-success {
-		color: green;
-		font-weight: bold;
-	}
+    .ldapcp-success {
+        color: green;
+        font-weight: bold;
+    }
 
-	.ldapcp-HideCol {
-		display: none;
-	}
+    .ldapcp-HideCol {
+        display: none;
+    }
 
-	#divNewLdapConnection label {
-		display: inline-block;
-		line-height: 1.8;
-		width: 100px;
-	}
+    #divNewLdapConnection label {
+        display: inline-block;
+        line-height: 1.8;
+        width: 100px;
+    }
 
-	#divNewLdapConnection fieldset {
-		border: 0;
-		margin: 0;
-		padding: 0;
-	}
+    #divNewLdapConnection fieldset {
+        border: 0;
+        margin: 0;
+        padding: 0;
+    }
 
-		#divNewLdapConnection fieldset ol {
-			margin: 0;
-			padding: 0;
-		}
+        #divNewLdapConnection fieldset ol {
+            margin: 0;
+            padding: 0;
+        }
 
-		#divNewLdapConnection fieldset li {
-			list-style: none;
-			padding: 5px;
-			margin: 0;
-		}
+        #divNewLdapConnection fieldset li {
+            list-style: none;
+            padding: 5px;
+            margin: 0;
+        }
 
-	#divNewLdapConnection em {
-		font-weight: bold;
-		font-style: normal;
-		color: #f00;
-	}
+    #divNewLdapConnection em {
+        font-weight: bold;
+        font-style: normal;
+        color: #f00;
+    }
 </style>
 
-<p class="ms-error"><asp:Label ID="LabelErrorMessage" runat="server" EnableViewState="False" /></p>
+<p class="ms-error">
+    <asp:Label ID="LabelErrorMessage" runat="server" EnableViewState="False" /></p>
 
 <wssuc:ButtonSection ID="ValidateTopSection" runat="server">
     <template_buttons>
@@ -181,7 +179,7 @@
 
 <wssuc:InputFormSection ID="NewLdapConnectionSection" Title="New LDAP connection" runat="server" Visible="<%# ShowNewLdapConnectionSection %>">
     <template_description>
-		<wssawc:EncodedLiteral runat="server" text="Create a new LDAP connection. A connection to same AD as SharePoint servers is created by default." EncodeMethod='HtmlEncodeAllowSimpleTextFormatting'/>
+		<wssawc:EncodedLiteral runat="server" text="Create a new LDAP connection. By default, LDAPCP adds a connection to the Active Directory domain of SharePoint servers, labelled 'Connect to SharePoint domain'." EncodeMethod='HtmlEncodeAllowSimpleTextFormatting'/>
 	</template_description>
     <template_inputformcontrols>
 		<tr><td>
@@ -192,7 +190,7 @@
 			GroupName="RbLDAPConnection"
 			CausesValidation="false"
 			runat="server"
-			onclick="window.Ldapcp.LdapcpSettingsPage.CheckDefaultADConnection()"					>
+			onclick="window.Ldapcp.LdapcpSettingsPage.CheckDefaultADConnection()">
 			<wssawc:EncodedLiteral runat="server" text="Connect to same AD as SharePoint servers, with application pool credentials." EncodeMethod='HtmlEncode'/>
 		</wssawc:InputFormRadioButton>
 		<wssawc:InputFormRadioButton id="RbUseCustomConnection"
@@ -242,7 +240,7 @@
 	</template_inputformcontrols>
 </wssuc:InputFormSection>
 
-<wssuc:inputformsection ID="AugmentationSection" runat="server" Visible="<%# ShowAugmentationSection %>" title="Augmentation" description="Configure augmentation to append groups of which users are members during logon.<br/><br/><b>Important:</b> at the time of the augmentation LDAPCP has very little information about the user: it only knows his identity claim.<br/>For this reason it's highly recommended to use an identity claim with a value guaranteed to be unique between all LDAP servers, like the email or the UPN.">
+<wssuc:inputformsection ID="AugmentationSection" runat="server" Visible="<%# ShowAugmentationSection %>" title="Augmentation" description="Enable augmentation to let LDAPCP get group membership of federated users.<br/><br/><b>Important:</b> During augmentation LDAPCP only knows the identity claim of the user, so it is strongly recommended to use an identity claim that ensures the uniqueness of the value across all domains, such as the email or the UPN.">
     <template_inputformcontrols>
         <p class="ms-error"><asp:Label ID="Label1" runat="server" EnableViewState="False" /></p>
         <asp:Checkbox Checked="false" Runat="server" Name="ChkEnableAugmentation" ID="ChkEnableAugmentation" OnClick="window.Ldapcp.AdminGlobalSettingsControl.InitAugmentationControls();" Text="Enable augmentation" />
@@ -253,18 +251,20 @@
                 <asp:ListItem Selected="True" Value="None"></asp:ListItem>
             </asp:DropDownList>
 			<tr><td>
-			<wssawc:EncodedLiteral runat="server" text="Select which LDAP path to query for augmentation:" EncodeMethod='HtmlEncodeAllowSimpleTextFormatting'/>
-            <br />
+			<wssawc:EncodedLiteral runat="server" text="<p>For Active Directory servers, the preferred way to get groups is using <a href='https://msdn.microsoft.com/en-us/library/system.directoryservices.accountmanagement.userprincipal.getauthorizationgroups.aspx' target='_blank'>UserPrincipal.GetAuthorizationGroups()</a>.<br />Otherwise LDAPCP reads LDAP attribute memberOf/uniquememberof of the user.</p>" EncodeMethod='NoEncode'/>
 			<div id="AugmentationControlsGrid">
             <wssawc:SPGridView ID="GridLdapConnections" runat="server" AutoGenerateColumns="False" ShowHeader="false">
                 <Columns>
-                    <asp:TemplateField ItemStyle-Width="10">
+                    <asp:TemplateField>
                         <ItemTemplate>
-                            <asp:CheckBox ID="ChkAugmentationEnableOnCoco" runat="server" Checked='<%# Bind("AugmentationEnabledProp") %>' />
-							<asp:TextBox ID="IdPropHidden" runat="server" Text='<%# Bind("IdProp") %>' Visible="false" />
+							<fieldset>
+                            <asp:TextBox ID="IdPropHidden" runat="server" Text='<%# Bind("IdProp") %>' Visible="false" />
+							<legend><span>LDAP Server "<asp:Label ID="TextPath" runat="server" Text='<%# Bind("PathProp") %>' />":</span></legend>
+                            <asp:CheckBox ID="ChkAugmentationEnableOnCoco" runat="server" Checked='<%# Bind("AugmentationEnabledProp") %>' Text="Query this server" />
+                            <asp:CheckBox ID="ChkGetGroupMembershipAsADDomain" runat="server" Checked='<%# Bind("GetGroupMembershipAsADDomainProp") %>' Text="This is an Active Directory server, use <a href='https://msdn.microsoft.com/en-us/library/system.directoryservices.accountmanagement.userprincipal.getauthorizationgroups.aspx' target='_blank'>UserPrincipal.GetAuthorizationGroups</a>" />
+							</fieldset>
                         </ItemTemplate>
                     </asp:TemplateField>
-                    <asp:BoundField DataField="PathProp" HeaderText="" />
                 </Columns>
             </wssawc:SPGridView>
 			</div>

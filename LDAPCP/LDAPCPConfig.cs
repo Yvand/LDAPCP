@@ -307,24 +307,6 @@ namespace ldapcp
         }
     }
 
-    //public interface IQueryObject
-    //{
-    //    string LDAPAttribute { get; set; }
-    //    string LDAPObjectClassProp { get; set; }
-    //    string ClaimTypeProp { get; set; }
-    //    string ClaimEntityTypeProp { get; set; }
-    //    string EntityDataKey { get; set; }
-    //    bool CreateAsIdentityClaim { get; set; }
-    //    string ClaimTypeMappingName { get; set; }
-    //    string ClaimValueTypeProp { get; set; }
-    //    string PrefixToAddToValueReturnedProp { get; set; }
-    //    bool DoNotAddPrefixIfInputHasKeywordProp { get; set; }
-    //    string PrefixToBypassLookup { get; set; }
-    //    string LDAPAttributeToDisplayProp { get; set; }
-    //    bool FilterExactMatchOnlyProp { get; set; }
-    //    string AdditionalLDAPFilterProp { get; set; }
-    //}
-
     /// <summary>
     /// Defines an attribute persisted in config database
     /// </summary>
@@ -522,22 +504,12 @@ namespace ldapcp
             };
             return newAtt;
         }
-
-        //protected override void OnDeserialization()
-        //{
-        //    base.OnDeserialization();
-        //}
-
-        //public LDAPClaimProviderTrustConfiguration(string name, SPPersistedObject parent)
-        //    : base(
-        //{
-        //}
     }
 
     public class LDAPConnection : SPAutoSerializingObject
     {
         [Persisted]
-        public Guid Id = Guid.NewGuid();
+        internal Guid Id = Guid.NewGuid();
         public Guid IdProp
         {
             get { return Id; }
@@ -545,7 +517,7 @@ namespace ldapcp
         }
 
         [Persisted]
-        public string Path;
+        internal string Path;
         public string PathProp
         {
             get { return Path; }
@@ -553,24 +525,27 @@ namespace ldapcp
         }
 
         [Persisted]
-        public string Username;
+        internal string Username;
 
         [Persisted]
-        public string Password;
+        internal string Password;
 
         [Persisted]
-        public string Metadata;
+        internal string Metadata;
 
         /// <summary>
         /// Specifies the types of authentication
         /// http://msdn.microsoft.com/en-us/library/system.directoryservices.authenticationtypes(v=vs.110).aspx
         /// </summary>
         [Persisted]
-        public AuthenticationTypes AuthenticationTypes;
+        internal AuthenticationTypes AuthenticationTypes;
 
         [Persisted]
-        public bool UserServerDirectoryEntry;
+        internal bool UserServerDirectoryEntry;
 
+        /// <summary>
+        /// If true: this server will be queried to perform augmentation
+        /// </summary>
         [Persisted]
         public bool AugmentationEnabled;
         public bool AugmentationEnabledProp
@@ -578,6 +553,24 @@ namespace ldapcp
             get { return AugmentationEnabled; }
             set { AugmentationEnabled = value; }
         }
+
+
+        /// <summary>
+        /// If true: get group membership with UserPrincipal.GetAuthorizationGroups()
+        /// If false: get group membership with LDAP queries
+        /// </summary>
+        [Persisted]
+        public bool GetGroupMembershipAsADDomain = true;
+        public bool GetGroupMembershipAsADDomainProp
+        {
+            get { return GetGroupMembershipAsADDomain; }
+            set { GetGroupMembershipAsADDomain = value; }
+        }
+
+        /// <summary>
+        /// DirectoryEntry used to make LDAP queries
+        /// </summary>
+        public DirectoryEntry directoryEntry;
 
         public LDAPConnection()
         {
@@ -595,9 +588,11 @@ namespace ldapcp
                 AuthenticationTypes = this.AuthenticationTypes,
                 UserServerDirectoryEntry = this.UserServerDirectoryEntry,
                 AugmentationEnabled = this.AugmentationEnabled,
+                GetGroupMembershipAsADDomain = this.GetGroupMembershipAsADDomain,
             };
             return copy;
         }
+
     }
 
     /// <summary>
@@ -747,6 +742,11 @@ namespace ldapcp
             return Regex.Replace(fullAccountName, RegexAccountFromFullAccountName, "$1", RegexOptions.None);
         }
 
+        /// <summary>
+        /// Returns the string before the '\'
+        /// </summary>
+        /// <param name="fullAccountName">e.g. "mylds.local\ldsgroup1"</param>
+        /// <returns>e.g. "mylds.local"</returns>
         public static string GetDomainFromFullAccountName(string fullAccountName)
         {
             return Regex.Replace(fullAccountName, RegexDomainFromFullAccountName, "$1", RegexOptions.None);
@@ -786,25 +786,58 @@ namespace ldapcp
 
         public static void GetDomainInformation(DirectoryEntry directory, out string domainName, out string domainFQDN)
         {
-            // Retrieve FQDN and domain name of current DirectoryEntry
             string distinguishedName = String.Empty;
-            domainFQDN = String.Empty;
+            domainName = domainFQDN = String.Empty;
             if (directory.Properties.Contains("distinguishedName"))
             {
                 distinguishedName = directory.Properties["distinguishedName"].Value.ToString();
-                if (distinguishedName.Contains("DC="))
-                {
-                    int start = distinguishedName.IndexOf("DC=", StringComparison.InvariantCultureIgnoreCase);
-                    string[] dnSplitted = distinguishedName.Substring(start).Split(new string[] { "DC=" }, StringSplitOptions.RemoveEmptyEntries);
-                    foreach (string dc in dnSplitted)
-                    {
-                        domainFQDN += dc.Replace(',', '.');
-                    }
-                }
+                GetDomainInformation(distinguishedName, out domainName, out domainFQDN);
             }
-            domainName = String.Empty;
-            if (directory.Properties.Contains("name")) domainName = directory.Properties["name"].Value.ToString();
-            else if (directory.Properties.Contains("cn")) domainName = directory.Properties["cn"].Value.ToString(); // Tivoli sets domain name in cn property (property name does not exist)
+            else
+            {
+                // This logic to get the domainName may not work with AD LDS:
+                // if distinguishedName = "CN=Partition1,DC=MyLDS,DC=local", then both "name" and "cn" = "Partition1", while we expect "MyLDS"
+                // So now it's only made if the distinguishedName is not available (very unlikely codepath)
+                if (directory.Properties.Contains("name")) domainName = directory.Properties["name"].Value.ToString();
+                else if (directory.Properties.Contains("cn")) domainName = directory.Properties["cn"].Value.ToString(); // Tivoli sets domain name in cn property (property name does not exist)
+            }
+
+            // OLD LOGIC
+            //// Retrieve FQDN and domain name of current DirectoryEntry
+            //domainFQDN = String.Empty;
+            //if (directory.Properties.Contains("distinguishedName"))
+            //{
+            //    distinguishedName = directory.Properties["distinguishedName"].Value.ToString();
+            //    if (distinguishedName.Contains("DC="))
+            //    {
+            //        int start = distinguishedName.IndexOf("DC=", StringComparison.InvariantCultureIgnoreCase);
+            //        string[] dnSplitted = distinguishedName.Substring(start).Split(new string[] { "DC=" }, StringSplitOptions.RemoveEmptyEntries);
+            //        foreach (string dc in dnSplitted)
+            //        {
+            //            domainFQDN += dc.Replace(',', '.');
+            //        }
+            //    }
+            //}
+
+            //// This change is in order to implement the same logic as in LDAPCP.SearchOrValidateWithLDAP()
+            //domainName = RequestInformation.GetFirstSubString(domainFQDN, ".");
+            ////if (directory.Properties.Contains("name")) domainName = directory.Properties["name"].Value.ToString();
+            ////else if (directory.Properties.Contains("cn")) domainName = directory.Properties["cn"].Value.ToString(); // Tivoli sets domain name in cn property (property name does not exist)
+        }
+
+        /// <summary>
+        /// Return the value from a distinguished name, or an empty string if not found.
+        /// </summary>
+        /// <param name="distinguishedNameValue">e.g. "CN=group1,CN=Users,DC=contoso,DC=local"</param>
+        /// <returns>e.g. "group1", or an empty string if not found</returns>
+        public static string GetValueFromDistinguishedName(string distinguishedNameValue)
+        {
+            int equalsIndex = distinguishedNameValue.IndexOf("=", 1);
+            int commaIndex = distinguishedNameValue.IndexOf(",", 1);
+            if (equalsIndex != -1 && commaIndex != -1)
+                return distinguishedNameValue.Substring(equalsIndex + 1, commaIndex - equalsIndex - 1);
+            else
+                return String.Empty;
         }
     }
 
