@@ -971,18 +971,19 @@ namespace ldapcp
             int i = 0;
             foreach (var ldapConnection in ldapConnections)
             {
-                LDAPConnection connection = ldapConnection.CopyPersistedProperties();
+                LDAPConnection coco = ldapConnection.CopyPersistedProperties();
                 if (!ldapConnection.UserServerDirectoryEntry)
                 {
-                    connection.directoryEntry = new DirectoryEntry(ldapConnection.Path, ldapConnection.Username, ldapConnection.Password, ldapConnection.AuthenticationTypes);
-                    LdapcpLogging.Log(String.Format("[{0}] Add \"{1}\" with AuthenticationType \"{2}\" and credentials \"{3}\".", ProviderInternalName, ldapConnection.Path, ldapConnection.AuthenticationTypes.ToString(), ldapConnection.Username), TraceSeverity.Verbose, EventSeverity.Information, LdapcpLogging.Categories.LDAP_Lookup);
+                    coco.directoryEntry = new DirectoryEntry(ldapConnection.Path, ldapConnection.Username, ldapConnection.Password, ldapConnection.AuthenticationTypes);
+                    string serverType = coco.GetGroupMembershipAsADDomain ? "AD" : "LDAP";
+                    LdapcpLogging.Log(String.Format("[{0}] Add {1} server \"{2}\" with AuthenticationType \"{3}\" and credentials \"{4}\".", ProviderInternalName, serverType, ldapConnection.Path, ldapConnection.AuthenticationTypes.ToString(), ldapConnection.Username), TraceSeverity.Verbose, EventSeverity.Information, LdapcpLogging.Categories.LDAP_Lookup);
                 }
                 else
                 {
-                    connection.directoryEntry = Domain.GetComputerDomain().GetDirectoryEntry();
-                    LdapcpLogging.Log(String.Format("[{0}] Add \"{1}\" with AuthenticationType \"{2}\" and credentials of application pool account.", ProviderInternalName, connection.directoryEntry.Path, connection.directoryEntry.AuthenticationType.ToString()), TraceSeverity.Verbose, EventSeverity.Information, LdapcpLogging.Categories.LDAP_Lookup);
+                    coco.directoryEntry = Domain.GetComputerDomain().GetDirectoryEntry();
+                    LdapcpLogging.Log(String.Format("[{0}] Add AD server \"{1}\" with AuthenticationType \"{2}\" and credentials of application pool account.", ProviderInternalName, coco.directoryEntry.Path, coco.directoryEntry.AuthenticationType.ToString()), TraceSeverity.Verbose, EventSeverity.Information, LdapcpLogging.Categories.LDAP_Lookup);
                 }
-                connections[i++] = connection;
+                connections[i++] = coco;
             }
             return connections;
         }
@@ -1200,13 +1201,17 @@ namespace ldapcp
                 }
                 catch (PrincipalOperationException ex)
                 {
-                    LdapcpLogging.LogException(ProviderInternalName, String.Format("while getting AD group membership of user {0} in {1}. This is likely due to a bug in .NET framework in UserPrincipal.GetAuthorizationGroups (as of v4.6.1), especially if user is member (directly or not) of a group either in a child domain that was migrated, or a group that has special (deny) permissions.", requestInfo.IncomingEntity.Value, directory.Path), LdapcpLogging.Categories.Augmentation, ex);
+                    LdapcpLogging.LogException(ProviderInternalName, String.Format("while getting AD group membership of user {0} in {1} using UserPrincipal.GetAuthorizationGroups(). This is likely due to a bug in .NET framework in UserPrincipal.GetAuthorizationGroups (as of v4.6.1), especially if user is member (directly or not) of a group either in a child domain that was migrated, or a group that has special (deny) permissions.", requestInfo.IncomingEntity.Value, directory.Path), LdapcpLogging.Categories.Augmentation, ex);
+                    // In this case, fallback to LDAP method to get group membership.
                     return GetGroupsFromLDAPDirectory(directory, requestInfo, groupAttribute);
+                }
+                catch (PrincipalServerDownException ex)
+                {
+                    LdapcpLogging.LogException(ProviderInternalName, String.Format("while getting AD group membership of user {0} in {1} using UserPrincipal.GetAuthorizationGroups(). Is this server an Active Directory server?", requestInfo.IncomingEntity.Value, directory.Path), LdapcpLogging.Categories.Augmentation, ex);
                 }
                 catch (Exception ex)
                 {
-                    LdapcpLogging.LogException(ProviderInternalName, String.Format("while getting AD group membership of user {0} in {1}", requestInfo.IncomingEntity.Value, directory.Path), LdapcpLogging.Categories.Augmentation, ex);
-                    return GetGroupsFromLDAPDirectory(directory, requestInfo, groupAttribute);
+                    LdapcpLogging.LogException(ProviderInternalName, String.Format("while getting AD group membership of user {0} in {1} using UserPrincipal.GetAuthorizationGroups()", requestInfo.IncomingEntity.Value, directory.Path), LdapcpLogging.Categories.Augmentation, ex);
                 }
             }
             return groups;
