@@ -28,3 +28,6 @@ Customization capabilities
 - Hide disabled users and distribution lists. 
 - Developers can easily do a lot more by inheriting base class.
 
+[How to install LDAPCP](How to install LDAPCP)
+[How to update LDAPCP](How to   LDAPCP)
+[How to remove LDAPCP](How to remove LDAPCP)
