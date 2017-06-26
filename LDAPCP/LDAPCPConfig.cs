@@ -307,24 +307,6 @@ namespace ldapcp
         }
     }
 
-    //public interface IQueryObject
-    //{
-    //    string LDAPAttribute { get; set; }
-    //    string LDAPObjectClassProp { get; set; }
-    //    string ClaimTypeProp { get; set; }
-    //    string ClaimEntityTypeProp { get; set; }
-    //    string EntityDataKey { get; set; }
-    //    bool CreateAsIdentityClaim { get; set; }
-    //    string ClaimTypeMappingName { get; set; }
-    //    string ClaimValueTypeProp { get; set; }
-    //    string PrefixToAddToValueReturnedProp { get; set; }
-    //    bool DoNotAddPrefixIfInputHasKeywordProp { get; set; }
-    //    string PrefixToBypassLookup { get; set; }
-    //    string LDAPAttributeToDisplayProp { get; set; }
-    //    bool FilterExactMatchOnlyProp { get; set; }
-    //    string AdditionalLDAPFilterProp { get; set; }
-    //}
-
     /// <summary>
     /// Defines an attribute persisted in config database
     /// </summary>
@@ -522,16 +504,6 @@ namespace ldapcp
             };
             return newAtt;
         }
-
-        //protected override void OnDeserialization()
-        //{
-        //    base.OnDeserialization();
-        //}
-
-        //public LDAPClaimProviderTrustConfiguration(string name, SPPersistedObject parent)
-        //    : base(
-        //{
-        //}
     }
 
     public class LDAPConnection : SPAutoSerializingObject
@@ -824,8 +796,8 @@ namespace ldapcp
             else
             {
                 // This logic to get the domainName may not work with AD LDS:
-                // if distinguishedName = "CN=Partition1,DC=MyLDS,DC=local", then both "name" and "cn" = "Partition1", while we want to get "MyLDS"
-                // So now it's only made if the distinguishedName is not available (very unlikely)
+                // if distinguishedName = "CN=Partition1,DC=MyLDS,DC=local", then both "name" and "cn" = "Partition1", while we expect "MyLDS"
+                // So now it's only made if the distinguishedName is not available (very unlikely codepath)
                 if (directory.Properties.Contains("name")) domainName = directory.Properties["name"].Value.ToString();
                 else if (directory.Properties.Contains("cn")) domainName = directory.Properties["cn"].Value.ToString(); // Tivoli sets domain name in cn property (property name does not exist)
             }

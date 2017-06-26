@@ -1109,8 +1109,7 @@ namespace ldapcp
                     }
 
                     List<SPClaim> groups = new List<SPClaim>();
-                    string claimType = groupAttribute.ClaimType;
-                    object lockResults = new object(); ;
+                    object lockResults = new object();
                     Stopwatch stopWatch = new Stopwatch();
                     stopWatch.Start();
                     Parallel.ForEach(connections, coco =>

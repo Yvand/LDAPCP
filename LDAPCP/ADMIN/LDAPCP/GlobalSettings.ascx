@@ -179,7 +179,7 @@
 
 <wssuc:InputFormSection ID="NewLdapConnectionSection" Title="New LDAP connection" runat="server" Visible="<%# ShowNewLdapConnectionSection %>">
     <template_description>
-		<wssawc:EncodedLiteral runat="server" text="Create a new LDAP connection. A connection to same AD as SharePoint servers is created by default." EncodeMethod='HtmlEncodeAllowSimpleTextFormatting'/>
+		<wssawc:EncodedLiteral runat="server" text="Create a new LDAP connection. By default, LDAPCP adds a connection to the Active Directory domain of SharePoint servers, labelled 'Connect to SharePoint domain'." EncodeMethod='HtmlEncodeAllowSimpleTextFormatting'/>
 	</template_description>
     <template_inputformcontrols>
 		<tr><td>
@@ -190,7 +190,7 @@
 			GroupName="RbLDAPConnection"
 			CausesValidation="false"
 			runat="server"
-			onclick="window.Ldapcp.LdapcpSettingsPage.CheckDefaultADConnection()"					>
+			onclick="window.Ldapcp.LdapcpSettingsPage.CheckDefaultADConnection()">
 			<wssawc:EncodedLiteral runat="server" text="Connect to same AD as SharePoint servers, with application pool credentials." EncodeMethod='HtmlEncode'/>
 		</wssawc:InputFormRadioButton>
 		<wssawc:InputFormRadioButton id="RbUseCustomConnection"
@@ -261,7 +261,7 @@
                             <asp:TextBox ID="IdPropHidden" runat="server" Text='<%# Bind("IdProp") %>' Visible="false" />
 							<legend><span>LDAP Server "<asp:Label ID="TextPath" runat="server" Text='<%# Bind("PathProp") %>' />":</span></legend>
                             <asp:CheckBox ID="ChkAugmentationEnableOnCoco" runat="server" Checked='<%# Bind("AugmentationEnabledProp") %>' Text="Query this server" />
-                            <asp:CheckBox ID="ChkGetGroupMembershipAsADDomain" runat="server" Checked='<%# Bind("GetGroupMembershipAsADDomainProp") %>' Text="This is an Active Directory server, get groups using <a href='https://msdn.microsoft.com/en-us/library/system.directoryservices.accountmanagement.userprincipal.getauthorizationgroups.aspx' target='_blank'>UserPrincipal.GetAuthorizationGroups</a>" />
+                            <asp:CheckBox ID="ChkGetGroupMembershipAsADDomain" runat="server" Checked='<%# Bind("GetGroupMembershipAsADDomainProp") %>' Text="This is an Active Directory server, use <a href='https://msdn.microsoft.com/en-us/library/system.directoryservices.accountmanagement.userprincipal.getauthorizationgroups.aspx' target='_blank'>UserPrincipal.GetAuthorizationGroups</a>" />
 							</fieldset>
                         </ItemTemplate>
                     </asp:TemplateField>
