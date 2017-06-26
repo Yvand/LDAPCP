@@ -935,6 +935,7 @@ namespace ldapcp
                                             });
                                         }
                                     }
+                                    LdapcpLogging.Log(String.Format("[{0}] Got {1} result(s) from {2}", ProviderInternalName, directoryResults.Count.ToString(), directory.Path), TraceSeverity.Verbose, EventSeverity.Information, LdapcpLogging.Categories.LDAP_Lookup);
                                 }
                             }
                         }
