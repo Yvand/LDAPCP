@@ -32,4 +32,8 @@ Customization capabilities
 [How to update LDAPCP](How to   LDAPCP)
 [How to remove LDAPCP](How to remove LDAPCP)
 
+{% for post in site.posts %}
+     {{ post.date | date_to_string }}
+{% endfor %}
+
 ##TODO: https://help.github.com/articles/setting-up-your-github-pages-site-locally-with-jekyll/
