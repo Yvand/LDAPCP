@@ -23,19 +23,11 @@
     <section class="main-content" style="float: left;" >
       <div style="display: block;">
         <div style="float: left; width: 750px;">
-            <p>You’ll find this post in your <code class="highlighter-rouge">_posts</code> directory - edit this post and re-build (or run with the <code class="highlighter-rouge">-w</code> switch) to see your changes!
-To add new posts, simply add a file in the <code class="highlighter-rouge">_posts</code> directory that follows the convention: YYYY-MM-DD-name-of-post.ext.</p>
-
-<p>Jekyll also offers powerful support for code snippets:</p>
-
-<figure class="highlight"><pre><code class="language-ruby" data-lang="ruby"><span class="k">def</span> <span class="nf">print_hi</span><span class="p">(</span><span class="nb">name</span><span class="p">)</span>
-  <span class="nb">puts</span> <span class="s2">"Hi, </span><span class="si">#{</span><span class="nb">name</span><span class="si">}</span><span class="s2">"</span>
-<span class="k">end</span>
-<span class="n">print_hi</span><span class="p">(</span><span class="s1">'Tom'</span><span class="p">)</span>
-<span class="c1">#=&gt; prints 'Hi, Tom' to STDOUT.</span></code></pre></figure>
-
-<p>Check out the <a href="http://jekyllrb.com">Jekyll docs</a> for more info on how to get the most out of Jekyll. File all bugs/feature requests at <a href="https://github.com/mojombo/jekyll">Jekyll’s GitHub repo</a>.</p>
-
+            <p>Run Update-SPSolution cmdlet to start a timer job that that will deploy the update:</p>
+<div class="language-powershell highlighter-rouge"><pre class="highlight"><code>Update-SPSolution -GACDeployment -Identity <span class="s2">"LDAPCP.wsp"</span> -LiteralPath <span class="s2">"C:</span><span class="se">\D</span><span class="s2">ata</span><span class="se">\D</span><span class="s2">ev</span><span class="se">\L</span><span class="s2">DAPCP.wsp"</span>
+</code></pre>
+</div>
+<p>You can monitor the progress in farm solutions page in central administration.</p>
 
         </div>
         <div style="float: left; width: 200px;">
