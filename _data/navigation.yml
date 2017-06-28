@@ -1,12 +1,12 @@
-docs_list_title: LDAPCP Documentation
+docs_list_title: LDAPCP
+
 docs:
+- title: Install
+  url: Install LDAPCP.html
 
-- title: How to install LDAPCP
-  url: How to install LDAPCP.html
+- title: Update
+  url: Update LDAPCP.html
 
-- title: Configuration
-  url: configuration.html
-
-- title: Deployment
-  url: deployment.html
+- title: Remove
+  url: Remove LDAPCP.html
 
