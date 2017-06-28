@@ -1,0 +1,12 @@
+docs_list_title: LDAPCP
+
+docs:
+- title: Install
+  url: Install LDAPCP.html
+
+- title: Update
+  url: Update LDAPCP.html
+
+- title: Remove
+  url: Remove LDAPCP.html
+

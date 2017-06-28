@@ -1,6 +1,20 @@
-theme: jekyll-theme-cayman
+#theme: jekyll-theme-cayman
 title: LDAPCP
-description: Most popular, free and open source claims provider for SharePoint 2013 and 2016
+tagline: Most popular, free and open source claims provider for SharePoint 2013 and 2016
+paginate: 1
 show_downloads: true
 repository: Yvand/LDAPCP
 timezone: Europe/Paris
+
+# About/contact
+author:
+  name:       Yvan Duhamel
+  url:        https://www.linkedin.com/in/yvand/
+
+# Gems
+gems:
+  - jekyll-paginate
+  - jekyll-sitemap
+
+#Others
+markdown: kramdown
