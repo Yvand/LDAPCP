@@ -12,3 +12,5 @@ Get-SPClaimProvider| ft DisplayName
 # If LDAPCP appears in cmdlet above, remove it:
 Remove-SPClaimProvider LDAPCP
 ```
+
+> **Note:** If something goes wrong, [check this page](Fix setup issues) to resolve problems.
