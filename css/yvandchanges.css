@@ -1,4 +1,4 @@
-.navigation {width: 350px; float: left;}
+.navigation {min-width: 1em; float: left;}
 .navigation :first-child { margin-top: 0; }
 @media screen and (min-width: 64em) { .navigation { max-width: 64rem; padding: 2rem 6rem; margin: 0 auto; font-size: 1.1rem; } }
 @media screen and (min-width: 42em) and (max-width: 64em) { .navigation { padding: 2rem 4rem; font-size: 1.1rem; } }
