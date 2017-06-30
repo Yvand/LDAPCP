@@ -5,4 +5,4 @@ Update-SPSolution -GACDeployment -Identity "LDAPCP.wsp" -LiteralPath "C:\Data\De
 ```
 You can monitor the progress in farm solutions page in central administration.
 
-> **Note:** If something goes wrong, [check this page](Fix setup issues) to resolve problems.
+> **Note:** If something goes wrong, [check this page](Fix-setup-issues.html) to resolve problems.

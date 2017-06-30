@@ -15,4 +15,4 @@ Get-SPClaimProvider| ft DisplayName
 Remove-SPClaimProvider LDAPCP
 ```
 
-> **Note:** If something goes wrong, [check this page](Fix setup issues) to resolve problems.
+> **Note:** If something goes wrong, [check this page](Fix-setup-issues.html) to resolve problems.

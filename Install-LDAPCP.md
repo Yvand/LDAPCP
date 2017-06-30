@@ -22,5 +22,5 @@ $publish = New-Object System.EnterpriseServices.Internal.Publish
 $publish.GacInstall("C:\Data\Dev\ldapcp.dll")
 ```
 
-> **Note:** If something goes wrong, [check this page](Fix setup issues) to resolve problems.
+> **Note:** If something goes wrong, [check this page](Fix-setup-issues.html) to resolve problems.
 
