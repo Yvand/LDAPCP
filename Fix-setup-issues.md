@@ -1,4 +1,5 @@
-Sometimes, install, uninstall or update of LDAPCP solution fails. It has nothing to do with LDAPCP solution itself and it is due to various unpredictable reasons in SharePoint.
+# Fix setup issues
+Sometimes, install, uninstall or update of LDAPCP solution fails. It has nothing to do with LDAPCP solution itself, but it is caused by various reasons in SharePoint.
 
 When this happens, most of the time LDAPCP features are in a half installed state which must be fixed.
 Perform all the step below on the server **running central administration**:

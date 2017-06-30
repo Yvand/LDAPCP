@@ -1,4 +1,6 @@
+# How to remove LDAPCP
 Randomly, SharePoint doesn’t uninstall the solution correctly: it removes the assembly too early and fails to call the feature receiver... When this happens, the claims provider is not removed and that causes issues when you re-install it.
+
 To uninstall safely, **deactivate the farm feature before retracting the solution**:
 ```powershell
 Disable-SPFeature -identity "LDAPCP"
