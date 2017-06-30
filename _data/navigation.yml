@@ -10,5 +10,8 @@ docs:
 - title: Remove
   url: Remove-LDAPCP.html
 
+- title: Configure
+  url: Configure-LDAPCP.html
+
 - title: Fix issues
   url: Fix-setup-issues.html
