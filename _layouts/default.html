@@ -6,15 +6,15 @@
   <body>
     {% include page-header.html %}
 
-    <section class="main-content" style="float: left;" >
-      <div style="display: block;">
-        <div>
-            {{ content }}
-        </div>
-        <div>
+    <section style="">
+      <!--<div style="display: block;">-->
+        <div class="navigation">
             {% include navigation.html %}
         </div>
-      </div>
+        <div class="main-content">
+            {{ content }}
+        </div>
+      <!--</div>-->
     </section>
     {% include page-footer.html %}
   </body>
