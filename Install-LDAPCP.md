@@ -1,5 +1,5 @@
 # How to install LDAPCP
-- Download [latest release of LDAPCP.wsp](https://github.com/Yvand/LDAPCP/releases).
+- Download LDAPCP.wsp.
 - Install and deploy the solution (that will automatically activate the "LDAPCP" farm-scoped feature):
 ```powershell
 Add-SPSolution -LiteralPath "PATH TO WSP FILE"
