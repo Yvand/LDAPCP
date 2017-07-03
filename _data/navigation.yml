@@ -13,6 +13,9 @@ docs:
 - title: Configure
   url: Configure-LDAPCP.html
 
+- title: Troubleshoot
+  url: Troubleshoot-LDAPCP.html
+
 - title: For developers
   url: For-Developers.html
 
