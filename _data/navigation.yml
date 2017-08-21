@@ -21,3 +21,6 @@ docs:
 
 - title: Fix setup issues
   url: Fix-setup-issues.html
+
+- title: Submit an issue
+  url: https://github.com/Yvand/LDAPCP/issues
