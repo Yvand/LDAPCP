@@ -1,6 +1,6 @@
 # How to remove LDAPCP
 
-## Reset property ClaimProviderName in the SPTrustedIdentityTokenIssuer
+## Step 1: Reset property ClaimProviderName in the SPTrustedIdentityTokenIssuer
 
 Unfortunately, the only supported way to reset property ClaimProviderName is to remove and recreate the SPTrustedIdentityTokenIssuer object, which requires to remove the trust from all the zones where it is used first, which is time consuming.
 
@@ -12,7 +12,7 @@ $trust.GetType().GetField("m_ClaimProviderName", "NonPublic, Instance").SetValue
 $trust.Update()
 ```
 
-## Uninstall LDAPCP
+## Step 2: Uninstall LDAPCP
 
 Randomly, SharePoint doesn’t uninstall the solution correctly: it removes the assembly too early and fails to call the feature receiver... When this happens, the claims provider is not removed and that causes issues when you re-install it.
 
