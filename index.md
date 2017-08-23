@@ -5,6 +5,7 @@ This claims provider for SharePoint 2013 and 2016 queries Active Directory and L
 This project was originally hosted on [Codeplex](https://ldapcp.codeplex.com/) but I moved it to GitHub since Codeplex is [shutting down](https://blogs.msdn.microsoft.com/bharry/2017/03/31/shutting-down-codeplex/).
 
 ## Features
+
 - Easy to configure with administration pages added in Central administration > Security. 
 - Queries multiple servers in parallel (multi-threaded connections). 
 - Populates properties (e.g. email, SIP, display name) upon permission creation. 
@@ -15,6 +16,7 @@ This project was originally hosted on [Codeplex](https://ldapcp.codeplex.com/) b
 - Implements augmentation to add group membership to security tokens.
 
 ## Customization capabilities
+
 - Customize list of claim types, and their mapping with LDAP objects. 
 - Enable/disable augmentation globally or per LDAP connection. 
 - Customize display of permissions. 
