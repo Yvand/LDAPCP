@@ -1,6 +1,6 @@
 <h2><a href="index.html">{{ site.data.navigation.docs_list_title }}</a></h2>
-<ul>
+<ul class="nav nav-pills nav-stacked">
 {% for item in site.data.navigation.docs %}
-    <li><a href="{{ item.url }}" alt="{{ item.title }}">{{ item.title }}</a></li>
+    <li role="presentation"><a href="{{ item.url }}" alt="{{ item.title }}">{{ item.title }}</a></li>
 {% endfor %}
 </ul>

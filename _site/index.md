@@ -1,4 +1,5 @@
 This claims provider for SharePoint 2013 and 2016 queries Active Directory and LDAP servers to enhance people picker with a great search experience in federated authentication (typically ADFS):
+
 ![People picker with LDAPCP](https://cloud.githubusercontent.com/assets/8788631/25440961/3b8db40a-2aa1-11e7-9070-aee808950f38.PNG)
 
 This project was originally hosted on [Codeplex](https://ldapcp.codeplex.com/) but I moved it to GitHub since Codeplex is [shutting down](https://blogs.msdn.microsoft.com/bharry/2017/03/31/shutting-down-codeplex/).

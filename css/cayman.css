@@ -182,7 +182,7 @@ a:hover { text-decoration: underline; }
 .main-content dl dd { padding: 0; margin-bottom: 1rem; }
 .main-content hr { height: 2px; padding: 0; margin: 1rem 0; background-color: #eff0f1; border: 0; }
 
-.site-footer { padding-top: 2rem; margin-top: 2rem; border-top: solid 1px #eff0f1; }
+.site-footer { padding-top: 2rem; margin-top: 2rem; border-top: solid 1px #eff0f1; margin-left: 5rem; }
 @media screen and (min-width: 64em) { .site-footer { font-size: 1rem; } }
 @media screen and (min-width: 42em) and (max-width: 64em) { .site-footer { font-size: 1rem; } }
 @media screen and (max-width: 42em) { .site-footer { font-size: 0.9rem; } }

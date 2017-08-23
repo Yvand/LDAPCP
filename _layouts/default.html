@@ -4,18 +4,31 @@
   {% include head.html %}
 
   <body>
-    {% include page-header.html %}
+    <div class="container-fluid">
+      {% include page-header.html %}
+      <div class="row">
+        <nav class="col-md-2">
+          {% include navigation.html %}
+        </nav>
+        <section class="col-md-10">
+          <div class="row main-content">
+            <article class="col-md-10">
+              {{ content }}
+            </article>
+            <aside class="col-md-2">
+            </aside>
+          </div>
+        </section>
+      </div>
+      {% include page-footer.html %}
+    </div>
 
-    <section style="">
-      <!--<div style="display: block;">-->
-        <div class="navigation">
-            {% include navigation.html %}
-        </div>
-        <div class="main-content">
-            {{ content }}
-        </div>
-      <!--</div>-->
-    </section>
-    {% include page-footer.html %}
+    <!-- Bootstrap core JavaScript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+    <!-- Include all compiled plugins (below), or include individual files as needed -->
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
   </body>
 </html>
