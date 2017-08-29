@@ -1,8 +1,6 @@
 # Configure LDAPCP
-## Claims supported
-LDAPCP has a default mapping between claim types and LDAP attributes, but this can be customized in “Claims table” page available in Central Administration/Security.
 
-Default list:
+LDAPCP has a default mapping between claim types and LDAP attributes:
 
 | Claim type                                                                 | LDAP attribute name        | LDAP object class |
 |----------------------------------------------------------------------------|----------------------------|-------------------|
@@ -10,12 +8,18 @@ Default list:
 | http://schemas.microsoft.com/ws/2008/06/identity/claims/windowsaccountname | sAMAccountName             | user              |
 | http://schemas.xmlsoap.org/ws/2005/05/identity/claims/upn                  | userPrincipalName          | user              |
 | http://schemas.xmlsoap.org/ws/2005/05/identity/claims/givenname            | givenName                  | user              |
-| http://schemas.xmlsoap.org/ws/2005/05/identity/claims/locality             | physicalDeliveryOfficeName | user              |
 | http://schemas.microsoft.com/ws/2008/06/identity/claims/role               | sAMAccountName             | group             |
 | linked to identity claim                                                   | displayName                | user              |
 | linked to identity claim                                                   | cn                         | user              |
 | linked to identity claim                                                   | sn                         | user              |
+| linked to identity claim                                                   | displayName                | group             |
 
-None of the claim types above is mandatory in the SPTrust, but the identity claim must either be one of them, or added through LDAPCP admin pages.
+<br />
+This list can be customized to fit your environment in Central Administration > Security > "Claims mapping" page.
 
-To enhance search experience, LDAPCP also queries user input against common LDAP attributes such as the display name (displayName) and the common name (cn).
+- The identity claim type is displayed in bold green, it is mandatory since it uniquely identifies trusted users.
+- Claim types in green are defined in the SPTrustedLoginProvider set with LDAPCP.
+- Claim types in red are not defined in the SPTrustedLoginProvider set with LDAPCP, so they can be safely deleted from LDAPCP.
+- "linked to identity claim": To enhance search experience, LDAPCP also queries common LDAP attributes such as the display name (displayName) and the common name (cn).
+
+If possible, only use indexed LDAP attributes to guarantee best performance during LDAP queries. For Active Directory, indexed attribute are listed in [this page](https://msdn.microsoft.com/en-us/library/ms675095.aspx).
