@@ -749,20 +749,39 @@ namespace ldapcp
                     continue;
                 }
 
+                // Cast collection to be able to use StringComparer.InvariantCultureIgnoreCase for case insensitive search of ldap properties
+                var resultPropertyCollectionPropertyNames = resultPropertyCollection.PropertyNames.Cast<string>();
+
+                // Issue https://github.com/Yvand/LDAPCP/issues/16: Ensure identity attribute exists in current LDAP result
+                if (resultPropertyCollection[LDAPObjectClassName].Cast<string>().Contains(IdentityAttribute.LDAPObjectClassProp, StringComparer.InvariantCultureIgnoreCase))
+                {
+                    // This is a user: check if his identity LDAP attribute (e.g. mail or sAMAccountName) is present
+                    if (!resultPropertyCollectionPropertyNames.Contains(IdentityAttribute.LDAPAttribute, StringComparer.InvariantCultureIgnoreCase))
+                    {
+                        LdapcpLogging.Log(String.Format("[{0}] A user was ignored because it is missing the identity attribute '{1}'", ProviderInternalName, IdentityAttribute.LDAPAttribute), TraceSeverity.Medium, EventSeverity.Information, LdapcpLogging.Categories.LDAP_Lookup);
+                        continue;
+                    }
+                }
+                else
+                {
+                    // This is a group: get the identity attribute of groups, and ensure it is present
+                    var groupAttribute = attributes.FirstOrDefault(x => resultPropertyCollection[LDAPObjectClassName].Contains(x.LDAPObjectClassProp) && x.ClaimType != null);
+                    if (groupAttribute != null && !resultPropertyCollectionPropertyNames.Contains(groupAttribute.LDAPAttribute, StringComparer.InvariantCultureIgnoreCase))
+                    {
+                        LdapcpLogging.Log(String.Format("[{0}] A group was ignored because it is missing the identity attribute '{1}'", ProviderInternalName, groupAttribute.LDAPAttribute), TraceSeverity.Medium, EventSeverity.Information, LdapcpLogging.Categories.LDAP_Lookup);
+                        continue;
+                    }
+                }
+
                 foreach (var attr in attributes)
                 {
                     // Check if current attribute object class matches the current LDAP result
-                    // Changed to a case insensitive search of the ldap properties
                     if (!resultPropertyCollection[LDAPObjectClassName].Cast<string>().Contains(attr.LDAPObjectClassProp, StringComparer.InvariantCultureIgnoreCase)) continue;
 
-                    // Added to use for case insensitive search of ldap properties
-                    var resultPropertyCollectionPropertyNames = resultPropertyCollection.PropertyNames.Cast<string>();
                     // Check if current LDAP result contains LDAP attribute of current attribute
-                    // Changed to a case insensitve search
                     if (!resultPropertyCollectionPropertyNames.Contains(attr.LDAPAttribute, StringComparer.InvariantCultureIgnoreCase)) continue;
 
                     // TODO: investigate http://ldapcp.codeplex.com/discussions/648655
-                    // Changed to a case insensitve search of properties
                     string value = resultPropertyCollection[resultPropertyCollectionPropertyNames.Where(x => x.ToLowerInvariant() == attr.LDAPAttribute.ToLowerInvariant()).First()][0].ToString();
                     // Check if current attribute matches the input
                     if (requestInfo.ExactSearch)
@@ -786,7 +805,6 @@ namespace ldapcp
                     AttributeHelper objCompare;
                     if (attr.CreateAsIdentityClaim && (String.Equals(attr.LDAPObjectClassProp, IdentityAttribute.LDAPObjectClassProp, StringComparison.InvariantCultureIgnoreCase)))
                     {
-                        // Changed to a case insensitive search
                         if (!resultPropertyCollectionPropertyNames.Contains(attr.LDAPAttribute, StringComparer.InvariantCultureIgnoreCase)) continue;
                         // If exactSearch is true, then IdentityAttribute.LDAPAttribute value should be also equals to input, otherwise igno
                         objCompare = IdentityAttribute;
@@ -1245,7 +1263,7 @@ namespace ldapcp
                         stopWatch.Start();
                         SearchResult result = searcher.FindOne();
                         stopWatch.Stop();
-                        
+
                         if (result == null) return groups;  // user was not found in this directory
 
                         int propertyCount = result.Properties["memberOf"].Count;
@@ -1765,7 +1783,7 @@ namespace ldapcp
             try
             {
                 LdapcpLogging.Log(String.Format("[{0}] Return user key for user \"{1}\"", ProviderInternalName, entity.Value),
-                    TraceSeverity.Medium, EventSeverity.Information, LdapcpLogging.Categories.Rehydration);
+                    TraceSeverity.Verbose, EventSeverity.Information, LdapcpLogging.Categories.Rehydration);
                 return CreateClaim(IdentityAttribute.ClaimType, curUser.Value, curUser.ValueType);
             }
             catch (Exception ex)
