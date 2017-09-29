@@ -12,7 +12,7 @@ author:
   url:        https://www.linkedin.com/in/yvand/
 
 # Gems
-gems:
+plugins:
  # - jekyll-paginate
   - jekyll-sitemap
 
