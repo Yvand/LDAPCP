@@ -1,6 +1,6 @@
 # Global settings
 destination: /_site
-exclude: [ "Start-Site.ps1", "/ts_src", "/js/*.map" ]
+exclude: [ "Start-Site.ps1", "/ts_src" ]
 timezone: Europe/Paris
 
 # Theme data
@@ -20,5 +20,5 @@ plugins:
  # - jekyll-paginate
   - jekyll-sitemap
 
-#Others
+# Others
 markdown: kramdown

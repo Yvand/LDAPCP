@@ -15,11 +15,15 @@ var GitHubStatistics;
                 contentType: "application/json; charset=utf-8",
                 dataType: "json",
                 url: this.url + "?code=" + this.authZKey + "&callback=?",
-            })
-                .done(function (data) {
-                console.log("Sample of data: ", data);
+                success: function (responseData, textStatus, jqXHR) {
+                    console.log("Data received");
+                    var value = responseData.someKey;
+                    console.log(value);
+                },
+                error: function (responseData, textStatus, errorThrown) {
+                    alert('POST failed.');
+                }
             });
-            //$.getJSON( this.url + "?code" + this.authZKey, function ( data ) { alert ( data ); } );
         }
     }
     GitHubStatistics.LDAPCPStats = LDAPCPStats;

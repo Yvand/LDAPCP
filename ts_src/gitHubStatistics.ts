@@ -13,11 +13,15 @@ namespace GitHubStatistics {
                 contentType: "application/json; charset=utf-8",
                 dataType: "json",
                 url: this.url + "?code=" + this.authZKey + "&callback=?",
+                success: function(responseData, textStatus, jqXHR) {
+                    console.log("Data received");                
+                    var value = responseData.someKey;
+                    console.log(value);
+                },
+                error: function (responseData, textStatus, errorThrown) {
+                    alert('Request failed.');
+                }
             })
-            .done(function( data ) {
-                console.log( "Sample of data: ", data);
-            });
-            //$.getJSON( this.url + "?code" + this.authZKey, function ( data ) { alert ( data ); } );
         }
     }
 }
