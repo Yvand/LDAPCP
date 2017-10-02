@@ -1,0 +1,16 @@
+{
+    "compilerOptions": {
+        "target": "es6",
+        "module": "commonjs",
+        "sourceMap": true,
+        "typeRoots" : ["../node_modules/@types/"],
+        "outDir": "../js"
+    },
+    "compileOnSave": true,
+    "include": [
+        "*.ts"
+    ],
+    "exclude": [
+        "../_site/**/*"
+    ]
+}

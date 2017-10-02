@@ -1,21 +1,22 @@
 {
-        "version": "0.2.0",
-        "configurations": [
-            {
-                "type": "node",
-                "request": "launch",
-                "name": "Launch Program",
-                "program": "${file}",
-                "outFiles": [
-                    "${workspaceRoot}/out/**/*.js"
-                ]
-            },
-            {
-                "type": "node",
-                "request": "launch",
-                "name": "Launch Jekyll",
-                "program": "bundle exec jekyll serve",
-                "preLaunchTask": "tsc"
-            }
-        ]
-    }
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "PowerShell",
+            "request": "launch",
+            "name": "Start Jekyll site",
+            "script": "${workspaceRoot}/Start-Site.ps1",
+            "args": [],
+            "cwd": "${workspaceRoot}",
+            "internalConsoleOptions": "openOnSessionStart"
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "JS debug",
+            "program": "${workspaceRoot}/js/gitHubStatistics.js",
+            "cwd": "${workspaceRoot}",
+            "preLaunchTask": "tsc"
+        }
+    ]
+}

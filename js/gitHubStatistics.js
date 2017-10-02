@@ -1,31 +1,32 @@
-/// <reference path="typings/jquery/index.d.ts" />
+/// <reference path="../node_modules/@types/jquery/index.d.ts" />
+// npm install --save @types/jquery
 var GitHubStatistics;
 (function (GitHubStatistics) {
-    var LDAPCPStats = /** @class */ (function () {
-        function LDAPCPStats() {
+    class LDAPCPStats {
+        constructor() {
             this.url = "http://ldapcp-functions.azurewebsites.net/api/GetRepoStats";
             this.authZKey = "Xs141m0QqIUrDBfecYvdhOf0cJJ8sA2LygLgkVcKmTdwIU5ELx1OCg==";
         }
-        LDAPCPStats.prototype.getLatestStat = function () {
+        getLatestStat() {
             console.log('Hello World');
             $.ajax({
                 method: "GET",
                 crossDomain: true,
                 contentType: "application/json; charset=utf-8",
                 dataType: "json",
-                url: this.url + "code?" + this.authZKey,
+                url: this.url + "?code=" + this.authZKey + "&callback=?",
             })
                 .done(function (data) {
-                console.log("Sample of data: ", data.slice(0, 100));
+                console.log("Sample of data: ", data);
             });
-        };
-        return LDAPCPStats;
-    }());
+            //$.getJSON( this.url + "?code" + this.authZKey, function ( data ) { alert ( data ); } );
+        }
+    }
     GitHubStatistics.LDAPCPStats = LDAPCPStats;
 })(GitHubStatistics || (GitHubStatistics = {}));
 $(document).ready(function () {
-    var stats = new GitHubStatistics.LDAPCPStats();
-    var result = stats.getLatestStat();
+    let stats = new GitHubStatistics.LDAPCPStats();
+    let result = stats.getLatestStat();
     //$("#status")[0].innerHTML = message;
 });
 //# sourceMappingURL=gitHubStatistics.js.map

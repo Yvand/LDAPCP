@@ -1,17 +1,21 @@
+# Global settings
+destination: /_site
+exclude: [ "Start-Site.ps1", "/ts_src", "/js/*.map" ]
+timezone: Europe/Paris
+
+# Theme data
 #theme: jekyll-theme-cayman
 #title: LDAPCP
 tagline: Most popular, free and open source claims provider for SharePoint 2013 and 2016
-#paginate: 1
 show_downloads: true
 repository: Yvand/LDAPCP
-timezone: Europe/Paris
 
 # About/contact
 author:
   name:       Yvan Duhamel
   url:        https://www.linkedin.com/in/yvand/
 
-# Gems
+# Gems == plugins
 plugins:
  # - jekyll-paginate
   - jekyll-sitemap

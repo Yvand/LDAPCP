@@ -1,5 +1,5 @@
-/// <reference path="typings/jquery/index.d.ts" />
-
+/// <reference path="../node_modules/@types/jquery/index.d.ts" />
+// npm install --save @types/jquery
 namespace GitHubStatistics {
     export class LDAPCPStats {
         url: string = "http://ldapcp-functions.azurewebsites.net/api/GetRepoStats";
@@ -12,11 +12,12 @@ namespace GitHubStatistics {
                 crossDomain: true,
                 contentType: "application/json; charset=utf-8",
                 dataType: "json",
-                url: this.url + "code?" + this.authZKey,
+                url: this.url + "?code=" + this.authZKey + "&callback=?",
             })
             .done(function( data ) {
-                console.log( "Sample of data: ", data.slice( 0, 100 ) );
+                console.log( "Sample of data: ", data);
             });
+            //$.getJSON( this.url + "?code" + this.authZKey, function ( data ) { alert ( data ); } );
         }
     }
 }
