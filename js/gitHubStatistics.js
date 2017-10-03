@@ -21,7 +21,7 @@ var GitHubStatistics;
                     console.log(value);
                 },
                 error: function (responseData, textStatus, errorThrown) {
-                    alert('POST failed.');
+                    alert('Request failed.');
                 }
             });
         }
@@ -33,4 +33,3 @@ $(document).ready(function () {
     let result = stats.getLatestStat();
     //$("#status")[0].innerHTML = message;
 });
-//# sourceMappingURL=gitHubStatistics.js.map

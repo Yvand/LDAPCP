@@ -21,7 +21,7 @@ namespace GitHubStatistics {
                 error: function (responseData, textStatus, errorThrown) {
                     alert('Request failed.');
                 }
-            })
+            });
         }
     }
 }

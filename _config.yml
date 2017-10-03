@@ -1,6 +1,6 @@
 # Global settings
-destination: /_site
-exclude: [ "Start-Site.ps1", "/ts_src" ]
+destination: ./_site
+exclude: [ "Start-Site.ps1", "/ts_src", "/node_modules" ]
 timezone: Europe/Paris
 
 # Theme data
@@ -9,8 +9,6 @@ timezone: Europe/Paris
 tagline: Most popular, free and open source claims provider for SharePoint 2013 and 2016
 show_downloads: true
 repository: Yvand/LDAPCP
-
-# About/contact
 author:
   name:       Yvan Duhamel
   url:        https://www.linkedin.com/in/yvand/
