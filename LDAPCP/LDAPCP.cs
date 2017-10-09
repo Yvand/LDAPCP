@@ -15,18 +15,18 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using WIF = System.Security.Claims;
 
 /*
  * DO NOT directly edit LDAPCP class. It is designed to be inherited to customize it as desired.
- * Please download "LDAPCP for Developers.zip" on https://ldapcp.codeplex.com to find examples and guidance.
+ * Please download "LDAPCP for Developers.zip" on https://github.com/Yvand/LDAPCP to find examples and guidance.
  * */
 
 namespace ldapcp
 {
     /// <summary>
-    /// Provides search and resolution against Active Directory or any LDAP server.
-    /// Visit https://ldapcp.codeplex.com/ for documentation and updates.
-    /// Please report any bug to https://github.com/Yvand/LDAPCP.
+    /// Query Active Directory and LDAP servers to enhance people picker with a great search experience in federated authentication
+    /// Please visit https://github.com/Yvand/LDAPCP for updates and to report bugs.
     /// Author: Yvan Duhamel - yvandev@outlook.fr
     /// </summary>
     public class LDAPCP : SPClaimProvider
@@ -82,9 +82,6 @@ namespace ldapcp
 
         public LDAPCP(string displayName) : base(displayName)
         {
-#if DEBUG
-            LdapcpLogging.Log(String.Format("[{0}] Constructor called", ProviderInternalName), TraceSeverity.VerboseEx, EventSeverity.Information, LdapcpLogging.Categories.Core);
-#endif
         }
 
         /// <summary>
@@ -133,8 +130,7 @@ namespace ldapcp
                     else
                     {
                         // Persisted object is found and seems valid
-                        LdapcpLogging.Log(String.Format("[{0}] LdapcpConfig PersistedObject found, version: {1}, previous version: {2}", ProviderInternalName, ((SPPersistedObject)globalConfiguration).Version.ToString(), this.LdapcpConfigVersion.ToString()),
-                            TraceSeverity.VerboseEx, EventSeverity.Information, LdapcpLogging.Categories.Core);
+                        LdapcpLogging.LogDebug(String.Format("[{0}] LdapcpConfig PersistedObject found, version: {1}, previous version: {2}", ProviderInternalName, ((SPPersistedObject)globalConfiguration).Version.ToString(), this.LdapcpConfigVersion.ToString()));
                         if (this.LdapcpConfigVersion != ((SPPersistedObject)globalConfiguration).Version)
                         {
                             refreshConfig = true;
@@ -421,8 +417,7 @@ namespace ldapcp
         /// <param name="resolved"></param>
         protected override void FillResolve(Uri context, string[] entityTypes, SPClaim resolveInput, List<Microsoft.SharePoint.WebControls.PickerEntity> resolved)
         {
-            LdapcpLogging.Log(String.Format("[{0}] FillResolve(SPClaim) called, incoming claim value: \"{1}\", claim type: \"{2}\", claim issuer: \"{3}\"", ProviderInternalName, resolveInput.Value, resolveInput.ClaimType, resolveInput.OriginalIssuer),
-                            TraceSeverity.VerboseEx, EventSeverity.Information, LdapcpLogging.Categories.Core);
+            LdapcpLogging.LogDebug(String.Format("[{0}] FillResolve(SPClaim) called, incoming claim value: \"{1}\", claim type: \"{2}\", claim issuer: \"{3}\"", ProviderInternalName, resolveInput.Value, resolveInput.ClaimType, resolveInput.OriginalIssuer));
 
             SPSecurity.RunWithElevatedPrivileges(delegate ()
             {
@@ -470,8 +465,7 @@ namespace ldapcp
         /// <param name="resolved"></param>
         protected override void FillResolve(Uri context, string[] entityTypes, string resolveInput, List<Microsoft.SharePoint.WebControls.PickerEntity> resolved)
         {
-            LdapcpLogging.Log(String.Format("[{0}] FillResolve(string) called, incoming input \"{1}\"", ProviderInternalName, resolveInput),
-                            TraceSeverity.VerboseEx, EventSeverity.Information, LdapcpLogging.Categories.Core);
+            LdapcpLogging.LogDebug(String.Format("[{0}] FillResolve(string) called, incoming input \"{1}\"", ProviderInternalName, resolveInput));
 
             SPSecurity.RunWithElevatedPrivileges(delegate ()
             {
@@ -504,8 +498,7 @@ namespace ldapcp
 
         protected override void FillSearch(Uri context, string[] entityTypes, string searchPattern, string hierarchyNodeID, int maxCount, Microsoft.SharePoint.WebControls.SPProviderHierarchyTree searchTree)
         {
-            LdapcpLogging.Log(String.Format("[{0}] FillSearch called, incoming input: \"{1}\"", ProviderInternalName, searchPattern),
-                TraceSeverity.VerboseEx, EventSeverity.Information, LdapcpLogging.Categories.Core);
+            LdapcpLogging.LogDebug(String.Format("[{0}] FillSearch called, incoming input: \"{1}\"", ProviderInternalName, searchPattern));
 
             SPSecurity.RunWithElevatedPrivileges(delegate ()
             {
@@ -1012,8 +1005,7 @@ namespace ldapcp
             if (claimTypes == null)
                 throw new ArgumentNullException("claimTypes");
 
-            LdapcpLogging.Log(String.Format("[{0}] FillClaimValueTypes called, ProcessedAttributes null: {1}", ProviderInternalName, ProcessedAttributes == null ? true : false),
-                TraceSeverity.VerboseEx, EventSeverity.Information, LdapcpLogging.Categories.Core);
+            LdapcpLogging.LogDebug(String.Format("[{0}] FillClaimValueTypes called, ProcessedAttributes null: {1}", ProviderInternalName, ProcessedAttributes == null ? true : false));
 
             if (ProcessedAttributes == null)
                 return;
@@ -1037,8 +1029,7 @@ namespace ldapcp
             if (claimValueTypes == null)
                 throw new ArgumentNullException("claimValueTypes");
 
-            LdapcpLogging.Log(String.Format("[{0}] FillClaimValueTypes called, ProcessedAttributes null: {1}", ProviderInternalName, ProcessedAttributes == null ? true : false),
-                            TraceSeverity.VerboseEx, EventSeverity.Information, LdapcpLogging.Categories.Core);
+            LdapcpLogging.LogDebug(String.Format("[{0}] FillClaimValueTypes called, ProcessedAttributes null: {1}", ProviderInternalName, ProcessedAttributes == null ? true : false));
 
             if (ProcessedAttributes == null)
                 return;
@@ -1185,37 +1176,46 @@ namespace ldapcp
             List<SPClaim> groups = new List<SPClaim>();
             using (new SPMonitoredScope(String.Format("[{0}] Getting AD group membership of user {1} in {2}", ProviderInternalName, requestInfo.IncomingEntity.Value, directory.Path), 2000))
             {
+                UserPrincipal adUser = null;
                 try
                 {
                     string directoryDomainName, directoryDomainFqdn;
                     RequestInformation.GetDomainInformation(directory, out directoryDomainName, out directoryDomainFqdn);
                     Stopwatch stopWatch = new Stopwatch();
                     stopWatch.Start();
+
                     using (PrincipalContext principalContext = new PrincipalContext(ContextType.Domain, directoryDomainFqdn))
                     {
-                        using (UserPrincipal adUser = UserPrincipal.FindByIdentity(principalContext, requestInfo.IncomingEntity.Value))
+                        if (String.Equals(requestInfo.IncomingEntity.ClaimType, WIF.ClaimTypes.Email, StringComparison.InvariantCultureIgnoreCase))
                         {
-                            if (adUser == null) return groups;
-                            IEnumerable<Principal> ADGroups = adUser.GetAuthorizationGroups().Where(x => !String.IsNullOrEmpty(x.DistinguishedName));
-                            stopWatch.Stop();
-
-                            foreach (Principal group in ADGroups)
+                            using (UserPrincipal userEmailPrincipal = new UserPrincipal(principalContext) { Enabled = true, EmailAddress = requestInfo.IncomingEntity.Value })
                             {
-                                string groupDomainName, groupDomainFqdn;
-                                RequestInformation.GetDomainInformation(group.DistinguishedName, out groupDomainName, out groupDomainFqdn);
-                                string claimValue = group.Name;
-                                if (!String.IsNullOrEmpty(groupAttribute.PrefixToAddToValueReturnedProp) && groupAttribute.PrefixToAddToValueReturnedProp.Contains(Constants.LDAPCPCONFIG_TOKENDOMAINNAME))
-                                    claimValue = groupAttribute.PrefixToAddToValueReturnedProp.Replace(Constants.LDAPCPCONFIG_TOKENDOMAINNAME, groupDomainName) + group.Name;
-                                else if (!String.IsNullOrEmpty(groupAttribute.PrefixToAddToValueReturnedProp) && groupAttribute.PrefixToAddToValueReturnedProp.Contains(Constants.LDAPCPCONFIG_TOKENDOMAINFQDN))
-                                    claimValue = groupAttribute.PrefixToAddToValueReturnedProp.Replace(Constants.LDAPCPCONFIG_TOKENDOMAINFQDN, groupDomainFqdn) + group.Name;
-                                SPClaim claim = CreateClaim(groupAttribute.ClaimType, claimValue, groupAttribute.ClaimValueType, false);
-                                groups.Add(claim);
+                                using (PrincipalSearcher userEmailSearcher = new PrincipalSearcher(userEmailPrincipal))
+                                {
+                                    adUser = userEmailSearcher.FindOne() as UserPrincipal;
+                                }
                             }
                         }
+                        else adUser = UserPrincipal.FindByIdentity(principalContext, requestInfo.IncomingEntity.Value);
+
+                        if (adUser == null) return groups;
+
+                        IEnumerable<Principal> ADGroups = adUser.GetAuthorizationGroups().Where(x => !String.IsNullOrEmpty(x.DistinguishedName));
+                        stopWatch.Stop();
+
+                        foreach (Principal group in ADGroups)
+                        {
+                            string groupDomainName, groupDomainFqdn;
+                            RequestInformation.GetDomainInformation(group.DistinguishedName, out groupDomainName, out groupDomainFqdn);
+                            string claimValue = group.Name;
+                            if (!String.IsNullOrEmpty(groupAttribute.PrefixToAddToValueReturnedProp) && groupAttribute.PrefixToAddToValueReturnedProp.Contains(Constants.LDAPCPCONFIG_TOKENDOMAINNAME))
+                                claimValue = groupAttribute.PrefixToAddToValueReturnedProp.Replace(Constants.LDAPCPCONFIG_TOKENDOMAINNAME, groupDomainName) + group.Name;
+                            else if (!String.IsNullOrEmpty(groupAttribute.PrefixToAddToValueReturnedProp) && groupAttribute.PrefixToAddToValueReturnedProp.Contains(Constants.LDAPCPCONFIG_TOKENDOMAINFQDN))
+                                claimValue = groupAttribute.PrefixToAddToValueReturnedProp.Replace(Constants.LDAPCPCONFIG_TOKENDOMAINFQDN, groupDomainFqdn) + group.Name;
+                            SPClaim claim = CreateClaim(groupAttribute.ClaimType, claimValue, groupAttribute.ClaimValueType, false);
+                            groups.Add(claim);
+                        }
                     }
-                    LdapcpLogging.Log(String.Format("[{0}] Domain {1} returned {2} groups for user {3}. Lookup took {4}ms on AD server '{5}'",
-                        ProviderInternalName, directoryDomainFqdn, groups.Count, requestInfo.IncomingEntity.Value, stopWatch.ElapsedMilliseconds.ToString(), directory.Path),
-                        TraceSeverity.Medium, EventSeverity.Information, LdapcpLogging.Categories.Augmentation);
                 }
                 catch (PrincipalOperationException ex)
                 {
@@ -1230,6 +1230,10 @@ namespace ldapcp
                 catch (Exception ex)
                 {
                     LdapcpLogging.LogException(ProviderInternalName, String.Format("while getting AD group membership of user {0} in {1} using UserPrincipal.GetAuthorizationGroups()", requestInfo.IncomingEntity.Value, directory.Path), LdapcpLogging.Categories.Augmentation, ex);
+                }
+                finally
+                {
+                    if (adUser != null) adUser.Dispose();
                 }
             }
             return groups;
@@ -1346,8 +1350,7 @@ namespace ldapcp
         /// <param name="entityTypes"></param>
         protected override void FillEntityTypes(List<string> entityTypes)
         {
-            LdapcpLogging.Log(String.Format("[{0}] FillEntityTypes called, ProcessedAttributes null: {1}", ProviderInternalName, ProcessedAttributes == null ? true : false),
-                            TraceSeverity.VerboseEx, EventSeverity.Information, LdapcpLogging.Categories.Core);
+            LdapcpLogging.LogDebug(String.Format("[{0}] FillEntityTypes called, ProcessedAttributes null: {1}", ProviderInternalName, ProcessedAttributes == null ? true : false));
 
             if (ProcessedAttributes == null)
                 return;
@@ -1383,8 +1386,7 @@ namespace ldapcp
         /// <param name="hierarchy"></param>
         protected override void FillHierarchy(Uri context, string[] entityTypes, string hierarchyNodeID, int numberOfLevels, Microsoft.SharePoint.WebControls.SPProviderHierarchyTree hierarchy)
         {
-            LdapcpLogging.Log(String.Format("[{0}] FillHierarchy called", ProviderInternalName),
-                TraceSeverity.VerboseEx, EventSeverity.Information, LdapcpLogging.Categories.Core);
+            LdapcpLogging.LogDebug(String.Format("[{0}] FillHierarchy called", ProviderInternalName));
 
             SPSecurity.RunWithElevatedPrivileges(delegate ()
             {
@@ -1735,8 +1737,7 @@ namespace ldapcp
         /// <returns></returns>
         public override string GetClaimTypeForUserKey()
         {
-            LdapcpLogging.Log(String.Format("[{0}] GetClaimTypeForUserKey called", ProviderInternalName),
-                TraceSeverity.VerboseEx, EventSeverity.Information, LdapcpLogging.Categories.Core);
+            LdapcpLogging.LogDebug(String.Format("[{0}] GetClaimTypeForUserKey called", ProviderInternalName));
 
             if (!Initialize(null, null))
                 return null;
@@ -1764,8 +1765,7 @@ namespace ldapcp
         /// <returns></returns>
         protected override SPClaim GetUserKeyForEntity(SPClaim entity)
         {
-            LdapcpLogging.Log(String.Format("[{0}] GetUserKeyForEntity called, incoming claim value: \"{1}\", claim type: \"{2}\", claim issuer: \"{3}\"", ProviderInternalName, entity.Value, entity.ClaimType, entity.OriginalIssuer),
-                TraceSeverity.VerboseEx, EventSeverity.Information, LdapcpLogging.Categories.Core);
+            LdapcpLogging.LogDebug(String.Format("[{0}] GetUserKeyForEntity called, incoming claim value: \"{1}\", claim type: \"{2}\", claim issuer: \"{3}\"", ProviderInternalName, entity.Value, entity.ClaimType, entity.OriginalIssuer));
 
             if (!Initialize(null, null))
                 return null;

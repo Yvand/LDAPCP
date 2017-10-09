@@ -133,12 +133,12 @@ namespace ldapcp
             {
                 TraceSeverity severity;
 #if DEBUG
-                severity = TraceSeverity.High;
-#else
                 severity = TraceSeverity.VerboseEx;
-#endif
                 WriteTrace(LdapcpLogging.Categories.Debug, severity, message);
                 Debug.WriteLine(message);
+#else
+                // Do nothing
+#endif
             }
             catch
             {   // Don't want to do anything if logging goes wrong, just ignore and continue
