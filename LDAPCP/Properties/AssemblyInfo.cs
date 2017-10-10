@@ -9,9 +9,9 @@ using System.Security;
 [assembly: AssemblyTitle("LDAPCP")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("github.com/Yvand - Yvan Duhamel")]
+[assembly: AssemblyCompany("GitHub.com/Yvand - Yvan Duhamel")]
 [assembly: AssemblyProduct("LDAPCP")]
-[assembly: AssemblyCopyright("Copyright © 2016, Yvan Duhamel, All rights reserved")]
+[assembly: AssemblyCopyright("Copyright © 2017, Yvan Duhamel, All rights reserved")]
 [assembly: AssemblyTrademark("LDAPCP")]
 [assembly: AssemblyCulture("")]
 
@@ -34,5 +34,4 @@ using System.Security;
 // by using the '*' as shown below:
 // [assembly: AssemblyVersion("1.0.*")]
 [assembly: AssemblyVersion("1.0.0.0")]
-[assembly: AssemblyFileVersion("2017.09")]
-
+[assembly: AssemblyFileVersion("2017.10")]
