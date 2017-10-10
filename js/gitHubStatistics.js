@@ -12,12 +12,12 @@ var GitHubStatistics;
             $.ajax({
                 method: "GET",
                 crossDomain: true,
-                contentType: "application/json; charset=utf-8",
+                contentType: "application/json",
                 dataType: "json",
                 url: this.url + "?code=" + this.authZKey + "&callback=?",
                 success: function (responseData, textStatus, jqXHR) {
                     console.log("Data received");
-                    var value = responseData.someKey;
+                    var value = responseData;
                     console.log(value);
                 },
                 error: function (responseData, textStatus, errorThrown) {
