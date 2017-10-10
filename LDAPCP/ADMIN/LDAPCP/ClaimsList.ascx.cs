@@ -44,7 +44,6 @@ namespace ldapcp.ControlTemplates
 
         protected void Page_Load(object sender, EventArgs e)
         {
-            LdapcpLogging.LogDebug(ValidatePrerequisite().ToString());
             if (ValidatePrerequisite() != ConfigStatus.AllGood && Status != ConfigStatus.NoIdentityClaimType)
             {
                 this.LabelErrorMessage.Text = base.MostImportantError;

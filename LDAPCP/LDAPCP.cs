@@ -1186,6 +1186,8 @@ namespace ldapcp
 
                     using (PrincipalContext principalContext = new PrincipalContext(ContextType.Domain, directoryDomainFqdn))
                     {
+                        // https://github.com/Yvand/LDAPCP/issues/22
+                        // UserPrincipal.FindByIdentity() doesn't support emails, so if IncomingEntity is an email, user needs to be retrieved in a different way
                         if (String.Equals(requestInfo.IncomingEntity.ClaimType, WIF.ClaimTypes.Email, StringComparison.InvariantCultureIgnoreCase))
                         {
                             using (UserPrincipal userEmailPrincipal = new UserPrincipal(principalContext) { Enabled = true, EmailAddress = requestInfo.IncomingEntity.Value })
