@@ -18,67 +18,39 @@ namespace ldapcp
         public enum Categories
         {
             [CategoryName("Core"),
-#if DEBUG
-             DefaultTraceSeverity(TraceSeverity.VerboseEx),
-#else
              DefaultTraceSeverity(TraceSeverity.Medium),
-#endif
             DefaultEventSeverity(EventSeverity.Error)]
             Core,
             [CategoryName("Configuration"),
-#if DEBUG
-             DefaultTraceSeverity(TraceSeverity.VerboseEx),
-#else
              DefaultTraceSeverity(TraceSeverity.Medium),
-#endif
             DefaultEventSeverity(EventSeverity.Error)]
             Configuration,
             [CategoryName("LDAP Lookup"),
-#if DEBUG
-             DefaultTraceSeverity(TraceSeverity.VerboseEx),
-#else
              DefaultTraceSeverity(TraceSeverity.Medium),
-#endif
              DefaultEventSeverity(EventSeverity.Error)]
             LDAP_Lookup,
             [CategoryName("Claims Picking"),
-#if DEBUG
-             DefaultTraceSeverity(TraceSeverity.VerboseEx),
-#else
              DefaultTraceSeverity(TraceSeverity.Medium),
-#endif
              DefaultEventSeverity(EventSeverity.Error)]
             Claims_Picking,
             [CategoryName("Rehydration"),
-#if DEBUG
-             DefaultTraceSeverity(TraceSeverity.VerboseEx),
-#else
              DefaultTraceSeverity(TraceSeverity.Medium),
-#endif
              DefaultEventSeverity(EventSeverity.Error)]
             Rehydration,
             [CategoryName("Augmentation"),
-#if DEBUG
-             DefaultTraceSeverity(TraceSeverity.VerboseEx),
-#else
              DefaultTraceSeverity(TraceSeverity.Medium),
-#endif
              DefaultEventSeverity(EventSeverity.Error)]
             Augmentation,
             [CategoryName("Debug"),
 #if DEBUG
-             DefaultTraceSeverity(TraceSeverity.VerboseEx),
-#else
              DefaultTraceSeverity(TraceSeverity.High),
+#else
+             DefaultTraceSeverity(TraceSeverity.VerboseEx),
 #endif
              DefaultEventSeverity(EventSeverity.Error)]
             Debug,
             [CategoryName("Custom"),
-#if DEBUG
-             DefaultTraceSeverity(TraceSeverity.VerboseEx),
-#else
              DefaultTraceSeverity(TraceSeverity.Medium),
-#endif
              DefaultEventSeverity(EventSeverity.Error)]
             Custom,
         }

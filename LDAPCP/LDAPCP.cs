@@ -419,41 +419,38 @@ namespace ldapcp
         {
             LdapcpLogging.LogDebug(String.Format("[{0}] FillResolve(SPClaim) called, incoming claim value: \"{1}\", claim type: \"{2}\", claim issuer: \"{3}\"", ProviderInternalName, resolveInput.Value, resolveInput.ClaimType, resolveInput.OriginalIssuer));
 
-            SPSecurity.RunWithElevatedPrivileges(delegate ()
+            if (!Initialize(context, entityTypes))
+                return;
+
+            // Ensure incoming claim should be validated by LDAPCP
+            // Must be made after call to Initialize because SPTrustedLoginProvider name must be known
+            if (!String.Equals(resolveInput.OriginalIssuer, IssuerName, StringComparison.InvariantCultureIgnoreCase))
+                return;
+
+            this.Lock_Config.EnterReadLock();
+            try
             {
-                if (!Initialize(context, entityTypes))
-                    return;
-
-                // Ensure incoming claim should be validated by LDAPCP
-                // Must be made after call to Initialize because SPTrustedLoginProvider name must be known
-                if (!String.Equals(resolveInput.OriginalIssuer, IssuerName, StringComparison.InvariantCultureIgnoreCase))
-                    return;
-
-                this.Lock_Config.EnterReadLock();
-                try
+                RequestInformation infos = new RequestInformation(CurrentConfiguration, RequestType.Validation, ProcessedAttributes, resolveInput.Value, resolveInput, context, entityTypes, null, Int32.MaxValue);
+                List<PickerEntity> permissions = SearchOrValidate(infos);
+                if (permissions.Count == 1)
                 {
-                    RequestInformation infos = new RequestInformation(CurrentConfiguration, RequestType.Validation, ProcessedAttributes, resolveInput.Value, resolveInput, context, entityTypes, null, Int32.MaxValue);
-                    List<PickerEntity> permissions = SearchOrValidate(infos);
-                    if (permissions.Count == 1)
-                    {
-                        resolved.Add(permissions[0]);
-                        LdapcpLogging.Log(String.Format("[{0}] Validated permission: claim value: \"{1}\", claim type: \"{2}\"", ProviderInternalName, permissions[0].Claim.Value, permissions[0].Claim.ClaimType),
-                            TraceSeverity.Medium, EventSeverity.Information, LdapcpLogging.Categories.Claims_Picking);
-                    }
-                    else
-                    {
-                        LdapcpLogging.Log(String.Format("[{0}] Validation of incoming claim returned {1} permissions instead of 1 expected. Aborting operation", ProviderInternalName, permissions.Count.ToString()), TraceSeverity.Unexpected, EventSeverity.Error, LdapcpLogging.Categories.Claims_Picking);
-                    }
+                    resolved.Add(permissions[0]);
+                    LdapcpLogging.Log(String.Format("[{0}] Validated permission: claim value: \"{1}\", claim type: \"{2}\"", ProviderInternalName, permissions[0].Claim.Value, permissions[0].Claim.ClaimType),
+                        TraceSeverity.Medium, EventSeverity.Information, LdapcpLogging.Categories.Claims_Picking);
                 }
-                catch (Exception ex)
+                else
                 {
-                    LdapcpLogging.LogException(ProviderInternalName, "in FillResolve(SPClaim)", LdapcpLogging.Categories.Claims_Picking, ex);
+                    LdapcpLogging.Log(String.Format("[{0}] Validation of incoming claim returned {1} permissions instead of 1 expected. Aborting operation", ProviderInternalName, permissions.Count.ToString()), TraceSeverity.Unexpected, EventSeverity.Error, LdapcpLogging.Categories.Claims_Picking);
                 }
-                finally
-                {
-                    this.Lock_Config.ExitReadLock();
-                }
-            });
+            }
+            catch (Exception ex)
+            {
+                LdapcpLogging.LogException(ProviderInternalName, "in FillResolve(SPClaim)", LdapcpLogging.Categories.Claims_Picking, ex);
+            }
+            finally
+            {
+                this.Lock_Config.ExitReadLock();
+            }
         }
 
         /// <summary>
@@ -467,82 +464,76 @@ namespace ldapcp
         {
             LdapcpLogging.LogDebug(String.Format("[{0}] FillResolve(string) called, incoming input \"{1}\"", ProviderInternalName, resolveInput));
 
-            SPSecurity.RunWithElevatedPrivileges(delegate ()
-            {
-                if (!Initialize(context, entityTypes))
-                    return;
+            if (!Initialize(context, entityTypes))
+                return;
 
-                this.Lock_Config.EnterReadLock();
-                try
+            this.Lock_Config.EnterReadLock();
+            try
+            {
+                RequestInformation settings = new RequestInformation(CurrentConfiguration, RequestType.Search, ProcessedAttributes, resolveInput, null, context, entityTypes, null, Int32.MaxValue);
+                List<PickerEntity> permissions = SearchOrValidate(settings);
+                FillPermissions(context, entityTypes, resolveInput, ref permissions);
+                foreach (PickerEntity permission in permissions)
                 {
-                    RequestInformation settings = new RequestInformation(CurrentConfiguration, RequestType.Search, ProcessedAttributes, resolveInput, null, context, entityTypes, null, Int32.MaxValue);
-                    List<PickerEntity> permissions = SearchOrValidate(settings);
-                    FillPermissions(context, entityTypes, resolveInput, ref permissions);
-                    foreach (PickerEntity permission in permissions)
-                    {
-                        resolved.Add(permission);
-                        LdapcpLogging.Log(String.Format("[{0}] Added permission: claim value: \"{1}\", claim type: \"{2}\"", ProviderInternalName, permission.Claim.Value, permission.Claim.ClaimType),
-                            TraceSeverity.Medium, EventSeverity.Information, LdapcpLogging.Categories.Claims_Picking);
-                    }
+                    resolved.Add(permission);
+                    LdapcpLogging.Log(String.Format("[{0}] Added permission: claim value: \"{1}\", claim type: \"{2}\"", ProviderInternalName, permission.Claim.Value, permission.Claim.ClaimType),
+                        TraceSeverity.Medium, EventSeverity.Information, LdapcpLogging.Categories.Claims_Picking);
                 }
-                catch (Exception ex)
-                {
-                    LdapcpLogging.LogException(ProviderInternalName, "in FillResolve(string)", LdapcpLogging.Categories.Claims_Picking, ex);
-                }
-                finally
-                {
-                    this.Lock_Config.ExitReadLock();
-                }
-            });
+            }
+            catch (Exception ex)
+            {
+                LdapcpLogging.LogException(ProviderInternalName, "in FillResolve(string)", LdapcpLogging.Categories.Claims_Picking, ex);
+            }
+            finally
+            {
+                this.Lock_Config.ExitReadLock();
+            }
         }
 
         protected override void FillSearch(Uri context, string[] entityTypes, string searchPattern, string hierarchyNodeID, int maxCount, Microsoft.SharePoint.WebControls.SPProviderHierarchyTree searchTree)
         {
             LdapcpLogging.LogDebug(String.Format("[{0}] FillSearch called, incoming input: \"{1}\"", ProviderInternalName, searchPattern));
 
-            SPSecurity.RunWithElevatedPrivileges(delegate ()
+            if (!Initialize(context, entityTypes))
+                return;
+
+            this.Lock_Config.EnterReadLock();
+            try
             {
-                if (!Initialize(context, entityTypes))
-                    return;
-
-                this.Lock_Config.EnterReadLock();
-                try
+                RequestInformation settings = new RequestInformation(CurrentConfiguration, RequestType.Search, ProcessedAttributes, searchPattern, null, context, entityTypes, hierarchyNodeID, maxCount);
+                List<PickerEntity> permissions = SearchOrValidate(settings);
+                FillPermissions(context, entityTypes, searchPattern, ref permissions);
+                SPProviderHierarchyNode matchNode = null;
+                foreach (PickerEntity permission in permissions)
                 {
-                    RequestInformation settings = new RequestInformation(CurrentConfiguration, RequestType.Search, ProcessedAttributes, searchPattern, null, context, entityTypes, hierarchyNodeID, maxCount);
-                    List<PickerEntity> permissions = SearchOrValidate(settings);
-                    FillPermissions(context, entityTypes, searchPattern, ref permissions);
-                    SPProviderHierarchyNode matchNode = null;
-                    foreach (PickerEntity permission in permissions)
+                    // Add current PickerEntity to the corresponding attribute in the hierarchy
+                    if (searchTree.HasChild(permission.Claim.ClaimType))
                     {
-                        // Add current PickerEntity to the corresponding attribute in the hierarchy
-                        if (searchTree.HasChild(permission.Claim.ClaimType))
-                        {
-                            matchNode = searchTree.Children.First(x => x.HierarchyNodeID == permission.Claim.ClaimType);
-                        }
-                        else
-                        {
-                            AttributeHelper attrHelper = ProcessedAttributes.FirstOrDefault(x =>
-                                !x.CreateAsIdentityClaim &&
-                                String.Equals(x.ClaimType, permission.Claim.ClaimType, StringComparison.InvariantCultureIgnoreCase));
-
-                            string nodeName = attrHelper != null ? attrHelper.ClaimTypeMappingName : permission.Claim.ClaimType;
-                            matchNode = new SPProviderHierarchyNode(_ProviderInternalName, nodeName, permission.Claim.ClaimType, true);
-                            searchTree.AddChild(matchNode);
-                        }
-                        matchNode.AddEntity(permission);
-                        LdapcpLogging.Log(String.Format("[{0}] Added permission: claim value: \"{1}\", claim type: \"{2}\"", ProviderInternalName, permission.Claim.Value, permission.Claim.ClaimType),
-                            TraceSeverity.Medium, EventSeverity.Information, LdapcpLogging.Categories.Claims_Picking);
+                        matchNode = searchTree.Children.First(x => x.HierarchyNodeID == permission.Claim.ClaimType);
                     }
+                    else
+                    {
+                        AttributeHelper attrHelper = ProcessedAttributes.FirstOrDefault(x =>
+                            !x.CreateAsIdentityClaim &&
+                            String.Equals(x.ClaimType, permission.Claim.ClaimType, StringComparison.InvariantCultureIgnoreCase));
+
+                        string nodeName = attrHelper != null ? attrHelper.ClaimTypeMappingName : permission.Claim.ClaimType;
+                        matchNode = new SPProviderHierarchyNode(_ProviderInternalName, nodeName, permission.Claim.ClaimType, true);
+                        searchTree.AddChild(matchNode);
+                    }
+                    matchNode.AddEntity(permission);
+                    LdapcpLogging.Log(String.Format("[{0}] Added permission: claim value: \"{1}\", claim type: \"{2}\"", ProviderInternalName, permission.Claim.Value, permission.Claim.ClaimType),
+                        TraceSeverity.Medium, EventSeverity.Information, LdapcpLogging.Categories.Claims_Picking);
                 }
-                catch (Exception ex)
-                {
-                    LdapcpLogging.LogException(ProviderInternalName, "in FillSearch", LdapcpLogging.Categories.Claims_Picking, ex);
-                }
-                finally
-                {
-                    this.Lock_Config.ExitReadLock();
-                }
-            });
+            }
+            catch (Exception ex)
+            {
+                LdapcpLogging.LogException(ProviderInternalName, "in FillSearch", LdapcpLogging.Categories.Claims_Picking, ex);
+            }
+            finally
+            {
+                this.Lock_Config.ExitReadLock();
+            }
         }
 
         /// <summary>
@@ -1067,100 +1058,97 @@ namespace ldapcp
         /// <param name="claims"></param>
         protected virtual void AugmentEntity(Uri context, SPClaim entity, SPClaimProviderContext claimProviderContext, List<SPClaim> claims)
         {
-            SPSecurity.RunWithElevatedPrivileges(delegate ()
+            SPClaim decodedEntity;
+            if (SPClaimProviderManager.IsUserIdentifierClaim(entity))
+                decodedEntity = SPClaimProviderManager.DecodeUserIdentifierClaim(entity);
+            else
             {
-                if (!Initialize(context, null))
+                if (SPClaimProviderManager.IsEncodedClaim(entity.Value))
+                    decodedEntity = SPClaimProviderManager.Local.DecodeClaim(entity.Value);
+                else
+                    decodedEntity = entity;
+            }
+
+            SPOriginalIssuerType loginType = SPOriginalIssuers.GetIssuerType(decodedEntity.OriginalIssuer);
+            if (loginType != SPOriginalIssuerType.TrustedProvider && loginType != SPOriginalIssuerType.ClaimProvider)
+            {
+                LdapcpLogging.LogDebug(String.Format("[{0}] Not trying to augment '{1}' because OriginalIssuer is '{2}'.", ProviderInternalName, decodedEntity.Value, decodedEntity.OriginalIssuer));
+                return;
+            }
+
+            if (!Initialize(context, null))
+                return;
+
+            this.Lock_Config.EnterReadLock();
+            try
+            {
+                LdapcpLogging.LogDebug(String.Format("[{0}] Original entity to augment: '{1}', augmentation enabled: {2}.", ProviderInternalName, entity.Value, CurrentConfiguration.AugmentationEnabledProp));
+                if (!this.CurrentConfiguration.AugmentationEnabledProp) return;
+                if (String.IsNullOrEmpty(this.CurrentConfiguration.AugmentationClaimTypeProp))
+                {
+                    LdapcpLogging.Log(String.Format("[{0}] Augmentation is enabled but no claim type is configured.", ProviderInternalName),
+                        TraceSeverity.High, EventSeverity.Error, LdapcpLogging.Categories.Augmentation);
                     return;
-
-                this.Lock_Config.EnterReadLock();
-                try
+                }
+                var groupAttribute = this.ProcessedAttributes.FirstOrDefault(x => String.Equals(x.ClaimType, this.CurrentConfiguration.AugmentationClaimTypeProp, StringComparison.InvariantCultureIgnoreCase) && !x.CreateAsIdentityClaim);
+                if (groupAttribute == null)
                 {
-                    LdapcpLogging.LogDebug(String.Format("[{0}] Original entity to augment: '{1}', augmentation enabled: {2}.", ProviderInternalName, entity.Value, CurrentConfiguration.AugmentationEnabledProp));
-                    if (!this.CurrentConfiguration.AugmentationEnabledProp) return;
-                    if (String.IsNullOrEmpty(this.CurrentConfiguration.AugmentationClaimTypeProp))
-                    {
-                        LdapcpLogging.Log(String.Format("[{0}] Augmentation is enabled but no claim type is configured.", ProviderInternalName),
-                            TraceSeverity.High, EventSeverity.Error, LdapcpLogging.Categories.Augmentation);
-                        return;
-                    }
-                    var groupAttribute = this.ProcessedAttributes.FirstOrDefault(x => String.Equals(x.ClaimType, this.CurrentConfiguration.AugmentationClaimTypeProp, StringComparison.InvariantCultureIgnoreCase) && !x.CreateAsIdentityClaim);
-                    if (groupAttribute == null)
-                    {
-                        LdapcpLogging.Log(String.Format("[{0}] Settings for claim type \"{1}\" cannot be found, its entry may have been deleted from claims mapping table.", ProviderInternalName, this.CurrentConfiguration.AugmentationClaimTypeProp),
-                            TraceSeverity.High, EventSeverity.Error, LdapcpLogging.Categories.Augmentation);
-                        return;
-                    }
+                    LdapcpLogging.Log(String.Format("[{0}] Settings for claim type \"{1}\" cannot be found, its entry may have been deleted from claims mapping table.", ProviderInternalName, this.CurrentConfiguration.AugmentationClaimTypeProp),
+                        TraceSeverity.High, EventSeverity.Error, LdapcpLogging.Categories.Augmentation);
+                    return;
+                }
 
-                    SPClaim decodedEntity;
-                    if (SPClaimProviderManager.IsUserIdentifierClaim(entity))
-                        decodedEntity = SPClaimProviderManager.DecodeUserIdentifierClaim(entity);
+                RequestInformation infos = new RequestInformation(CurrentConfiguration, RequestType.Augmentation, ProcessedAttributes, null, decodedEntity, context, null, null, Int32.MaxValue);
+                LDAPConnection[] connections = GetLDAPServers(infos);
+                if (connections == null || connections.Length == 0)
+                {
+                    LdapcpLogging.Log(String.Format("[{0}] No LDAP server is enabled for augmentation", ProviderInternalName), TraceSeverity.High, EventSeverity.Error, LdapcpLogging.Categories.Augmentation);
+                    return;
+                }
+
+                List<SPClaim> groups = new List<SPClaim>();
+                object lockResults = new object();
+                Stopwatch stopWatch = new Stopwatch();
+                stopWatch.Start();
+                Parallel.ForEach(connections, coco =>
+                {
+                    List<SPClaim> directoryGroups;
+                    if (coco.GetGroupMembershipAsADDomain)
+                        directoryGroups = GetGroupsFromADDirectory(coco.directoryEntry, infos, groupAttribute);
                     else
+                        directoryGroups = GetGroupsFromLDAPDirectory(coco.directoryEntry, infos, groupAttribute);
+
+                    lock (lockResults)
                     {
-                        if (SPClaimProviderManager.IsEncodedClaim(entity.Value))
-                            decodedEntity = SPClaimProviderManager.Local.DecodeClaim(entity.Value);
-                        else
-                            decodedEntity = entity;
+                        groups.AddRange(directoryGroups);
                     }
+                });
+                stopWatch.Stop();
+                LdapcpLogging.Log(String.Format("[{0}] LDAP queries to get group membership on all servers completed in {1}ms",
+                    ProviderInternalName, stopWatch.ElapsedMilliseconds.ToString()),
+                    TraceSeverity.Verbose, EventSeverity.Information, LdapcpLogging.Categories.Augmentation);
 
-                    SPOriginalIssuerType loginType = SPOriginalIssuers.GetIssuerType(decodedEntity.OriginalIssuer);
-                    if (loginType != SPOriginalIssuerType.TrustedProvider && loginType != SPOriginalIssuerType.ClaimProvider)
-                    {
-                        LdapcpLogging.LogDebug(String.Format("[{0}] Not trying to augment '{1}' because OriginalIssuer is '{2}'.", ProviderInternalName, decodedEntity.Value, decodedEntity.OriginalIssuer));
-                        return;
-                    }
-
-                    RequestInformation infos = new RequestInformation(CurrentConfiguration, RequestType.Augmentation, ProcessedAttributes, null, decodedEntity, context, null, null, Int32.MaxValue);
-                    LDAPConnection[] connections = GetLDAPServers(infos);
-                    if (connections == null || connections.Length == 0)
-                    {
-                        LdapcpLogging.Log(String.Format("[{0}] No LDAP server is enabled for augmentation", ProviderInternalName), TraceSeverity.High, EventSeverity.Error, LdapcpLogging.Categories.Augmentation);
-                        return;
-                    }
-
-                    List<SPClaim> groups = new List<SPClaim>();
-                    object lockResults = new object();
-                    Stopwatch stopWatch = new Stopwatch();
-                    stopWatch.Start();
-                    Parallel.ForEach(connections, coco =>
-                    {
-                        List<SPClaim> directoryGroups;
-                        if (coco.GetGroupMembershipAsADDomain)
-                            directoryGroups = GetGroupsFromADDirectory(coco.directoryEntry, infos, groupAttribute);
-                        else
-                            directoryGroups = GetGroupsFromLDAPDirectory(coco.directoryEntry, infos, groupAttribute);
-
-                        lock (lockResults)
-                        {
-                            groups.AddRange(directoryGroups);
-                        }
-                    });
-                    stopWatch.Stop();
-                    LdapcpLogging.Log(String.Format("[{0}] LDAP queries to get group membership on all servers completed in {1}ms",
-                        ProviderInternalName, stopWatch.ElapsedMilliseconds.ToString()),
+                foreach (SPClaim group in groups)
+                {
+                    claims.Add(group);
+                    LdapcpLogging.Log(String.Format("[{0}] Added group \"{1}\" to user \"{2}\"", ProviderInternalName, group.Value, infos.IncomingEntity.Value),
                         TraceSeverity.Verbose, EventSeverity.Information, LdapcpLogging.Categories.Augmentation);
-
-                    foreach (SPClaim group in groups)
-                    {
-                        claims.Add(group);
-                        LdapcpLogging.Log(String.Format("[{0}] Added group \"{1}\" to user \"{2}\"", ProviderInternalName, group.Value, infos.IncomingEntity.Value),
-                            TraceSeverity.Verbose, EventSeverity.Information, LdapcpLogging.Categories.Augmentation);
-                    }
-                    if (groups.Count > 0)
-                        LdapcpLogging.Log(String.Format("[{0}] User '{1}' was augmented with {2} groups of claim type '{3}'", ProviderInternalName, infos.IncomingEntity.Value, groups.Count.ToString(), groupAttribute.ClaimType),
-                            TraceSeverity.Medium, EventSeverity.Information, LdapcpLogging.Categories.Augmentation);
-                    else
-                        LdapcpLogging.Log(String.Format("[{0}] No group found for user '{1}' during augmentation", ProviderInternalName, infos.IncomingEntity.Value),
-                            TraceSeverity.Medium, EventSeverity.Information, LdapcpLogging.Categories.Augmentation);
                 }
-                catch (Exception ex)
-                {
-                    LdapcpLogging.LogException(ProviderInternalName, "in AugmentEntity", LdapcpLogging.Categories.Augmentation, ex);
-                }
-                finally
-                {
-                    this.Lock_Config.ExitReadLock();
-                }
-            });
+                if (groups.Count > 0)
+                    LdapcpLogging.Log(String.Format("[{0}] User '{1}' was augmented with {2} groups of claim type '{3}'", ProviderInternalName, infos.IncomingEntity.Value, groups.Count.ToString(), groupAttribute.ClaimType),
+                        TraceSeverity.Medium, EventSeverity.Information, LdapcpLogging.Categories.Augmentation);
+                else
+                    LdapcpLogging.Log(String.Format("[{0}] No group found for user '{1}' during augmentation", ProviderInternalName, infos.IncomingEntity.Value),
+                        TraceSeverity.Medium, EventSeverity.Information, LdapcpLogging.Categories.Augmentation);
+            }
+            catch (Exception ex)
+            {
+                LdapcpLogging.LogException(ProviderInternalName, "in AugmentEntity", LdapcpLogging.Categories.Augmentation, ex);
+            }
+            finally
+            {
+                this.Lock_Config.ExitReadLock();
+            }
         }
 
         /// <summary>
@@ -1390,37 +1378,34 @@ namespace ldapcp
         {
             LdapcpLogging.LogDebug(String.Format("[{0}] FillHierarchy called", ProviderInternalName));
 
-            SPSecurity.RunWithElevatedPrivileges(delegate ()
-            {
-                if (!Initialize(context, entityTypes))
-                    return;
+            if (!Initialize(context, entityTypes))
+                return;
 
-                this.Lock_Config.EnterReadLock();
-                try
+            this.Lock_Config.EnterReadLock();
+            try
+            {
+                if (hierarchyNodeID == null)
                 {
-                    if (hierarchyNodeID == null)
+                    // Root level
+                    foreach (var attribute in ProcessedAttributes.Where(x => !x.CreateAsIdentityClaim && entityTypes.Contains(x.ClaimEntityType)))
                     {
-                        // Root level
-                        foreach (var attribute in ProcessedAttributes.Where(x => !x.CreateAsIdentityClaim && entityTypes.Contains(x.ClaimEntityType)))
-                        {
-                            hierarchy.AddChild(
-                                new Microsoft.SharePoint.WebControls.SPProviderHierarchyNode(
-                                    _ProviderInternalName,
-                                    attribute.ClaimTypeMappingName,
-                                    attribute.ClaimType,
-                                    true));
-                        }
+                        hierarchy.AddChild(
+                            new Microsoft.SharePoint.WebControls.SPProviderHierarchyNode(
+                                _ProviderInternalName,
+                                attribute.ClaimTypeMappingName,
+                                attribute.ClaimType,
+                                true));
                     }
                 }
-                catch (Exception ex)
-                {
-                    LdapcpLogging.LogException(ProviderInternalName, "in FillHierarchy", LdapcpLogging.Categories.Claims_Picking, ex);
-                }
-                finally
-                {
-                    this.Lock_Config.ExitReadLock();
-                }
-            });
+            }
+            catch (Exception ex)
+            {
+                LdapcpLogging.LogException(ProviderInternalName, "in FillHierarchy", LdapcpLogging.Categories.Claims_Picking, ex);
+            }
+            finally
+            {
+                this.Lock_Config.ExitReadLock();
+            }
         }
 
         /// <summary>
