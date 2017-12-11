@@ -21,7 +21,7 @@ var GitHubStatistics;
                     console.log(value);
                 },
                 error: function (responseData, textStatus, errorThrown) {
-                    alert('Request failed.');
+                    console.log('Request failed.');
                 }
             });
         }
