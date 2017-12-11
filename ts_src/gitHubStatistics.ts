@@ -11,7 +11,7 @@ namespace GitHubStatistics {
                 method: "GET",
                 crossDomain: true,
                 contentType: "application/json; charset=utf-8",
-                dataType: "json",
+                //dataType: "json",
                 url: this.url + "?code=" + this.authZKey + "&callback=?",
                 success: function(responseData, textStatus, jqXHR) {
                     console.log("Data received");                
