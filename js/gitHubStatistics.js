@@ -13,8 +13,8 @@ var GitHubStatistics;
                 method: "GET",
                 crossDomain: true,
                 contentType: "application/json; charset=utf-8",
-                //dataType: "json",
-                url: this.url + "?code=" + this.authZKey + "&callback=?",
+                dataType: "jsonp",
+                url: this.url + "?code=" + this.authZKey + "&callback=parseGitHubStatisticsResponse",
                 success: function (responseData, textStatus, jqXHR) {
                     console.log("Data received");
                     var value = responseData;
@@ -33,3 +33,6 @@ $(document).ready(function () {
     let result = stats.getLatestStat();
     //$("#status")[0].innerHTML = message;
 });
+function parseGitHubStatisticsResponse(p1) {
+    console.log('Got callback.');
+}
