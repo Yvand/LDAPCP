@@ -1,27 +1,32 @@
 /// <reference path="../node_modules/@types/jquery/index.d.ts" />
 // npm install --save @types/jquery
+/*function parseGitHubStatisticsResponse (p1) {
+    console.log('Got callback.');
+}*/
 var GitHubStatistics;
 (function (GitHubStatistics) {
     class LDAPCPStats {
         constructor() {
-            this.url = "http://ldapcp-functions.azurewebsites.net/api/GetRepoStats";
+            //url: string = "http://ldapcp-functions.azurewebsites.net/api/GetRepoStats";
+            this.url = "http://jsfiddle.net/echo/jsonp/";
             this.authZKey = "Xs141m0QqIUrDBfecYvdhOf0cJJ8sA2LygLgkVcKmTdwIU5ELx1OCg==";
         }
         getLatestStat() {
-            console.log('Hello World');
+            console.log("Sending query to " + this.url);
             $.ajax({
                 method: "GET",
                 crossDomain: true,
-                contentType: "application/json; charset=utf-8",
+                data: { code: this.authZKey },
                 dataType: "jsonp",
-                url: this.url + "?code=" + this.authZKey + "&callback=parseGitHubStatisticsResponse",
+                jsonpCallback: "parseGitHubStatisticsResponse",
+                url: this.url,
                 success: function (responseData, textStatus, jqXHR) {
                     console.log("Data received");
                     var value = responseData;
                     console.log(value);
                 },
                 error: function (responseData, textStatus, errorThrown) {
-                    console.log('Request failed.');
+                    console.log("Request failed: " + errorThrown);
                 }
             });
         }
@@ -33,6 +38,3 @@ $(document).ready(function () {
     let result = stats.getLatestStat();
     //$("#status")[0].innerHTML = message;
 });
-function parseGitHubStatisticsResponse(p1) {
-    console.log('Got callback.');
-}
