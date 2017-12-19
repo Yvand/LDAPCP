@@ -8,17 +8,25 @@
       {% include page-header.html %}
       <div class="row">
         <nav class="col-md-2">
+          <div id="Stats">
+              <fieldset>
+                  <legend>Statistics</legend>
+                  <ol>
+                      <li><span class="">Total download count: </span><span id="TotalDownloadCount"></span></li>
+                      <li><span class="">Latest release download count: </span><span id="LatestReleaseDownloadCount"></span></li>
+                  </ol>
+              </fieldset>
+          </div>
           {% include navigation.html %}
         </nav>
         <section class="col-md-10">
           <div class="row main-content">
-            <article class="col-md-10">
+            <article class="col-md-12">
               {{ content }}
             </article>
-            <aside class="col-md-2">
-              <div id="Stats">
-              </div>
-            </aside>
+            <!-- <aside class="col-md-2">
+             
+            </aside> -->
           </div>
         </section>
       </div>
@@ -26,11 +34,7 @@
     </div>
 
     <script>
-      //function parseGitHubStatisticsResponse (data){
-      window.parseGitHubStatisticsResponse = function(data) {
-          console.log("parseGitHubStatisticsResponse response received");
-          console.log(JSON.stringify(data));
-      };
+      
     </script>
 
 
@@ -43,6 +47,6 @@
     <!-- Include all compiled plugins (below), or include individual files as needed -->
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
     <script src="/js/gitHubStatistics.js"></script>
-    <script src="http://ldapcp-functions.azurewebsites.net/api/GetRepoStats?code=Xs141m0QqIUrDBfecYvdhOf0cJJ8sA2LygLgkVcKmTdwIU5ELx1OCg%3D%3D&callback=parseGitHubStatisticsResponse"></script>
+    <!-- <script src="http://ldapcp-functions.azurewebsites.net/api/GetRepoStats?code=Xs141m0QqIUrDBfecYvdhOf0cJJ8sA2LygLgkVcKmTdwIU5ELx1OCg%3D%3D&callback=parseGitHubStatisticsResponse"></script> -->
   </body>
 </html>

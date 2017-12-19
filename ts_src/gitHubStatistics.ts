@@ -5,10 +5,20 @@
     console.log('Got callback.');    
 }*/
 
-namespace GitHubStatistics {
+namespace GitHubStatistics {    
+    export interface RepoStatsJSON {
+        DateStatCreatedUTC: string;
+        Repository: string;
+        LatestAssetUrl: string;
+        LatestReleaseCreationDate: string;
+        LatestReleaseTagName: string;
+        LatestReleaseDownloadCount: number;
+        AllReleasesDownloadCount: number;
+    }
+
     export class LDAPCPStats {
-        //url: string = "http://ldapcp-functions.azurewebsites.net/api/GetRepoStats";
-        url: string = "http://jsfiddle.net/echo/jsonp/";
+        url: string = "http://ldapcp-functions.azurewebsites.net/api/GetRepoStats";
+        //url: string = "http://jsfiddle.net/echo/jsonp/";
         authZKey: string = "Xs141m0QqIUrDBfecYvdhOf0cJJ8sA2LygLgkVcKmTdwIU5ELx1OCg==";
         getLatestStat() {
             console.log("Sending query to " + this.url);
@@ -30,8 +40,24 @@ namespace GitHubStatistics {
                 }
             });
         }
+
+        static DecodeJSONResponse(json: GitHubStatistics.RepoStatsJSON) {
+            var obj = Object.assign({}, json, {
+                created: new Date(json.DateStatCreatedUTC)
+            });
+            return obj;
+        }
     }
 }
+
+//window.parseGitHubStatisticsResponse = function(data) {
+function parseGitHubStatisticsResponse (data){
+    console.log("parseGitHubStatisticsResponse response received");
+    var result =  GitHubStatistics.LDAPCPStats.DecodeJSONResponse(data);
+    $("#TotalDownloadCount").text(result.AllReleasesDownloadCount);
+    $("#LatestReleaseDownloadCount").text(result.LatestReleaseDownloadCount);
+    console.log(result);
+};
 
 $(document).ready(function () {
     let stats = new GitHubStatistics.LDAPCPStats();

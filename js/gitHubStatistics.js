@@ -7,8 +7,8 @@ var GitHubStatistics;
 (function (GitHubStatistics) {
     class LDAPCPStats {
         constructor() {
-            //url: string = "http://ldapcp-functions.azurewebsites.net/api/GetRepoStats";
-            this.url = "http://jsfiddle.net/echo/jsonp/";
+            this.url = "http://ldapcp-functions.azurewebsites.net/api/GetRepoStats";
+            //url: string = "http://jsfiddle.net/echo/jsonp/";
             this.authZKey = "Xs141m0QqIUrDBfecYvdhOf0cJJ8sA2LygLgkVcKmTdwIU5ELx1OCg==";
         }
         getLatestStat() {
@@ -30,9 +30,27 @@ var GitHubStatistics;
                 }
             });
         }
+        static DecodeJSONResponse(json) {
+            var obj = Object.assign({}, json, {
+                created: new Date(json.DateStatCreatedUTC)
+            });
+            return obj;
+        }
     }
     GitHubStatistics.LDAPCPStats = LDAPCPStats;
 })(GitHubStatistics || (GitHubStatistics = {}));
+//window.parseGitHubStatisticsResponse = function(data) {
+function parseGitHubStatisticsResponse(data) {
+    console.log("parseGitHubStatisticsResponse response received");
+    var result = GitHubStatistics.LDAPCPStats.DecodeJSONResponse(data);
+    $("#TotalDownloadCount").text(result.AllReleasesDownloadCount);
+    $("#LatestReleaseDownloadCount").text(result.LatestReleaseDownloadCount);
+    // $("#stats").text("<p>test</p>");
+    // $("#stats").text(result.LatestReleaseDownloadCount);
+    // $("#stats").text("<p>test</p>");
+    console.log(result.LatestReleaseDownloadCount);
+}
+;
 $(document).ready(function () {
     let stats = new GitHubStatistics.LDAPCPStats();
     let result = stats.getLatestStat();
