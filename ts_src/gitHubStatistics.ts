@@ -14,6 +14,7 @@ namespace GitHubStatistics {
         LatestReleaseTagName: string;
         LatestReleaseDownloadCount: number;
         AllReleasesDownloadCount: number;
+        TotalDownloadCount: number;
     }
 
     export class LDAPCPStats {
@@ -47,17 +48,26 @@ namespace GitHubStatistics {
             });
             return obj;
         }
+
+        static ParseGitHubStatisticsResponse (data) {
+            console.log("parseGitHubStatisticsResponse response received");
+            var result =  GitHubStatistics.LDAPCPStats.DecodeJSONResponse(data);
+            $("#TotalDownloadCount").text(result.TotalDownloadCount);
+            $("#LatestReleaseDownloadCount").text(result.LatestReleaseDownloadCount);
+            $("#LatestReleaseTagName").text(result.LatestReleaseTagName);
+            console.log(result);
+        };
     }
 }
 
-//window.parseGitHubStatisticsResponse = function(data) {
-function parseGitHubStatisticsResponse (data){
+/*//window.parseGitHubStatisticsResponse = function(data) {
+function parseGitHubStatisticsResponse (data) {
     console.log("parseGitHubStatisticsResponse response received");
     var result =  GitHubStatistics.LDAPCPStats.DecodeJSONResponse(data);
-    $("#TotalDownloadCount").text(result.AllReleasesDownloadCount);
+    $("#TotalDownloadCount").text(result.TotalDownloadCount);
     $("#LatestReleaseDownloadCount").text(result.LatestReleaseDownloadCount);
     console.log(result);
-};
+};*/
 
 $(document).ready(function () {
     let stats = new GitHubStatistics.LDAPCPStats();
