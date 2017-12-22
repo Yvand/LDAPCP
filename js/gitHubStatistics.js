@@ -1,8 +1,5 @@
 /// <reference path="../node_modules/@types/jquery/index.d.ts" />
 // npm install --save @types/jquery
-/*function parseGitHubStatisticsResponse (p1) {
-    console.log('Got callback.');
-}*/
 var GitHubStatistics;
 (function (GitHubStatistics) {
     class LDAPCPStats {
@@ -18,12 +15,9 @@ var GitHubStatistics;
                 crossDomain: true,
                 data: { code: this.authZKey },
                 dataType: "jsonp",
-                jsonpCallback: "parseGitHubStatisticsResponse",
+                jsonpCallback: "GitHubStatistics.LDAPCPStats.parseGitHubStatisticsResponse",
                 url: this.url,
                 success: function (responseData, textStatus, jqXHR) {
-                    console.log("Data received");
-                    var value = responseData;
-                    console.log(value);
                 },
                 error: function (responseData, textStatus, errorThrown) {
                     console.log("Request failed: " + errorThrown);
@@ -31,9 +25,7 @@ var GitHubStatistics;
             });
         }
         static decodeJSONResponse(json) {
-            var obj = Object.assign({}, json, {
-                created: new Date(json.DateStatCreatedUTC)
-            });
+            var obj = Object.assign({}, json, {});
             return obj;
         }
         static parseGitHubStatisticsResponse(data) {
