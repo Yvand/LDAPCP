@@ -30,34 +30,24 @@ var GitHubStatistics;
                 }
             });
         }
-        static DecodeJSONResponse(json) {
+        static decodeJSONResponse(json) {
             var obj = Object.assign({}, json, {
                 created: new Date(json.DateStatCreatedUTC)
             });
             return obj;
         }
-        static ParseGitHubStatisticsResponse(data) {
-            console.log("parseGitHubStatisticsResponse response received");
-            var result = GitHubStatistics.LDAPCPStats.DecodeJSONResponse(data);
+        static parseGitHubStatisticsResponse(data) {
+            var result = GitHubStatistics.LDAPCPStats.decodeJSONResponse(data);
             $("#TotalDownloadCount").text(result.TotalDownloadCount);
             $("#LatestReleaseDownloadCount").text(result.LatestReleaseDownloadCount);
             $("#LatestReleaseTagName").text(result.LatestReleaseTagName);
-            console.log(result);
+            $("#LatestAssetUrl").attr("href", result.LatestAssetUrl);
         }
         ;
     }
     GitHubStatistics.LDAPCPStats = LDAPCPStats;
 })(GitHubStatistics || (GitHubStatistics = {}));
-/*//window.parseGitHubStatisticsResponse = function(data) {
-function parseGitHubStatisticsResponse (data) {
-    console.log("parseGitHubStatisticsResponse response received");
-    var result =  GitHubStatistics.LDAPCPStats.DecodeJSONResponse(data);
-    $("#TotalDownloadCount").text(result.TotalDownloadCount);
-    $("#LatestReleaseDownloadCount").text(result.LatestReleaseDownloadCount);
-    console.log(result);
-};*/
 $(document).ready(function () {
     let stats = new GitHubStatistics.LDAPCPStats();
     let result = stats.getLatestStat();
-    //$("#status")[0].innerHTML = message;
 });
