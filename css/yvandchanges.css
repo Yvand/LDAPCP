@@ -5,3 +5,13 @@ html {
 .page-header { margin-top: 0; }
 
 .main-content { margin: 0; padding: 0; max-width: unset; }
+
+.stat-number{ 
+    font-size: 2em; 
+    margin-bottom: 0px;
+    color: #1e6bb8;
+}
+.stat-label{ 
+    margin-top: -5px; 
+    color: #1e6bb8;
+}
