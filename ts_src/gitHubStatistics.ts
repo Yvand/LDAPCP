@@ -18,8 +18,7 @@ namespace GitHubStatistics {
         //url: string = "http://jsfiddle.net/echo/jsonp/";
         authZKey: string = "Xs141m0QqIUrDBfecYvdhOf0cJJ8sA2LygLgkVcKmTdwIU5ELx1OCg==";
         getLatestStat() {
-            console.log("Sending query to " + this.url);
-            
+            //console.log("Sending query to " + this.url);            
             $.ajax({
                 method: "GET",
                 crossDomain: true,
@@ -30,7 +29,7 @@ namespace GitHubStatistics {
                 success: function(responseData, textStatus, jqXHR) {
                 },
                 error: function (responseData, textStatus, errorThrown) {
-                    console.log("Request failed: " + errorThrown);
+                    console.log("Request to " + this.url + " failed: " + errorThrown);
                 }
             });
         }
@@ -48,6 +47,7 @@ namespace GitHubStatistics {
             $("#LatestReleaseDownloadCount").text(result.LatestReleaseDownloadCount);
             $("#LatestReleaseTagName").text(result.LatestReleaseTagName);
             $("#LatestAssetUrl").attr("href", result.LatestAssetUrl)
+            //$("#LatestReleaseCreationDate").text(result.LatestReleaseCreationDate);
         };
     }
 }

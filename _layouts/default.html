@@ -10,11 +10,11 @@
         <nav class="col-md-2">
           <div id="Stats">
               <div class="stat">
-                <p class="stat-number" id="TotalDownloadCount"></p>
+                <p class="stat-number" id="TotalDownloadCount">--</p>
                 <p class="stat-label">Downloads</p>
               </div>
               <div class="stat">
-                <p class="stat-number" id="LatestReleaseDownloadCount" style="line-height: 1.4em; font: 1.75em;"></p>
+                <p class="stat-number" id="LatestReleaseDownloadCount">--</p>
                 <p class="stat-label">Downloads of <span id="LatestReleaseTagName"></span></p>
               </div>
           </div>
@@ -25,20 +25,11 @@
             <article class="col-md-12">
               {{ content }}
             </article>
-            <!-- <aside class="col-md-2">
-             
-            </aside> -->
           </div>
         </section>
       </div>
       {% include page-footer.html %}
     </div>
-
-    <script>
-      
-    </script>
-
-
     <!-- Bootstrap core JavaScript
     ================================================== -->
     <!-- Placed at the end of the document so the pages load faster -->
