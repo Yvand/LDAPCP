@@ -2,8 +2,9 @@
 
 Run Update-SPSolution cmdlet to start a timer job that that will deploy the update:
 
+> **Important:** Always start a new PowerShell console to ensure it uses up to date persisted objects and avoid concurrency update errors.
+
 ```powershell
-# Run this on a new PowerShell console (it tends to avoid issues with local cache of persisted objects, that could cause errors on such operations)
 Update-SPSolution -GACDeployment -Identity "LDAPCP.wsp" -LiteralPath "C:\Data\Dev\LDAPCP.wsp"
 ```
 

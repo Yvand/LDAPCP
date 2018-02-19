@@ -3,8 +3,9 @@
 - Download LDAPCP.wsp.
 - Install and deploy the solution (that will automatically activate the "LDAPCP" farm-scoped feature):
 
+> **Important:** Always start a new PowerShell console to ensure it uses up to date persisted objects and avoid concurrency update errors.
+
 ```powershell
-# Run this on a new PowerShell console (it tends to avoid issues with local cache of persisted objects, that could cause errors on such operations)
 Add-SPSolution -LiteralPath "PATH TO WSP FILE"
 Install-SPSolution -Identity "LDAPCP.wsp" -GACDeployment
 ```
