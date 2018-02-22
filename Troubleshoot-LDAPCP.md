@@ -35,20 +35,20 @@ foreach ($objResult in $results)    {$objItem = $objResult.Properties; $objItem}
 
 ## Troubleshoot augmentation
 
-LDAPCP can be used to get group membership of federated users. This address 2 types of scenarios:
+If augmentation is enabled in LDAPCP configuration page, it will the get group membership of federated users. This addresses 2 types of scenarios:
 
-- Populate SharePoint SAML token with group membership: it is useful if the one supplied by the trusted STS does not include it.
-- Populate non-interactive token: it is useful for some features like email alerts, "check permissions" (in site settings), incoming email, etc...
+- Populate SharePoint SAML token of users with their group membership: it is useful if the trusted STS does not do it.
+- Populate non-interactive SharePoint token: it fixes invalid group permissions for some features like email alerts, "check permissions", incoming email, etc...
 
 If augmentation does not work as expected, here are some steps to troubleshoot it:
 
-### Confirm augmentation is enabled in LDAPCP configuration page.
+### Ensure augmentation is enabled in LDAPCP configuration page
 
 Go to central administration > Security > LDAPCP global configuration page and confirm that augmentation is enabled.
 
-### Trigger a refresh of the non-interactive token
+### Force a refresh of the non-interactive token
 
-Set the lifetime of the non-interactive token to 1 min (default value is 1 day):
+By default, non-interactive token has a lifetime of 1 day. To troubleshoot its refresh, we need to force it to expire by setting its lifetime to 1 min:
 
 ```powershell
 $cs = [Microsoft.SharePoint.Administration.SPWebService]::ContentService
@@ -56,12 +56,13 @@ $cs.TokenTimeout = New-TimeSpan -Minutes 1
 $cs.Update()
 ```
 
-Trigger a refresh of the non-interactive token for a specific user:
+Then, we can trigger a refresh of the non-interactive token for a specific user:
 
 ```powershell
 $web = Get-SPWeb "http://spsites/"
-$logon = "i:05.t|contoso|yvand@contoso.local";
-$web.DoesUserHavePermissions($logon, [Microsoft.SharePoint.SPBasePermissions]::EditListItems); 
+$logon = "i:05.t|contoso|yvand@contoso.local"
+# SPWeb.DoesUserHavePermissions() uses the non-interactive token, and will refresh it in PowerShell process if it is expired
+$web.DoesUserHavePermissions($logon, [Microsoft.SharePoint.SPBasePermissions]::EditListItems)
 ```
 
 ### Check SharePoint logs

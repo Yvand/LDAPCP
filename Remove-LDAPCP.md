@@ -18,7 +18,7 @@ Randomly, SharePoint doesn’t uninstall the solution correctly: it removes the 
 
 To uninstall safely, **deactivate the farm feature before retracting the solution**:
 
-> **Important:** Always start a new PowerShell console to ensure it uses up to date persisted objects and avoid concurrency update errors.
+> **Important:** Always start a new PowerShell console to ensure it uses up to date persisted objects, this avoids concurrency update errors.
 
 ```powershell
 Disable-SPFeature -identity "LDAPCP"
