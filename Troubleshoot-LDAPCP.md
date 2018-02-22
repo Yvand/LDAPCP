@@ -1,6 +1,6 @@
 # Troubleshoot LDAPCP
 
-If LDAPCP doesn't work as expected, here are some steps that can be used for troubleshooting.
+If LDAPCP doesn't work as expected, here are some troubleshooting tips.
 
 ## Check SharePoint logs
 
@@ -40,11 +40,11 @@ If augmentation is enabled in LDAPCP configuration page, it will the get group m
 - Populate SharePoint SAML token of users with their group membership: it is useful if the trusted STS does not do it.
 - Populate non-interactive SharePoint token: it fixes invalid group permissions for some features like email alerts, "check permissions", incoming email, etc...
 
-If augmentation does not work as expected, here are some steps to troubleshoot it:
+If augmentation does not work, here is how to troubleshoot it:
 
 ### Ensure augmentation is enabled in LDAPCP configuration page
 
-Go to central administration > Security > LDAPCP global configuration page and confirm that augmentation is enabled.
+Go to central administration > Security > LDAPCP global configuration page: validate that augmentation is enabled.
 
 ### Force a refresh of the non-interactive token
 
