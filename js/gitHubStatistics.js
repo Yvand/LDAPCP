@@ -4,9 +4,9 @@ var GitHubStatistics;
 (function (GitHubStatistics) {
     class LDAPCPStats {
         constructor() {
-            this.url = "http://ldapcp-functions.azurewebsites.net/api/GetRepoStats";
+            this.url = "http://ldapcp-functions.azurewebsites.net/api/GetLatestLDAPCPRepoStats";
             //url: string = "http://jsfiddle.net/echo/jsonp/";
-            this.authZKey = "Xs141m0QqIUrDBfecYvdhOf0cJJ8sA2LygLgkVcKmTdwIU5ELx1OCg==";
+            this.authZKey = "Qa9dKSDOyvgxsbsnJvw9pwTQ3PrGa6J/caQA8RF4tfiz9woaTmeaXQ==";
         }
         getLatestStat() {
             //console.log("Sending query to " + this.url);            
