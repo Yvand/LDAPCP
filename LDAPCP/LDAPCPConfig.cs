@@ -164,12 +164,12 @@ namespace ldapcp
             return false;
         }
 
-        public static LDAPCPConfig GetFromConfigDB()
+        public static LDAPCPConfig GetFromConfigDB(string persistedObjectName)
         {
             SPPersistedObject parent = SPFarm.Local;
             try
             {
-                LDAPCPConfig persistedObject = parent.GetChild<LDAPCPConfig>(Constants.LDAPCPCONFIG_NAME);
+                LDAPCPConfig persistedObject = parent.GetChild<LDAPCPConfig>(persistedObjectName);
                 if (persistedObject != null)
                 {
                     if (persistedObject.LDAPConnectionsProp == null)
@@ -188,14 +188,14 @@ namespace ldapcp
             }
             catch (Exception ex)
             {
-                LdapcpLogging.LogException(LDAPCP._ProviderInternalName, String.Format("Error while retrieving SPPersistedObject {0}", Constants.LDAPCPCONFIG_NAME), LdapcpLogging.Categories.Core, ex);
+                LdapcpLogging.LogException(LDAPCP._ProviderInternalName, String.Format("Error while retrieving SPPersistedObject {0}", persistedObjectName), LdapcpLogging.Categories.Core, ex);
             }
             return null;
         }
 
         public static void ResetClaimsList()
         {
-            LDAPCPConfig persistedObject = GetFromConfigDB();
+            LDAPCPConfig persistedObject = GetFromConfigDB(Constants.LDAPCPCONFIG_NAME);
             if (persistedObject != null)
             {
                 persistedObject.AttributesListProp.Clear();
@@ -214,10 +214,10 @@ namespace ldapcp
         /// It should be created only in central administration with application pool credentials
         /// because this is the only place where we are sure user has the permission to write in the config database
         /// </summary>
-        public static LDAPCPConfig CreatePersistedObject()
+        public static LDAPCPConfig CreatePersistedObject(string persistedObjectID)
         {
             LDAPCPConfig PersistedObject = GetDefaultConfiguration();
-            PersistedObject.Id = new Guid(Constants.LDAPCPCONFIG_ID);
+            PersistedObject.Id = new Guid(persistedObjectID);
             try
             {
                 PersistedObject.Update();
@@ -250,9 +250,9 @@ namespace ldapcp
             return PersistedObject;
         }
 
-        public static void DeleteLDAPCPConfig()
+        public static void DeleteLDAPCPConfig(string persistedObjectName)
         {
-            LDAPCPConfig LdapcpConfig = LDAPCPConfig.GetFromConfigDB();
+            LDAPCPConfig LdapcpConfig = LDAPCPConfig.GetFromConfigDB(persistedObjectName);
             if (LdapcpConfig != null) LdapcpConfig.Delete();
         }
 

@@ -49,7 +49,7 @@ namespace ldapcp
 
         private void RemovePersistedObject()
         {
-            var PersistedObject = LDAPCPConfig.GetFromConfigDB();
+            var PersistedObject = LDAPCPConfig.GetFromConfigDB(Constants.LDAPCPCONFIG_NAME);
             if (PersistedObject != null)
                 PersistedObject.Delete();
         }

@@ -12,6 +12,11 @@ namespace ldapcp.ControlTemplates
 {
     public partial class GlobalSettings : LdapcpUserControl
     {
+        public String EXTRAPROP2
+        {
+            get { return ""; }
+            set { }
+        }
         public bool ShowValidateSection
         {
             get { return ValidateSection.Visible; }
@@ -47,7 +52,6 @@ namespace ldapcp.ControlTemplates
         {
             ViewState["IsDefaultADConnectionCreated"] = false;
             ViewState["ForceCheckCustomLdapConnection"] = false;
-
             if (ValidatePrerequisite() != ConfigStatus.AllGood)
             {
                 this.LabelErrorMessage.Text = base.MostImportantError;
@@ -233,7 +237,7 @@ namespace ldapcp.ControlTemplates
 
         protected virtual void ResetConfiguration()
         {
-            LDAPCPConfig.DeleteLDAPCPConfig();
+            LDAPCPConfig.DeleteLDAPCPConfig(PersistedObjectName);
             Response.Redirect(Request.RawUrl, false);
         }
 
@@ -298,7 +302,7 @@ namespace ldapcp.ControlTemplates
             // Update object in database
             CommitChanges();
             LdapcpLogging.Log(
-                   String.Format("Added a new LDAP connection in PersistedObject {0}", Constants.LDAPCPCONFIG_NAME),
+                   $"[{ClaimsProviderName}] Added a new LDAP connection in PersistedObject {PersistedObjectName}",
                    TraceSeverity.Medium,
                    EventSeverity.Information,
                    LdapcpLogging.Categories.Configuration);
@@ -332,7 +336,7 @@ namespace ldapcp.ControlTemplates
             }
             catch (Exception ex)
             {
-                LdapcpLogging.LogException(LDAPCP._ProviderInternalName, "while testing LDAP connection", LdapcpLogging.Categories.Configuration, ex);
+                LdapcpLogging.LogException(ClaimsProviderName, "while testing LDAP connection", LdapcpLogging.Categories.Configuration, ex);
                 this.LabelErrorTestLdapConnection.Text = String.Format(TextErrorTestLdapConnection, ex.Message);
             }
             finally
@@ -357,7 +361,7 @@ namespace ldapcp.ControlTemplates
             // Update object in database
             CommitChanges();
             LdapcpLogging.Log(
-                    String.Format("Removed a LDAP connection in PersistedObject {0}", Constants.LDAPCPCONFIG_NAME),
+                    $"[{ClaimsProviderName}] Removed a LDAP connection in PersistedObject {PersistedObjectName}",
                     TraceSeverity.Medium,
                     EventSeverity.Information,
                     LdapcpLogging.Categories.Configuration);

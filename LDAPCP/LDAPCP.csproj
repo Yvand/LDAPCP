@@ -128,7 +128,10 @@
       <DependentUpon>LDAPCP.feature</DependentUpon>
     </Content>
     <Content Include="Layouts\ldapcp\jquery-1.9.1.min.js" />
-    <Content Include="LDAPCP.AdminLinks\Elements.xml" />
+    <Content Include="Layouts\ldapcp\ldapcp_logo_50x27.png" />
+    <Content Include="LDAPCP.AdminLinks\Elements.xml">
+      <SubType>Designer</SubType>
+    </Content>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>

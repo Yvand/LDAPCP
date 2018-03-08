@@ -43,7 +43,7 @@ namespace ldapcp
             Augmentation,
             [CategoryName("Debug"),
 #if DEBUG
-             DefaultTraceSeverity(TraceSeverity.High),
+             DefaultTraceSeverity(TraceSeverity.Verbose),
 #else
              DefaultTraceSeverity(TraceSeverity.VerboseEx),
 #endif
@@ -103,10 +103,8 @@ namespace ldapcp
         {
             try
             {
-                TraceSeverity severity;
 #if DEBUG
-                severity = TraceSeverity.VerboseEx;
-                WriteTrace(LdapcpLogging.Categories.Debug, severity, message);
+                WriteTrace(LdapcpLogging.Categories.Debug, TraceSeverity.VerboseEx, message);
                 Debug.WriteLine(message);
 #else
                 // Do nothing
