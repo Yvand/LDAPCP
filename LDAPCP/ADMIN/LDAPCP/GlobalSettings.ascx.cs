@@ -12,30 +12,25 @@ namespace ldapcp.ControlTemplates
 {
     public partial class GlobalSettings : LdapcpUserControl
     {
-        public String EXTRAPROP2
-        {
-            get { return ""; }
-            set { }
-        }
-        public bool ShowValidateSection
+        protected bool ShowValidateSection
         {
             get { return ValidateSection.Visible; }
             set { ValidateSection.Visible = ValidateTopSection.Visible = value; }
         }
 
-        public bool ShowCurrentLdapConnectionSection
+        protected bool ShowCurrentLdapConnectionSection
         {
             get { return CurrentLdapConnectionSection.Visible; }
             set { CurrentLdapConnectionSection.Visible = value; }
         }
 
-        public bool ShowNewLdapConnectionSection
+        protected bool ShowNewLdapConnectionSection
         {
             get { return NewLdapConnectionSection.Visible; }
             set { NewLdapConnectionSection.Visible = value; }
         }
 
-        public bool ShowAugmentationSection
+        protected bool ShowAugmentationSection
         {
             get { return AugmentationSection.Visible; }
             set { AugmentationSection.Visible = value; }
@@ -72,7 +67,7 @@ namespace ldapcp.ControlTemplates
             }
         }
 
-        public void Initialize()
+        protected void Initialize()
         {
             PopulateLdapConnectionGrid();
             PopulateCblAuthenticationTypes();
@@ -166,7 +161,7 @@ namespace ldapcp.ControlTemplates
             //this.TxtPickerEntityGroupName.Text = PersistedObject.PickerEntityGroupNameProp;
         }
 
-        public override bool UpdatePersistedObjectProperties(bool commitChanges)
+        protected override bool UpdatePersistedObjectProperties(bool commitChanges)
         {
             if (ValidatePrerequisite() != ConfigStatus.AllGood) return false;
             UpdateLdapSettings();
@@ -370,7 +365,7 @@ namespace ldapcp.ControlTemplates
             PopulateLdapConnectionGrid();
         }
 
-        public static Dictionary<int, string> EnumToList(Type t)
+        protected static Dictionary<int, string> EnumToList(Type t)
         {
             Dictionary<int, string> list = new Dictionary<int, string>();
             foreach (var v in Enum.GetValues(t))

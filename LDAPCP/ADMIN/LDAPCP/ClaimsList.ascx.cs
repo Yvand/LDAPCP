@@ -13,10 +13,10 @@ namespace ldapcp.ControlTemplates
 {
     public partial class ClaimsList : LdapcpUserControl
     {
-        public string CurrentTrustedLoginProviderName = String.Empty;
+        protected string CurrentTrustedLoginProviderName = String.Empty;
         List<KeyValuePair<int, AttributeHelper>> ClaimsMapping;
-        public bool ShowNewItemForm = false;
-        public bool HideAllContent = false;
+        protected bool ShowNewItemForm = false;
+        protected bool HideAllContent = false;
 
         string TextErrorFieldsMissing = "Some mandatory fields are missing.";
         string TextErrorDuplicateClaimType = "This claim type already exists in the list, you cannot create duplicates.";
@@ -268,7 +268,7 @@ namespace ldapcp.ControlTemplates
             return tc;
         }
 
-        public override bool UpdatePersistedObjectProperties(bool commitChanges)
+        protected override bool UpdatePersistedObjectProperties(bool commitChanges)
         {
             throw new NotImplementedException();
         }

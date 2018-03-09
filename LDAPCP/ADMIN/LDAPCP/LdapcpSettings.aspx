@@ -1,9 +1,9 @@
 ﻿<%@ Assembly Name="$SharePoint.Project.AssemblyFullName$" %>
 <%@ Page Language="C#" AutoEventWireup="true" Inherits="Microsoft.SharePoint.WebControls.LayoutsPageBase" MasterPageFile="~/_admin/admin.master" %>
+<%@ Register Assembly="$SharePoint.Project.AssemblyFullName$" Namespace="ldapcp.ControlTemplates" TagPrefix="Ldapcp" %>
 <%@ Import Namespace="ldapcp" %>
 <%@ Import Namespace="System.Diagnostics" %>
 <%@ Import Namespace="System.Reflection" %>
-<%@ Register Src="GlobalSettings.ascx" TagName="GlobalSettings" TagPrefix="Ldapcp"%>
 
 <asp:Content ID="PageHead" ContentPlaceHolderID="PlaceHolderAdditionalPageHead" runat="server" />
 <asp:Content ID="PageTitle" ContentPlaceHolderID="PlaceHolderPageTitle" runat="server">LDAPCP Configuration</asp:Content>

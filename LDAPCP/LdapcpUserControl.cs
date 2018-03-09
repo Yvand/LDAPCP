@@ -36,7 +36,7 @@ namespace ldapcp.ControlTemplates
         }
 
         private ILDAPCPConfiguration _PersistedObject;
-        public virtual LDAPCPConfig PersistedObject
+        protected LDAPCPConfig PersistedObject
         {
             get
             {
@@ -57,10 +57,9 @@ namespace ldapcp.ControlTemplates
 
         protected SPTrustedLoginProvider CurrentTrustedLoginProvider;
         protected AttributeHelper IdentityClaim;
-        public ConfigStatus Status;
+        protected ConfigStatus Status;
 
-
-        public long PersistedObjectVersion
+        protected long PersistedObjectVersion
         {
             get
             {
@@ -71,7 +70,7 @@ namespace ldapcp.ControlTemplates
             set { ViewState[ViewStatePersistedObjectVersionKey] = value; }
         }
 
-        public string MostImportantError
+        protected string MostImportantError
         {
             get
             {
@@ -102,16 +101,16 @@ namespace ldapcp.ControlTemplates
             }
         }
 
-        public static string ViewStatePersistedObjectVersionKey = "PersistedObjectVersion";
-        public static string TextErrorPersistedObjectNotFound = "PersistedObject cannot be found.";
-        public static string TextErrorPersistedObjectStale = "Modification is cancelled because persisted object was modified since last load of the page. Please refresh the page and try again.";
-        public static string TextErrorNoSPTrustAssociation = "LDAPCP is currently not associated with any TrustedLoginProvider. It is mandatory because it cannot create permission for a trust if it is not associated to it.<br/>Visit <a href=\"http://ldapcp.codeplex.com/\" target=\"_blank\">http://ldapcp.codeplex.com/</a> to see how to associate it.<br/>Settings on this page will not be available as long as LDAPCP will not associated to a trut.";
-        public static string TextErrorNoIdentityClaimType = "The TrustedLoginProvider {0} is set with identity claim type \"{1}\" but it is not in the claims list of LDAPCP.<br/>Please visit LDAPCP page \"claims mapping\" in Security tab to set it and return to this page afterwards.";
-        public static string TextErrorClaimsProviderNameNotSet = "The attribute 'ClaimsProviderName' is required but is not set on the user control.";
-        public static string TextErrorPersistedObjectNameNotSet = "The attribute 'PersistedObjectName' is required but is not set on the user control.";
-        public static string TextErrorPersistedObjectIDNotSet = "The attribute 'PersistedObjectID' is required but is not set on the user control.";
+        protected static string ViewStatePersistedObjectVersionKey = "PersistedObjectVersion";
+        protected static string TextErrorPersistedObjectNotFound = "PersistedObject cannot be found.";
+        protected static string TextErrorPersistedObjectStale = "Modification is cancelled because persisted object was modified since last load of the page. Please refresh the page and try again.";
+        protected static string TextErrorNoSPTrustAssociation = "LDAPCP is currently not associated with any TrustedLoginProvider. It is mandatory because it cannot create permission for a trust if it is not associated to it.<br/>Visit <a href=\"http://ldapcp.codeplex.com/\" target=\"_blank\">http://ldapcp.codeplex.com/</a> to see how to associate it.<br/>Settings on this page will not be available as long as LDAPCP will not associated to a trut.";
+        protected static string TextErrorNoIdentityClaimType = "The TrustedLoginProvider {0} is set with identity claim type \"{1}\" but it is not in the claims list of LDAPCP.<br/>Please visit LDAPCP page \"claims mapping\" in Security tab to set it and return to this page afterwards.";
+        protected static string TextErrorClaimsProviderNameNotSet = "The attribute 'ClaimsProviderName' is required but is not set on the user control.";
+        protected static string TextErrorPersistedObjectNameNotSet = "The attribute 'PersistedObjectName' is required but is not set on the user control.";
+        protected static string TextErrorPersistedObjectIDNotSet = "The attribute 'PersistedObjectID' is required but is not set on the user control.";
 
-        abstract public bool UpdatePersistedObjectProperties(bool commitChanges);
+        abstract protected bool UpdatePersistedObjectProperties(bool commitChanges);
 
         /// <summary>
         /// Ensures configuration is valid to proceed
