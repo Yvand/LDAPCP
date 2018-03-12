@@ -3,7 +3,13 @@
 Sometimes, install, uninstall or update of LDAPCP solution fails. It has nothing to do with LDAPCP solution itself, but it is caused by various reasons in SharePoint.
 
 When this happens, most of the time LDAPCP features are in a half installed state which must be fixed.
-Perform all the step below on the server **running central administration**:
+To fix it, open a new **PowerShell console** and perform all the step below on the server **running central administration**, in this order:
+
+## Remove LDAPCP claims provider
+
+```powershell
+Get-SPClaimProvider| ?{$_.DisplayName -like "LDAPCP"}| Remove-SPClaimProvider
+```
 
 ## Identify LDAPCP features installed
 
@@ -38,6 +44,14 @@ If it does not exist:
 Get-SPFeature| ?{$_.DisplayName -like 'LDAPCP*'}| Disable-SPFeature -Confirm:$false
 # Uninstall LDAPCP features
 Get-SPFeature| ?{$_.DisplayName -like 'LDAPCP*'}| Uninstall-SPFeature -Confirm:$false
+```
+
+## Delete the LDAPCP persisted object
+
+LDAPCP stores its configuration is its own persisted object, and sometimes this object may not be deleted. In such scenario, this stsadm command can delete it:
+
+```
+stsadm -o deleteconfigurationobject -id 5D306A02-A262-48AC-8C44-BDB927620227
 ```
 
 ## If desired, LDAPCP solution can now be safely removed

@@ -1,29 +1,30 @@
 {
     "version": "0.2.0",
     "configurations": [
-    {
-        "type": "PowerShell",
-        "request": "launch",
-        "name": "PowerShell Launch Current File",
-        "script": "${file}",
-        "args": [],
-        "cwd": "${file}"
-    },
-    {
-        "type": "PowerShell",
-        "request": "launch",
-        "name": "Start Jekyll site",
-        "script": "${workspaceRoot}/Start-Site.ps1",
-        "args": [],
-        "cwd": "${workspaceRoot}",
-        "internalConsoleOptions": "openOnSessionStart"
-    },
-    {
-        "type": "node",
-        "request": "launch",
-        "name": "JS debug",
-        "program": "${workspaceRoot}/js/gitHubStatistics.js",
-        "cwd": "${workspaceRoot}",
-        "preLaunchTask": "tsc"
-    }]
+        {
+            "type": "PowerShell",
+            "request": "launch",
+            "name": "PowerShell Launch Current File",
+            "script": "${file}",
+            "args": [],
+            "cwd": "${file}"
+        },
+        {
+            "type": "PowerShell",
+            "request": "launch",
+            "name": "Start Jekyll site",
+            "script": "${workspaceRoot}/Start-Site.ps1",
+            "args": [],
+            "cwd": "${workspaceRoot}",
+            "internalConsoleOptions": "openOnSessionStart"
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "JS debug",
+            "program": "${workspaceRoot}/js/gitHubStatistics.js",
+            "cwd": "${workspaceRoot}",
+            "preLaunchTask": "tsc"
+        }
+    ]
 }
