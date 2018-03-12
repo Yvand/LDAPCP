@@ -1,6 +1,6 @@
 ﻿<%@ Page Language="C#" AutoEventWireup="true" Inherits="Microsoft.SharePoint.WebControls.LayoutsPageBase" MasterPageFile="~/_admin/admin.master" %>
 <%@ Register TagPrefix="asp" Namespace="System.Web.UI" Assembly="System.Web.Extensions, Version=4.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35" %>
-<%@ Register Assembly="$SharePoint.Project.AssemblyFullName$" Namespace="ldapcp.ControlTemplates" TagPrefix="Ldapcp" %>
+<%@ Register TagPrefix="Ldapcp" TagName="ClaimsList" src="ClaimsList.ascx" %>
 <%@ Import Namespace="ldapcp" %>
 <%@ Import Namespace="System.Diagnostics" %>
 <%@ Import Namespace="System.Reflection" %>
@@ -11,7 +11,7 @@
     Claims list
 </asp:Content>
 <asp:Content ID="PageTitleInTitleArea" ContentPlaceHolderID="PlaceHolderPageTitleInTitleArea" runat="server">
-<%= String.Format("LDAPCP v{0} - <a href=\"http://www.LDAPCP.com\" target=\"_blank\">LDAPCP.com</a>", FileVersionInfo.GetVersionInfo(Assembly.GetAssembly(typeof(LDAPCP)).Location).FileVersion) %>
+    <asp:Literal runat="server" ID="TitleInTitleText" />
 </asp:Content>
 <asp:Content ID="Main" ContentPlaceHolderID="PlaceHolderMain" runat="server">
     <table border="0" cellspacing="0" cellpadding="0" width="100%">

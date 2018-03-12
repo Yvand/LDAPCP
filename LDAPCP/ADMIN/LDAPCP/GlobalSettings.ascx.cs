@@ -77,7 +77,7 @@ namespace ldapcp.ControlTemplates
 
         private void InitializeAugmentation()
         {
-            IEnumerable<AttributeHelper> potentialGroupClaimTypes = PersistedObject.AttributesListProp.Where(x => x.ClaimEntityType == SPClaimEntityTypes.FormsRole || x.ClaimEntityType == SPClaimEntityTypes.SecurityGroup);
+            IEnumerable<AttributeHelper> potentialGroupClaimTypes = PersistedObject.ClaimTypesConfigList.Where(x => x.ClaimEntityType == SPClaimEntityTypes.FormsRole || x.ClaimEntityType == SPClaimEntityTypes.SecurityGroup);
             if (potentialGroupClaimTypes == null || potentialGroupClaimTypes.Count() == 0)
             {
                 LabelErrorMessage.Text = TextErrorNoGroupClaimType;
@@ -244,7 +244,7 @@ namespace ldapcp.ControlTemplates
         void UpdateAdditionalUserLdapFilter()
         {
             if (PersistedObject == null) return;
-            foreach (var userAttr in this.PersistedObject.AttributesListProp.FindAll(x => x.ClaimEntityType == SPClaimEntityTypes.User || x.CreateAsIdentityClaim))
+            foreach (var userAttr in this.PersistedObject.ClaimTypesConfigList.FindAll(x => x.ClaimEntityType == SPClaimEntityTypes.User || x.CreateAsIdentityClaim))
             {
                 userAttr.AdditionalLDAPFilterProp = this.TxtAdditionalUserLdapFilter.Text;
             }

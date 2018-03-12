@@ -46,7 +46,7 @@ namespace ldapcp.ControlTemplates
                     if (_PersistedObject == null)
                     {
                         SPContext.Current.Web.AllowUnsafeUpdates = true;
-                        _PersistedObject = LDAPCPConfig.CreatePersistedObject(this.PersistedObjectID);
+                        _PersistedObject = LDAPCPConfig.CreatePersistedObject(this.PersistedObjectID, this.PersistedObjectName);
                         SPContext.Current.Web.AllowUnsafeUpdates = false;
                     }
                 });
@@ -142,7 +142,7 @@ namespace ldapcp.ControlTemplates
             }
             if (IdentityClaim == null && Status == ConfigStatus.AllGood)
             {
-                IdentityClaim = this.IdentityClaim = PersistedObject.AttributesListProp.Find(x => String.Equals(CurrentTrustedLoginProvider.IdentityClaimTypeInformation.MappedClaimType, x.ClaimType, StringComparison.InvariantCultureIgnoreCase) && !x.CreateAsIdentityClaim);
+                IdentityClaim = this.IdentityClaim = PersistedObject.ClaimTypesConfigList.Find(x => String.Equals(CurrentTrustedLoginProvider.IdentityClaimTypeInformation.MappedClaimType, x.ClaimType, StringComparison.InvariantCultureIgnoreCase) && !x.CreateAsIdentityClaim);
                 if (IdentityClaim == null) Status |= ConfigStatus.NoIdentityClaimType;
             }
             if (PersistedObjectVersion != PersistedObject.Version)

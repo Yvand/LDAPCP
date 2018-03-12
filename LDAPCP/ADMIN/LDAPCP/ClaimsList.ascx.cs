@@ -3,6 +3,7 @@ using Microsoft.SharePoint.WebControls;
 using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
@@ -41,7 +42,6 @@ namespace ldapcp.ControlTemplates
         //string HtmlEditLink = "<a name=\"editLink_{0}\" id=\"editLink_{0}\" href=\"javascript:Ldapcp.ClaimsTablePage.EditItem('{0}')\"><div class='s4-clust ms-promotedActionButton-icon' style='width: 16px; height: 16px; overflow: hidden; display: inline-block; position: relative;'><img style='left: -236px; top: -84px; position: absolute;' alt='Edit' src='/_layouts/15/images/spcommon.png?rev=23'/></div></a>";
         string HtmlCancelEditLink = "<a name=\"cancelLink_{0}\" id=\"cancelLink_{0}\" href=\"javascript:Ldapcp.ClaimsTablePage.CancelEditItem('{0}')\" style=\"display:none;\">Cancel</a>";
 
-
         protected void Page_Load(object sender, EventArgs e)
         {
             if (ValidatePrerequisite() != ConfigStatus.AllGood && Status != ConfigStatus.NoIdentityClaimType)
@@ -79,7 +79,7 @@ namespace ldapcp.ControlTemplates
             // Copy claims list in a key value pair so that each item has a unique ID that can be used later for update/delete operations
             ClaimsMapping = new List<KeyValuePair<int, AttributeHelper>>();
             int i = 0;
-            foreach (AttributeHelper attr in this.PersistedObject.AttributesListProp)
+            foreach (AttributeHelper attr in this.PersistedObject.ClaimTypesConfigList)
             {
                 ClaimsMapping.Add(new KeyValuePair<int, AttributeHelper>(i++, attr));
             }
@@ -279,7 +279,7 @@ namespace ldapcp.ControlTemplates
 
             string itemId = e.CommandArgument.ToString();
             AttributeHelper attr = ClaimsMapping.Find(x => x.Key == Convert.ToInt32(itemId)).Value;
-            PersistedObject.AttributesListProp.Remove(attr);
+            PersistedObject.ClaimTypesConfigList.Remove(attr);
             CommitChanges();
             this.BuildAttributesListTable(false);
         }
@@ -384,7 +384,7 @@ namespace ldapcp.ControlTemplates
 
         protected void BtnReset_Click(object sender, EventArgs e)
         {
-            LDAPCPConfig.ResetClaimsList();
+            LDAPCPConfig.ResetClaimsList(PersistedObjectName);
             Response.Redirect(Request.Url.ToString());
         }
 
@@ -414,7 +414,7 @@ namespace ldapcp.ControlTemplates
                     return;
                 }
 
-                if (PersistedObject.AttributesListProp.Find(x => String.Equals(newClaimType, x.ClaimType, StringComparison.InvariantCultureIgnoreCase)) != null)
+                if (PersistedObject.ClaimTypesConfigList.Find(x => String.Equals(newClaimType, x.ClaimType, StringComparison.InvariantCultureIgnoreCase)) != null)
                 {
                     this.LabelErrorMessage.Text = TextErrorDuplicateClaimType;
                     ShowNewItemForm = true;
@@ -466,7 +466,7 @@ namespace ldapcp.ControlTemplates
             }
 
             // Check if same LDAP attribute/class is not already used
-            if (PersistedObject.AttributesListProp.Find(x =>
+            if (PersistedObject.ClaimTypesConfigList.Find(x =>
                 String.Equals(newLdapAttribute, x.LDAPAttribute, StringComparison.InvariantCultureIgnoreCase) &&
                 String.Equals(newLdapClass, x.LDAPObjectClassProp, StringComparison.InvariantCultureIgnoreCase)) != null)
             {
@@ -484,7 +484,7 @@ namespace ldapcp.ControlTemplates
             attr.ClaimEntityType = newClaimEntityType;
             attr.EntityDataKey = newPermissionMetadata;
 
-            PersistedObject.AttributesListProp.Add(attr);
+            PersistedObject.ClaimTypesConfigList.Add(attr);
             CommitChanges();
             BuildAttributesListTable(false);
         }

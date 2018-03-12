@@ -1,6 +1,6 @@
 ﻿<%@ Assembly Name="$SharePoint.Project.AssemblyFullName$" %>
 <%@ Page Language="C#" AutoEventWireup="true" Inherits="Microsoft.SharePoint.WebControls.LayoutsPageBase" MasterPageFile="~/_admin/admin.master" %>
-<%@ Register Assembly="$SharePoint.Project.AssemblyFullName$" Namespace="ldapcp.ControlTemplates" TagPrefix="Ldapcp" %>
+<%@ Register TagPrefix="Ldapcp" TagName="GlobalSettings" src="GlobalSettings.ascx" %>
 <%@ Import Namespace="ldapcp" %>
 <%@ Import Namespace="System.Diagnostics" %>
 <%@ Import Namespace="System.Reflection" %>
