@@ -32,9 +32,9 @@ namespace ldapcp
     public class LDAPCP : SPClaimProvider
     {
         public const string _ProviderInternalName = "LDAPCP";
-        public virtual string ProviderInternalName { get { return "LDAPCP"; } }
+        public virtual string ProviderInternalName => "LDAPCP";
 
-        public virtual string PersistedObjectName { get { return Constants.LDAPCPCONFIG_NAME; } }
+        public virtual string PersistedObjectName => Constants.LDAPCPCONFIG_NAME;
 
         /// <summary>
         /// Contains configuration currently in use by claims provider
@@ -109,7 +109,7 @@ namespace ldapcp
                     globalConfiguration = GetConfiguration(context, entityTypes, PersistedObjectName);
                     if (globalConfiguration == null)
                     {
-                        LdapcpLogging.Log(String.Format("[{0}] LdapcpConfig PersistedObject not found. Visit LDAPCP admin pages in central administration to create it.", ProviderInternalName),
+                        LdapcpLogging.Log($"[{ProviderInternalName}] PersistedObject '{PersistedObjectName}' was not found. Visit LDAPCP admin pages in central administration to create it.",
                             TraceSeverity.Verbose, EventSeverity.Information, LdapcpLogging.Categories.Core);
                         // Create a fake persisted object just to get the default settings, it will not be saved in config database
                         globalConfiguration = LDAPCPConfig.GetDefaultConfiguration(PersistedObjectName);
@@ -117,14 +117,14 @@ namespace ldapcp
                     }
                     else if (globalConfiguration.ClaimTypesConfigList == null || globalConfiguration.ClaimTypesConfigList.Count == 0)
                     {
-                        LdapcpLogging.Log(String.Format("[{0}] LdapcpConfig PersistedObject was found but there are no Attribute set. Visit AzureCP admin pages in central administration to create it.", ProviderInternalName),
+                        LdapcpLogging.Log($"[{ProviderInternalName}] PersistedObject '{PersistedObjectName}' was found but there are no Attribute set. Visit AzureCP admin pages in central administration to create it.",
                             TraceSeverity.Unexpected, EventSeverity.Error, LdapcpLogging.Categories.Core);
                         // Cannot continue 
                         success = false;
                     }
                     else if (globalConfiguration.LDAPConnectionsProp == null || globalConfiguration.LDAPConnectionsProp.Count == 0)
                     {
-                        LdapcpLogging.Log(String.Format("[{0}] LdapcpConfig PersistedObject was found but there are no LDAP connection set. Visit AzureCP admin pages in central administration to create it.", ProviderInternalName),
+                        LdapcpLogging.Log($"[{ProviderInternalName}] PersistedObject '{PersistedObjectName}' was found but there are no LDAP connection set. Visit AzureCP admin pages in central administration to create it.",
                             TraceSeverity.Unexpected, EventSeverity.Error, LdapcpLogging.Categories.Core);
                         // Cannot continue 
                         success = false;
@@ -132,12 +132,12 @@ namespace ldapcp
                     else
                     {
                         // Persisted object is found and seems valid
-                        LdapcpLogging.LogDebug(String.Format("[{0}] LdapcpConfig PersistedObject found, version: {1}, previous version: {2}", ProviderInternalName, ((SPPersistedObject)globalConfiguration).Version.ToString(), this.LdapcpConfigVersion.ToString()));
+                        LdapcpLogging.LogDebug($"[{ProviderInternalName}] PersistedObject '{PersistedObjectName}' was found, version: {((SPPersistedObject)globalConfiguration).Version.ToString()}, previous version: {this.LdapcpConfigVersion.ToString()}");
                         if (this.LdapcpConfigVersion != ((SPPersistedObject)globalConfiguration).Version)
                         {
                             refreshConfig = true;
                             this.LdapcpConfigVersion = ((SPPersistedObject)globalConfiguration).Version;
-                            LdapcpLogging.Log(String.Format("[{0}] LdapcpConfig PersistedObject changed, refreshing configuration", ProviderInternalName),
+                            LdapcpLogging.Log($"[{ProviderInternalName}] PersistedObject '{PersistedObjectName}' was changed, refreshing configuration",
                                 TraceSeverity.Medium, EventSeverity.Information, LdapcpLogging.Categories.Core);
                         }
                     }
@@ -168,11 +168,11 @@ namespace ldapcp
                 Lock_Config.EnterWriteLock();
                 try
                 {
-                    LdapcpLogging.Log(String.Format("[{0}] Refreshing configuration", ProviderInternalName),
+                    LdapcpLogging.Log($"[{ProviderInternalName}] Refreshing configuration from PersistedObject '{PersistedObjectName}'...",
                         TraceSeverity.Verbose, EventSeverity.Information, LdapcpLogging.Categories.Core);
 
-                    // Create local persisted object that will never be saved in config DB
-                    // This copy is unique to current instance to avoid thread safety issues
+                    // Create local version of the persisted object, that will never be saved in config DB
+                    // This copy is unique to current object instance to avoid thread safety issues
                     this.CurrentConfiguration = new LDAPCPConfig();
                     this.CurrentConfiguration.AlwaysResolveUserInputProp = globalConfiguration.AlwaysResolveUserInputProp;
                     this.CurrentConfiguration.AddWildcardInFrontOfQueryProp = globalConfiguration.AddWildcardInFrontOfQueryProp;
@@ -479,8 +479,7 @@ namespace ldapcp
                 this.Lock_Config.EnterReadLock();
                 try
                 {
-                    RequestType reqType = this.CurrentConfiguration.FilterExactMatchOnlyProp ? RequestType.Validation : RequestType.Search;
-                    RequestInformation settings = new RequestInformation(CurrentConfiguration, reqType, ProcessedClaimTypesConfig, resolveInput, null, context, entityTypes, null, Int32.MaxValue);
+                    RequestInformation settings = new RequestInformation(CurrentConfiguration, RequestType.Search, ProcessedClaimTypesConfig, resolveInput, null, context, entityTypes, null, Int32.MaxValue);
                     List<PickerEntity> permissions = SearchOrValidate(settings);
                     FillPermissions(context, entityTypes, resolveInput, ref permissions);
                     foreach (PickerEntity permission in permissions)
@@ -513,8 +512,7 @@ namespace ldapcp
                 this.Lock_Config.EnterReadLock();
                 try
                 {
-                    RequestType reqType = this.CurrentConfiguration.FilterExactMatchOnlyProp ? RequestType.Validation : RequestType.Search;
-                    RequestInformation settings = new RequestInformation(CurrentConfiguration, reqType, ProcessedClaimTypesConfig, searchPattern, null, context, entityTypes, hierarchyNodeID, maxCount);
+                    RequestInformation settings = new RequestInformation(CurrentConfiguration, RequestType.Search, ProcessedClaimTypesConfig, searchPattern, null, context, entityTypes, hierarchyNodeID, maxCount);
                     List<PickerEntity> permissions = SearchOrValidate(settings);
                     FillPermissions(context, entityTypes, searchPattern, ref permissions);
                     SPProviderHierarchyNode matchNode = null;
@@ -734,7 +732,7 @@ namespace ldapcp
             ResultPropertyCollection resultPropertyCollection;
             List<AttributeHelper> attributes;
             // If exactSearch is true, we don't care about attributes with CreateAsIdentityClaim = true
-            if (requestInfo.RequestType == RequestType.Validation) attributes = requestInfo.ClaimTypesConfigList.FindAll(x => !x.CreateAsIdentityClaim);
+            if (requestInfo.ExactSearch) attributes = requestInfo.ClaimTypesConfigList.FindAll(x => !x.CreateAsIdentityClaim);
             else attributes = requestInfo.ClaimTypesConfigList;
 
             foreach (LDAPSearchResultWrapper LDAPresult in LDAPSearchResultWrappers)
@@ -782,7 +780,7 @@ namespace ldapcp
                     // TODO: investigate http://ldapcp.codeplex.com/discussions/648655
                     string value = resultPropertyCollection[resultPropertyCollectionPropertyNames.Where(x => x.ToLowerInvariant() == attr.LDAPAttribute.ToLowerInvariant()).First()][0].ToString();
                     // Check if current attribute matches the input
-                    if (requestInfo.RequestType == RequestType.Validation)
+                    if (requestInfo.ExactSearch)
                     {
                         if (!String.Equals(value, requestInfo.Input, StringComparison.InvariantCultureIgnoreCase)) continue;
                     }
@@ -869,7 +867,7 @@ namespace ldapcp
 
             string searchPattern;
             string input = requestInfo.Input;
-            if (requestInfo.RequestType == RequestType.Validation) searchPattern = input;
+            if (requestInfo.ExactSearch) searchPattern = input;
             else searchPattern = this.CurrentConfiguration.AddWildcardInFrontOfQueryProp ? "*" + input + "*" : input + "*";
 
             foreach (var attribute in requestInfo.ClaimTypesConfigList)

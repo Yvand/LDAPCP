@@ -601,7 +601,7 @@ namespace ldapcp
         /// <summary>
         /// Current LDAPCP configuration
         /// </summary>
-        public ILDAPCPConfiguration CurrentConfiguration;
+        //public ILDAPCPConfiguration CurrentConfiguration;
 
         /// <summary>
         /// Indicates what kind of operation SharePoint is sending to LDAPCP
@@ -626,13 +626,13 @@ namespace ldapcp
 
         public string Input;
         public bool InputHasKeyword;
-        //public bool ExactSearch;
+        public bool ExactSearch;
         public AttributeHelper IdentityClaimTypeConfig;
         public List<AttributeHelper> ClaimTypesConfigList;
 
         public RequestInformation(ILDAPCPConfiguration currentConfiguration, RequestType currentRequestType, List<AttributeHelper> processedClaimTypeConfigList, string input, SPClaim incomingEntity, Uri context, string[] entityTypes, string hierarchyNodeID, int maxCount)
         {
-            this.CurrentConfiguration = currentConfiguration;
+            //this.CurrentConfiguration = currentConfiguration;
             this.RequestType = currentRequestType;
             this.OriginalInput = input;
             this.IncomingEntity = incomingEntity;
@@ -655,7 +655,7 @@ namespace ldapcp
             }
             else if (currentRequestType == RequestType.Search)
             {
-                this.InitializeSearch(processedClaimTypeConfigList);
+                this.InitializeSearch(processedClaimTypeConfigList, currentConfiguration.FilterExactMatchOnlyProp);
             }
             else if (currentRequestType == RequestType.Augmentation)
             {
@@ -664,7 +664,7 @@ namespace ldapcp
         }
 
         /// <summary>
-        /// Validation is when SharePoint asks LDAPCP to return 1 PickerEntity from a given SPClaim
+        /// Validation is when SharePoint expects LDAPCP to return 1 PickerEntity from a given SPClaim
         /// </summary>
         /// <param name="processedClaimTypeConfigList"></param>
         protected void InitializeValidation(List<AttributeHelper> processedClaimTypeConfigList)
@@ -673,7 +673,7 @@ namespace ldapcp
             this.IdentityClaimTypeConfig = FindClaimTypeConfig(processedClaimTypeConfigList, this.IncomingEntity.ClaimType);
             if (this.IdentityClaimTypeConfig == null) return;
             this.ClaimTypesConfigList = new List<AttributeHelper>() { this.IdentityClaimTypeConfig };
-            //this.ExactSearch = true;
+            this.ExactSearch = true;
             this.Input = (!String.IsNullOrEmpty(IdentityClaimTypeConfig.PrefixToAddToValueReturnedProp) && this.IncomingEntity.Value.StartsWith(IdentityClaimTypeConfig.PrefixToAddToValueReturnedProp, StringComparison.InvariantCultureIgnoreCase)) ?
                 this.IncomingEntity.Value.Substring(IdentityClaimTypeConfig.PrefixToAddToValueReturnedProp.Length) : this.IncomingEntity.Value;
 
@@ -688,12 +688,12 @@ namespace ldapcp
         }
 
         /// <summary>
-        /// Search is when SharePoint asks LDAPCP to return all PickerEntity that match input provided
+        /// Search is when SharePoint expects LDAPCP to return all PickerEntity that match input provided
         /// </summary>
         /// <param name="processedClaimTypeConfigList"></param>
-        protected void InitializeSearch(List<AttributeHelper> processedClaimTypeConfigList)
+        protected void InitializeSearch(List<AttributeHelper> processedClaimTypeConfigList, bool exactSearch)
         {
-            //this.ExactSearch = this.CurrentConfiguration.FilterExactMatchOnlyProp;
+            this.ExactSearch = exactSearch;
             this.Input = this.OriginalInput;
             if (!String.IsNullOrEmpty(this.HierarchyNodeID))
             {
