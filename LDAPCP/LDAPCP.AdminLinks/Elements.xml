@@ -21,7 +21,7 @@
       Id="LdapcpClaimsMapping"
       GroupId="LDAPCP"
       Location="Microsoft.SharePoint.Administration.Security"
-      Title="Claims mapping"
+      Title="Claim types configuration"
       Sequence="20">
     <UrlAction Url="/_admin/Ldapcp/ClaimsTable.aspx" />
   </CustomAction>

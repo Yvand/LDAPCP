@@ -85,7 +85,7 @@ namespace ldapcp.ControlTemplates
             }
 
             bool identityClaimPresent = false;
-
+            
             TblClaimsMapping.Rows.Clear();
             TableRow tr = new TableRow();
             TableHeaderCell th;

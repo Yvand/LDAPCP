@@ -174,16 +174,16 @@ namespace ldapcp
                     // Create local version of the persisted object, that will never be saved in config DB
                     // This copy is unique to current object instance to avoid thread safety issues
                     this.CurrentConfiguration = new LDAPCPConfig();
-                    this.CurrentConfiguration.AlwaysValidateInput = globalConfiguration.AlwaysValidateInput;
-                    this.CurrentConfiguration.AddWildcardInFrontOfQueryProp = globalConfiguration.AddWildcardInFrontOfQueryProp;
+                    this.CurrentConfiguration.BypassLDAPLookup = globalConfiguration.BypassLDAPLookup;
+                    this.CurrentConfiguration.AddWildcardAsPrefixOfInput = globalConfiguration.AddWildcardAsPrefixOfInput;
                     this.CurrentConfiguration.PickerEntityGroupNameProp = globalConfiguration.PickerEntityGroupNameProp;
                     this.CurrentConfiguration.DisplayLdapMatchForIdentityClaimTypeProp = globalConfiguration.DisplayLdapMatchForIdentityClaimTypeProp;
                     this.CurrentConfiguration.FilterEnabledUsersOnlyProp = globalConfiguration.FilterEnabledUsersOnlyProp;
                     this.CurrentConfiguration.FilterSecurityGroupsOnlyProp = globalConfiguration.FilterSecurityGroupsOnlyProp;
                     this.CurrentConfiguration.FilterExactMatchOnlyProp = globalConfiguration.FilterExactMatchOnlyProp;
-                    this.CurrentConfiguration.TimeoutProp = globalConfiguration.TimeoutProp;
-                    this.CurrentConfiguration.AugmentationEnabledProp = globalConfiguration.AugmentationEnabledProp;
-                    this.CurrentConfiguration.AugmentationClaimTypeProp = globalConfiguration.AugmentationClaimTypeProp;
+                    this.CurrentConfiguration.LDAPQueryTimeout = globalConfiguration.LDAPQueryTimeout;
+                    this.CurrentConfiguration.EnableAugmentation = globalConfiguration.EnableAugmentation;
+                    this.CurrentConfiguration.ClaimTypeUsedForAugmentation = globalConfiguration.ClaimTypeUsedForAugmentation;
                     this.CurrentConfiguration.ClaimTypesConfigList = new List<AttributeHelper>();
                     foreach (AttributeHelper currentObject in globalConfiguration.ClaimTypesConfigList)
                     {
@@ -559,7 +559,7 @@ namespace ldapcp
             List<PickerEntity> permissions = new List<PickerEntity>();
             try
             {
-                if (this.CurrentConfiguration.AlwaysValidateInput)
+                if (this.CurrentConfiguration.BypassLDAPLookup)
                 {
                     // Completely bypass LDAP lookp
                     List<PickerEntity> entities = CreatePickerEntityForSpecificClaimTypes(
@@ -786,7 +786,7 @@ namespace ldapcp
                     }
                     else
                     {
-                        if (this.CurrentConfiguration.AddWildcardInFrontOfQueryProp)
+                        if (this.CurrentConfiguration.AddWildcardAsPrefixOfInput)
                         {
                             // Changed to a case insensitive search
                             if (value.IndexOf(requestInfo.Input, StringComparison.InvariantCultureIgnoreCase) != -1) continue;
@@ -868,7 +868,7 @@ namespace ldapcp
             string searchPattern;
             string input = requestInfo.Input;
             if (requestInfo.ExactSearch) searchPattern = input;
-            else searchPattern = this.CurrentConfiguration.AddWildcardInFrontOfQueryProp ? "*" + input + "*" : input + "*";
+            else searchPattern = this.CurrentConfiguration.AddWildcardAsPrefixOfInput ? "*" + input + "*" : input + "*";
 
             foreach (var attribute in requestInfo.ClaimTypesConfigList)
             {
@@ -912,7 +912,7 @@ namespace ldapcp
                 using (DirectorySearcher ds = new DirectorySearcher(LDAPServer.Filter))
                 {
                     ds.SearchRoot = directory;
-                    ds.ClientTimeout = new TimeSpan(0, 0, this.CurrentConfiguration.TimeoutProp); // Set the timeout of the query
+                    ds.ClientTimeout = new TimeSpan(0, 0, this.CurrentConfiguration.LDAPQueryTimeout); // Set the timeout of the query
                     ds.PropertiesToLoad.Add(LDAPObjectClassName);
                     ds.PropertiesToLoad.Add("nETBIOSName");
                     foreach (var ldapAttribute in ProcessedClaimTypesConfig.Where(x => !String.IsNullOrEmpty(x.LDAPAttribute)))
@@ -1102,18 +1102,18 @@ namespace ldapcp
                 this.Lock_Config.EnterReadLock();
                 try
                 {
-                    LdapcpLogging.LogDebug(String.Format("[{0}] Original entity to augment: '{1}', augmentation enabled: {2}.", ProviderInternalName, entity.Value, CurrentConfiguration.AugmentationEnabledProp));
-                    if (!this.CurrentConfiguration.AugmentationEnabledProp) return;
-                    if (String.IsNullOrEmpty(this.CurrentConfiguration.AugmentationClaimTypeProp))
+                    LdapcpLogging.LogDebug(String.Format("[{0}] Original entity to augment: '{1}', augmentation enabled: {2}.", ProviderInternalName, entity.Value, CurrentConfiguration.EnableAugmentation));
+                    if (!this.CurrentConfiguration.EnableAugmentation) return;
+                    if (String.IsNullOrEmpty(this.CurrentConfiguration.ClaimTypeUsedForAugmentation))
                     {
                         LdapcpLogging.Log(String.Format("[{0}] Augmentation is enabled but no claim type is configured.", ProviderInternalName),
                             TraceSeverity.High, EventSeverity.Error, LdapcpLogging.Categories.Augmentation);
                         return;
                     }
-                    var groupAttribute = this.ProcessedClaimTypesConfig.FirstOrDefault(x => String.Equals(x.ClaimType, this.CurrentConfiguration.AugmentationClaimTypeProp, StringComparison.InvariantCultureIgnoreCase) && !x.CreateAsIdentityClaim);
+                    var groupAttribute = this.ProcessedClaimTypesConfig.FirstOrDefault(x => String.Equals(x.ClaimType, this.CurrentConfiguration.ClaimTypeUsedForAugmentation, StringComparison.InvariantCultureIgnoreCase) && !x.CreateAsIdentityClaim);
                     if (groupAttribute == null)
                     {
-                        LdapcpLogging.Log(String.Format("[{0}] Settings for claim type \"{1}\" cannot be found, its entry may have been deleted from claims mapping table.", ProviderInternalName, this.CurrentConfiguration.AugmentationClaimTypeProp),
+                        LdapcpLogging.Log(String.Format("[{0}] Settings for claim type \"{1}\" cannot be found, its entry may have been deleted from claims mapping table.", ProviderInternalName, this.CurrentConfiguration.ClaimTypeUsedForAugmentation),
                             TraceSeverity.High, EventSeverity.Error, LdapcpLogging.Categories.Augmentation);
                         return;
                     }
@@ -1270,7 +1270,7 @@ namespace ldapcp
 
                     using (DirectorySearcher searcher = new DirectorySearcher(directory))
                     {
-                        searcher.ClientTimeout = new TimeSpan(0, 0, this.CurrentConfiguration.TimeoutProp); // Set the timeout of the query
+                        searcher.ClientTimeout = new TimeSpan(0, 0, this.CurrentConfiguration.LDAPQueryTimeout); // Set the timeout of the query
                         searcher.Filter = string.Format("(&(ObjectClass={0})({1}={2}){3})", IdentityClaimTypeConfig.LDAPObjectClassProp, IdentityClaimTypeConfig.LDAPAttribute, requestInfo.IncomingEntity.Value, IdentityClaimTypeConfig.AdditionalLDAPFilterProp);
                         searcher.PropertiesToLoad.Add("memberOf");
                         searcher.PropertiesToLoad.Add("uniquememberof");

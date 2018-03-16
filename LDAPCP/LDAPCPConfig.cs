@@ -16,17 +16,17 @@ namespace ldapcp
     {
         List<LDAPConnection> LDAPConnectionsProp { get; set; }
         List<AttributeHelper> ClaimTypesConfigList { get; set; }
-        bool AlwaysValidateInput { get; set; }
-        bool AddWildcardInFrontOfQueryProp { get; set; }
+        bool BypassLDAPLookup { get; set; }
+        bool AddWildcardAsPrefixOfInput { get; set; }
         bool DisplayLdapMatchForIdentityClaimTypeProp { get; set; }
         string PickerEntityGroupNameProp { get; set; }
         bool FilterEnabledUsersOnlyProp { get; set; }
         bool FilterSecurityGroupsOnlyProp { get; set; }
         bool FilterExactMatchOnlyProp { get; set; }
-        int TimeoutProp { get; set; }
+        int LDAPQueryTimeout { get; set; }
         bool CompareResultsWithDomainNameProp { get; set; }
-        bool AugmentationEnabledProp { get; set; }
-        string AugmentationClaimTypeProp { get; set; }
+        bool EnableAugmentation { get; set; }
+        string ClaimTypeUsedForAugmentation { get; set; }
     }
 
     public class Constants
@@ -40,6 +40,9 @@ namespace ldapcp
 
     public class LDAPCPConfig : SPPersistedObject, ILDAPCPConfiguration
     {
+        /// <summary>
+        /// List of LDAP servers to query
+        /// </summary>
         public List<LDAPConnection> LDAPConnectionsProp
         {
             get { return LDAPConnections; }
@@ -48,6 +51,9 @@ namespace ldapcp
         [Persisted]
         private List<LDAPConnection> LDAPConnections;
 
+        /// <summary>
+        /// Configuration of claim types and their mapping with LDAP attribute/class
+        /// </summary>
         public List<AttributeHelper> ClaimTypesConfigList
         {
             get { return AttributesList; }
@@ -56,7 +62,10 @@ namespace ldapcp
         [Persisted]
         private List<AttributeHelper> AttributesList;
 
-        public bool AlwaysValidateInput
+        /// <summary>
+        /// If true, LDAPCP will validate the input as is, with no LDAP query
+        /// </summary>
+        public bool BypassLDAPLookup
         {
             get { return AlwaysResolveUserInput; }
             set { AlwaysResolveUserInput = value; }
@@ -64,7 +73,10 @@ namespace ldapcp
         [Persisted]
         private bool AlwaysResolveUserInput;
 
-        public bool AddWildcardInFrontOfQueryProp
+        /// <summary>
+        /// NOT RECOMMENDED: Change filter to query "*input*" instead of "input*". This may have a strong negative impact on performance
+        /// </summary>
+        public bool AddWildcardAsPrefixOfInput
         {
             get { return AddWildcardInFrontOfQuery; }
             set { AddWildcardInFrontOfQuery = value; }
@@ -107,6 +119,9 @@ namespace ldapcp
         //[Persisted]
         //public SPOriginalIssuerType LDAPCPIssuerType;
 
+        /// <summary>
+        /// If true, LDAPCP will only return results that match exactly the input
+        /// </summary>
         public bool FilterExactMatchOnlyProp
         {
             get { return FilterExactMatchOnly; }
@@ -115,7 +130,10 @@ namespace ldapcp
         [Persisted]
         private bool FilterExactMatchOnly;
 
-        public int TimeoutProp
+        /// <summary>
+        /// Timeout in seconds to wait for LDAP to return the result
+        /// </summary>
+        public int LDAPQueryTimeout
         {
             get { return Timeout; }
             set { Timeout = value; }
@@ -134,7 +152,10 @@ namespace ldapcp
         [Persisted]
         private bool CompareResultsWithDomainName = false;
 
-        public bool AugmentationEnabledProp
+        /// <summary>
+        /// Set to true to enable augmentation. Property ClaimTypeUsedForAugmentation must also be set for augmentation to work.
+        /// </summary>
+        public bool EnableAugmentation
         {
             get { return AugmentationEnabled; }
             set { AugmentationEnabled = value; }
@@ -142,7 +163,10 @@ namespace ldapcp
         [Persisted]
         private bool AugmentationEnabled;
 
-        public string AugmentationClaimTypeProp
+        /// <summary>
+        /// Claim type to use for the groups created by LDAPCP during augmentation
+        /// </summary>
+        public string ClaimTypeUsedForAugmentation
         {
             get { return AugmentationClaimType; }
             set { AugmentationClaimType = value; }
@@ -156,6 +180,10 @@ namespace ldapcp
         public LDAPCPConfig()
         { }
 
+        /// <summary>
+        /// Override this method to allow more users to update the object. True specifies that more users can update the object; otherwise, false. The default value is false.
+        /// </summary>
+        /// <returns></returns>
         protected override bool HasAdditionalUpdateAccess()
         {
             return false;
@@ -241,6 +269,12 @@ namespace ldapcp
             {
                 PersistedObject.Update();
             }
+            catch (ArgumentException argExc)
+            {
+                // This exception is recorded when persisted object already exists in config database. Let's get it and return it.
+                LdapcpLogging.LogException(String.Empty, $": Could not create persisted object {persistedObjectName} and save it in configuration database because it already exists. Returning the one already created in configuration database...", LdapcpLogging.Categories.Core, argExc);
+                return GetConfiguration(persistedObjectName);
+            }
             catch (NullReferenceException nullex)
             {
                 // This exception occurs if an older version of the persisted object lives in the config database with a schema that doesn't match current one
@@ -259,6 +293,12 @@ namespace ldapcp
                 {
                     throw new Exception(error, nullex);
                 }
+            }
+            catch (Exception ex)
+            {
+                // Catch all other exception types and log them
+                LdapcpLogging.LogException(String.Empty, $": Could not create persisted object {persistedObjectName} and save it in configuration database.", LdapcpLogging.Categories.Core, ex);
+                return null;
             }
 
             LdapcpLogging.Log($"Created PersistedObject {PersistedObject.Name} with Id {PersistedObject.Id}",

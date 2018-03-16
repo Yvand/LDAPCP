@@ -89,10 +89,10 @@ namespace ldapcp.ControlTemplates
                 DdlClaimTypes.Items.Add(potentialGroup.ClaimType);
             }
 
-            ChkEnableAugmentation.Checked = PersistedObject.AugmentationEnabledProp;
+            ChkEnableAugmentation.Checked = PersistedObject.EnableAugmentation;
 
-            if (!String.IsNullOrEmpty(PersistedObject.AugmentationClaimTypeProp) && DdlClaimTypes.Items.FindByValue(PersistedObject.AugmentationClaimTypeProp) != null)
-                DdlClaimTypes.SelectedValue = PersistedObject.AugmentationClaimTypeProp;
+            if (!String.IsNullOrEmpty(PersistedObject.ClaimTypeUsedForAugmentation) && DdlClaimTypes.Items.FindByValue(PersistedObject.ClaimTypeUsedForAugmentation) != null)
+                DdlClaimTypes.SelectedValue = PersistedObject.ClaimTypeUsedForAugmentation;
 
             // Initialize grid for LDAP connections
             var spDomainCoco = PersistedObject.LDAPConnectionsProp.FirstOrDefault(x => x.UserServerDirectoryEntry);
@@ -150,11 +150,11 @@ namespace ldapcp.ControlTemplates
                 this.TxtLdapAttributeToDisplay.Text = IdentityClaim.LDAPAttributeToDisplayProp;
             }
 
-            this.ChkAlwaysResolveUserInput.Checked = PersistedObject.AlwaysValidateInput;
+            this.ChkAlwaysResolveUserInput.Checked = PersistedObject.BypassLDAPLookup;
             this.ChkFilterEnabledUsersOnly.Checked = PersistedObject.FilterEnabledUsersOnlyProp;
             this.ChkFilterSecurityGroupsOnly.Checked = PersistedObject.FilterSecurityGroupsOnlyProp;
             this.ChkFilterExactMatchOnly.Checked = PersistedObject.FilterExactMatchOnlyProp;
-            this.txtTimeout.Text = PersistedObject.TimeoutProp.ToString();
+            this.txtTimeout.Text = PersistedObject.LDAPQueryTimeout.ToString();
 
             // Deprecated options that are not shown anymore in LDAPCP configuration page
             //this.ChkAddWildcardInFront.Checked = PersistedObject.AddWildcardInFrontOfQueryProp;
@@ -184,7 +184,7 @@ namespace ldapcp.ControlTemplates
                 IdentityClaim.LDAPAttributeToDisplayProp = String.Empty;
             }
 
-            PersistedObject.AlwaysValidateInput = this.ChkAlwaysResolveUserInput.Checked;
+            PersistedObject.BypassLDAPLookup = this.ChkAlwaysResolveUserInput.Checked;
             PersistedObject.FilterEnabledUsersOnlyProp = this.ChkFilterEnabledUsersOnly.Checked;
             PersistedObject.FilterSecurityGroupsOnlyProp = this.ChkFilterSecurityGroupsOnly.Checked;
             PersistedObject.FilterExactMatchOnlyProp = this.ChkFilterExactMatchOnly.Checked;
@@ -195,7 +195,7 @@ namespace ldapcp.ControlTemplates
             int timeOut;
             if (!Int32.TryParse(this.txtTimeout.Text, out timeOut) || timeOut < 0)
                 timeOut = Constants.LDAPCPCONFIG_TIMEOUT; //set to default if unable to parse
-            PersistedObject.TimeoutProp = timeOut;
+            PersistedObject.LDAPQueryTimeout = timeOut;
         }
 
         private void UpdateLdapSettings()
@@ -214,8 +214,8 @@ namespace ldapcp.ControlTemplates
 
         private void UpdateAugmentationSettings()
         {
-            PersistedObject.AugmentationEnabledProp = ChkEnableAugmentation.Checked;
-            PersistedObject.AugmentationClaimTypeProp = DdlClaimTypes.SelectedValue.Equals("none", StringComparison.InvariantCultureIgnoreCase) ? String.Empty : DdlClaimTypes.SelectedValue;
+            PersistedObject.EnableAugmentation = ChkEnableAugmentation.Checked;
+            PersistedObject.ClaimTypeUsedForAugmentation = DdlClaimTypes.SelectedValue.Equals("none", StringComparison.InvariantCultureIgnoreCase) ? String.Empty : DdlClaimTypes.SelectedValue;
         }
 
         protected void BtnOK_Click(Object sender, EventArgs e)
