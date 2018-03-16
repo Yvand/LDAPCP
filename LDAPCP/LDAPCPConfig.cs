@@ -16,7 +16,7 @@ namespace ldapcp
     {
         List<LDAPConnection> LDAPConnectionsProp { get; set; }
         List<AttributeHelper> ClaimTypesConfigList { get; set; }
-        bool AlwaysResolveUserInputProp { get; set; }
+        bool AlwaysValidateInput { get; set; }
         bool AddWildcardInFrontOfQueryProp { get; set; }
         bool DisplayLdapMatchForIdentityClaimTypeProp { get; set; }
         string PickerEntityGroupNameProp { get; set; }
@@ -56,7 +56,7 @@ namespace ldapcp
         [Persisted]
         private List<AttributeHelper> AttributesList;
 
-        public bool AlwaysResolveUserInputProp
+        public bool AlwaysValidateInput
         {
             get { return AlwaysResolveUserInput; }
             set { AlwaysResolveUserInput = value; }
@@ -161,7 +161,21 @@ namespace ldapcp
             return false;
         }
 
-        public static LDAPCPConfig GetFromConfigDB(string persistedObjectName)
+        /// <summary>
+        /// Return configuration of LDAPCP
+        /// </summary>
+        /// <returns></returns>
+        public static LDAPCPConfig GetConfiguration()
+        {
+            return GetConfiguration(Constants.LDAPCPCONFIG_NAME);
+        }
+
+        /// <summary>
+        /// Return configuration specified by persistedObjectName
+        /// </summary>
+        /// <param name="persistedObjectName">Name of the persisted object that holds configuration to return</param>
+        /// <returns></returns>
+        public static LDAPCPConfig GetConfiguration(string persistedObjectName)
         {
             SPPersistedObject parent = SPFarm.Local;
             try
@@ -187,13 +201,23 @@ namespace ldapcp
             return null;
         }
 
-        public static void ResetClaimsList(string persistedObjectName)
+        /// <summary>
+        /// Commit changes in configuration database
+        /// </summary>
+        public override void Update()
         {
-            LDAPCPConfig persistedObject = GetFromConfigDB(persistedObjectName);
+            base.Update();
+            LdapcpLogging.Log($"PersistedObject {base.DisplayName} was updated successfully.",
+                TraceSeverity.Medium, EventSeverity.Information, LdapcpLogging.Categories.Core);
+        }
+
+        public static void ResetClaimTypesList(string persistedObjectName)
+        {
+            LDAPCPConfig persistedObject = GetConfiguration(persistedObjectName);
             if (persistedObject != null)
             {
                 persistedObject.ClaimTypesConfigList.Clear();
-                persistedObject.ClaimTypesConfigList = GetDefaultAttributesList();
+                persistedObject.ClaimTypesConfigList = GetDefaultClaimTypeConfigList();
                 persistedObject.Update();
 
                 LdapcpLogging.Log($"Claims list of PersistedObject {persistedObjectName} was successfully reset to default claim types configuration",
@@ -203,10 +227,11 @@ namespace ldapcp
         }
 
         /// <summary>
-        /// Create the persisted object that contains default configuration of LDAPCP.
-        /// It should be created only in central administration with application pool credentials
-        /// because this is the only place where we are sure user has the permission to write in the config database
+        /// Create a persisted object initialized with default configuration
         /// </summary>
+        /// <param name="persistedObjectID">GUID of persisted object</param>
+        /// <param name="persistedObjectName">Name of persisted object</param>
+        /// <returns></returns>
         public static LDAPCPConfig CreatePersistedObject(string persistedObjectID, string persistedObjectName)
         {
             LdapcpLogging.Log($"Creating persisted object {persistedObjectName} with ID {persistedObjectID}...", TraceSeverity.Medium, EventSeverity.Error, LdapcpLogging.Categories.Core);
@@ -236,27 +261,36 @@ namespace ldapcp
                 }
             }
 
-            LdapcpLogging.Log($"Created PersistedObject {PersistedObject.Name} with Id {PersistedObject.Id}", 
+            LdapcpLogging.Log($"Created PersistedObject {PersistedObject.Name} with Id {PersistedObject.Id}",
                 TraceSeverity.Verbose, EventSeverity.Information, LdapcpLogging.Categories.Core);
 
             return PersistedObject;
         }
 
+        /// <summary>
+        /// Delete persisted object from configuration database
+        /// </summary>
+        /// <param name="persistedObjectName">Name of persisted object to delete</param>
         public static void DeleteLDAPCPConfig(string persistedObjectName)
         {
-            LdapcpLogging.Log($"Deleting persisted object {persistedObjectName}...", TraceSeverity.Medium, EventSeverity.Error, LdapcpLogging.Categories.Core);
-            LDAPCPConfig LdapcpConfig = LDAPCPConfig.GetFromConfigDB(persistedObjectName);
-            if (LdapcpConfig != null) LdapcpConfig.Delete();
+            LDAPCPConfig LdapcpConfig = LDAPCPConfig.GetConfiguration(persistedObjectName);
+            if (LdapcpConfig == null)
+            {
+                LdapcpLogging.Log($"Persisted object {persistedObjectName} was not found in configuration database", TraceSeverity.Medium, EventSeverity.Error, LdapcpLogging.Categories.Core);
+                return;
+            }
+            LdapcpConfig.Delete();
+            LdapcpLogging.Log($"Persisted object {persistedObjectName} was successfully deleted from configuration database", TraceSeverity.Medium, EventSeverity.Error, LdapcpLogging.Categories.Core);
         }
 
         /// <summary>
-        /// Creates a persisted object with default LDAPCP configuration. It won't be saved in configuration database unless Update() is called, but property Id should be set with a unique Guid before.
+        /// Return default configuration in a in-memory only object. It won't be saved in configuration database unless Update() is called, but property Id should be set with a unique Guid before.
         /// </summary>
         /// <returns></returns>
         public static LDAPCPConfig GetDefaultConfiguration(string persistedObjectName)
         {
             LDAPCPConfig PersistedObject = new LDAPCPConfig(persistedObjectName, SPFarm.Local);
-            PersistedObject.AttributesList = GetDefaultAttributesList();
+            PersistedObject.AttributesList = GetDefaultClaimTypeConfigList();
             PersistedObject.LDAPConnections = GetDefaultLDAPConnection();
             PersistedObject.PickerEntityGroupName = "Results";
             PersistedObject.AlwaysResolveUserInput = false;
@@ -271,7 +305,11 @@ namespace ldapcp
             return PersistedObject;
         }
 
-        public static List<AttributeHelper> GetDefaultAttributesList()
+        /// <summary>
+        /// Return default claim type configuration list
+        /// </summary>
+        /// <returns></returns>
+        public static List<AttributeHelper> GetDefaultClaimTypeConfigList()
         {
             return new List<AttributeHelper>
             {
@@ -291,6 +329,10 @@ namespace ldapcp
             };
         }
 
+        /// <summary>
+        /// Return default LDAP connection list
+        /// </summary>
+        /// <returns></returns>
         public static List<LDAPConnection> GetDefaultLDAPConnection()
         {
             return new List<LDAPConnection>
@@ -301,7 +343,7 @@ namespace ldapcp
     }
 
     /// <summary>
-    /// Defines an attribute persisted in config database
+    /// Defines an attribute / claim type configuration
     /// </summary>
     public class AttributeHelper : SPAutoSerializingObject
     {
@@ -477,7 +519,7 @@ namespace ldapcp
 
         public AttributeHelper CopyPersistedProperties()
         {
-            AttributeHelper newAtt = new AttributeHelper()
+            return new AttributeHelper()
             {
                 AdditionalLDAPFilter = this.AdditionalLDAPFilter,
                 claimEntityType = this.claimEntityType,
@@ -495,7 +537,6 @@ namespace ldapcp
                 ResolveAsIdentityClaim = this.ResolveAsIdentityClaim,
                 showClaimNameInDisplayText = this.showClaimNameInDisplayText,
             };
-            return newAtt;
         }
     }
 
@@ -571,7 +612,7 @@ namespace ldapcp
 
         internal LDAPConnection CopyPersistedProperties()
         {
-            LDAPConnection copy = new LDAPConnection()
+            return new LDAPConnection()
             {
                 Id = this.Id,
                 Path = this.Path,
@@ -583,9 +624,7 @@ namespace ldapcp
                 AugmentationEnabled = this.AugmentationEnabled,
                 GetGroupMembershipAsADDomain = this.GetGroupMembershipAsADDomain,
             };
-            return copy;
         }
-
     }
 
     /// <summary>

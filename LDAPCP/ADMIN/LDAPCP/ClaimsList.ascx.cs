@@ -67,7 +67,7 @@ namespace ldapcp.ControlTemplates
             }
 
             MemberInfo[] members = typeof(SPClaimEntityTypes).GetProperties(BindingFlags.Static | BindingFlags.Public);
-            foreach (MemberInfo member in members)
+            foreach (MemberInfo member in members.Where(x => x.Name == SPClaimEntityTypes.User || x.Name == SPClaimEntityTypes.FormsRole))
             {
                 New_DdlClaimEntityType.Items.Add(member.Name);
             }
@@ -384,7 +384,7 @@ namespace ldapcp.ControlTemplates
 
         protected void BtnReset_Click(object sender, EventArgs e)
         {
-            LDAPCPConfig.ResetClaimsList(PersistedObjectName);
+            LDAPCPConfig.ResetClaimTypesList(PersistedObjectName);
             Response.Redirect(Request.Url.ToString());
         }
 

@@ -150,7 +150,7 @@ namespace ldapcp.ControlTemplates
                 this.TxtLdapAttributeToDisplay.Text = IdentityClaim.LDAPAttributeToDisplayProp;
             }
 
-            this.ChkAlwaysResolveUserInput.Checked = PersistedObject.AlwaysResolveUserInputProp;
+            this.ChkAlwaysResolveUserInput.Checked = PersistedObject.AlwaysValidateInput;
             this.ChkFilterEnabledUsersOnly.Checked = PersistedObject.FilterEnabledUsersOnlyProp;
             this.ChkFilterSecurityGroupsOnly.Checked = PersistedObject.FilterSecurityGroupsOnlyProp;
             this.ChkFilterExactMatchOnly.Checked = PersistedObject.FilterExactMatchOnlyProp;
@@ -184,7 +184,7 @@ namespace ldapcp.ControlTemplates
                 IdentityClaim.LDAPAttributeToDisplayProp = String.Empty;
             }
 
-            PersistedObject.AlwaysResolveUserInputProp = this.ChkAlwaysResolveUserInput.Checked;
+            PersistedObject.AlwaysValidateInput = this.ChkAlwaysResolveUserInput.Checked;
             PersistedObject.FilterEnabledUsersOnlyProp = this.ChkFilterEnabledUsersOnly.Checked;
             PersistedObject.FilterSecurityGroupsOnlyProp = this.ChkFilterSecurityGroupsOnly.Checked;
             PersistedObject.FilterExactMatchOnlyProp = this.ChkFilterExactMatchOnly.Checked;

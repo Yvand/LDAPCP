@@ -174,7 +174,7 @@ namespace ldapcp
                     // Create local version of the persisted object, that will never be saved in config DB
                     // This copy is unique to current object instance to avoid thread safety issues
                     this.CurrentConfiguration = new LDAPCPConfig();
-                    this.CurrentConfiguration.AlwaysResolveUserInputProp = globalConfiguration.AlwaysResolveUserInputProp;
+                    this.CurrentConfiguration.AlwaysValidateInput = globalConfiguration.AlwaysValidateInput;
                     this.CurrentConfiguration.AddWildcardInFrontOfQueryProp = globalConfiguration.AddWildcardInFrontOfQueryProp;
                     this.CurrentConfiguration.PickerEntityGroupNameProp = globalConfiguration.PickerEntityGroupNameProp;
                     this.CurrentConfiguration.DisplayLdapMatchForIdentityClaimTypeProp = globalConfiguration.DisplayLdapMatchForIdentityClaimTypeProp;
@@ -340,7 +340,7 @@ namespace ldapcp
         /// <returns></returns>
         protected virtual ILDAPCPConfiguration GetConfiguration(Uri context, string[] entityTypes, string persistedObjectName)
         {
-            return LDAPCPConfig.GetFromConfigDB(persistedObjectName);
+            return LDAPCPConfig.GetConfiguration(persistedObjectName);
             //if (String.Equals(ProviderInternalName, LDAPCP._ProviderInternalName, StringComparison.InvariantCultureIgnoreCase))
             //    return LDAPCPConfig.GetFromConfigDB(persistedObjectName);
             //else
@@ -559,7 +559,7 @@ namespace ldapcp
             List<PickerEntity> permissions = new List<PickerEntity>();
             try
             {
-                if (this.CurrentConfiguration.AlwaysResolveUserInputProp)
+                if (this.CurrentConfiguration.AlwaysValidateInput)
                 {
                     // Completely bypass LDAP lookp
                     List<PickerEntity> entities = CreatePickerEntityForSpecificClaimTypes(
