@@ -3,6 +3,7 @@ using Microsoft.SharePoint.Administration;
 using Microsoft.SharePoint.Administration.Claims;
 using Microsoft.SharePoint.WebControls;
 using System;
+using System.Linq;
 using System.Web.UI;
 
 namespace ldapcp.ControlTemplates
@@ -56,7 +57,7 @@ namespace ldapcp.ControlTemplates
         }
 
         protected SPTrustedLoginProvider CurrentTrustedLoginProvider;
-        protected AttributeHelper IdentityClaim;
+        protected ClaimTypeConfig IdentityClaim;
         protected ConfigStatus Status;
 
         protected long PersistedObjectVersion
@@ -142,7 +143,8 @@ namespace ldapcp.ControlTemplates
             }
             if (IdentityClaim == null && Status == ConfigStatus.AllGood)
             {
-                IdentityClaim = this.IdentityClaim = PersistedObject.ClaimTypesConfigList.Find(x => String.Equals(CurrentTrustedLoginProvider.IdentityClaimTypeInformation.MappedClaimType, x.ClaimType, StringComparison.InvariantCultureIgnoreCase) && !x.CreateAsIdentityClaim);
+                //FINDTOFIRSTORDEFAULT
+                IdentityClaim = this.IdentityClaim = PersistedObject.ClaimTypes.FirstOrDefault(x => String.Equals(CurrentTrustedLoginProvider.IdentityClaimTypeInformation.MappedClaimType, x.ClaimType, StringComparison.InvariantCultureIgnoreCase) && !x.CreateAsIdentityClaim);
                 if (IdentityClaim == null) Status |= ConfigStatus.NoIdentityClaimType;
             }
             if (PersistedObjectVersion != PersistedObject.Version)

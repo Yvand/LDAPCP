@@ -77,7 +77,7 @@ namespace ldapcp.ControlTemplates
 
         private void InitializeAugmentation()
         {
-            IEnumerable<AttributeHelper> potentialGroupClaimTypes = PersistedObject.ClaimTypesConfigList.Where(x => x.ClaimEntityType == SPClaimEntityTypes.FormsRole || x.ClaimEntityType == SPClaimEntityTypes.SecurityGroup);
+            IEnumerable<ClaimTypeConfig> potentialGroupClaimTypes = PersistedObject.ClaimTypes.Where(x => x.ClaimEntityType == SPClaimEntityTypes.FormsRole || x.ClaimEntityType == SPClaimEntityTypes.SecurityGroup);
             if (potentialGroupClaimTypes == null || potentialGroupClaimTypes.Count() == 0)
             {
                 LabelErrorMessage.Text = TextErrorNoGroupClaimType;
@@ -140,14 +140,14 @@ namespace ldapcp.ControlTemplates
         private void InitializeGeneralSettings()
         {
             this.ChkIdentityShowAdditionalAttribute.Checked = PersistedObject.DisplayLdapMatchForIdentityClaimTypeProp;
-            if (String.IsNullOrEmpty(IdentityClaim.LDAPAttributeToDisplayProp))
+            if (String.IsNullOrEmpty(IdentityClaim.LDAPAttributeToShowAsDisplayText))
             {
                 this.RbIdentityDefault.Checked = true;
             }
             else
             {
                 this.RbIdentityCustomLDAP.Checked = true;
-                this.TxtLdapAttributeToDisplay.Text = IdentityClaim.LDAPAttributeToDisplayProp;
+                this.TxtLdapAttributeToDisplay.Text = IdentityClaim.LDAPAttributeToShowAsDisplayText;
             }
 
             this.ChkAlwaysResolveUserInput.Checked = PersistedObject.BypassLDAPLookup;
@@ -177,11 +177,11 @@ namespace ldapcp.ControlTemplates
             PersistedObject.DisplayLdapMatchForIdentityClaimTypeProp = this.ChkIdentityShowAdditionalAttribute.Checked;
             if (this.RbIdentityCustomLDAP.Checked)
             {
-                IdentityClaim.LDAPAttributeToDisplayProp = this.TxtLdapAttributeToDisplay.Text;
+                IdentityClaim.LDAPAttributeToShowAsDisplayText = this.TxtLdapAttributeToDisplay.Text;
             }
             else
             {
-                IdentityClaim.LDAPAttributeToDisplayProp = String.Empty;
+                IdentityClaim.LDAPAttributeToShowAsDisplayText = String.Empty;
             }
 
             PersistedObject.BypassLDAPLookup = this.ChkAlwaysResolveUserInput.Checked;
@@ -244,9 +244,10 @@ namespace ldapcp.ControlTemplates
         void UpdateAdditionalUserLdapFilter()
         {
             if (PersistedObject == null) return;
-            foreach (var userAttr in this.PersistedObject.ClaimTypesConfigList.FindAll(x => x.ClaimEntityType == SPClaimEntityTypes.User || x.CreateAsIdentityClaim))
+            //FINDTOWHERE
+            foreach (var userAttr in this.PersistedObject.ClaimTypes.Where(x => x.ClaimEntityType == SPClaimEntityTypes.User || x.CreateAsIdentityClaim))
             {
-                userAttr.AdditionalLDAPFilterProp = this.TxtAdditionalUserLdapFilter.Text;
+                userAttr.AdditionalLDAPFilter = this.TxtAdditionalUserLdapFilter.Text;
             }
             this.CommitChanges();
             LabelUpdateAdditionalLdapFilterOk.Text = this.TextUpdateAdditionalLdapFilterOk;

@@ -2,7 +2,9 @@
 using Microsoft.SharePoint.Administration.Claims;
 using Microsoft.SharePoint.WebControls;
 using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.DirectoryServices;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -15,7 +17,7 @@ namespace ldapcp
     public interface ILDAPCPConfiguration
     {
         List<LDAPConnection> LDAPConnectionsProp { get; set; }
-        List<AttributeHelper> ClaimTypesConfigList { get; set; }
+        ClaimTypeConfigCollection ClaimTypes { get; set; }
         bool BypassLDAPLookup { get; set; }
         bool AddWildcardAsPrefixOfInput { get; set; }
         bool DisplayLdapMatchForIdentityClaimTypeProp { get; set; }
@@ -54,13 +56,20 @@ namespace ldapcp
         /// <summary>
         /// Configuration of claim types and their mapping with LDAP attribute/class
         /// </summary>
-        public List<AttributeHelper> ClaimTypesConfigList
+        public ClaimTypeConfigCollection ClaimTypes
         {
-            get { return AttributesList; }
-            set { AttributesList = value; }
+            get
+            {
+                // TODO: Invalid as is
+                return ClaimTypes;
+            }
+            set
+            {
+                _ClaimTypes = value.innerCol;
+            }
         }
         [Persisted]
-        private List<AttributeHelper> AttributesList;
+        private Collection<ClaimTypeConfig> _ClaimTypes;
 
         /// <summary>
         /// If true, LDAPCP will validate the input as is, with no LDAP query
@@ -219,6 +228,14 @@ namespace ldapcp
                         LdapcpLogging.Log($"LDAP connections list was missing in the persisted object {persistedObjectName} and default configuration was used. Visit LDAPCP admin page and validate it to create the list.",
                             TraceSeverity.High, EventSeverity.Information, LdapcpLogging.Categories.Configuration);
                     }
+
+                    if (persistedObject.ClaimTypes == null)
+                    {
+                        // Breaking change in v10: ClaimTypes implementation changed with new name/type/propertyNames, so persisted object from previous versions cannot be read anymore
+                        persistedObject.ClaimTypes = GetDefaultClaimTypesConfig();
+                        LdapcpLogging.Log($"ClaimTypes configuration list was missing in the persisted object {persistedObjectName} and default configuration was applied. Visit LDAPCP claims configuration page to check and edit the list.",
+                            TraceSeverity.High, EventSeverity.Information, LdapcpLogging.Categories.Configuration);
+                    }
                 }
                 return persistedObject;
             }
@@ -244,8 +261,8 @@ namespace ldapcp
             LDAPCPConfig persistedObject = GetConfiguration(persistedObjectName);
             if (persistedObject != null)
             {
-                persistedObject.ClaimTypesConfigList.Clear();
-                persistedObject.ClaimTypesConfigList = GetDefaultClaimTypeConfigList();
+                persistedObject.ClaimTypes.Clear();
+                persistedObject.ClaimTypes = GetDefaultClaimTypesConfig();
                 persistedObject.Update();
 
                 LdapcpLogging.Log($"Claims list of PersistedObject {persistedObjectName} was successfully reset to default claim types configuration",
@@ -330,7 +347,7 @@ namespace ldapcp
         public static LDAPCPConfig GetDefaultConfiguration(string persistedObjectName)
         {
             LDAPCPConfig PersistedObject = new LDAPCPConfig(persistedObjectName, SPFarm.Local);
-            PersistedObject.AttributesList = GetDefaultClaimTypeConfigList();
+            PersistedObject.ClaimTypes = GetDefaultClaimTypesConfig();
             PersistedObject.LDAPConnections = GetDefaultLDAPConnection();
             PersistedObject.PickerEntityGroupName = "Results";
             PersistedObject.AlwaysResolveUserInput = false;
@@ -349,23 +366,23 @@ namespace ldapcp
         /// Return default claim type configuration list
         /// </summary>
         /// <returns></returns>
-        public static List<AttributeHelper> GetDefaultClaimTypeConfigList()
+        public static ClaimTypeConfigCollection GetDefaultClaimTypesConfig()
         {
-            return new List<AttributeHelper>
+            return new ClaimTypeConfigCollection
             {
-                new AttributeHelper{LDAPAttribute="mail", LDAPObjectClassProp="user", ClaimType=WIF.ClaimTypes.Email, ClaimEntityType = SPClaimEntityTypes.User, EntityDataKey=PeopleEditorEntityDataKeys.Email},
-                new AttributeHelper{LDAPAttribute="sAMAccountName", LDAPObjectClassProp="user", ClaimType=WIF.ClaimTypes.WindowsAccountName, ClaimEntityType = SPClaimEntityTypes.User, AdditionalLDAPFilterProp="(!(objectClass=computer))"},
-                new AttributeHelper{LDAPAttribute="userPrincipalName", LDAPObjectClassProp="user", ClaimType=WIF.ClaimTypes.Upn, ClaimEntityType = SPClaimEntityTypes.User},
-                new AttributeHelper{LDAPAttribute="givenName", LDAPObjectClassProp="user", ClaimType=WIF.ClaimTypes.GivenName, ClaimEntityType = SPClaimEntityTypes.User},
-                new AttributeHelper{LDAPAttribute="sAMAccountName", LDAPObjectClassProp="group", ClaimType=WIF.ClaimTypes.Role, ClaimEntityType = SPClaimEntityTypes.FormsRole, PrefixToAddToValueReturnedProp=@"{fqdn}\"},
-                new AttributeHelper{LDAPAttribute="displayName", LDAPObjectClassProp="user", CreateAsIdentityClaim=true, EntityDataKey=PeopleEditorEntityDataKeys.DisplayName},
-                new AttributeHelper{LDAPAttribute="cn", LDAPObjectClassProp="user", CreateAsIdentityClaim=true, AdditionalLDAPFilterProp="(!(objectClass=computer))"},
-                new AttributeHelper{LDAPAttribute="sn", LDAPObjectClassProp="user", CreateAsIdentityClaim=true},
-                new AttributeHelper{LDAPAttribute="physicalDeliveryOfficeName", LDAPObjectClassProp="user", EntityDataKey=PeopleEditorEntityDataKeys.Location},
-                new AttributeHelper{LDAPAttribute="title", LDAPObjectClassProp="user", EntityDataKey=PeopleEditorEntityDataKeys.JobTitle},
-                new AttributeHelper{LDAPAttribute="msRTCSIP-PrimaryUserAddress", LDAPObjectClassProp="user", EntityDataKey=PeopleEditorEntityDataKeys.SIPAddress},
-                new AttributeHelper{LDAPAttribute="telephoneNumber", LDAPObjectClassProp="user", EntityDataKey=PeopleEditorEntityDataKeys.WorkPhone},
-                new AttributeHelper{LDAPAttribute="displayName", LDAPObjectClassProp="group", CreateAsIdentityClaim=true, EntityDataKey=PeopleEditorEntityDataKeys.DisplayName},
+                new ClaimTypeConfig{LDAPAttribute="mail", LDAPClass="user", ClaimType=WIF.ClaimTypes.Email, ClaimEntityType = SPClaimEntityTypes.User, EntityDataKey=PeopleEditorEntityDataKeys.Email},
+                new ClaimTypeConfig{LDAPAttribute="sAMAccountName", LDAPClass="user", ClaimType=WIF.ClaimTypes.WindowsAccountName, ClaimEntityType = SPClaimEntityTypes.User, AdditionalLDAPFilter="(!(objectClass=computer))"},
+                new ClaimTypeConfig{LDAPAttribute="userPrincipalName", LDAPClass="user", ClaimType=WIF.ClaimTypes.Upn, ClaimEntityType = SPClaimEntityTypes.User},
+                new ClaimTypeConfig{LDAPAttribute="givenName", LDAPClass="user", ClaimType=WIF.ClaimTypes.GivenName, ClaimEntityType = SPClaimEntityTypes.User},
+                new ClaimTypeConfig{LDAPAttribute="sAMAccountName", LDAPClass="group", ClaimType=WIF.ClaimTypes.Role, ClaimEntityType = SPClaimEntityTypes.FormsRole, ClaimValuePrefix=@"{fqdn}\"},
+                new ClaimTypeConfig{LDAPAttribute="displayName", LDAPClass="user", CreateAsIdentityClaim=true, EntityDataKey=PeopleEditorEntityDataKeys.DisplayName},
+                new ClaimTypeConfig{LDAPAttribute="cn", LDAPClass="user", CreateAsIdentityClaim=true, AdditionalLDAPFilter="(!(objectClass=computer))"},
+                new ClaimTypeConfig{LDAPAttribute="sn", LDAPClass="user", CreateAsIdentityClaim=true},
+                new ClaimTypeConfig{LDAPAttribute="physicalDeliveryOfficeName", LDAPClass="user", EntityDataKey=PeopleEditorEntityDataKeys.Location},
+                new ClaimTypeConfig{LDAPAttribute="title", LDAPClass="user", EntityDataKey=PeopleEditorEntityDataKeys.JobTitle},
+                new ClaimTypeConfig{LDAPAttribute="msRTCSIP-PrimaryUserAddress", LDAPClass="user", EntityDataKey=PeopleEditorEntityDataKeys.SIPAddress},
+                new ClaimTypeConfig{LDAPAttribute="telephoneNumber", LDAPClass="user", EntityDataKey=PeopleEditorEntityDataKeys.WorkPhone},
+                new ClaimTypeConfig{LDAPAttribute="displayName", LDAPClass="group", CreateAsIdentityClaim=true, EntityDataKey=PeopleEditorEntityDataKeys.DisplayName},
             };
         }
 
@@ -382,203 +399,7 @@ namespace ldapcp
         }
     }
 
-    /// <summary>
-    /// Defines an attribute / claim type configuration
-    /// </summary>
-    public class AttributeHelper : SPAutoSerializingObject
-    {
-        /// <summary>
-        /// Name of the attribute in LDAP
-        /// </summary>
-        public string LDAPAttribute
-        {
-            get { return LDAPAttributeName; }
-            set { LDAPAttributeName = value; }
-        }
-        [Persisted]
-        private string LDAPAttributeName;
 
-        /// <summary>
-        /// Class of the attribute in LDAP, typically user or group
-        /// </summary>
-        public string LDAPObjectClassProp
-        {
-            get { return LDAPObjectClass; }
-            set { LDAPObjectClass = value; }
-        }
-        [Persisted]
-        private string LDAPObjectClass;
-
-        /// <summary>
-        /// define the claim type associated with the attribute that must map the claim type defined in the sp trust
-        /// for example "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress"
-        /// </summary>
-        public string ClaimType
-        {
-            get { return claimType; }
-            set { claimType = value; }
-        }
-        [Persisted]
-        private string claimType;
-
-        /// <summary>
-        /// SPClaimEntityTypes enum that represents the type of permission (a user, a role, a security group, etc...)
-        /// </summary>
-        public string ClaimEntityType
-        {
-            get { return claimEntityType; }
-            set { claimEntityType = value; }
-        }
-        [Persisted]
-        private string claimEntityType = SPClaimEntityTypes.User;
-
-        /// <summary>
-        /// When creating a PickerEntry, it's possible to populate entry with additional attributes stored in EntityData hash table
-        /// </summary>
-        public string EntityDataKey
-        {
-            get { return peopleEditorEntityDataKey; }
-            set { peopleEditorEntityDataKey = value; }
-        }
-        [Persisted]
-        private string peopleEditorEntityDataKey;
-
-        /// <summary>
-        /// Set to true if the attribute should always be queried in LDAP even if it is not defined in the SP trust (typically displayName and cn attributes)
-        /// </summary>
-        public bool CreateAsIdentityClaim
-        {
-            get { return ResolveAsIdentityClaim; }
-            set { ResolveAsIdentityClaim = value; }
-        }
-        [Persisted]
-        private bool ResolveAsIdentityClaim = false;
-
-        /// <summary>
-        /// This attribute is not intended to be used or modified in your code
-        /// </summary>
-        public string ClaimTypeMappingName
-        {
-            get { return peoplePickerAttributeDisplayName; }
-            set { peoplePickerAttributeDisplayName = value; }
-        }
-        [Persisted]
-        private string peoplePickerAttributeDisplayName;
-
-        /// <summary>
-        /// Every claim value type is a string by default
-        /// </summary>
-        public string ClaimValueType
-        {
-            get { return claimValueType; }
-            set { claimValueType = value; }
-        }
-        [Persisted]
-        private string claimValueType = WIF.ClaimValueTypes.String;
-
-        /// <summary>
-        /// This prefix is added to the value of the permission created. This is useful to add a domain name before a group name (for example "domain\group" instead of "group")
-        /// </summary>
-        public string PrefixToAddToValueReturnedProp
-        {
-            get { return PrefixToAddToValueReturned; }
-            set { PrefixToAddToValueReturned = value; }
-        }
-        [Persisted]
-        private string PrefixToAddToValueReturned;
-
-        /// <summary>
-        /// If set to true: permission created without LDAP lookup (possible if KeywordToValidateInputWithoutLookup is set and user typed this keyword in the input) should not contain the prefix (set in PrefixToAddToValueReturned) in the value
-        /// </summary>
-        public bool DoNotAddPrefixIfInputHasKeywordProp
-        {
-            get { return DoNotAddPrefixIfInputHasKeyword; }
-            set { DoNotAddPrefixIfInputHasKeyword = value; }
-        }
-        [Persisted]
-        private bool DoNotAddPrefixIfInputHasKeyword;
-
-        /// <summary>
-        /// Set this to tell LDAPCP to validate user input (and create the permission) without LDAP lookup if it contains this keyword at the beginning
-        /// </summary>
-        public string PrefixToBypassLookup
-        {
-            get { return KeywordToValidateInputWithoutLookup; }
-            set { KeywordToValidateInputWithoutLookup = value; }
-        }
-        [Persisted]
-        private string KeywordToValidateInputWithoutLookup;
-
-        /// <summary>
-        /// Set this property to customize display text of the permission with a specific LDAP attribute (different than LDAPAttributeName, that is the actual value of the permission)
-        /// </summary>
-        public string LDAPAttributeToDisplayProp
-        {
-            get { return LDAPAttributeToDisplay; }
-            set { LDAPAttributeToDisplay = value; }
-        }
-        [Persisted]
-        private string LDAPAttributeToDisplay;
-
-        /// <summary>
-        /// Set to only return values that exactly match the user input
-        /// </summary>
-        public bool FilterExactMatchOnlyProp
-        {
-            get { return FilterExactMatchOnly; }
-            set { FilterExactMatchOnly = value; }
-        }
-        [Persisted]
-        private bool FilterExactMatchOnly = false;
-
-        /// <summary>
-        /// Set this property to specify make LDAP lookup on this attribute more restrictive
-        /// </summary>
-        public string AdditionalLDAPFilterProp
-        {
-            get { return AdditionalLDAPFilter; }
-            set { AdditionalLDAPFilter = value; }
-        }
-        [Persisted]
-        private string AdditionalLDAPFilter;
-
-        /// <summary>
-        /// Set to true to show the display name of claim type in parenthesis in display text of permission
-        /// </summary>
-        public bool ShowClaimNameInDisplayText
-        {
-            get { return showClaimNameInDisplayText; }
-            set { showClaimNameInDisplayText = value; }
-        }
-        [Persisted]
-        private bool showClaimNameInDisplayText = true;
-
-        public AttributeHelper()
-        {
-        }
-
-        public AttributeHelper CopyPersistedProperties()
-        {
-            return new AttributeHelper()
-            {
-                AdditionalLDAPFilter = this.AdditionalLDAPFilter,
-                claimEntityType = this.claimEntityType,
-                claimType = this.claimType,
-                claimValueType = this.claimValueType,
-                DoNotAddPrefixIfInputHasKeyword = this.DoNotAddPrefixIfInputHasKeyword,
-                FilterExactMatchOnly = this.FilterExactMatchOnly,
-                KeywordToValidateInputWithoutLookup = this.KeywordToValidateInputWithoutLookup,
-                LDAPAttributeName = this.LDAPAttributeName,
-                LDAPAttributeToDisplay = this.LDAPAttributeToDisplay,
-                LDAPObjectClass = this.LDAPObjectClass,
-                peopleEditorEntityDataKey = this.peopleEditorEntityDataKey,
-                peoplePickerAttributeDisplayName = this.peoplePickerAttributeDisplayName,
-                PrefixToAddToValueReturned = this.PrefixToAddToValueReturned,
-                ResolveAsIdentityClaim = this.ResolveAsIdentityClaim,
-                showClaimNameInDisplayText = this.showClaimNameInDisplayText,
-            };
-        }
-    }
 
     public class LDAPConnection : SPAutoSerializingObject
     {
@@ -644,7 +465,7 @@ namespace ldapcp
         /// <summary>
         /// DirectoryEntry used to make LDAP queries
         /// </summary>
-        public DirectoryEntry directoryEntry;
+        public DirectoryEntry LDAPServer;
 
         public LDAPConnection()
         {
@@ -666,6 +487,8 @@ namespace ldapcp
             };
         }
     }
+
+
 
     /// <summary>
     /// Contains information about current request
@@ -706,10 +529,10 @@ namespace ldapcp
         public string Input;
         public bool InputHasKeyword;
         public bool ExactSearch;
-        public AttributeHelper IdentityClaimTypeConfig;
-        public List<AttributeHelper> ClaimTypesConfigList;
+        public ClaimTypeConfig IdentityClaimTypeConfig;
+        public List<ClaimTypeConfig> ClaimTypesConfigList;
 
-        public RequestInformation(ILDAPCPConfiguration currentConfiguration, RequestType currentRequestType, List<AttributeHelper> processedClaimTypeConfigList, string input, SPClaim incomingEntity, Uri context, string[] entityTypes, string hierarchyNodeID, int maxCount)
+        public RequestInformation(ILDAPCPConfiguration currentConfiguration, RequestType currentRequestType, List<ClaimTypeConfig> processedClaimTypeConfigList, string input, SPClaim incomingEntity, Uri context, string[] entityTypes, string hierarchyNodeID, int maxCount)
         {
             //this.CurrentConfiguration = currentConfiguration;
             this.RequestType = currentRequestType;
@@ -746,31 +569,31 @@ namespace ldapcp
         /// Validation is when SharePoint expects LDAPCP to return 1 PickerEntity from a given SPClaim
         /// </summary>
         /// <param name="processedClaimTypeConfigList"></param>
-        protected void InitializeValidation(List<AttributeHelper> processedClaimTypeConfigList)
+        protected void InitializeValidation(List<ClaimTypeConfig> processedClaimTypeConfigList)
         {
             if (this.IncomingEntity == null) throw new ArgumentNullException("claimToValidate");
             this.IdentityClaimTypeConfig = FindClaimTypeConfig(processedClaimTypeConfigList, this.IncomingEntity.ClaimType);
             if (this.IdentityClaimTypeConfig == null) return;
-            this.ClaimTypesConfigList = new List<AttributeHelper>() { this.IdentityClaimTypeConfig };
+            this.ClaimTypesConfigList = new List<ClaimTypeConfig>() { this.IdentityClaimTypeConfig };
             this.ExactSearch = true;
-            this.Input = (!String.IsNullOrEmpty(IdentityClaimTypeConfig.PrefixToAddToValueReturnedProp) && this.IncomingEntity.Value.StartsWith(IdentityClaimTypeConfig.PrefixToAddToValueReturnedProp, StringComparison.InvariantCultureIgnoreCase)) ?
-                this.IncomingEntity.Value.Substring(IdentityClaimTypeConfig.PrefixToAddToValueReturnedProp.Length) : this.IncomingEntity.Value;
+            this.Input = (!String.IsNullOrEmpty(IdentityClaimTypeConfig.ClaimValuePrefix) && this.IncomingEntity.Value.StartsWith(IdentityClaimTypeConfig.ClaimValuePrefix, StringComparison.InvariantCultureIgnoreCase)) ?
+                this.IncomingEntity.Value.Substring(IdentityClaimTypeConfig.ClaimValuePrefix.Length) : this.IncomingEntity.Value;
 
             // When working with domain tokens remove the domain part of the input so it can be found in AD
-            if (IdentityClaimTypeConfig.PrefixToAddToValueReturnedProp != null && (
-                    IdentityClaimTypeConfig.PrefixToAddToValueReturnedProp.Contains(Constants.LDAPCPCONFIG_TOKENDOMAINNAME) ||
-                    IdentityClaimTypeConfig.PrefixToAddToValueReturnedProp.Contains(Constants.LDAPCPCONFIG_TOKENDOMAINFQDN)
+            if (IdentityClaimTypeConfig.ClaimValuePrefix != null && (
+                    IdentityClaimTypeConfig.ClaimValuePrefix.Contains(Constants.LDAPCPCONFIG_TOKENDOMAINNAME) ||
+                    IdentityClaimTypeConfig.ClaimValuePrefix.Contains(Constants.LDAPCPCONFIG_TOKENDOMAINFQDN)
                 ))
                 Input = GetAccountFromFullAccountName(Input);
 
-            this.InputHasKeyword = (!String.IsNullOrEmpty(IdentityClaimTypeConfig.PrefixToAddToValueReturnedProp) && !IncomingEntity.Value.StartsWith(IdentityClaimTypeConfig.PrefixToAddToValueReturnedProp, StringComparison.InvariantCultureIgnoreCase) && IdentityClaimTypeConfig.DoNotAddPrefixIfInputHasKeywordProp) ? true : false;
+            this.InputHasKeyword = (!String.IsNullOrEmpty(IdentityClaimTypeConfig.ClaimValuePrefix) && !IncomingEntity.Value.StartsWith(IdentityClaimTypeConfig.ClaimValuePrefix, StringComparison.InvariantCultureIgnoreCase) && IdentityClaimTypeConfig.DoNotAddClaimValuePrefixIfBypassLookup) ? true : false;
         }
 
         /// <summary>
         /// Search is when SharePoint expects LDAPCP to return all PickerEntity that match input provided
         /// </summary>
         /// <param name="processedClaimTypeConfigList"></param>
-        protected void InitializeSearch(List<AttributeHelper> processedClaimTypeConfigList, bool exactSearch)
+        protected void InitializeSearch(List<ClaimTypeConfig> processedClaimTypeConfigList, bool exactSearch)
         {
             this.ExactSearch = exactSearch;
             this.Input = this.OriginalInput;
@@ -788,14 +611,14 @@ namespace ldapcp
             }
         }
 
-        protected void InitializeAugmentation(List<AttributeHelper> processedClaimTypeConfigList)
+        protected void InitializeAugmentation(List<ClaimTypeConfig> processedClaimTypeConfigList)
         {
             if (this.IncomingEntity == null) throw new ArgumentNullException("claimToValidate");
             this.IdentityClaimTypeConfig = FindClaimTypeConfig(processedClaimTypeConfigList, this.IncomingEntity.ClaimType);
             if (this.IdentityClaimTypeConfig == null) return;
         }
 
-        public static AttributeHelper FindClaimTypeConfig(List<AttributeHelper> processedClaimTypeConfigList, string claimType)
+        public static ClaimTypeConfig FindClaimTypeConfig(List<ClaimTypeConfig> processedClaimTypeConfigList, string claimType)
         {
             var Attributes = processedClaimTypeConfigList.FindAll(x =>
                 String.Equals(x.ClaimType, claimType, StringComparison.InvariantCultureIgnoreCase)
