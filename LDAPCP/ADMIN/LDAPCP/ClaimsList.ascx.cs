@@ -384,7 +384,8 @@ namespace ldapcp.ControlTemplates
 
         protected void BtnReset_Click(object sender, EventArgs e)
         {
-            LDAPCPConfig.ResetClaimTypesList(PersistedObjectName);
+            PersistedObject.ResetClaimTypesList();
+            PersistedObject.Update();
             Response.Redirect(Request.Url.ToString());
         }
 

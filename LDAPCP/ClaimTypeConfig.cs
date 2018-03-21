@@ -241,6 +241,12 @@ namespace ldapcp
             innerCol = new Collection<ClaimTypeConfig>();
         }
 
+        internal ClaimTypeConfigCollection(ref Collection<ClaimTypeConfig> innerCol)
+        {
+            this.innerCol = innerCol;
+            if (this.innerCol == null) this.innerCol = new Collection<ClaimTypeConfig>();
+        }
+
         public ClaimTypeConfig this[int index]
         {
             get { return (ClaimTypeConfig)innerCol[index]; }
@@ -276,6 +282,21 @@ namespace ldapcp
 
             innerCol.Add(item);
         }
+
+        //public void AddRange(List<ClaimTypeConfig> claimTypesList)
+        //{
+        //    foreach (ClaimTypeConfig claimType in claimTypesList)
+        //    {
+        //        Add(claimType);
+        //    }
+        //}
+
+        //public static ClaimTypeConfigCollection ToClaimTypeConfigCollection(IEnumerable<ClaimTypeConfig> enumList)
+        //{
+        //    Collection<ClaimTypeConfig> innerCol = new Collection<ClaimTypeConfig>(enumList.ToList());
+        //    ClaimTypeConfigCollection collection = new ClaimTypeConfigCollection(innerCol);
+        //    return collection;
+        //}
 
         public void Clear()
         {
@@ -331,12 +352,27 @@ namespace ldapcp
         public bool Remove(ClaimTypeConfig item)
         {
             bool result = false;
-
-            // Iterate the inner collection to find the box to be removed.
             for (int i = 0; i < innerCol.Count; i++)
             {
-                ClaimTypeConfig curBox = (ClaimTypeConfig)innerCol[i];
-                if (new ClaimTypeConfigSameConfig().Equals(curBox, item))
+                ClaimTypeConfig curCT = (ClaimTypeConfig)innerCol[i];
+                if (new ClaimTypeConfigSameConfig().Equals(curCT, item))
+                {
+                    innerCol.RemoveAt(i);
+                    result = true;
+                    break;
+                }
+            }
+            return result;
+        }
+
+        public bool Remove(string claimType)
+        {
+            if (String.IsNullOrEmpty(claimType)) throw new ArgumentNullException("claimType");
+            bool result = false;
+            for (int i = 0; i < innerCol.Count; i++)
+            {
+                ClaimTypeConfig curCT = (ClaimTypeConfig)innerCol[i];
+                if (String.Equals(claimType, curCT.ClaimType, StringComparison.InvariantCultureIgnoreCase))
                 {
                     innerCol.RemoveAt(i);
                     result = true;

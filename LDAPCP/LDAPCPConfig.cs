@@ -60,16 +60,19 @@ namespace ldapcp
         {
             get
             {
-                // TODO: Invalid as is
-                return ClaimTypes;
+                if (innerClaimTypes == null) innerClaimTypes = new ClaimTypeConfigCollection(ref this._ClaimTypes);
+                return innerClaimTypes;
+                //return ClaimTypes;
             }
             set
             {
-                _ClaimTypes = value.innerCol;
+                innerClaimTypes = value;
+                //_ClaimTypes = value.innerCol;
             }
         }
         [Persisted]
         private Collection<ClaimTypeConfig> _ClaimTypes;
+        private ClaimTypeConfigCollection innerClaimTypes;
 
         /// <summary>
         /// If true, LDAPCP will validate the input as is, with no LDAP query
@@ -256,19 +259,39 @@ namespace ldapcp
                 TraceSeverity.Medium, EventSeverity.Information, LdapcpLogging.Categories.Core);
         }
 
-        public static void ResetClaimTypesList(string persistedObjectName)
+        public LDAPCPConfig CloneInReadOnlyObject()
         {
-            LDAPCPConfig persistedObject = GetConfiguration(persistedObjectName);
-            if (persistedObject != null)
+            //return this.Clone() as LDAPCPConfig;
+            LDAPCPConfig newConfig = new LDAPCPConfig();
+            newConfig.BypassLDAPLookup = this.BypassLDAPLookup;
+            newConfig.AddWildcardAsPrefixOfInput = this.AddWildcardAsPrefixOfInput;
+            newConfig.PickerEntityGroupNameProp = this.PickerEntityGroupNameProp;
+            newConfig.DisplayLdapMatchForIdentityClaimTypeProp = this.DisplayLdapMatchForIdentityClaimTypeProp;
+            newConfig.FilterEnabledUsersOnlyProp = this.FilterEnabledUsersOnlyProp;
+            newConfig.FilterSecurityGroupsOnlyProp = this.FilterSecurityGroupsOnlyProp;
+            newConfig.FilterExactMatchOnlyProp = this.FilterExactMatchOnlyProp;
+            newConfig.LDAPQueryTimeout = this.LDAPQueryTimeout;
+            newConfig.EnableAugmentation = this.EnableAugmentation;
+            newConfig.ClaimTypeUsedForAugmentation = this.ClaimTypeUsedForAugmentation;
+            newConfig.ClaimTypes = new ClaimTypeConfigCollection();
+            foreach (ClaimTypeConfig currentObject in this.ClaimTypes)
             {
-                persistedObject.ClaimTypes.Clear();
-                persistedObject.ClaimTypes = GetDefaultClaimTypesConfig();
-                persistedObject.Update();
-
-                LdapcpLogging.Log($"Claims list of PersistedObject {persistedObjectName} was successfully reset to default claim types configuration",
-                    TraceSeverity.High, EventSeverity.Information, LdapcpLogging.Categories.Core);
+                newConfig.ClaimTypes.Add(currentObject.CopyPersistedProperties());
             }
-            return;
+            newConfig.LDAPConnectionsProp = new List<LDAPConnection>();
+            foreach (LDAPConnection currentCoco in this.LDAPConnectionsProp)
+            {
+                newConfig.LDAPConnectionsProp.Add(currentCoco.CopyPersistedProperties());
+            }
+            return newConfig;
+        }
+
+        public void ResetClaimTypesList()
+        {
+            ClaimTypes.Clear();
+            ClaimTypes = GetDefaultClaimTypesConfig();
+            LdapcpLogging.Log($"Claim types list of PersistedObject {Name} was successfully reset to default configuration",
+                TraceSeverity.High, EventSeverity.Information, LdapcpLogging.Categories.Core);
         }
 
         /// <summary>
@@ -620,13 +643,14 @@ namespace ldapcp
 
         public static ClaimTypeConfig FindClaimTypeConfig(List<ClaimTypeConfig> processedClaimTypeConfigList, string claimType)
         {
-            var Attributes = processedClaimTypeConfigList.FindAll(x =>
+            //FINDTOWHERE
+            var Attributes = processedClaimTypeConfigList.Where(x =>
                 String.Equals(x.ClaimType, claimType, StringComparison.InvariantCultureIgnoreCase)
                 && !x.CreateAsIdentityClaim);
-            if (Attributes.Count != 1)
+            if (Attributes.Count() != 1)
             {
                 // Should always find only 1 attribute at this stage
-                LdapcpLogging.Log(String.Format("[{0}] Found {1} attributes that match the claim type \"{2}\", but exactly 1 is expected. Verify that there is no duplicate claim type. Aborting operation.", LDAPCP._ProviderInternalName, Attributes.Count.ToString(), claimType), TraceSeverity.Unexpected, EventSeverity.Error, LdapcpLogging.Categories.Claims_Picking);
+                LdapcpLogging.Log(String.Format("[{0}] Found {1} attributes that match the claim type \"{2}\", but exactly 1 is expected. Verify that there is no duplicate claim type. Aborting operation.", LDAPCP._ProviderInternalName, Attributes.Count(), claimType), TraceSeverity.Unexpected, EventSeverity.Error, LdapcpLogging.Categories.Claims_Picking);
                 return null;
             }
             return Attributes.First();
