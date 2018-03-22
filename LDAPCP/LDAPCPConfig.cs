@@ -60,18 +60,25 @@ namespace ldapcp
         {
             get
             {
-                if (innerClaimTypes == null) innerClaimTypes = new ClaimTypeConfigCollection(ref this._ClaimTypes);
+                if (innerClaimTypes == null)
+                {
+                    innerClaimTypes = new ClaimTypeConfigCollection(ref this._ClaimTypesCollection);
+                }
+                //else
+                //{
+                //    _ClaimTypesCollection = innerClaimTypes.innerCol;
+                //}
                 return innerClaimTypes;
-                //return ClaimTypes;
             }
             set
             {
                 innerClaimTypes = value;
-                //_ClaimTypes = value.innerCol;
+                _ClaimTypesCollection = value.innerCol;
             }
         }
         [Persisted]
-        private Collection<ClaimTypeConfig> _ClaimTypes;
+        private Collection<ClaimTypeConfig> _ClaimTypesCollection;
+
         private ClaimTypeConfigCollection innerClaimTypes;
 
         /// <summary>

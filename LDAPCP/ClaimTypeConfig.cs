@@ -230,7 +230,7 @@ namespace ldapcp
         /// <summary>
         /// Internal collection serialized in persisted object
         /// </summary>
-        internal Collection<ClaimTypeConfig> innerCol;
+        internal Collection<ClaimTypeConfig> innerCol = new Collection<ClaimTypeConfig>();
 
         public int Count => innerCol.Count;
 
@@ -238,13 +238,11 @@ namespace ldapcp
 
         public ClaimTypeConfigCollection()
         {
-            innerCol = new Collection<ClaimTypeConfig>();
         }
 
         internal ClaimTypeConfigCollection(ref Collection<ClaimTypeConfig> innerCol)
         {
             this.innerCol = innerCol;
-            if (this.innerCol == null) this.innerCol = new Collection<ClaimTypeConfig>();
         }
 
         public ClaimTypeConfig this[int index]
