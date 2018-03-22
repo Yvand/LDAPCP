@@ -222,7 +222,7 @@ namespace ldapcp
     }
 
     /// <summary>
-    /// Implements collection
+    /// Implements ICollection<ClaimTypeConfig> to add validation
     /// </summary>
     public class ClaimTypeConfigCollection : ICollection<ClaimTypeConfig>
     {   // Follows article https://docs.microsoft.com/en-us/dotnet/api/system.collections.generic.icollection-1?view=netframework-4.7.1
@@ -263,6 +263,11 @@ namespace ldapcp
                 throw new InvalidOperationException($"No claim type should be set if CreateAsIdentityClaim is set to true");
             }
 
+            if (!item.CreateAsIdentityClaim && String.IsNullOrEmpty(item.ClaimType) && String.IsNullOrEmpty(item.EntityDataKey))
+            {
+                throw new InvalidOperationException($"EntityDataKey is required if ClaimType is empty and CreateAsIdentityClaim is set to false");
+            }
+
             if (Contains(item, new ClaimTypeConfigSamePermissionMetadata()))
             {
                 throw new InvalidOperationException($"Permission metadata '{item.EntityDataKey}' already exists in the collection for the LDAP class {item.LDAPClass}");
@@ -275,11 +280,31 @@ namespace ldapcp
 
             if (Contains(item))
             {
-                throw new InvalidOperationException($"This configuration with claim type '{item.ClaimType}' already exists in the collection");
+                if (String.IsNullOrEmpty(item.ClaimType))
+                    throw new InvalidOperationException($"This configuration with LDAP attribute '{item.LDAPAttribute}' and class '{item.LDAPClass}' already exists in the collection");
+                else
+                    throw new InvalidOperationException($"This configuration with claim type '{item.ClaimType}' already exists in the collection");
             }
 
             innerCol.Add(item);
         }
+
+        //public ClaimTypeConfig GetConfigByClaimType(string claimType)
+        //{
+        //    if (String.IsNullOrEmpty(claimType)) throw new ArgumentNullException(claimType);
+
+        //    ClaimTypeConfig result = null;
+        //    for (int i = 0; i < innerCol.Count; i++)
+        //    {
+        //        ClaimTypeConfig curCT = (ClaimTypeConfig)innerCol[i];
+        //        if (String.Equals(curCT.ClaimType, claimType, StringComparison.InvariantCultureIgnoreCase))
+        //        {
+        //            result = curCT;
+        //            break;
+        //        }
+        //    }
+        //    return result;
+        //}
 
         //public void AddRange(List<ClaimTypeConfig> claimTypesList)
         //{

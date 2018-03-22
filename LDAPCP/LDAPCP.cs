@@ -138,7 +138,7 @@ namespace ldapcp
                         {
                             refreshConfig = true;
                             this.LdapcpConfigVersion = ((SPPersistedObject)globalConfiguration).Version;
-                            LdapcpLogging.Log($"[{ProviderInternalName}] PersistedObject '{PersistedObjectName}' was changed, refreshing configuration",
+                            LdapcpLogging.Log($"[{ProviderInternalName}] PersistedObject '{PersistedObjectName}' was changed, refreshing configuration from new version {((SPPersistedObject)globalConfiguration).Version}",
                                 TraceSeverity.Medium, EventSeverity.Information, LdapcpLogging.Categories.Core);
                         }
                     }
@@ -488,9 +488,11 @@ namespace ldapcp
                     foreach (PickerEntity permission in permissions)
                     {
                         resolved.Add(permission);
-                        LdapcpLogging.Log(String.Format("[{0}] Added permission: claim value: \"{1}\", claim type: \"{2}\"", ProviderInternalName, permission.Claim.Value, permission.Claim.ClaimType),
-                            TraceSeverity.Medium, EventSeverity.Information, LdapcpLogging.Categories.Claims_Picking);
+                        LdapcpLogging.Log($"[{ProviderInternalName}] Added permission: claim value: '{permission.Claim.Value}', claim type: '{permission.Claim.ClaimType}', display text: '{permission.DisplayText}'",
+                            TraceSeverity.Verbose, EventSeverity.Information, LdapcpLogging.Categories.Claims_Picking);
                     }
+                    LdapcpLogging.Log($"[{ProviderInternalName}] Added {permissions.Count} permissions",
+                        TraceSeverity.Medium, EventSeverity.Information, LdapcpLogging.Categories.Claims_Picking);
                 }
                 catch (Exception ex)
                 {
@@ -537,9 +539,11 @@ namespace ldapcp
                             searchTree.AddChild(matchNode);
                         }
                         matchNode.AddEntity(permission);
-                        LdapcpLogging.Log(String.Format("[{0}] Added permission: claim value: \"{1}\", claim type: \"{2}\"", ProviderInternalName, permission.Claim.Value, permission.Claim.ClaimType),
-                            TraceSeverity.Medium, EventSeverity.Information, LdapcpLogging.Categories.Claims_Picking);
+                        LdapcpLogging.Log($"[{ProviderInternalName}] Added permission: claim value: '{permission.Claim.Value}', claim type: '{permission.Claim.ClaimType}', display text: '{permission.DisplayText}'",
+                            TraceSeverity.Verbose, EventSeverity.Information, LdapcpLogging.Categories.Claims_Picking);
                     }
+                    LdapcpLogging.Log($"[{ProviderInternalName}] Added {permissions.Count} permissions",
+                        TraceSeverity.Medium, EventSeverity.Information, LdapcpLogging.Categories.Claims_Picking);
                 }
                 catch (Exception ex)
                 {
@@ -720,7 +724,7 @@ namespace ldapcp
                 {
                     permissions.Add(result.PickerEntity);
                     LdapcpLogging.Log(String.Format("[{0}] Added permission created with LDAP lookup: claim value: \"{1}\", claim type: \"{2}\"", ProviderInternalName, result.PickerEntity.Claim.Value, result.PickerEntity.Claim.ClaimType),
-                        TraceSeverity.Verbose, EventSeverity.Information, LdapcpLogging.Categories.Claims_Picking);
+                        TraceSeverity.VerboseEx, EventSeverity.Information, LdapcpLogging.Categories.Claims_Picking);
                 }
             }
         }

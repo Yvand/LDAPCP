@@ -93,11 +93,11 @@ namespace ldapcp.ControlTemplates
             tr.Cells.Add(th);
             th = GetTableHeaderCell("Claim type");
             tr.Cells.Add(th);
-            th = GetTableHeaderCell("LDAP Attribute");
+            th = GetTableHeaderCell("LDAP attribute");
             tr.Cells.Add(th);
             th = GetTableHeaderCell("LDAP class");
             tr.Cells.Add(th);
-            th = GetTableHeaderCell("Attribute to display");
+            th = GetTableHeaderCell("LDAP attribute to show");
             tr.Cells.Add(th);
             th = GetTableHeaderCell("<a href='http://msdn.microsoft.com/en-us/library/office/microsoft.sharepoint.webcontrols.peopleeditorentitydatakeys_members(v=office.15).aspx' target='_blank'>Metadata</a>");
             tr.Cells.Add(th);
@@ -107,7 +107,7 @@ namespace ldapcp.ControlTemplates
             tr.Cells.Add(th);
             th = GetTableHeaderCell("Prefix to bypass lookup");
             tr.Cells.Add(th);
-            th = GetTableHeaderCell("Prefix to add to value returned");
+            th = GetTableHeaderCell("Claim value prefix");
             tr.Cells.Add(th);
             th = GetTableHeaderCell("Show claim name in display text");
             tr.Cells.Add(th);

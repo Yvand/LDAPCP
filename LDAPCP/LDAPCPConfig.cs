@@ -60,26 +60,26 @@ namespace ldapcp
         {
             get
             {
-                if (innerClaimTypes == null)
+                if (_ClaimTypes == null)
                 {
-                    innerClaimTypes = new ClaimTypeConfigCollection(ref this._ClaimTypesCollection);
+                    _ClaimTypes = new ClaimTypeConfigCollection(ref this._ClaimTypesCollection);
                 }
                 //else
                 //{
-                //    _ClaimTypesCollection = innerClaimTypes.innerCol;
+                //    _ClaimTypesCollection = _ClaimTypes.innerCol;
                 //}
-                return innerClaimTypes;
+                return _ClaimTypes;
             }
             set
             {
-                innerClaimTypes = value;
+                _ClaimTypes = value;
                 _ClaimTypesCollection = value.innerCol;
             }
         }
         [Persisted]
         private Collection<ClaimTypeConfig> _ClaimTypesCollection;
 
-        private ClaimTypeConfigCollection innerClaimTypes;
+        private ClaimTypeConfigCollection _ClaimTypes;
 
         /// <summary>
         /// If true, LDAPCP will validate the input as is, with no LDAP query
