@@ -673,7 +673,7 @@ namespace ldapcp
             {
                 LDAPServers.Add(new LDAPConnectionSettings() { Directory = coco.LDAPServer });
             }
-            GetLDAPFilter(requestInfo, ref LDAPServers);
+            BuildLDAPFilter(requestInfo, ref LDAPServers);
 
             bool resultsfound = false;
             List<LDAPSearchResultWrapper> LDAPSearchResultWrappers = new List<LDAPSearchResultWrapper>();
@@ -854,9 +854,9 @@ namespace ldapcp
         /// </summary>
         /// <param name="requestInfo">Information about current context and operation</param>
         /// <param name="LDAPServers">List to be populated by this method</param>
-        protected virtual void GetLDAPFilter(RequestInformation requestInfo, ref List<LDAPConnectionSettings> LDAPServers)
+        protected virtual void BuildLDAPFilter(RequestInformation requestInfo, ref List<LDAPConnectionSettings> LDAPServers)
         {
-            string filter = GetLDAPFilterForCurrentRequestInfo(requestInfo);
+            string filter = BuildLDAPFilterForCurrentRequest(requestInfo);
             foreach (LDAPConnectionSettings ldapServer in LDAPServers)
             {
                 ldapServer.Filter = filter.ToString();
@@ -868,7 +868,7 @@ namespace ldapcp
         /// </summary>
         /// <param name="requestInfo">Information about current context and operation</param>
         /// <returns>LDAP filter created from settings provided</returns>
-        protected string GetLDAPFilterForCurrentRequestInfo(RequestInformation requestInfo)
+        protected string BuildLDAPFilterForCurrentRequest(RequestInformation requestInfo)
         {
             // Build LDAP filter as documented in http://technet.microsoft.com/fr-fr/library/aa996205(v=EXCHG.65).aspx
             StringBuilder filter = new StringBuilder();
