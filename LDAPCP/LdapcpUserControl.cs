@@ -120,7 +120,7 @@ namespace ldapcp.ControlTemplates
         public virtual ConfigStatus ValidatePrerequisite()
         {
             Status = ConfigStatus.AllGood;
-            // DataBind() must be called to bind attributes set in UserControl if they are set as "<%# #>"
+            // DataBind() must be called to bind attributes that are set as "<%# #>"in .aspx
             DataBind();
             if (String.IsNullOrEmpty(ClaimsProviderName)) Status |= ConfigStatus.ClaimsProviderNamePropNotSet;
             if (String.IsNullOrEmpty(PersistedObjectName)) Status |= ConfigStatus.PersistedObjectNamePropNotSet;
@@ -143,8 +143,7 @@ namespace ldapcp.ControlTemplates
             }
             if (IdentityClaim == null && Status == ConfigStatus.AllGood)
             {
-                //FINDTOFIRSTORDEFAULT
-                IdentityClaim = this.IdentityClaim = PersistedObject.ClaimTypes.FirstOrDefault(x => String.Equals(CurrentTrustedLoginProvider.IdentityClaimTypeInformation.MappedClaimType, x.ClaimType, StringComparison.InvariantCultureIgnoreCase) && !x.CreateAsIdentityClaim);
+                IdentityClaim = this.IdentityClaim = PersistedObject.ClaimTypes.FirstOrDefault(x => String.Equals(CurrentTrustedLoginProvider.IdentityClaimTypeInformation.MappedClaimType, x.ClaimType, StringComparison.InvariantCultureIgnoreCase) && !x.UseMainClaimTypeOfDirectoryObject);
                 if (IdentityClaim == null) Status |= ConfigStatus.NoIdentityClaimType;
             }
             if (PersistedObjectVersion != PersistedObject.Version)
@@ -161,7 +160,7 @@ namespace ldapcp.ControlTemplates
             PersistedObject.Update();
             PersistedObjectVersion = PersistedObject.Version;
             LdapcpLogging.Log(
-               $"[{ClaimsProviderName}] Updated PersistedObject {PersistedObjectName} to version {PersistedObject.Version}", 
+               $"[{ClaimsProviderName}] Updated configuration {PersistedObjectName} to version {PersistedObject.Version}", 
                TraceSeverity.Medium,
                EventSeverity.Information,
                LdapcpLogging.Categories.Configuration);

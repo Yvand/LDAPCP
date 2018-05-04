@@ -61,7 +61,7 @@ namespace ldapcp
                 //    outfile.WriteLine(DateTime.Now.ToString() + " - FeatureDeactivating called");
                 //}
                 base.RemoveClaimProvider(LDAPCP._ProviderInternalName);
-                LDAPCPConfig.DeleteLDAPCPConfig(Constants.LDAPCPCONFIG_NAME);
+                LDAPCPConfig.DeleteLDAPCPConfig(ClaimsProviderConstants.LDAPCPCONFIG_NAME);
             });
         }
 

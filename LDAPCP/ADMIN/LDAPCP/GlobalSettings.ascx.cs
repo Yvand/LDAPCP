@@ -44,9 +44,21 @@ namespace ldapcp.ControlTemplates
         string TextUpdateAdditionalLdapFilterOk = "LDAP filter was successfully applied to all LDAP attributes of class 'user'.";
 
         protected void Page_Load(object sender, EventArgs e)
+        {          
+            Initialize();
+        }
+
+        /// <summary>
+        /// Initialize controls as needed if prerequisites are ok, otherwise deactivate controls and show error message
+        /// </summary>
+        protected void Initialize()
         {
+            // Set default values of IsDefaultADConnectionCreated and ForceCheckCustomLdapConnection
+            // They are overridden later if needed
             ViewState["IsDefaultADConnectionCreated"] = false;
             ViewState["ForceCheckCustomLdapConnection"] = false;
+
+            // Check prerequisite
             if (ValidatePrerequisite() != ConfigStatus.AllGood)
             {
                 this.LabelErrorMessage.Text = base.MostImportantError;
@@ -54,8 +66,15 @@ namespace ldapcp.ControlTemplates
                 return;
             }
 
-            if (!this.IsPostBack) Initialize();
+            PopulateLdapConnectionGrid();
+            if (!this.IsPostBack)
+            {
+                PopulateCblAuthenticationTypes();
+                InitializeAugmentation();
+                InitializeGeneralSettings();
+            }
 
+            // Handle password storage in ViewState
             if (ViewState["LDAPpwd"] != null)
             {
                 ViewState["LDAPpwd"] = TxtLdapPassword.Text;
@@ -67,17 +86,9 @@ namespace ldapcp.ControlTemplates
             }
         }
 
-        protected void Initialize()
-        {
-            PopulateLdapConnectionGrid();
-            PopulateCblAuthenticationTypes();
-            InitializeAugmentation();
-            InitializeGeneralSettings();
-        }
-
         private void InitializeAugmentation()
         {
-            IEnumerable<ClaimTypeConfig> potentialGroupClaimTypes = PersistedObject.ClaimTypes.Where(x => x.ClaimEntityType == SPClaimEntityTypes.FormsRole || x.ClaimEntityType == SPClaimEntityTypes.SecurityGroup);
+            IEnumerable<ClaimTypeConfig> potentialGroupClaimTypes = PersistedObject.ClaimTypes.Where(x => x.DirectoryObjectType == LDAPObjectType.Group);
             if (potentialGroupClaimTypes == null || potentialGroupClaimTypes.Count() == 0)
             {
                 LabelErrorMessage.Text = TextErrorNoGroupClaimType;
@@ -194,7 +205,7 @@ namespace ldapcp.ControlTemplates
 
             int timeOut;
             if (!Int32.TryParse(this.txtTimeout.Text, out timeOut) || timeOut < 0)
-                timeOut = Constants.LDAPCPCONFIG_TIMEOUT; //set to default if unable to parse
+                timeOut = ClaimsProviderConstants.LDAPCPCONFIG_TIMEOUT; //set to default if unable to parse
             PersistedObject.LDAPQueryTimeout = timeOut;
         }
 
@@ -244,8 +255,7 @@ namespace ldapcp.ControlTemplates
         void UpdateAdditionalUserLdapFilter()
         {
             if (PersistedObject == null) return;
-            //FINDTOWHERE
-            foreach (var userAttr in this.PersistedObject.ClaimTypes.Where(x => x.ClaimEntityType == SPClaimEntityTypes.User || x.CreateAsIdentityClaim))
+            foreach (var userAttr in this.PersistedObject.ClaimTypes.Where(x => x.DirectoryObjectType == LDAPObjectType.User || x.UseMainClaimTypeOfDirectoryObject))
             {
                 userAttr.AdditionalLDAPFilter = this.TxtAdditionalUserLdapFilter.Text;
             }

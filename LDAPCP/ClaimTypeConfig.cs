@@ -38,6 +38,14 @@ namespace ldapcp
         [Persisted]
         private string _LDAPClass;
 
+        public LDAPObjectType DirectoryObjectType
+        {
+            get { return (LDAPObjectType)Enum.ToObject(typeof(LDAPObjectType), _DirectoryObjectType); }
+            set { _DirectoryObjectType = (int)value; }
+        }
+        [Persisted]
+        private int _DirectoryObjectType;
+
         /// <summary>
         /// define the claim type associated with the attribute that must map the claim type defined in the sp trust
         /// for example "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress"
@@ -50,16 +58,24 @@ namespace ldapcp
         [Persisted]
         private string _ClaimType;
 
-        /// <summary>
-        /// SPClaimEntityTypes enum that represents the type of permission (a user, a role, a security group, etc...)
-        /// </summary>
-        public string ClaimEntityType
+        public bool SupportsWildcard
         {
-            get { return _ClaimEntityType; }
-            set { _ClaimEntityType = value; }
+            get { return _SupportsWildcard; }
+            set { _SupportsWildcard = value; }
         }
         [Persisted]
-        private string _ClaimEntityType = SPClaimEntityTypes.User;
+        private bool _SupportsWildcard;
+
+        /// <summary>
+        /// If set to true, property ClaimType should not be set
+        /// </summary>
+        public bool UseMainClaimTypeOfDirectoryObject
+        {
+            get { return _UseMainClaimTypeOfDirectoryObject; }
+            set { _UseMainClaimTypeOfDirectoryObject = value; }
+        }
+        [Persisted]
+        private bool _UseMainClaimTypeOfDirectoryObject = false;
 
         /// <summary>
         /// When creating a PickerEntry, it's possible to populate entry with additional attributes stored in EntityData hash table
@@ -70,23 +86,12 @@ namespace ldapcp
             set { _EntityDataKey = value; }
         }
         [Persisted]
-        private string _EntityDataKey;
+        private string _EntityDataKey;        
 
         /// <summary>
-        /// Set to true if the attribute should always be queried in LDAP even if it is not defined in the SP trust (typically displayName and cn attributes)
+        /// Stores property SPTrustedClaimTypeInformation.DisplayName of current claim type.
         /// </summary>
-        public bool CreateAsIdentityClaim
-        {
-            get { return _CreateAsIdentityClaim; }
-            set { _CreateAsIdentityClaim = value; }
-        }
-        [Persisted]
-        private bool _CreateAsIdentityClaim = false;
-
-        /// <summary>
-        /// This attribute is not intended to be used or modified in your code
-        /// </summary>
-        internal string ClaimTypeMappingName
+        internal string ClaimTypeDisplayName
         {
             get { return _ClaimTypeMappingName; }
             set { _ClaimTypeMappingName = value; }
@@ -191,7 +196,7 @@ namespace ldapcp
             return new ClaimTypeConfig()
             {
                 _AdditionalLDAPFilter = this._AdditionalLDAPFilter,
-                _ClaimEntityType = this._ClaimEntityType,
+                _DirectoryObjectType = this._DirectoryObjectType,
                 _ClaimType = this._ClaimType,
                 _ClaimValueType = this._ClaimValueType,
                 _DoNotAddClaimValuePrefixIfBypassLookup = this._DoNotAddClaimValuePrefixIfBypassLookup,
@@ -203,7 +208,7 @@ namespace ldapcp
                 _EntityDataKey = this._EntityDataKey,
                 _ClaimTypeMappingName = this._ClaimTypeMappingName,
                 _ClaimValuePrefix = this._ClaimValuePrefix,
-                _CreateAsIdentityClaim = this._CreateAsIdentityClaim,
+                _UseMainClaimTypeOfDirectoryObject = this._UseMainClaimTypeOfDirectoryObject,
                 _ShowClaimNameInDisplayText = this._ShowClaimNameInDisplayText,
             };
         }
@@ -258,14 +263,14 @@ namespace ldapcp
                 throw new InvalidOperationException($"Properties LDAPAttribute and LDAPClass are required");
             }
 
-            if (item.CreateAsIdentityClaim && !String.IsNullOrEmpty(item.ClaimType))
+            if (item.UseMainClaimTypeOfDirectoryObject && !String.IsNullOrEmpty(item.ClaimType))
             {
-                throw new InvalidOperationException($"No claim type should be set if CreateAsIdentityClaim is set to true");
+                throw new InvalidOperationException($"No claim type should be set if UseMainClaimTypeOfDirectoryObject is set to true");
             }
 
-            if (!item.CreateAsIdentityClaim && String.IsNullOrEmpty(item.ClaimType) && String.IsNullOrEmpty(item.EntityDataKey))
+            if (!item.UseMainClaimTypeOfDirectoryObject && String.IsNullOrEmpty(item.ClaimType) && String.IsNullOrEmpty(item.EntityDataKey))
             {
-                throw new InvalidOperationException($"EntityDataKey is required if ClaimType is empty and CreateAsIdentityClaim is set to false");
+                throw new InvalidOperationException($"EntityDataKey is required if ClaimType is empty and UseMainClaimTypeOfDirectoryObject is set to false");
             }
 
             if (Contains(item, new ClaimTypeConfigSamePermissionMetadata()))
