@@ -7,6 +7,7 @@ using System.Data;
 using System.DirectoryServices;
 using System.Linq;
 using System.Web.UI.WebControls;
+using static ldapcp.ClaimsProviderLogging;
 
 namespace ldapcp.ControlTemplates
 {
@@ -243,7 +244,7 @@ namespace ldapcp.ControlTemplates
 
         protected virtual void ResetConfiguration()
         {
-            LDAPCPConfig.DeleteLDAPCPConfig(PersistedObjectName);
+            LDAPCPConfig.DeleteConfiguration(PersistedObjectName);
             Response.Redirect(Request.RawUrl, false);
         }
 
@@ -307,11 +308,11 @@ namespace ldapcp.ControlTemplates
 
             // Update object in database
             CommitChanges();
-            LdapcpLogging.Log(
+            ClaimsProviderLogging.Log(
                    $"[{ClaimsProviderName}] Added a new LDAP connection in PersistedObject {PersistedObjectName}",
                    TraceSeverity.Medium,
                    EventSeverity.Information,
-                   LdapcpLogging.Categories.Configuration);
+                   TraceCategory.Configuration);
 
             PopulateLdapConnectionGrid();
             InitializeAugmentation();
@@ -342,7 +343,7 @@ namespace ldapcp.ControlTemplates
             }
             catch (Exception ex)
             {
-                LdapcpLogging.LogException(ClaimsProviderName, "while testing LDAP connection", LdapcpLogging.Categories.Configuration, ex);
+                ClaimsProviderLogging.LogException(ClaimsProviderName, "while testing LDAP connection", TraceCategory.Configuration, ex);
                 this.LabelErrorTestLdapConnection.Text = String.Format(TextErrorTestLdapConnection, ex.Message);
             }
             finally
@@ -366,11 +367,11 @@ namespace ldapcp.ControlTemplates
 
             // Update object in database
             CommitChanges();
-            LdapcpLogging.Log(
+            ClaimsProviderLogging.Log(
                     $"[{ClaimsProviderName}] Removed a LDAP connection in PersistedObject {PersistedObjectName}",
                     TraceSeverity.Medium,
                     EventSeverity.Information,
-                    LdapcpLogging.Categories.Configuration);
+                    TraceCategory.Configuration);
 
             InitializeAugmentation();
             PopulateLdapConnectionGrid();

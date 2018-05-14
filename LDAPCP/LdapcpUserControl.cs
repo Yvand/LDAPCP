@@ -5,6 +5,7 @@ using Microsoft.SharePoint.WebControls;
 using System;
 using System.Linq;
 using System.Web.UI;
+using static ldapcp.ClaimsProviderLogging;
 
 namespace ldapcp.ControlTemplates
 {
@@ -47,7 +48,7 @@ namespace ldapcp.ControlTemplates
                     if (_PersistedObject == null)
                     {
                         SPContext.Current.Web.AllowUnsafeUpdates = true;
-                        _PersistedObject = LDAPCPConfig.CreatePersistedObject(this.PersistedObjectID, this.PersistedObjectName);
+                        _PersistedObject = LDAPCPConfig.CreateConfiguration(this.PersistedObjectID, this.PersistedObjectName);
                         SPContext.Current.Web.AllowUnsafeUpdates = false;
                     }
                 });
@@ -127,7 +128,7 @@ namespace ldapcp.ControlTemplates
             if (String.IsNullOrEmpty(PersistedObjectID)) Status |= ConfigStatus.PersistedObjectIDPropNotSet;
             if (Status != ConfigStatus.AllGood)
             {
-                LdapcpLogging.Log($"[{ClaimsProviderName}] {MostImportantError}", TraceSeverity.Unexpected, EventSeverity.Error, LdapcpLogging.Categories.Configuration);
+                ClaimsProviderLogging.Log($"[{ClaimsProviderName}] {MostImportantError}", TraceSeverity.Unexpected, EventSeverity.Error, TraceCategory.Configuration);
                 // Should not go further if those requirements are not met
                 return Status;
             }
@@ -151,7 +152,7 @@ namespace ldapcp.ControlTemplates
                 Status |= ConfigStatus.PersistedObjectStale;
             }
 
-            if (Status != ConfigStatus.AllGood) LdapcpLogging.Log($"[{ClaimsProviderName}] {MostImportantError}", TraceSeverity.Unexpected, EventSeverity.Error, LdapcpLogging.Categories.Configuration);
+            if (Status != ConfigStatus.AllGood) ClaimsProviderLogging.Log($"[{ClaimsProviderName}] {MostImportantError}", TraceSeverity.Unexpected, EventSeverity.Error, TraceCategory.Configuration);
             return Status;
         }
 
@@ -159,11 +160,11 @@ namespace ldapcp.ControlTemplates
         {
             PersistedObject.Update();
             PersistedObjectVersion = PersistedObject.Version;
-            LdapcpLogging.Log(
+            ClaimsProviderLogging.Log(
                $"[{ClaimsProviderName}] Updated configuration {PersistedObjectName} to version {PersistedObject.Version}", 
                TraceSeverity.Medium,
                EventSeverity.Information,
-               LdapcpLogging.Categories.Configuration);
+               TraceCategory.Configuration);
         }
     }
 

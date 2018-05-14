@@ -7,7 +7,7 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using WIF = System.Security.Claims;
+using WIF4_5 = System.Security.Claims;
 
 namespace ldapcp
 {
@@ -46,10 +46,6 @@ namespace ldapcp
         [Persisted]
         private int _DirectoryObjectType;
 
-        /// <summary>
-        /// define the claim type associated with the attribute that must map the claim type defined in the sp trust
-        /// for example "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress"
-        /// </summary>
         public string ClaimType
         {
             get { return _ClaimType; }
@@ -108,7 +104,7 @@ namespace ldapcp
             set { _ClaimValueType = value; }
         }
         [Persisted]
-        private string _ClaimValueType = WIF.ClaimValueTypes.String;
+        private string _ClaimValueType = WIF4_5.ClaimValueTypes.String;
 
         /// <summary>
         /// This prefix is added to the value of the permission created. This is useful to add a domain name before a group name (for example "domain\group" instead of "group")
@@ -270,7 +266,7 @@ namespace ldapcp
 
             if (!item.UseMainClaimTypeOfDirectoryObject && String.IsNullOrEmpty(item.ClaimType) && String.IsNullOrEmpty(item.EntityDataKey))
             {
-                throw new InvalidOperationException($"EntityDataKey is required if ClaimType is empty and UseMainClaimTypeOfDirectoryObject is set to false");
+                throw new InvalidOperationException($"EntityDataKey is required if ClaimType is not set and UseMainClaimTypeOfDirectoryObject is set to false");
             }
 
             if (Contains(item, new ClaimTypeConfigSamePermissionMetadata()))
@@ -283,12 +279,31 @@ namespace ldapcp
                 throw new InvalidOperationException($"Claim type '{item.ClaimType}' already exists in the collection");
             }
 
+            if (Contains(item, new ClaimTypeConfigEnsureUniquePrefixToBypassLookup()))
+            {
+                throw new InvalidOperationException($"Prefix '{item.PrefixToBypassLookup}' is already set with another claim type and must be unique");
+            }
+
             if (Contains(item))
             {
                 if (String.IsNullOrEmpty(item.ClaimType))
                     throw new InvalidOperationException($"This configuration with LDAP attribute '{item.LDAPAttribute}' and class '{item.LDAPClass}' already exists in the collection");
                 else
                     throw new InvalidOperationException($"This configuration with claim type '{item.ClaimType}' already exists in the collection");
+            }
+
+            if (ClaimsProviderConstants.EnforceOnly1ClaimTypeForGroup && item.DirectoryObjectType == LDAPObjectType.Group)
+            {
+                if (Contains(item, new ClaimTypeConfigEnforeOnly1ClaimTypePerObjectType()))
+                {
+                    throw new InvalidOperationException($"A claim type for DirectoryObjectType '{LDAPObjectType.Group.ToString()}' already exists in the collection");
+                }
+            }
+
+            // Cannot add item with UseMainClaimTypeOfDirectoryObject true if collection does not contain an item with same directory object type AND a claim type defined
+            if (item.UseMainClaimTypeOfDirectoryObject && innerCol.FirstOrDefault(x => x.DirectoryObjectType == item.DirectoryObjectType && !String.IsNullOrEmpty(x.ClaimType)) == null)
+            {
+                throw new InvalidOperationException($"Cannot add this item (with UseMainClaimTypeOfDirectoryObject set to true) because collecton does not contain an item with same DirectoryObjectType '{item.DirectoryObjectType.ToString()}' AND a ClaimType set");
             }
 
             innerCol.Add(item);
@@ -531,6 +546,58 @@ namespace ldapcp
         public override int GetHashCode(ClaimTypeConfig ct)
         {
             string hCode = ct.ClaimType + ct.LDAPAttribute + ct.LDAPClass;
+            return hCode.GetHashCode();
+        }
+    }
+
+    /// <summary>
+    /// Ensure that there is no duplicate of "PrefixToBypassLookup" property
+    /// </summary>
+    internal class ClaimTypeConfigEnsureUniquePrefixToBypassLookup : EqualityComparer<ClaimTypeConfig>
+    {
+        public override bool Equals(ClaimTypeConfig existingCTConfig, ClaimTypeConfig newCTConfig)
+        {
+            if (!String.IsNullOrEmpty(newCTConfig.PrefixToBypassLookup) &&
+                String.Equals(newCTConfig.PrefixToBypassLookup, existingCTConfig.PrefixToBypassLookup, StringComparison.InvariantCultureIgnoreCase))
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+        public override int GetHashCode(ClaimTypeConfig ct)
+        {
+            string hCode = ct.PrefixToBypassLookup;
+            return hCode.GetHashCode();
+        }
+    }
+
+    /// <summary>
+    /// Should be used only to ensure that only 1 claim type is set per DirectoryObjectType
+    /// </summary>
+    internal class ClaimTypeConfigEnforeOnly1ClaimTypePerObjectType : EqualityComparer<ClaimTypeConfig>
+    {
+        public override bool Equals(ClaimTypeConfig existingCTConfig, ClaimTypeConfig newCTConfig)
+        {
+            if ((!String.IsNullOrEmpty(newCTConfig.ClaimType) && !String.IsNullOrEmpty(existingCTConfig.ClaimType)) &&
+                existingCTConfig.DirectoryObjectType == newCTConfig.DirectoryObjectType &&
+                existingCTConfig.UseMainClaimTypeOfDirectoryObject == newCTConfig.UseMainClaimTypeOfDirectoryObject &&
+                newCTConfig.UseMainClaimTypeOfDirectoryObject == false)
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+        public override int GetHashCode(ClaimTypeConfig ct)
+        {
+            string hCode = ct.ClaimType + ct.DirectoryObjectType + ct.UseMainClaimTypeOfDirectoryObject.ToString();
             return hCode.GetHashCode();
         }
     }

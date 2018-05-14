@@ -36,7 +36,7 @@ namespace ldapcp
             base.FeatureActivated(properties);
             SPSecurity.RunWithElevatedPrivileges(delegate()
             {
-                LdapcpLogging svc = LdapcpLogging.Local;
+                ClaimsProviderLogging svc = ClaimsProviderLogging.Local;
             });
         }        
 
@@ -48,7 +48,7 @@ namespace ldapcp
                 //{
                 //    outfile.WriteLine(DateTime.Now.ToString() + " - FeatureUninstalling called");
                 //}
-                LdapcpLogging.Unregister();
+                ClaimsProviderLogging.Unregister();
             });
         }
 
@@ -61,7 +61,7 @@ namespace ldapcp
                 //    outfile.WriteLine(DateTime.Now.ToString() + " - FeatureDeactivating called");
                 //}
                 base.RemoveClaimProvider(LDAPCP._ProviderInternalName);
-                LDAPCPConfig.DeleteLDAPCPConfig(ClaimsProviderConstants.LDAPCPCONFIG_NAME);
+                LDAPCPConfig.DeleteConfiguration(ClaimsProviderConstants.LDAPCPCONFIG_NAME);
             });
         }
 
@@ -69,7 +69,7 @@ namespace ldapcp
         {
             SPSecurity.RunWithElevatedPrivileges(delegate ()
             {
-                LdapcpLogging svc = LdapcpLogging.Local;
+                ClaimsProviderLogging svc = ClaimsProviderLogging.Local;
             });
         }
     }
