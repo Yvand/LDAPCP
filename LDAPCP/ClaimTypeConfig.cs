@@ -60,7 +60,7 @@ namespace ldapcp
             set { _SupportsWildcard = value; }
         }
         [Persisted]
-        private bool _SupportsWildcard;
+        private bool _SupportsWildcard = true;
 
         /// <summary>
         /// If set to true, property ClaimType should not be set

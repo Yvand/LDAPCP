@@ -273,15 +273,6 @@ namespace ldapcp
                 this.ProcessedClaimTypesList.AddRange(claimTypesSetInTrust);
                 this.ProcessedClaimTypesList.AddRange(additionalClaimTypeConfigList);
 
-                //// Parse each attribute to configure its settings from the corresponding claim types defined in the SPTrustedLoginProvider
-                //foreach (ClaimTypeConfig claimTypeConfig in this.ProcessedClaimTypesList)
-                //{
-                //    var trustedClaim = SPTrust.GetClaimTypeInformationFromMappedClaimType(claimTypeConfig.ClaimType);
-                //    // It should never be null
-                //    if (trustedClaim == null) continue;
-                //    claimTypeConfig.ClaimTypeDisplayName = trustedClaim.DisplayName;
-                //}
-
                 // Any metadata for a user with at least an LDAP attribute and a LDAP class is valid
                 this.MetadataConfig = nonProcessedClaimTypes.Where(x =>
                     !String.IsNullOrEmpty(x.EntityDataKey) &&

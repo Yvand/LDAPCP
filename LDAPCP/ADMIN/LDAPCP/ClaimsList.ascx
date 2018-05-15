@@ -276,7 +276,7 @@
         <input id="btnEnableFullScreenMode" type="button" value="Maximize content" onclick="window.Ldapcp.ClaimsTablePage.SetFullScreenModeInCurPageOnly(); $('#btnEnableFullScreenMode').hide(); $('#btnDisableFullScreenMode').show(); return false;" style="display: none;" class="ms-ButtonHeightWidth" />
     </div>
     <div id="divTblClaims">
-        <span style="display: block; margin-bottom: 10px;">This table is used by LDAPCP to map claim types set in SPTrustedIdentityTokenIssuer &quot;{trustname}&quot; with Azure AD objects and properties.</span>
+        <span style="display: block; margin-bottom: 10px;">This table is used by LDAPCP to map claim types set in SPTrustedIdentityTokenIssuer &quot;{trustname}&quot; with LDAP objects.</span>
         <asp:Table ID="TblClaimsMapping" runat="server"></asp:Table>
         <div id="divLegend">
             <fieldset>
@@ -284,9 +284,9 @@
                 <ol>
                     <li><span class="ldapcp-rowidentityclaim">This formatting</span><span> shows the identity claim type set in SPTrust &quot;{trustname}&quot;. It is required for LDAPCP to work.</span></li>
                     <li><span class="ldapcp-rowUserProperty">This formatting</span><span> shows an additional property used to search a User. Permission will be created using identity claim type configuration.</span></li>
-                    <li><span class="ldapcp-rowMainGroupClaimType">This formatting</span><span> shows the main claim type mapped to object &quot;Group&quot;, which is also used for augmentation (this can be enabled or disabled in LDAPCP global settings page).</span></li>
-                    <li><span class="ldapcp-rowGroupProperty">This formatting</span><span> shows an additional property used to search a Group. Permission will be created using Group claim type configuration.</span></li>
-                    <li><span class="ldapcp-rowClaimTypeNotUsedInTrust">This formatting</span><span> shows a claim type not set in SPTrust &quot;{trustname}&quot;, it will be ignored by LDAPCP and may be deleted.</span></li>
+                    <li><span class="ldapcp-rowMainGroupClaimType">This formatting</span><span> shows the main &quot;Group&quot; claim type, used for augmentation (which can be enabled or disabled in LDAPCP global settings page).</span></li>
+					<li><span class="ldapcp-rowGroupProperty">This formatting</span><span> shows an additional property used to search a Group. Permission will be created using the main &quot;Group&quot; claim type configuration.</span></li>
+					<li><span class="ldapcp-rowClaimTypeNotUsedInTrust">This formatting</span><span> shows a claim type not set in SPTrust &quot;{trustname}&quot;, it will be ignored by LDAPCP and may be deleted.</span></li>
                 </ol>
             </fieldset>
         </div>
