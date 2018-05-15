@@ -39,6 +39,7 @@ namespace ldapcp
         public const int LDAPCPCONFIG_TIMEOUT = 10;
         public static string GroupClaimEntityType = SPClaimEntityTypes.FormsRole;
         public const bool EnforceOnly1ClaimTypeForGroup = false;    // In LDAPCP, multiple claim types can be used to create group permissions
+        public const string DefaultMainGroupClaimType = WIF4_5.ClaimTypes.Role;
     }
 
     public class LDAPCPConfig : SPPersistedObject, ILDAPCPConfiguration
@@ -201,15 +202,15 @@ namespace ldapcp
             {
                 this.LDAPConnections = GetDefaultLDAPConnection();
                 this.ClaimTypes = GetDefaultClaimTypesConfig();
-                this.PickerEntityGroupName = "Results";
-                this.AlwaysResolveUserInput = false;
-                this.AddWildcardInFrontOfQuery = false;
-                this.FilterEnabledUsersOnly = false;
-                this.FilterSecurityGroupsOnly = false;
-                this.FilterExactMatchOnly = false;
-                this.Timeout = ClaimsProviderConstants.LDAPCPCONFIG_TIMEOUT;
-                this.AugmentationEnabled = false;
-                this.AugmentationClaimType = String.Empty;
+                this.PickerEntityGroupNameProp = "Results";
+                this.BypassLDAPLookup = false;
+                this.AddWildcardAsPrefixOfInput = false;
+                this.FilterEnabledUsersOnlyProp = false;
+                this.FilterSecurityGroupsOnlyProp = false;
+                this.FilterExactMatchOnlyProp = false;
+                this.LDAPQueryTimeout = ClaimsProviderConstants.LDAPCPCONFIG_TIMEOUT;
+                this.EnableAugmentation = false;
+                this.ClaimTypeUsedForAugmentation = ClaimsProviderConstants.DefaultMainGroupClaimType;
             }
         }
 
@@ -337,7 +338,7 @@ namespace ldapcp
             copy.ClaimTypes = new ClaimTypeConfigCollection();
             foreach (ClaimTypeConfig currentObject in this.ClaimTypes)
             {
-                copy.ClaimTypes.Add(currentObject.CopyPersistedProperties());
+                copy.ClaimTypes.Add(currentObject.CopyCurrentObject());
             }
             copy.LDAPConnectionsProp = new List<LDAPConnection>();
             foreach (LDAPConnection currentCoco in this.LDAPConnectionsProp)
@@ -351,6 +352,7 @@ namespace ldapcp
         {
             ClaimTypes.Clear();
             ClaimTypes = GetDefaultClaimTypesConfig();
+            ClaimTypeUsedForAugmentation = ClaimsProviderConstants.DefaultMainGroupClaimType;
             ClaimsProviderLogging.Log($"Claim types list of configuration '{Name}' was successfully reset to default configuration",
                 TraceSeverity.High, EventSeverity.Information, TraceCategory.Core);
         }
@@ -411,7 +413,7 @@ namespace ldapcp
                 new ClaimTypeConfig{DirectoryObjectType = LDAPObjectType.User, LDAPClass = "user", LDAPAttribute="telephoneNumber", EntityDataKey = PeopleEditorEntityDataKeys.WorkPhone},
 
                 // Group
-                new ClaimTypeConfig{DirectoryObjectType = LDAPObjectType.Group, LDAPClass = "group", LDAPAttribute="sAMAccountName", ClaimType = WIF4_5.ClaimTypes.Role, ClaimValuePrefix = @"{fqdn}\"},
+                new ClaimTypeConfig{DirectoryObjectType = LDAPObjectType.Group, LDAPClass = "group", LDAPAttribute="sAMAccountName", ClaimType = ClaimsProviderConstants.DefaultMainGroupClaimType, ClaimValuePrefix = @"{fqdn}\"},
                 new ClaimTypeConfig{DirectoryObjectType = LDAPObjectType.Group, LDAPClass = "group", LDAPAttribute="displayName", UseMainClaimTypeOfDirectoryObject = true, EntityDataKey = PeopleEditorEntityDataKeys.DisplayName},
             };
         }

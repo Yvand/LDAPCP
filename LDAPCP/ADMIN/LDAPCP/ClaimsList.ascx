@@ -77,10 +77,21 @@
 
     .ldapcp-rowClaimTypeNotUsedInTrust {
         color: red;
+        font-style: italic;
+        text-decoration: line-through;
     }
 
-    .ldapcp-rowClaimTypeOk {
+    .ldapcp-rowUserProperty {
         color: green;
+    }
+
+    .ldapcp-rowMainGroupClaimType {
+        font-weight: bold;
+        color: #0072c6;
+    }
+
+    .ldapcp-rowGroupProperty {
+        color: #0072c6;
     }
 
     #divBtnsFullScreenMode {
@@ -109,7 +120,7 @@
     // Builds unique namespace
     window.Ldapcp = window.Ldapcp || {};
     window.Ldapcp.ClaimsTablePage = window.Ldapcp.ClaimsTablePage || {};
-        
+
     // Hide labels and show input controls
     window.Ldapcp.ClaimsTablePage.EditItem = function (ItemId) {
         $('#span_claimtype_' + ItemId).hide('fast');
@@ -138,7 +149,7 @@
 
         $('#chk_ShowClaimNameInDisplayText_' + ItemId).removeAttr("disabled");
     }
-		
+
     // Show labels and hide input controls
     window.Ldapcp.ClaimsTablePage.CancelEditItem = function (ItemId) {
         $('#span_claimtype_' + ItemId).show('fast');
@@ -167,13 +178,13 @@
 
         $('#chk_ShowClaimNameInDisplayText_' + ItemId).attr("disabled", true);
     }
-		
+
     //$(document).ready(function () {
     //});
-		
+
     // Register initialization method to run when DOM is ready and most SP JS functions loaded
     _spBodyOnLoadFunctionNames.push("window.Ldapcp.ClaimsTablePage.Init");
-		
+
     window.Ldapcp.ClaimsTablePage.Init = function () {
         // Variables initialized from server side code
         window.Ldapcp.ClaimsTablePage.ShowNewItemForm = <%= ShowNewItemForm.ToString().ToLower() %>;
@@ -182,41 +193,38 @@
 
         // Check if all content should be hidden (most probably because LDAPCP is not associated with any SPTrustedLoginProvider)
         if (window.Ldapcp.ClaimsTablePage.HideAllContent) {
-            $('#divMainContent').hide(); 
+            $('#divMainContent').hide();
             return;
         }
-			
+
         // Replace placeholder with actual SPTrustedIdentityTokenIssuer name
-        $('#divMainContent').find("span").each(function(ev)
-        {
+        $('#divMainContent').find("span").each(function (ev) {
             $(this).text($(this).text().replace("{trustname}", window.Ldapcp.ClaimsTablePage.TrustName));
         });
 
         // ONLY FOR SP 2013
         // Display only current page in full screen mode
         window.Ldapcp.ClaimsTablePage.SetFullScreenModeInCurPageOnly();
-			
+
         // Initialize display
-        var rdbGroupName= $('#<%= RdbNewItemClassicClaimType.ClientID %>').attr('name');
-        if (Ldapcp.ClaimsTablePage.ShowNewItemForm)
-        {
-            $('#divTblClaims').hide('fast'); 
+        var rdbGroupName = $('#<%= RdbNewItemClassicClaimType.ClientID %>').attr('name');
+        if (Ldapcp.ClaimsTablePage.ShowNewItemForm) {
+            $('#divTblClaims').hide('fast');
             $('#divNewItem').show('fast');
-				
-            var id = $("input[name='"+rdbGroupName+"']:checked").attr('id');
-            $('#'+id).trigger('click');
+
+            var id = $("input[name='" + rdbGroupName + "']:checked").attr('id');
+            $('#' + id).trigger('click');
         }
-        else
-        {
-            $("input[name='"+rdbGroupName+"']:checked").removeAttr('checked');
+        else {
+            $("input[name='" + rdbGroupName + "']:checked").removeAttr('checked');
         }
     }
-		
+
     // Display only current page in full screen mode
     window.Ldapcp.ClaimsTablePage.SetFullScreenModeInCurPageOnly = function () {
         // Remove call to OOB InitFullScreenMode function. If not removed, it will disable full screen mode just after because it will not find cookie WSS_FullScreenMode
         _spBodyOnLoadFunctions.pop("InitFullScreenMode");
-			
+
         // Copied from OOB SetFullScreenMode method (SP 2013 SP1 15.0.4569.1000)
         var bodyElement = document.body;
         var fsmButtonElement = document.getElementById('fullscreenmode');
@@ -236,7 +244,7 @@
             document.body.fireEvent('onresize');
         }
         CallWorkspaceResizedEventHandlers();
-			
+
         PreventDefaultNavigation();
     }
 </script>
@@ -263,21 +271,22 @@
     <asp:LinkButton ID="DeleteItemLink_" runat="server" Visible="false"></asp:LinkButton>
     <asp:LinkButton ID="UpdateItemLink_" runat="server" Visible="false"></asp:LinkButton>
     <div id="divBtnsFullScreenMode">
-        <input type="button" value="Quit page" onclick="location.href='/';" class="ms-ButtonHeightWidth" />
-        <input id="btnDisableFullScreenMode" type="button" value="Show navigation" onclick="SetFullScreenMode(false);PreventDefaultNavigation(); $('#btnDisableFullScreenMode').hide(); $('#btnEnableFullScreenMode').show(); return false;" class="ms-ButtonHeightWidth" />
+        <input type="button" value="Quit page" onclick="location.href = '/';" class="ms-ButtonHeightWidth" />
+        <input id="btnDisableFullScreenMode" type="button" value="Show navigation" onclick="SetFullScreenMode(false); PreventDefaultNavigation(); $('#btnDisableFullScreenMode').hide(); $('#btnEnableFullScreenMode').show(); return false;" class="ms-ButtonHeightWidth" />
         <input id="btnEnableFullScreenMode" type="button" value="Maximize content" onclick="window.Ldapcp.ClaimsTablePage.SetFullScreenModeInCurPageOnly(); $('#btnEnableFullScreenMode').hide(); $('#btnDisableFullScreenMode').show(); return false;" style="display: none;" class="ms-ButtonHeightWidth" />
     </div>
     <div id="divTblClaims">
-        <span style="display: block; margin-bottom: 10px;">This table is used by LDAPCP to link claim types with LDAP objects. Claim types should match those set in SPTrustedIdentityTokenIssuer &quot;{trustname}&quot;.</span>
+        <span style="display: block; margin-bottom: 10px;">This table is used by LDAPCP to map claim types set in SPTrustedIdentityTokenIssuer &quot;{trustname}&quot; with Azure AD objects and properties.</span>
         <asp:Table ID="TblClaimsMapping" runat="server"></asp:Table>
         <div id="divLegend">
             <fieldset>
-                <legend>Color legend:</legend>
+                <legend>Formatting legend:</legend>
                 <ol>
-					<li><span class="ldapcp-rowidentityclaim">This color</span><span> shows the identity claim type set in SPTrust {trustname}. It must always be present and unique, otherwise LDAPCP won&#39;t work.</span></li>
-                    <li><span class="ldapcp-rowClaimTypeOk">This color</span><span> shows a claim type set in SPTrust {trustname}.</span></li>
-                    <li><span class="ldapcp-rowClaimTypeNotUsedInTrust">This color</span><span> shows a claim type missing in SPTrust {trustname}, thus it won't be used by LDAPCP.</span></li>
-                    <li><span>This color shows an optional entry.</span></li>
+                    <li><span class="ldapcp-rowidentityclaim">This formatting</span><span> shows the identity claim type set in SPTrust &quot;{trustname}&quot;. It is required for LDAPCP to work.</span></li>
+                    <li><span class="ldapcp-rowUserProperty">This formatting</span><span> shows an additional property used to search a User. Permission will be created using identity claim type configuration.</span></li>
+                    <li><span class="ldapcp-rowMainGroupClaimType">This formatting</span><span> shows the main claim type mapped to object &quot;Group&quot;, which is also used for augmentation (this can be enabled or disabled in LDAPCP global settings page).</span></li>
+                    <li><span class="ldapcp-rowGroupProperty">This formatting</span><span> shows an additional property used to search a Group. Permission will be created using Group claim type configuration.</span></li>
+                    <li><span class="ldapcp-rowClaimTypeNotUsedInTrust">This formatting</span><span> shows a claim type not set in SPTrust &quot;{trustname}&quot;, it will be ignored by LDAPCP and may be deleted.</span></li>
                 </ol>
             </fieldset>
         </div>
@@ -302,28 +311,28 @@
                         <asp:RadioButton ID="RdbNewItemPermissionMetadata" runat="server" GroupName="RdgGroupNewItem" Text="Add a LDAP attribute to use only as a <a href='http://msdn.microsoft.com/en-us/library/microsoft.sharepoint.webcontrols.peopleeditorentitydatakeys_members.aspx' target='_blank'>metadata</a> of the new permission." AutoPostBack="false" OnClick="$('#divNewItemControls').show('slow'); $('#rowClaimType').hide('slow'); $('#emPermissionMetadata').show('slow'); $('#rowClaimEntityType').hide('slow');" />
                     </div>
                 </li>
-				<div id="divNewItemControls" style="display: none;">
-                <li id="rowClaimType" style="display: none;">
-                    <label for="<%= TxtNewClaimType.ClientID %>">Claim type: <em>*</em></label>
-                    <asp:TextBox ID="TxtNewClaimType" runat="server" CssClass="ms-inputformcontrols"></asp:TextBox>
-                </li>
-                <li id="rowPermissionMetadata">
-                    <label for="<%= New_DdlPermissionMetadata.ClientID %>">Type of <a href="http://msdn.microsoft.com/en-us/library/microsoft.sharepoint.webcontrols.peopleeditorentitydatakeys_members.aspx" target="_blank">permission metadata: </a><em id="emPermissionMetadata" style="display: none;">*</em></label>
-                    <asp:DropDownList ID="New_DdlPermissionMetadata" runat="server" CssClass="ms-inputformcontrols"></asp:DropDownList>
-                </li>
-                <li>
-                    <label for="<%= TxtNewAttrName.ClientID %>">LDAP Attribute: <em>*</em></label>
-                    <asp:TextBox ID="TxtNewAttrName" runat="server" CssClass="ms-inputformcontrols"></asp:TextBox>
-                </li>
-                <li>
-                    <label for="<%= TxtNewObjectClass.ClientID %>">LDAP Object class: <em>*</em></label>
-                    <asp:TextBox ID="TxtNewObjectClass" runat="server" CssClass="ms-inputformcontrols"></asp:TextBox>
-                </li>
-                <li id="rowClaimEntityType">
-                    <label for="<%=New_DdlClaimEntityType.ClientID %>"><a href="https://msdn.microsoft.com/en-us/library/office/microsoft.sharepoint.administration.claims.spclaimentitytypes_members.aspx" target="_blank">Claim entity type: </a><em>*</em></label>
-                    <asp:DropDownList ID="New_DdlClaimEntityType" runat="server" CssClass="ms-inputformcontrols"></asp:DropDownList>
-                </li>
-				</div>
+                <div id="divNewItemControls" style="display: none;">
+                    <li id="rowClaimType" style="display: none;">
+                        <label for="<%= TxtNewClaimType.ClientID %>">Claim type: <em>*</em></label>
+                        <asp:TextBox ID="TxtNewClaimType" runat="server" CssClass="ms-inputformcontrols"></asp:TextBox>
+                    </li>
+                    <li id="rowPermissionMetadata">
+                        <label for="<%= New_DdlPermissionMetadata.ClientID %>">Type of <a href="http://msdn.microsoft.com/en-us/library/microsoft.sharepoint.webcontrols.peopleeditorentitydatakeys_members.aspx" target="_blank">permission metadata: </a><em id="emPermissionMetadata" style="display: none;">*</em></label>
+                        <asp:DropDownList ID="New_DdlPermissionMetadata" runat="server" CssClass="ms-inputformcontrols"></asp:DropDownList>
+                    </li>
+                    <li>
+                        <label for="<%= TxtNewAttrName.ClientID %>">LDAP Attribute: <em>*</em></label>
+                        <asp:TextBox ID="TxtNewAttrName" runat="server" CssClass="ms-inputformcontrols"></asp:TextBox>
+                    </li>
+                    <li>
+                        <label for="<%= TxtNewObjectClass.ClientID %>">LDAP Object class: <em>*</em></label>
+                        <asp:TextBox ID="TxtNewObjectClass" runat="server" CssClass="ms-inputformcontrols"></asp:TextBox>
+                    </li>
+                    <li id="rowClaimEntityType">
+                        <label for="<%=New_DdlClaimEntityType.ClientID %>"><a href="https://msdn.microsoft.com/en-us/library/office/microsoft.sharepoint.administration.claims.spclaimentitytypes_members.aspx" target="_blank">Claim entity type: </a><em>*</em></label>
+                        <asp:DropDownList ID="New_DdlClaimEntityType" runat="server" CssClass="ms-inputformcontrols"></asp:DropDownList>
+                    </li>
+                </div>
             </ol>
             <div class="divbuttons">
                 <asp:Button ID="BtnCreateNewItem" runat="server" Text="Create" OnClick="BtnCreateNewItem_Click" />

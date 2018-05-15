@@ -82,7 +82,7 @@ namespace ldapcp
             set { _EntityDataKey = value; }
         }
         [Persisted]
-        private string _EntityDataKey;        
+        private string _EntityDataKey;
 
         /// <summary>
         /// Stores property SPTrustedClaimTypeInformation.DisplayName of current claim type.
@@ -187,7 +187,7 @@ namespace ldapcp
         {
         }
 
-        public ClaimTypeConfig CopyPersistedProperties()
+        public ClaimTypeConfig CopyCurrentObject()
         {
             return new ClaimTypeConfig()
             {
@@ -207,6 +207,25 @@ namespace ldapcp
                 _UseMainClaimTypeOfDirectoryObject = this._UseMainClaimTypeOfDirectoryObject,
                 _ShowClaimNameInDisplayText = this._ShowClaimNameInDisplayText,
             };
+        }
+
+        internal void SetFromObject(ClaimTypeConfig objectToCopy)
+        {
+            _AdditionalLDAPFilter = objectToCopy._AdditionalLDAPFilter;
+            _DirectoryObjectType = objectToCopy._DirectoryObjectType;
+            _ClaimType = objectToCopy._ClaimType;
+            _ClaimValueType = objectToCopy._ClaimValueType;
+            _DoNotAddClaimValuePrefixIfBypassLookup = objectToCopy._DoNotAddClaimValuePrefixIfBypassLookup;
+            _FilterExactMatchOnly = objectToCopy._FilterExactMatchOnly;
+            _PrefixToBypassLookup = objectToCopy._PrefixToBypassLookup;
+            _LDAPAttribute = objectToCopy._LDAPAttribute;
+            _LDAPAttributeToShowAsDisplayText = objectToCopy._LDAPAttributeToShowAsDisplayText;
+            _LDAPClass = objectToCopy._LDAPClass;
+            _EntityDataKey = objectToCopy._EntityDataKey;
+            _ClaimTypeMappingName = objectToCopy._ClaimTypeMappingName;
+            _ClaimValuePrefix = objectToCopy._ClaimValuePrefix;
+            _UseMainClaimTypeOfDirectoryObject = objectToCopy._UseMainClaimTypeOfDirectoryObject;
+            _ShowClaimNameInDisplayText = objectToCopy._ShowClaimNameInDisplayText;
         }
 
         public bool Equals(ClaimTypeConfig other)
@@ -309,37 +328,37 @@ namespace ldapcp
             innerCol.Add(item);
         }
 
-        //public ClaimTypeConfig GetConfigByClaimType(string claimType)
-        //{
-        //    if (String.IsNullOrEmpty(claimType)) throw new ArgumentNullException(claimType);
+        /// <summary>
+        /// Only ClaimTypeConfig with property ClaimType already set can be updated
+        /// </summary>
+        /// <param name="oldClaimType">Claim type of ClaimTypeConfig object to update</param>
+        /// <param name="newItem">New version of ClaimTypeConfig object</param>
+        public void Update(string oldClaimType, ClaimTypeConfig newItem)
+        {
+            if (String.IsNullOrEmpty(oldClaimType)) throw new ArgumentNullException("oldClaimType");
+            if (newItem == null) throw new ArgumentNullException("newItem");
 
-        //    ClaimTypeConfig result = null;
-        //    for (int i = 0; i < innerCol.Count; i++)
-        //    {
-        //        ClaimTypeConfig curCT = (ClaimTypeConfig)innerCol[i];
-        //        if (String.Equals(curCT.ClaimType, claimType, StringComparison.InvariantCultureIgnoreCase))
-        //        {
-        //            result = curCT;
-        //            break;
-        //        }
-        //    }
-        //    return result;
-        //}
+            // Create a temporary copy of the collection without the old item, to test if new item can be added
+            ClaimTypeConfigCollection temporaryCollection = new ClaimTypeConfigCollection();
+            foreach (ClaimTypeConfig curCTConfig in innerCol.Where(x => !String.Equals(x.ClaimType, oldClaimType, StringComparison.InvariantCultureIgnoreCase)))
+            {
+                temporaryCollection.Add(curCTConfig);
+            }
 
-        //public void AddRange(List<ClaimTypeConfig> claimTypesList)
-        //{
-        //    foreach (ClaimTypeConfig claimType in claimTypesList)
-        //    {
-        //        Add(claimType);
-        //    }
-        //}
+            // ClaimTypeConfigCollection.Add() may thrown an exception if newItem is not valid for any reason
+            temporaryCollection.Add(newItem);
 
-        //public static ClaimTypeConfigCollection ToClaimTypeConfigCollection(IEnumerable<ClaimTypeConfig> enumList)
-        //{
-        //    Collection<ClaimTypeConfig> innerCol = new Collection<ClaimTypeConfig>(enumList.ToList());
-        //    ClaimTypeConfigCollection collection = new ClaimTypeConfigCollection(innerCol);
-        //    return collection;
-        //}
+            // ClaimTypeConfigCollection.Add() did not thrown an exception, current item can be safely updated
+            for (int i = 0; i < innerCol.Count; i++)
+            {
+                ClaimTypeConfig curCT = (ClaimTypeConfig)innerCol[i];
+                if (String.Equals(curCT.ClaimType, oldClaimType, StringComparison.InvariantCultureIgnoreCase))
+                {
+                    innerCol.ElementAt(i).SetFromObject(newItem);
+                    break;
+                }
+            }
+        }
 
         public void Clear()
         {
@@ -484,11 +503,11 @@ namespace ldapcp
 
     public class ClaimTypeConfigSameConfig : EqualityComparer<ClaimTypeConfig>
     {
-        public override bool Equals(ClaimTypeConfig ct1, ClaimTypeConfig ct2)
+        public override bool Equals(ClaimTypeConfig existingCTConfig, ClaimTypeConfig newCTConfig)
         {
-            if (String.Equals(ct1.ClaimType, ct2.ClaimType, StringComparison.InvariantCultureIgnoreCase) &&
-                String.Equals(ct1.LDAPAttribute, ct2.LDAPAttribute, StringComparison.InvariantCultureIgnoreCase) &&
-                String.Equals(ct1.LDAPClass, ct2.LDAPClass, StringComparison.InvariantCultureIgnoreCase))
+            if (String.Equals(existingCTConfig.ClaimType, newCTConfig.ClaimType, StringComparison.InvariantCultureIgnoreCase) &&
+                String.Equals(existingCTConfig.LDAPAttribute, newCTConfig.LDAPAttribute, StringComparison.InvariantCultureIgnoreCase) &&
+                String.Equals(existingCTConfig.LDAPClass, newCTConfig.LDAPClass, StringComparison.InvariantCultureIgnoreCase))
             {
                 return true;
             }
@@ -507,10 +526,10 @@ namespace ldapcp
 
     public class ClaimTypeConfigSameClaimType : EqualityComparer<ClaimTypeConfig>
     {
-        public override bool Equals(ClaimTypeConfig ct1, ClaimTypeConfig ct2)
+        public override bool Equals(ClaimTypeConfig existingCTConfig, ClaimTypeConfig newCTConfig)
         {
-            if (String.Equals(ct1.ClaimType, ct2.ClaimType, StringComparison.InvariantCultureIgnoreCase) &&
-                !String.IsNullOrEmpty(ct2.ClaimType))
+            if (String.Equals(existingCTConfig.ClaimType, newCTConfig.ClaimType, StringComparison.InvariantCultureIgnoreCase) &&
+                !String.IsNullOrEmpty(newCTConfig.ClaimType))
             {
                 return true;
             }
@@ -529,11 +548,11 @@ namespace ldapcp
 
     public class ClaimTypeConfigSamePermissionMetadata : EqualityComparer<ClaimTypeConfig>
     {
-        public override bool Equals(ClaimTypeConfig ct1, ClaimTypeConfig ct2)
+        public override bool Equals(ClaimTypeConfig existingCTConfig, ClaimTypeConfig newCTConfig)
         {
-            if (!String.IsNullOrEmpty(ct2.EntityDataKey) &&
-                String.Equals(ct1.EntityDataKey, ct2.EntityDataKey, StringComparison.InvariantCultureIgnoreCase) &&
-                String.Equals(ct1.LDAPClass, ct2.LDAPClass, StringComparison.InvariantCultureIgnoreCase))
+            if (!String.IsNullOrEmpty(newCTConfig.EntityDataKey) &&
+                String.Equals(existingCTConfig.EntityDataKey, newCTConfig.EntityDataKey, StringComparison.InvariantCultureIgnoreCase) &&
+                String.Equals(existingCTConfig.LDAPClass, newCTConfig.LDAPClass, StringComparison.InvariantCultureIgnoreCase))
             {
                 return true;
             }

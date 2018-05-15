@@ -186,14 +186,29 @@ namespace ldapcp.ControlTemplates
                         {
                             tr.CssClass = "ldapcp-rowClaimTypeNotUsedInTrust";
                         }
-                        else
+                        else if (attr.Value.DirectoryObjectType == LDAPObjectType.Group && String.Equals(this.PersistedObject.ClaimTypeUsedForAugmentation, attr.Value.ClaimType, StringComparison.InvariantCultureIgnoreCase))
                         {
-                            tr.CssClass = "ldapcp-rowClaimTypeOk";
+                            tr.CssClass = "ldapcp-rowMainGroupClaimType";
                         }
                     }
                     else
                     {
-                        c = GetTableCell(attr.Value.UseMainClaimTypeOfDirectoryObject ? "linked to identity claim" : "Used as metadata for the permission created");
+                        if (!attr.Value.UseMainClaimTypeOfDirectoryObject)
+                        {
+                            c = GetTableCell("Map property with a PickerEntity metadata");
+                        }
+                        else
+                        {
+                            c = GetTableCell($"Use main claim type of object {attr.Value.DirectoryObjectType}");
+                            if (attr.Value.DirectoryObjectType == LDAPObjectType.User)
+                            {
+                                tr.CssClass = "ldapcp-rowUserProperty";
+                            }
+                            else
+                            {
+                                tr.CssClass = "ldapcp-rowGroupProperty";
+                            }
+                        }
                     }
                     tr.Cells.Add(c);
 
