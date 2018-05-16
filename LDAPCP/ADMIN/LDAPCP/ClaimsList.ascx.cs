@@ -316,12 +316,7 @@ namespace ldapcp.ControlTemplates
             TableCell tc = new TableCell();
             tc.Text = Value;
             return tc;
-        }
-
-        protected override bool UpdatePersistedObjectProperties(bool commitChanges)
-        {
-            throw new NotImplementedException();
-        }
+        }        
 
         void LnkDeleteItem_Command(object sender, CommandEventArgs e)
         {

@@ -44,7 +44,7 @@ namespace ldapcp
 
         private object Sync_Init = new object();
         private ReaderWriterLockSlim Lock_Config = new ReaderWriterLockSlim();
-        private long LdapcpConfigVersion = 0;
+        private long CurrentConfigurationVersion = 0;
 
         /// <summary>
         /// Contains the attribute mapped to the identity claim in the SPTrustedLoginProvider
@@ -105,54 +105,55 @@ namespace ldapcp
                     globalConfiguration = GetConfiguration(context, entityTypes, PersistedObjectName);
                     if (globalConfiguration == null)
                     {
-                        ClaimsProviderLogging.Log($"[{ProviderInternalName}] PersistedObject '{PersistedObjectName}' was not found. Visit LDAPCP admin pages in central administration to create it.",
-                            TraceSeverity.Verbose, EventSeverity.Information, TraceCategory.Core);
+                        ClaimsProviderLogging.Log($"[{ProviderInternalName}] Configuration '{PersistedObjectName}' was not found. Visit LDAPCP admin pages in central administration to create it.",
+                            TraceSeverity.Unexpected, EventSeverity.Error, TraceCategory.Core);
                         // Create a fake persisted object just to get the default settings, it will not be saved in config database
                         globalConfiguration = LDAPCPConfig.GetDefaultConfiguration();
                         refreshConfig = true;
                     }
                     else if (globalConfiguration.ClaimTypes == null || globalConfiguration.ClaimTypes.Count == 0)
                     {
-                        ClaimsProviderLogging.Log($"[{ProviderInternalName}] PersistedObject '{PersistedObjectName}' was found but there are no Attribute set. Visit AzureCP admin pages in central administration to create it.",
+                        ClaimsProviderLogging.Log($"[{ProviderInternalName}] Configuration '{PersistedObjectName}' was found but collection ClaimTypes is null or empty. Visit LDAPCP admin pages in central administration to create it.",
                             TraceSeverity.Unexpected, EventSeverity.Error, TraceCategory.Core);
                         // Cannot continue 
                         success = false;
                     }
                     else if (globalConfiguration.LDAPConnectionsProp == null || globalConfiguration.LDAPConnectionsProp.Count == 0)
                     {
-                        ClaimsProviderLogging.Log($"[{ProviderInternalName}] PersistedObject '{PersistedObjectName}' was found but there are no LDAP connection set. Visit AzureCP admin pages in central administration to create it.",
+                        ClaimsProviderLogging.Log($"[{ProviderInternalName}] Configuration '{PersistedObjectName}' was found but there is no LDAP connection registered. Visit LDAPCP admin pages in central administration to register one.",
                             TraceSeverity.Unexpected, EventSeverity.Error, TraceCategory.Core);
                         // Cannot continue 
                         success = false;
                     }
                     else
                     {
-                        // Persisted object is found and seems valid
-                        ClaimsProviderLogging.LogDebug($"[{ProviderInternalName}] PersistedObject '{PersistedObjectName}' was found, version: {((SPPersistedObject)globalConfiguration).Version.ToString()}, previous version: {this.LdapcpConfigVersion.ToString()}");
-                        if (this.LdapcpConfigVersion != ((SPPersistedObject)globalConfiguration).Version)
+                        // Persisted object is found
+                        if (this.CurrentConfigurationVersion == ((SPPersistedObject)globalConfiguration).Version)
+                        {
+                            ClaimsProviderLogging.Log($"[{ProviderInternalName}] Configuration '{PersistedObjectName}' was found, version {((SPPersistedObject)globalConfiguration).Version.ToString()}",
+                                TraceSeverity.VerboseEx, EventSeverity.Information, TraceCategory.Core);
+                        }
+                        else
                         {
                             refreshConfig = true;
-                            this.LdapcpConfigVersion = ((SPPersistedObject)globalConfiguration).Version;
-                            ClaimsProviderLogging.Log($"[{ProviderInternalName}] PersistedObject '{PersistedObjectName}' was changed, refreshing configuration from new version {((SPPersistedObject)globalConfiguration).Version}",
+                            this.CurrentConfigurationVersion = ((SPPersistedObject)globalConfiguration).Version;
+                            ClaimsProviderLogging.Log($"[{ProviderInternalName}] Configuration '{PersistedObjectName}' changed to version {((SPPersistedObject)globalConfiguration).Version.ToString()}, refreshing local copy",
                                 TraceSeverity.Medium, EventSeverity.Information, TraceCategory.Core);
                         }
                     }
+
+                    // At this point, globalConfiguration should be set
+                    if (globalConfiguration == null) success = false;
+
+                    // ProcessedClaimTypesList can be null if:
+                    // - 1st initialization
+                    // - Initialized before but it failed. If so, try again to refresh config
                     if (this.ProcessedClaimTypesList == null) refreshConfig = true;
                 }
                 catch (Exception ex)
                 {
                     success = false;
                     ClaimsProviderLogging.LogException(ProviderInternalName, "in Initialize", TraceCategory.Core, ex);
-                }
-                finally
-                {
-                    // ProcessedAttributes can be null if:
-                    // - 1st initialization
-                    // - Initialized before but it failed. If so, try again to refresh config
-                    if (this.ProcessedClaimTypesList == null) refreshConfig = true;
-
-                    // Cannot continue if something went wrong to retrieve global configuration
-                    if (globalConfiguration == null) success = false;
                 }
 
                 //refreshConfig = true;   // DEBUG
@@ -164,7 +165,7 @@ namespace ldapcp
                 Lock_Config.EnterWriteLock();
                 try
                 {
-                    ClaimsProviderLogging.Log($"[{ProviderInternalName}] Refreshing configuration from PersistedObject '{PersistedObjectName}' version {((SPPersistedObject)globalConfiguration).Version.ToString()}...",
+                    ClaimsProviderLogging.Log($"[{ProviderInternalName}] Refreshing local copy of configuration '{PersistedObjectName}'",
                         TraceSeverity.Verbose, EventSeverity.Information, TraceCategory.Core);
 
                     // Create local version of the persisted object, that will never be saved in config DB
@@ -288,25 +289,22 @@ namespace ldapcp
         }
 
         /// <summary>
-        /// DO NOT Override this method if you use a custom persisted object to hold your configuration.
-        /// To get you custom persisted object, you must override property LDAPCP.PersistedObjectName and set its name
+        /// Override this method to return a custom configuration of LDAPCP.
+        /// DO NOT Override this method if you use a custom persisted object to store configuration in config DB.
+        /// To use a custom persisted object, override property PersistedObjectName and set its name
         /// </summary>
         /// <returns></returns>
         protected virtual ILDAPCPConfiguration GetConfiguration(Uri context, string[] entityTypes, string persistedObjectName)
         {
             return LDAPCPConfig.GetConfiguration(persistedObjectName);
-            //if (String.Equals(ProviderInternalName, LDAPCP._ProviderInternalName, StringComparison.InvariantCultureIgnoreCase))
-            //    return LDAPCPConfig.GetFromConfigDB(persistedObjectName);
-            //else
-            //    return null;
         }
 
         /// <summary>
-        /// [Deprecated] Override this method to customize configuration of LDAPCP. Please use GetConfiguration instead.
+        /// [Deprecated] Override this method to customize the configuration of LDAPCP. Please override GetConfiguration instead.
         /// </summary>
         /// <param name="context">The context, as a URI</param>
         /// <param name="entityTypes">The EntityType entity types set to scope the search to</param>
-        [Obsolete("SetCustomConfiguration is deprecated, please use GetConfiguration instead.")]
+        [Obsolete("SetCustomConfiguration is deprecated, please override GetConfiguration instead.")]
         protected virtual void SetCustomConfiguration(Uri context, string[] entityTypes)
         {
         }
@@ -350,19 +348,19 @@ namespace ldapcp
         /// Get the first TrustedLoginProvider associated with current claim provider
         /// LIMITATION: The same claims provider (uniquely identified by its name) cannot be associated to multiple TrustedLoginProvider because at runtime there is no way to determine what TrustedLoginProvider is currently calling
         /// </summary>
-        /// <param name="ProviderInternalName"></param>
+        /// <param name="providerInternalName"></param>
         /// <returns></returns>
-        public static SPTrustedLoginProvider GetSPTrustAssociatedWithCP(string ProviderInternalName)
+        public static SPTrustedLoginProvider GetSPTrustAssociatedWithCP(string providerInternalName)
         {
-            var lp = SPSecurityTokenServiceManager.Local.TrustedLoginProviders.Where(x => String.Equals(x.ClaimProviderName, ProviderInternalName, StringComparison.OrdinalIgnoreCase));
+            var lp = SPSecurityTokenServiceManager.Local.TrustedLoginProviders.Where(x => String.Equals(x.ClaimProviderName, providerInternalName, StringComparison.OrdinalIgnoreCase));
 
             if (lp != null && lp.Count() == 1)
                 return lp.First();
 
             if (lp != null && lp.Count() > 1)
-                ClaimsProviderLogging.Log(String.Format("[{0}] Claims provider {0} is associated to multiple SPTrustedIdentityTokenIssuer, which is not supported because at runtime there is no way to determine what TrustedLoginProvider is currently calling", ProviderInternalName), TraceSeverity.Unexpected, EventSeverity.Error, TraceCategory.Core);
+                ClaimsProviderLogging.Log($"[{providerInternalName}] Cannot continue because '{providerInternalName}' is set with multiple SPTrustedIdentityTokenIssuer", TraceSeverity.Unexpected, EventSeverity.Error, TraceCategory.Core);
 
-            ClaimsProviderLogging.Log(String.Format("[{0}] Claims provider {0} is not associated with any SPTrustedIdentityTokenIssuer so it cannot create permissions.\r\nVisit http://www.ldapcp.com for installation procedure or set property ClaimProviderName with PowerShell cmdlet Get-SPTrustedIdentityTokenIssuer to create association.", ProviderInternalName), TraceSeverity.High, EventSeverity.Warning, TraceCategory.Core);
+            ClaimsProviderLogging.Log($"[{providerInternalName}] Cannot continue because '{providerInternalName}' is not set with any SPTrustedIdentityTokenIssuer.\r\nVisit {ClaimsProviderConstants.PUBLICSITEURL} for more information.", TraceSeverity.High, EventSeverity.Warning, TraceCategory.Core);
             return null;
         }
 

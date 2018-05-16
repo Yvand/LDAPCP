@@ -40,6 +40,7 @@ namespace ldapcp
         public static string GroupClaimEntityType = SPClaimEntityTypes.FormsRole;
         public const bool EnforceOnly1ClaimTypeForGroup = false;    // In LDAPCP, multiple claim types can be used to create group permissions
         public const string DefaultMainGroupClaimType = WIF4_5.ClaimTypes.Role;
+        public const string PUBLICSITEURL = "https://www.ldapcp.com";
     }
 
     public class LDAPCPConfig : SPPersistedObject, ILDAPCPConfiguration
@@ -277,7 +278,7 @@ namespace ldapcp
         public override void Update()
         {
             base.Update();
-            ClaimsProviderLogging.Log($"Configuration '{base.DisplayName}' was updated successfully in configuration database.",
+            ClaimsProviderLogging.Log($"Configuration '{base.DisplayName}' was updated successfully to version {base.Version} in configuration database.",
                 TraceSeverity.Medium, EventSeverity.Information, TraceCategory.Core);
         }
 
