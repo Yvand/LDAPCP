@@ -142,6 +142,7 @@ namespace ldapcp.ControlTemplates
                 CurrentTrustedLoginProvider = LDAPCP.GetSPTrustAssociatedWithCP(this.ClaimsProviderName);
                 if (CurrentTrustedLoginProvider == null) Status |= ConfigStatus.NoSPTrustAssociation;
             }
+            PersistedObject.ClaimTypes.SPTrust = CurrentTrustedLoginProvider;
             if (IdentityClaim == null && Status == ConfigStatus.AllGood)
             {
                 IdentityClaim = this.IdentityClaim = PersistedObject.ClaimTypes.FirstOrDefault(x => String.Equals(CurrentTrustedLoginProvider.IdentityClaimTypeInformation.MappedClaimType, x.ClaimType, StringComparison.InvariantCultureIgnoreCase) && !x.UseMainClaimTypeOfDirectoryObject);

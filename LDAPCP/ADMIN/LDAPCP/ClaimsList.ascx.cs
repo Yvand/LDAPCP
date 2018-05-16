@@ -14,16 +14,17 @@ namespace ldapcp.ControlTemplates
 {
     public partial class ClaimsList : LdapcpUserControl
     {
-        protected string CurrentTrustedLoginProviderName = String.Empty;
+        public string TrustName = String.Empty; // This must be a field to be accessible from marup code, it cannot be a property
         List<KeyValuePair<int, ClaimTypeConfig>> ClaimsMapping;
         protected bool ShowNewItemForm = false;
         protected bool HideAllContent = false;
 
         string TextErrorFieldsMissing = "Some mandatory fields are missing.";
+        string TextErrorUpdateEmptyClaimType = "Claim type must be set.";
         string TextErrorDuplicateClaimType = "This claim type already exists in the list, you cannot create duplicates.";
         string TextErrorUpdateItemDuplicate = "You tried to update item {0} with a {1} that already exists ({2}). Duplicates are not allowed.";
         string TextErrorUpdateIdentityClaimTypeChanged = "You cannot change claim type of identity claim.";
-        string TextErrorIdentityClaimTypeNotUser = "Identity claim must be set to SPClaimEntityTypes.User.";
+        string TextErrorIdentityClaimTypeNotUser = "Identity claim type must be set with with object type &quot;User&quot;.";
         string TextErrorNewMetadataAlreadyUsed = "Metadata {0} is already used for the claim entity type {1}. Duplicates are not allowed.";
         string TextErrorDuplicateLdapAttrAndClass = "The LDAP attribute/class specified are already used.";
 
@@ -35,43 +36,47 @@ namespace ldapcp.ControlTemplates
         string HtmlCellLAddLDAPFilter = "<span name=\"span_AddLDAPFilter_{1}\" id=\"span_AddLDAPFilter_{1}\">{0}</span><input name=\"input_AddLDAPFilter_{1}\" id=\"input_AddLDAPFilter_{1}\" style=\"display:none;\" value=\"{0}\"></input>";
         string HtmlCellKeywordToValidateInputWithoutLookup = "<span name=\"span_KeywordToValidateInputWithoutLookup_{1}\" id=\"span_KeywordToValidateInputWithoutLookup_{1}\">{0}</span><input name=\"input_KeywordToValidateInputWithoutLookup_{1}\" id=\"input_KeywordToValidateInputWithoutLookup_{1}\" style=\"display:none;\" value=\"{0}\"></input>";
         string HtmlCellPrefixToAddToValueReturned = "<span name=\"span_PrefixToAddToValueReturned_{1}\" id=\"span_PrefixToAddToValueReturned_{1}\">{0}</span><input name=\"input_PrefixToAddToValueReturned_{1}\" id=\"input_PrefixToAddToValueReturned_{1}\" style=\"display:none;\" value=\"{0}\"></input>";
-        string HtmlCellClaimEntityType = "<span name=\"span_ClaimEntityType_{1}\" id=\"span_ClaimEntityType_{1}\">{0}</span><select name=\"list_ClaimEntityType_{1}\" id=\"list_ClaimEntityType_{1}\" style=\"display:none;\">{2}</select>";
+        string HtmlCellDirectoryObjectType = "<span name=\"span_ClaimEntityType_{1}\" id=\"span_ClaimEntityType_{1}\">{0}</span><select name=\"list_ClaimEntityType_{1}\" id=\"list_ClaimEntityType_{1}\" style=\"display:none;\">{2}</select>";
         string HtmlCellShowClaimNameInDisplayText = "<input type=checkbox id=\"chk_ShowClaimNameInDisplayText_{1}\" name=\"chk_ShowClaimNameInDisplayText_{1}\" {0} disabled>";
 
         string HtmlEditLink = "<a name=\"editLink_{0}\" id=\"editLink_{0}\" href=\"javascript:Ldapcp.ClaimsTablePage.EditItem('{0}')\">Edit</a>";
-        //string HtmlEditLink = "<a name=\"editLink_{0}\" id=\"editLink_{0}\" href=\"javascript:Ldapcp.ClaimsTablePage.EditItem('{0}')\"><div class='s4-clust ms-promotedActionButton-icon' style='width: 16px; height: 16px; overflow: hidden; display: inline-block; position: relative;'><img style='left: -236px; top: -84px; position: absolute;' alt='Edit' src='/_layouts/15/images/spcommon.png?rev=23'/></div></a>";
         string HtmlCancelEditLink = "<a name=\"cancelLink_{0}\" id=\"cancelLink_{0}\" href=\"javascript:Ldapcp.ClaimsTablePage.CancelEditItem('{0}')\" style=\"display:none;\">Cancel</a>";
 
         protected void Page_Load(object sender, EventArgs e)
         {
-            if (ValidatePrerequisite() != ConfigStatus.AllGood && Status != ConfigStatus.NoIdentityClaimType)
+            Initialize();
+        }
+
+        private void Initialize()
+        {
+            ConfigStatus status = ValidatePrerequisite();
+            if (status != ConfigStatus.AllGood && status != ConfigStatus.NoIdentityClaimType)
             {
                 this.LabelErrorMessage.Text = base.MostImportantError;
                 this.HideAllContent = true;
                 this.BtnCreateNewItem.Visible = false;
                 return;
             }
-            if (!this.IsPostBack) Initialize();
+
+            TrustName = CurrentTrustedLoginProvider.Name;
+            if (!this.IsPostBack)
+            {
+                // NEW ITEM FORM
+                // Populate picker entity metadata DDL
+                DdlNewEntityMetadata.Items.Add(String.Empty);
+                Type EntityDataKeysInfo = typeof(PeopleEditorEntityDataKeys);
+                foreach (object field in EntityDataKeysInfo.GetFields())
+                {
+                    DdlNewEntityMetadata.Items.Add(((FieldInfo)field).Name);
+                }
+
+                // Populate DirectoryObjectType DDL
+                foreach (var value in Enum.GetValues(typeof(DirectoryObjectType)))
+                {
+                    DdlNewDirectoryObjectType.Items.Add(value.ToString());
+                }
+            }
             BuildAttributesListTable(this.IsPostBack);
-        }
-
-        private void Initialize()
-        {
-            CurrentTrustedLoginProviderName = CurrentTrustedLoginProvider.Name;
-            New_DdlPermissionMetadata.Items.Add(String.Empty);
-            Type EntityDataKeysInfo = typeof(PeopleEditorEntityDataKeys);
-            object[] fields = EntityDataKeysInfo.GetFields();
-            foreach (object field in fields)
-            {
-                New_DdlPermissionMetadata.Items.Add(((FieldInfo)field).Name);
-            }
-
-            MemberInfo[] members = typeof(SPClaimEntityTypes).GetProperties(BindingFlags.Static | BindingFlags.Public);
-            foreach (MemberInfo member in members.Where(x => x.Name == SPClaimEntityTypes.User || x.Name == SPClaimEntityTypes.FormsRole))
-            {
-                New_DdlClaimEntityType.Items.Add(member.Name);
-            }
-            New_DdlClaimEntityType.Items.FindByValue(SPClaimEntityTypes.User).Selected = true;
         }
 
         private void BuildAttributesListTable(bool pendingUpdate)
@@ -85,7 +90,7 @@ namespace ldapcp.ControlTemplates
             }
 
             bool identityClaimPresent = false;
-            
+
             TblClaimsMapping.Rows.Clear();
 
             // FIRST ROW HEADERS
@@ -124,8 +129,8 @@ namespace ldapcp.ControlTemplates
             tr.Cells.Add(th);
             th = GetTableHeaderCell("Claim value prefix");
             tr.Cells.Add(th);
-            th = GetTableHeaderCell("Show claim name in display text");
-            tr.Cells.Add(th);
+            //th = GetTableHeaderCell("Show claim name in display text");
+            //tr.Cells.Add(th);
             this.TblClaimsMapping.Rows.Add(tr);
 
             foreach (var attr in this.ClaimsMapping)
@@ -186,7 +191,7 @@ namespace ldapcp.ControlTemplates
                         {
                             tr.CssClass = "ldapcp-rowClaimTypeNotUsedInTrust";
                         }
-                        else if (attr.Value.DirectoryObjectType == LDAPObjectType.Group && String.Equals(this.PersistedObject.ClaimTypeUsedForAugmentation, attr.Value.ClaimType, StringComparison.InvariantCultureIgnoreCase))
+                        else if (attr.Value.DirectoryObjectType == DirectoryObjectType.Group && String.Equals(this.PersistedObject.ClaimTypeUsedForAugmentation, attr.Value.ClaimType, StringComparison.InvariantCultureIgnoreCase))
                         {
                             tr.CssClass = "ldapcp-rowMainGroupClaimType";
                         }
@@ -200,7 +205,7 @@ namespace ldapcp.ControlTemplates
                         else
                         {
                             c = GetTableCell($"Use main claim type of object {attr.Value.DirectoryObjectType}");
-                            if (attr.Value.DirectoryObjectType == LDAPObjectType.User)
+                            if (attr.Value.DirectoryObjectType == DirectoryObjectType.User)
                             {
                                 tr.CssClass = "ldapcp-rowUserProperty";
                             }
@@ -220,7 +225,7 @@ namespace ldapcp.ControlTemplates
                     tr.Cells.Add(GetTableCell(html));
 
                     html = String.Format(HtmlCellLAttrName, attr.Value.LDAPAttribute, attr.Key);
-                    tr.Cells.Add(GetTableCell(html));                    
+                    tr.Cells.Add(GetTableCell(html));
 
                     html = String.Format(HtmlCellLDAPAttrToDisplay, attr.Value.LDAPAttributeToShowAsDisplayText, attr.Key);
                     tr.Cells.Add(GetTableCell(html));
@@ -229,7 +234,7 @@ namespace ldapcp.ControlTemplates
                     MemberInfo[] members;
                     members = typeof(PeopleEditorEntityDataKeys).GetFields(BindingFlags.Static | BindingFlags.Public);
                     html = BuildDDLFromTypeMembers(HtmlCellMetadata, attr, "EntityDataKey", members, true);
-                    tr.Cells.Add(GetTableCell(html));                    
+                    tr.Cells.Add(GetTableCell(html));
 
                     html = String.Format(HtmlCellLAddLDAPFilter, attr.Value.AdditionalLDAPFilter, attr.Key);
                     tr.Cells.Add(GetTableCell(html));
@@ -240,15 +245,14 @@ namespace ldapcp.ControlTemplates
                     html = String.Format(HtmlCellPrefixToAddToValueReturned, attr.Value.ClaimValuePrefix, attr.Key);
                     tr.Cells.Add(GetTableCell(html));
 
-                    if (isIdentityClaimType || !allowEditItem) html = String.Empty;
-                    else
-                    {
-                        string strChecked = attr.Value.ShowClaimNameInDisplayText ? "checked" : String.Empty;
-                        html = String.Format(HtmlCellShowClaimNameInDisplayText, strChecked, attr.Key);
-                    }
-                    tr.Cells.Add(GetTableCell(html));
+                    //if (isIdentityClaimType || !allowEditItem) html = String.Empty;
+                    //else
+                    //{
+                    //    string strChecked = attr.Value.ShowClaimNameInDisplayText ? "checked" : String.Empty;
+                    //    html = String.Format(HtmlCellShowClaimNameInDisplayText, strChecked, attr.Key);
+                    //}
+                    //tr.Cells.Add(GetTableCell(html));
                 }
-
                 TblClaimsMapping.Rows.Add(tr);
             }
 
@@ -293,12 +297,12 @@ namespace ldapcp.ControlTemplates
             string option = "<option value=\"{0}\" {1}>{2}</option>";
             StringBuilder directoryObjectTypeOptions = new StringBuilder();
 
-            string selectedText = azureObject.Value.DirectoryObjectType == LDAPObjectType.User ? "selected" : String.Empty;
-            directoryObjectTypeOptions.Append(String.Format(option, LDAPObjectType.User.ToString(), selectedText, LDAPObjectType.User.ToString()));
-            selectedText = azureObject.Value.DirectoryObjectType == LDAPObjectType.Group ? "selected" : String.Empty;
-            directoryObjectTypeOptions.Append(String.Format(option, LDAPObjectType.Group.ToString(), selectedText, LDAPObjectType.Group.ToString()));
+            string selectedText = azureObject.Value.DirectoryObjectType == DirectoryObjectType.User ? "selected" : String.Empty;
+            directoryObjectTypeOptions.Append(String.Format(option, DirectoryObjectType.User.ToString(), selectedText, DirectoryObjectType.User.ToString()));
+            selectedText = azureObject.Value.DirectoryObjectType == DirectoryObjectType.Group ? "selected" : String.Empty;
+            directoryObjectTypeOptions.Append(String.Format(option, DirectoryObjectType.Group.ToString(), selectedText, DirectoryObjectType.Group.ToString()));
 
-            return String.Format(HtmlCellClaimEntityType, azureObject.Value.DirectoryObjectType, azureObject.Key, directoryObjectTypeOptions.ToString());
+            return String.Format(HtmlCellDirectoryObjectType, azureObject.Value.DirectoryObjectType, azureObject.Key, directoryObjectTypeOptions.ToString());
         }
 
         private TableHeaderCell GetTableHeaderCell(string Value)
@@ -324,8 +328,8 @@ namespace ldapcp.ControlTemplates
             if (ValidatePrerequisite() != ConfigStatus.AllGood && Status != ConfigStatus.NoIdentityClaimType) return;
 
             string itemId = e.CommandArgument.ToString();
-            ClaimTypeConfig attr = ClaimsMapping.Find(x => x.Key == Convert.ToInt32(itemId)).Value;
-            PersistedObject.ClaimTypes.Remove(attr);
+            ClaimTypeConfig ctConfig = ClaimsMapping.Find(x => x.Key == Convert.ToInt32(itemId)).Value;
+            PersistedObject.ClaimTypes.Remove(ctConfig);
             CommitChanges();
             this.BuildAttributesListTable(false);
         }
@@ -335,95 +339,45 @@ namespace ldapcp.ControlTemplates
             if (ValidatePrerequisite() != ConfigStatus.AllGood && Status != ConfigStatus.NoIdentityClaimType) return;
 
             string itemId = e.CommandArgument.ToString();
+            ClaimTypeConfig existingCTConfig = ClaimsMapping.Find(x => x.Key == Convert.ToInt32(itemId)).Value;
+
+            // Get new values
             NameValueCollection formData = Request.Form;
-            int attrObjectId = Convert.ToInt32(itemId);
-            ClaimTypeConfig attr = ClaimsMapping.Find(x => x.Key == attrObjectId).Value;
-
-            // Check if changes are OK
             string newClaimType = formData["input_claimtype_" + itemId].Trim();
-            string newLDAPAttribute = formData["input_attrname_" + itemId].Trim();
-            string newLDAPClass = formData["input_attrclass_" + itemId].Trim();
             string newDirectoryObjectType = formData["list_ClaimEntityType_" + itemId];
-            Enum.TryParse(newDirectoryObjectType, out LDAPObjectType typeSelected);
-            string newEntityDataKey = formData["list_Metadata_" + itemId];
-            string newShowClaimNameInDisplayText = formData["chk_ShowClaimNameInDisplayText_" + itemId];
+            Enum.TryParse(newDirectoryObjectType, out DirectoryObjectType directoryObjectTypeSelected);
 
-            // Check if new LDAP attribute/class/claimtype are empty
-            if (String.IsNullOrEmpty(newClaimType) || String.IsNullOrEmpty(newLDAPAttribute) || String.IsNullOrEmpty(newLDAPClass))
+            if (String.IsNullOrEmpty(newClaimType))
             {
-                this.LabelErrorMessage.Text = TextErrorFieldsMissing;
+                this.LabelErrorMessage.Text = TextErrorUpdateEmptyClaimType;
                 BuildAttributesListTable(false);
                 return;
             }
 
-            // Check if claim type is not already used
-            List<KeyValuePair<int, ClaimTypeConfig>> otherObjects = ClaimsMapping.FindAll(x => x.Key != attrObjectId);
-            KeyValuePair<int, ClaimTypeConfig> matchFound;
-            matchFound = otherObjects.FirstOrDefault(x => String.Equals(x.Value.ClaimType, newClaimType, StringComparison.InvariantCultureIgnoreCase));
+            ClaimTypeConfig newCTConfig = new ClaimTypeConfig();
+            newCTConfig.ClaimType = newClaimType;
+            newCTConfig.DirectoryObjectType = directoryObjectTypeSelected;
+            newCTConfig.LDAPClass = formData["input_attrclass_" + itemId].Trim();
+            newCTConfig.LDAPAttribute = formData["input_attrname_" + itemId].Trim();
+            newCTConfig.LDAPAttributeToShowAsDisplayText = formData["input_LDAPAttrToDisplay_" + itemId];
+            newCTConfig.EntityDataKey = formData["list_Metadata_" + itemId];
+            newCTConfig.AdditionalLDAPFilter = formData["input_AddLDAPFilter_" + itemId];
+            newCTConfig.PrefixToBypassLookup = formData["input_KeywordToValidateInputWithoutLookup_" + itemId];
+            newCTConfig.ClaimValuePrefix = formData["input_PrefixToAddToValueReturned_" + itemId].ToLower();
+            //string newShowClaimNameInDisplayText = formData["chk_ShowClaimNameInDisplayText_" + itemId];
+            //newCTConfig.ShowClaimNameInDisplayText = String.IsNullOrEmpty(newShowClaimNameInDisplayText) ? false : true;
 
-            // Check if new claim type is not already used
-            if (!matchFound.Equals(default(KeyValuePair<int, ClaimTypeConfig>)))
+            try
             {
-                this.LabelErrorMessage.Text = String.Format(TextErrorUpdateItemDuplicate, attr.ClaimType, "claim type", newClaimType);
+                // ClaimTypeConfigCollection.Update() may thrown an exception if new ClaimTypeConfig is not valid for any reason
+                PersistedObject.ClaimTypes.Update(existingCTConfig.ClaimType, newCTConfig);
+            }
+            catch (Exception ex)
+            {
+                this.LabelErrorMessage.Text = ex.Message;
                 BuildAttributesListTable(false);
                 return;
             }
-
-            // Check if new entity data key is not already used on the new claim entity type (we don't care about this check if it's empty)
-            if (newEntityDataKey != String.Empty)
-            {
-                matchFound = otherObjects.FirstOrDefault(x =>
-                    String.Equals(x.Value.EntityDataKey, newEntityDataKey, StringComparison.InvariantCultureIgnoreCase) &&
-                    x.Value.DirectoryObjectType == typeSelected);
-                if (!matchFound.Equals(default(KeyValuePair<int, ClaimTypeConfig>)))
-                {
-                    this.LabelErrorMessage.Text = String.Format(TextErrorUpdateItemDuplicate, attr.ClaimType, "permission metadata", newEntityDataKey);
-                    BuildAttributesListTable(false);
-                    return;
-                }
-            }
-
-            // Specific checks if current claim type is identity claim type
-            if (String.Equals(attr.ClaimType, CurrentTrustedLoginProvider.IdentityClaimTypeInformation.MappedClaimType, StringComparison.InvariantCultureIgnoreCase))
-            {
-                // We don't allow to change claim type
-                if (!String.Equals(attr.ClaimType, newClaimType, StringComparison.InvariantCultureIgnoreCase))
-                {
-                    this.LabelErrorMessage.Text = TextErrorUpdateIdentityClaimTypeChanged;
-                    BuildAttributesListTable(false);
-                    return;
-                }
-
-                // ClaimEntityType must be "SPClaimEntityTypes.User"
-                if (!String.Equals(SPClaimEntityTypes.User, newDirectoryObjectType, StringComparison.InvariantCultureIgnoreCase))
-                {
-                    this.LabelErrorMessage.Text = TextErrorIdentityClaimTypeNotUser;
-                    BuildAttributesListTable(false);
-                    return;
-                }
-            }
-
-            // Check if new LDAP attribute/class are not already used or empty
-            matchFound = otherObjects.FirstOrDefault(x =>
-                String.Equals(x.Value.LDAPAttribute, newLDAPAttribute, StringComparison.InvariantCultureIgnoreCase) &&
-                String.Equals(x.Value.LDAPClass, newLDAPClass, StringComparison.InvariantCultureIgnoreCase));
-            if (!matchFound.Equals(default(KeyValuePair<int, ClaimTypeConfig>)))
-            {
-                this.LabelErrorMessage.Text = TextErrorDuplicateLdapAttrAndClass;
-                BuildAttributesListTable(false);
-                return;
-            }
-
-            attr.ClaimType = newClaimType;
-            attr.LDAPAttribute = newLDAPAttribute;
-            attr.LDAPClass = newLDAPClass;
-            attr.LDAPAttributeToShowAsDisplayText = formData["input_LDAPAttrToDisplay_" + itemId];
-            attr.EntityDataKey = newEntityDataKey;
-            attr.DirectoryObjectType = typeSelected;
-            attr.AdditionalLDAPFilter = formData["input_AddLDAPFilter_" + itemId];
-            attr.PrefixToBypassLookup = formData["input_KeywordToValidateInputWithoutLookup_" + itemId];
-            attr.ClaimValuePrefix = formData["input_PrefixToAddToValueReturned_" + itemId].ToLower();
-            attr.ShowClaimNameInDisplayText = String.IsNullOrEmpty(newShowClaimNameInDisplayText) ? false : true;
 
             CommitChanges();
             this.BuildAttributesListTable(false);
@@ -436,22 +390,20 @@ namespace ldapcp.ControlTemplates
             Response.Redirect(Request.Url.ToString());
         }
 
+        /// <summary>
+        /// Add a new claim type configuration
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         protected void BtnCreateNewItem_Click(object sender, EventArgs e)
         {
             string newClaimType = TxtNewClaimType.Text.Trim();
             string newLdapAttribute = TxtNewAttrName.Text.Trim();
             string newLdapClass = TxtNewObjectClass.Text.Trim();
-            string newDirectoryObjectType = New_DdlClaimEntityType.SelectedValue;
-            Enum.TryParse(newDirectoryObjectType, out LDAPObjectType typeSelected);
-            string newPermissionMetadata = New_DdlPermissionMetadata.SelectedValue;
-            bool newCreateAsIdentityClaim = false;
-            if (String.IsNullOrEmpty(newLdapAttribute) || String.IsNullOrEmpty(newLdapClass))
-            {
-                this.LabelErrorMessage.Text = TextErrorFieldsMissing;
-                ShowNewItemForm = true;
-                BuildAttributesListTable(false);
-                return;
-            }
+            DirectoryObjectType newDirectoryObjectType;
+            Enum.TryParse<DirectoryObjectType>(DdlNewDirectoryObjectType.SelectedValue, out newDirectoryObjectType);
+            string newEntityMetadata = DdlNewEntityMetadata.SelectedValue;
+            bool useMainClaimTypeOfDirectoryObject = false;
 
             if (RdbNewItemClassicClaimType.Checked)
             {
@@ -462,79 +414,46 @@ namespace ldapcp.ControlTemplates
                     BuildAttributesListTable(false);
                     return;
                 }
-
-                if (PersistedObject.ClaimTypes.Where(x => String.Equals(newClaimType, x.ClaimType, StringComparison.InvariantCultureIgnoreCase)) != null)
-                {
-                    this.LabelErrorMessage.Text = TextErrorDuplicateClaimType;
-                    ShowNewItemForm = true;
-                    BuildAttributesListTable(false);
-                    return;
-                }
-
-                // Check if new claim type matches identity claim, and if so ensure that ClaimEntityType is User
-                if (String.Equals(newClaimType, CurrentTrustedLoginProvider.IdentityClaimTypeInformation.MappedClaimType, StringComparison.InvariantCultureIgnoreCase) &&
-                    typeSelected == LDAPObjectType.User)
-                {
-                    this.LabelErrorMessage.Text = TextErrorIdentityClaimTypeNotUser;
-                    ShowNewItemForm = true;
-                    BuildAttributesListTable(false);
-                    return;
-                }
             }
             else if (RdbNewItemPermissionMetadata.Checked)
             {
-                if (String.IsNullOrEmpty(newPermissionMetadata))
+                if (String.IsNullOrEmpty(newEntityMetadata))
                 {
                     this.LabelErrorMessage.Text = TextErrorFieldsMissing;
                     ShowNewItemForm = true;
                     BuildAttributesListTable(false);
                     return;
                 }
+                newClaimType = String.Empty;
             }
             else
             {
-                newCreateAsIdentityClaim = true;
-                //CP newClaimEntityType = SPClaimEntityTypes.User;
-                newDirectoryObjectType = New_DdlClaimEntityType.SelectedValue;
+                useMainClaimTypeOfDirectoryObject = true;
+                newClaimType = String.Empty;
             }
 
-            // Check if metadata is not already used for the specified claim entity type
-            if (!String.IsNullOrEmpty(newPermissionMetadata) &&
-                !ClaimsMapping.FirstOrDefault(x =>
-                    String.Equals(x.Value.EntityDataKey, newPermissionMetadata, StringComparison.InvariantCultureIgnoreCase) &&
-                    // Change condition to fix bug http://ldapcp.codeplex.com/discussions/653087
-                    // We don't care about the claim entity type, it must be unique based on the LDAP class
-                    //String.Equals(x.Value.ClaimEntityType, newClaimEntityType, StringComparison.InvariantCultureIgnoreCase)).
-                    String.Equals(x.Value.LDAPClass, newLdapClass, StringComparison.InvariantCultureIgnoreCase)).
-                Equals(default(KeyValuePair<int, ClaimTypeConfig>)))
+            ClaimTypeConfig newCTConfig = new ClaimTypeConfig();
+            newCTConfig.ClaimType = newClaimType;
+            newCTConfig.DirectoryObjectType = newDirectoryObjectType;
+            newCTConfig.LDAPClass = newLdapClass;
+            newCTConfig.LDAPAttribute = newLdapAttribute;
+            newCTConfig.UseMainClaimTypeOfDirectoryObject = useMainClaimTypeOfDirectoryObject;
+            newCTConfig.EntityDataKey = newEntityMetadata;
+
+            try
             {
-                this.LabelErrorMessage.Text = String.Format(TextErrorNewMetadataAlreadyUsed, newPermissionMetadata, newDirectoryObjectType);
+                // ClaimTypeConfigCollection.Add() may thrown an exception if new ClaimTypeConfig is not valid for any reason
+                PersistedObject.ClaimTypes.Add(newCTConfig);
+            }
+            catch (Exception ex)
+            {
+                this.LabelErrorMessage.Text = ex.Message;
                 ShowNewItemForm = true;
                 BuildAttributesListTable(false);
                 return;
             }
 
-            // Check if same LDAP attribute/class is not already used
-            //FINDTOWHERE
-            if (PersistedObject.ClaimTypes.Where(x =>
-                String.Equals(newLdapAttribute, x.LDAPAttribute, StringComparison.InvariantCultureIgnoreCase) &&
-                String.Equals(newLdapClass, x.LDAPClass, StringComparison.InvariantCultureIgnoreCase)) != null)
-            {
-                this.LabelErrorMessage.Text = TextErrorDuplicateLdapAttrAndClass;
-                ShowNewItemForm = true;
-                BuildAttributesListTable(false);
-                return;
-            }
-
-            ClaimTypeConfig attr = new ClaimTypeConfig();
-            attr.UseMainClaimTypeOfDirectoryObject = newCreateAsIdentityClaim;
-            attr.ClaimType = newClaimType;
-            attr.LDAPAttribute = newLdapAttribute;
-            attr.LDAPClass = newLdapClass;
-            attr.DirectoryObjectType = typeSelected;
-            attr.EntityDataKey = newPermissionMetadata;
-
-            PersistedObject.ClaimTypes.Add(attr);
+            // Update configuration and rebuild table with new configuration
             CommitChanges();
             BuildAttributesListTable(false);
         }

@@ -112,22 +112,13 @@ namespace ldapcp.ControlTemplates {
         protected global::System.Web.UI.WebControls.TextBox TxtNewClaimType;
         
         /// <summary>
-        /// New_DdlPermissionMetadata control.
+        /// DdlNewDirectoryObjectType control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.DropDownList New_DdlPermissionMetadata;
-        
-        /// <summary>
-        /// TxtNewAttrName control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.TextBox TxtNewAttrName;
+        protected global::System.Web.UI.WebControls.DropDownList DdlNewDirectoryObjectType;
         
         /// <summary>
         /// TxtNewObjectClass control.
@@ -139,13 +130,22 @@ namespace ldapcp.ControlTemplates {
         protected global::System.Web.UI.WebControls.TextBox TxtNewObjectClass;
         
         /// <summary>
-        /// New_DdlClaimEntityType control.
+        /// TxtNewAttrName control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::System.Web.UI.WebControls.DropDownList New_DdlClaimEntityType;
+        protected global::System.Web.UI.WebControls.TextBox TxtNewAttrName;
+        
+        /// <summary>
+        /// DdlNewEntityMetadata control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.DropDownList DdlNewEntityMetadata;
         
         /// <summary>
         /// BtnCreateNewItem control.

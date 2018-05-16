@@ -89,7 +89,7 @@ namespace ldapcp.ControlTemplates
 
         private void InitializeAugmentation()
         {
-            IEnumerable<ClaimTypeConfig> potentialGroupClaimTypes = PersistedObject.ClaimTypes.Where(x => x.DirectoryObjectType == LDAPObjectType.Group);
+            IEnumerable<ClaimTypeConfig> potentialGroupClaimTypes = PersistedObject.ClaimTypes.Where(x => x.DirectoryObjectType == DirectoryObjectType.Group);
             if (potentialGroupClaimTypes == null || potentialGroupClaimTypes.Count() == 0)
             {
                 LabelErrorMessage.Text = TextErrorNoGroupClaimType;
@@ -256,7 +256,7 @@ namespace ldapcp.ControlTemplates
         void UpdateAdditionalUserLdapFilter()
         {
             if (PersistedObject == null) return;
-            foreach (var userAttr in this.PersistedObject.ClaimTypes.Where(x => x.DirectoryObjectType == LDAPObjectType.User || x.UseMainClaimTypeOfDirectoryObject))
+            foreach (var userAttr in this.PersistedObject.ClaimTypes.Where(x => x.DirectoryObjectType == DirectoryObjectType.User || x.UseMainClaimTypeOfDirectoryObject))
             {
                 userAttr.AdditionalLDAPFilter = this.TxtAdditionalUserLdapFilter.Text;
             }

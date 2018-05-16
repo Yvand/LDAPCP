@@ -397,24 +397,24 @@ namespace ldapcp
             return new ClaimTypeConfigCollection
             {
                 // Claim types most liekly to be set as identity claim types
-                new ClaimTypeConfig{DirectoryObjectType = LDAPObjectType.User, LDAPClass = "user", LDAPAttribute = "mail", ClaimType = WIF4_5.ClaimTypes.Email, EntityDataKey = PeopleEditorEntityDataKeys.Email},
-                new ClaimTypeConfig{DirectoryObjectType = LDAPObjectType.User, LDAPClass = "user", LDAPAttribute = "userPrincipalName", ClaimType = WIF4_5.ClaimTypes.Upn},
-                new ClaimTypeConfig{DirectoryObjectType = LDAPObjectType.User, LDAPClass = "user", LDAPAttribute = "sAMAccountName", ClaimType = WIF4_5.ClaimTypes.WindowsAccountName, AdditionalLDAPFilter = "(!(objectClass=computer))"},
+                new ClaimTypeConfig{DirectoryObjectType = DirectoryObjectType.User, LDAPClass = "user", LDAPAttribute = "mail", ClaimType = WIF4_5.ClaimTypes.Email, EntityDataKey = PeopleEditorEntityDataKeys.Email},
+                new ClaimTypeConfig{DirectoryObjectType = DirectoryObjectType.User, LDAPClass = "user", LDAPAttribute = "userPrincipalName", ClaimType = WIF4_5.ClaimTypes.Upn},
+                new ClaimTypeConfig{DirectoryObjectType = DirectoryObjectType.User, LDAPClass = "user", LDAPAttribute = "sAMAccountName", ClaimType = WIF4_5.ClaimTypes.WindowsAccountName, AdditionalLDAPFilter = "(!(objectClass=computer))"},
 
                 // Additional properties to find user and create entity with the identity claim type (UseMainClaimTypeOfDirectoryObject=true)
-                new ClaimTypeConfig{DirectoryObjectType = LDAPObjectType.User, LDAPClass = "user", LDAPAttribute = "displayName", UseMainClaimTypeOfDirectoryObject = true, EntityDataKey = PeopleEditorEntityDataKeys.DisplayName},
-                new ClaimTypeConfig{DirectoryObjectType = LDAPObjectType.User, LDAPClass = "user", LDAPAttribute = "cn", UseMainClaimTypeOfDirectoryObject = true, AdditionalLDAPFilter = "(!(objectClass=computer))"},
-                new ClaimTypeConfig{DirectoryObjectType = LDAPObjectType.User, LDAPClass = "user", LDAPAttribute = "sn", UseMainClaimTypeOfDirectoryObject = true},
+                new ClaimTypeConfig{DirectoryObjectType = DirectoryObjectType.User, LDAPClass = "user", LDAPAttribute = "displayName", UseMainClaimTypeOfDirectoryObject = true, EntityDataKey = PeopleEditorEntityDataKeys.DisplayName},
+                new ClaimTypeConfig{DirectoryObjectType = DirectoryObjectType.User, LDAPClass = "user", LDAPAttribute = "cn", UseMainClaimTypeOfDirectoryObject = true, AdditionalLDAPFilter = "(!(objectClass=computer))"},
+                new ClaimTypeConfig{DirectoryObjectType = DirectoryObjectType.User, LDAPClass = "user", LDAPAttribute = "sn", UseMainClaimTypeOfDirectoryObject = true},
 
                 // Additional properties to populate metadata of entity created: no claim type set, EntityDataKey is set and UseMainClaimTypeOfDirectoryObject = false (default value)
-                new ClaimTypeConfig{DirectoryObjectType = LDAPObjectType.User, LDAPClass = "user", LDAPAttribute="physicalDeliveryOfficeName", EntityDataKey = PeopleEditorEntityDataKeys.Location},
-                new ClaimTypeConfig{DirectoryObjectType = LDAPObjectType.User, LDAPClass = "user", LDAPAttribute="title", EntityDataKey = PeopleEditorEntityDataKeys.JobTitle},
-                new ClaimTypeConfig{DirectoryObjectType = LDAPObjectType.User, LDAPClass = "user", LDAPAttribute="msRTCSIP-PrimaryUserAddress", EntityDataKey = PeopleEditorEntityDataKeys.SIPAddress},
-                new ClaimTypeConfig{DirectoryObjectType = LDAPObjectType.User, LDAPClass = "user", LDAPAttribute="telephoneNumber", EntityDataKey = PeopleEditorEntityDataKeys.WorkPhone},
+                new ClaimTypeConfig{DirectoryObjectType = DirectoryObjectType.User, LDAPClass = "user", LDAPAttribute="physicalDeliveryOfficeName", EntityDataKey = PeopleEditorEntityDataKeys.Location},
+                new ClaimTypeConfig{DirectoryObjectType = DirectoryObjectType.User, LDAPClass = "user", LDAPAttribute="title", EntityDataKey = PeopleEditorEntityDataKeys.JobTitle},
+                new ClaimTypeConfig{DirectoryObjectType = DirectoryObjectType.User, LDAPClass = "user", LDAPAttribute="msRTCSIP-PrimaryUserAddress", EntityDataKey = PeopleEditorEntityDataKeys.SIPAddress},
+                new ClaimTypeConfig{DirectoryObjectType = DirectoryObjectType.User, LDAPClass = "user", LDAPAttribute="telephoneNumber", EntityDataKey = PeopleEditorEntityDataKeys.WorkPhone},
 
                 // Group
-                new ClaimTypeConfig{DirectoryObjectType = LDAPObjectType.Group, LDAPClass = "group", LDAPAttribute="sAMAccountName", ClaimType = ClaimsProviderConstants.DefaultMainGroupClaimType, ClaimValuePrefix = @"{fqdn}\"},
-                new ClaimTypeConfig{DirectoryObjectType = LDAPObjectType.Group, LDAPClass = "group", LDAPAttribute="displayName", UseMainClaimTypeOfDirectoryObject = true, EntityDataKey = PeopleEditorEntityDataKeys.DisplayName},
+                new ClaimTypeConfig{DirectoryObjectType = DirectoryObjectType.Group, LDAPClass = "group", LDAPAttribute="sAMAccountName", ClaimType = ClaimsProviderConstants.DefaultMainGroupClaimType, ClaimValuePrefix = @"{fqdn}\"},
+                new ClaimTypeConfig{DirectoryObjectType = DirectoryObjectType.Group, LDAPClass = "group", LDAPAttribute="displayName", UseMainClaimTypeOfDirectoryObject = true, EntityDataKey = PeopleEditorEntityDataKeys.DisplayName},
             };
         }
 
@@ -568,7 +568,7 @@ namespace ldapcp
         /// <summary>
         /// EntityTypes expected by SharePoint in the entities returned
         /// </summary>
-        public LDAPObjectType[] DirectoryObjectTypes;
+        public DirectoryObjectType[] DirectoryObjectTypes;
 
         public string HierarchyNodeID;
         public int MaxCount;
@@ -605,11 +605,11 @@ namespace ldapcp
 
             if (entityTypes != null)
             {
-                List<LDAPObjectType> aadEntityTypes = new List<LDAPObjectType>();
+                List<DirectoryObjectType> aadEntityTypes = new List<DirectoryObjectType>();
                 if (entityTypes.Contains(SPClaimEntityTypes.User))
-                    aadEntityTypes.Add(LDAPObjectType.User);
+                    aadEntityTypes.Add(DirectoryObjectType.User);
                 if (entityTypes.Contains(ClaimsProviderConstants.GroupClaimEntityType))
-                    aadEntityTypes.Add(LDAPObjectType.Group);
+                    aadEntityTypes.Add(DirectoryObjectType.Group);
                 this.DirectoryObjectTypes = aadEntityTypes.ToArray();
             }
 
@@ -814,7 +814,7 @@ namespace ldapcp
         }
     }
 
-    public enum LDAPObjectType
+    public enum DirectoryObjectType
     {
         User,
         Group

@@ -223,7 +223,7 @@ namespace ldapcp
                         identityClaimTypeFound = true;
                         IdentityClaimTypeConfig = claimTypeConfig;
                     }
-                    else if (!groupClaimTypeFound && claimTypeConfig.DirectoryObjectType == LDAPObjectType.Group)
+                    else if (!groupClaimTypeFound && claimTypeConfig.DirectoryObjectType == DirectoryObjectType.Group)
                     {
                         // If ClaimTypeUsedForAugmentation is set, try to set MainGroupClaimTypeConfig with the ClaimTypeConfig that has the same ClaimType
                         // Otherwise, use arbitrarily the first valid group ClaimTypeConfig found
@@ -254,7 +254,7 @@ namespace ldapcp
                 List<ClaimTypeConfig> additionalClaimTypeConfigList = new List<ClaimTypeConfig>();
                 foreach (ClaimTypeConfig claimTypeConfig in nonProcessedClaimTypes.Where(x => x.UseMainClaimTypeOfDirectoryObject))
                 {
-                    if (claimTypeConfig.DirectoryObjectType == LDAPObjectType.User)
+                    if (claimTypeConfig.DirectoryObjectType == DirectoryObjectType.User)
                     {
                         claimTypeConfig.ClaimType = IdentityClaimTypeConfig.ClaimType;
                         claimTypeConfig.LDAPAttributeToShowAsDisplayText = IdentityClaimTypeConfig.LDAPAttributeToShowAsDisplayText;
@@ -1334,11 +1334,11 @@ namespace ldapcp
         /// <param name="hierarchy"></param>
         protected override void FillHierarchy(Uri context, string[] entityTypes, string hierarchyNodeID, int numberOfLevels, Microsoft.SharePoint.WebControls.SPProviderHierarchyTree hierarchy)
         {
-            List<LDAPObjectType> aadEntityTypes = new List<LDAPObjectType>();
+            List<DirectoryObjectType> aadEntityTypes = new List<DirectoryObjectType>();
             if (entityTypes.Contains(SPClaimEntityTypes.User))
-                aadEntityTypes.Add(LDAPObjectType.User);
+                aadEntityTypes.Add(DirectoryObjectType.User);
             if (entityTypes.Contains(ClaimsProviderConstants.GroupClaimEntityType))
-                aadEntityTypes.Add(LDAPObjectType.Group);
+                aadEntityTypes.Add(DirectoryObjectType.Group);
 
             SPSecurity.RunWithElevatedPrivileges(delegate ()
             {
@@ -1466,7 +1466,7 @@ namespace ldapcp
                     permissionValue,
                     IdentityClaimTypeConfig.ClaimValueType,
                     false);
-                pe.EntityType = IdentityClaimTypeConfig.DirectoryObjectType == LDAPObjectType.User ? SPClaimEntityTypes.User : ClaimsProviderConstants.GroupClaimEntityType;
+                pe.EntityType = IdentityClaimTypeConfig.DirectoryObjectType == DirectoryObjectType.User ? SPClaimEntityTypes.User : ClaimsProviderConstants.GroupClaimEntityType;
             }
             else
             {
@@ -1476,7 +1476,7 @@ namespace ldapcp
                     permissionValue,
                     result.Attribute.ClaimValueType,
                     false);
-                pe.EntityType = result.Attribute.DirectoryObjectType == LDAPObjectType.User ? SPClaimEntityTypes.User : ClaimsProviderConstants.GroupClaimEntityType;
+                pe.EntityType = result.Attribute.DirectoryObjectType == DirectoryObjectType.User ? SPClaimEntityTypes.User : ClaimsProviderConstants.GroupClaimEntityType;
             }
 
             int nbMetadata = 0;
@@ -1651,7 +1651,7 @@ namespace ldapcp
                         input);
                 }
 
-                pe.EntityType = claimTypeToResolve.DirectoryObjectType == LDAPObjectType.User ? SPClaimEntityTypes.User : ClaimsProviderConstants.GroupClaimEntityType;
+                pe.EntityType = claimTypeToResolve.DirectoryObjectType == DirectoryObjectType.User ? SPClaimEntityTypes.User : ClaimsProviderConstants.GroupClaimEntityType;
                 pe.Description = String.Format(
                     EntityOnMouseOver,
                     claimTypeToResolve.LDAPAttribute,
@@ -1661,7 +1661,7 @@ namespace ldapcp
                 pe.IsResolved = true;
                 pe.EntityGroupName = this.CurrentConfiguration.PickerEntityGroupNameProp;
 
-                if (claimTypeToResolve.DirectoryObjectType == LDAPObjectType.User && !String.IsNullOrEmpty(claimTypeToResolve.EntityDataKey))
+                if (claimTypeToResolve.DirectoryObjectType == DirectoryObjectType.User && !String.IsNullOrEmpty(claimTypeToResolve.EntityDataKey))
                 {
                     pe.EntityData[claimTypeToResolve.EntityDataKey] = pe.Claim.Value;
                     ClaimsProviderLogging.Log(String.Format("[{0}] Added metadata \"{1}\" with value \"{2}\" to permission", ProviderInternalName, claimTypeToResolve.EntityDataKey, pe.EntityData[claimTypeToResolve.EntityDataKey]), TraceSeverity.Verbose, EventSeverity.Information, TraceCategory.Claims_Picking);
