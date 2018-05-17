@@ -224,7 +224,7 @@ namespace ldapcp
                         identityClaimTypeFound = true;
                         IdentityClaimTypeConfig = claimTypeConfig;
                     }
-                    else if (!groupClaimTypeFound && claimTypeConfig.DirectoryObjectType == DirectoryObjectType.Group)
+                    else if (!groupClaimTypeFound && claimTypeConfig.EntityType == DirectoryObjectType.Group)
                     {
                         // If ClaimTypeUsedForAugmentation is set, try to set MainGroupClaimTypeConfig with the ClaimTypeConfig that has the same ClaimType
                         // Otherwise, use arbitrarily the first valid group ClaimTypeConfig found
@@ -255,7 +255,7 @@ namespace ldapcp
                 List<ClaimTypeConfig> additionalClaimTypeConfigList = new List<ClaimTypeConfig>();
                 foreach (ClaimTypeConfig claimTypeConfig in nonProcessedClaimTypes.Where(x => x.UseMainClaimTypeOfDirectoryObject))
                 {
-                    if (claimTypeConfig.DirectoryObjectType == DirectoryObjectType.User)
+                    if (claimTypeConfig.EntityType == DirectoryObjectType.User)
                     {
                         claimTypeConfig.ClaimType = IdentityClaimTypeConfig.ClaimType;
                         claimTypeConfig.LDAPAttributeToShowAsDisplayText = IdentityClaimTypeConfig.LDAPAttributeToShowAsDisplayText;
@@ -572,7 +572,7 @@ namespace ldapcp
                 else if (requestInfo.OperationType == OperationType.Validation)
                 {
                     SearchOrValidateWithLDAP(requestInfo, ref permissions);
-                    if (!String.IsNullOrEmpty(requestInfo.CurrentClaimTypeConfig.PrefixToBypassLookup))
+                    if (!String.IsNullOrEmpty(requestInfo.IncomingEntityClaimTypeConfig.PrefixToBypassLookup))
                     {
                         // At this stage, it is impossible to know if input was originally created with the keyword that bypasses LDAP lookup
                         // But it should be validated anyway since keyword is set for this claim type
@@ -582,7 +582,7 @@ namespace ldapcp
                         // If we don't get exactly 1 permission, create it manually
                         PickerEntity entity = CreatePickerEntityForSpecificClaimType(
                             requestInfo.Input,
-                            requestInfo.CurrentClaimTypeConfig,
+                            requestInfo.IncomingEntityClaimTypeConfig,
                             requestInfo.InputHasKeyword);
                         if (entity != null)
                         {
@@ -607,10 +607,9 @@ namespace ldapcp
         /// <param name="requestInfo">Information about current context and operation</param>
         /// <param name="permissions"></param>
         /// <returns></returns>
-        protected virtual void SearchOrValidateWithLDAP(OperationContext requestInfo, ref List<PickerEntity> permissions)
+        protected virtual void SearchOrValidateWithLDAP(OperationContext currentContext, ref List<PickerEntity> permissions)
         {
-            //DirectoryEntry[] directories = GetLDAPServers(requestInfo);
-            LDAPConnection[] connections = GetLDAPServers(requestInfo);
+            LDAPConnection[] connections = GetLDAPServers(currentContext);
             if (connections == null || connections.Length == 0)
             {
                 ClaimsProviderLogging.Log(String.Format("[{0}] No LDAP server is configured.", ProviderInternalName), TraceSeverity.Unexpected, EventSeverity.Error, TraceCategory.Configuration);
@@ -622,37 +621,37 @@ namespace ldapcp
             {
                 LDAPServers.Add(new LDAPConnectionSettings() { Directory = coco.LDAPServer });
             }
-            BuildLDAPFilter(requestInfo, ref LDAPServers);
+            BuildLDAPFilter(currentContext, ref LDAPServers);
 
             bool resultsfound = false;
             List<LDAPSearchResultWrapper> LDAPSearchResultWrappers = new List<LDAPSearchResultWrapper>();
             using (new SPMonitoredScope(String.Format("[{0}] Total time spent in all LDAP server(s)", ProviderInternalName), 1000))
             {
-                resultsfound = QueryLDAPServers(LDAPServers, requestInfo, ref LDAPSearchResultWrappers);
+                resultsfound = QueryLDAPServers(LDAPServers, currentContext, ref LDAPSearchResultWrappers);
             }
 
             if (!resultsfound) return;
-            ConsolidatedResultCollection results = ProcessLdapResults(requestInfo, ref LDAPSearchResultWrappers);
+            ConsolidatedResultCollection results = ProcessLdapResults(currentContext, ref LDAPSearchResultWrappers);
 
             if (results.Count > 0)
             {
                 // There may be some extra work based on settings associated with the input claim type
                 // Check to see if we have a prefix and have a domain token
-                if (requestInfo.OperationType == OperationType.Validation
-                    && requestInfo.CurrentClaimTypeConfig.ClaimValuePrefix != null)
+                if (currentContext.OperationType == OperationType.Validation
+                    && currentContext.IncomingEntityClaimTypeConfig.ClaimValuePrefix != null)
                 {
                     // Extract just the domain from the input
                     bool tokenFound = false;
                     string domainOnly = String.Empty;
-                    if (requestInfo.CurrentClaimTypeConfig.ClaimValuePrefix.Contains(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINNAME))
+                    if (currentContext.IncomingEntityClaimTypeConfig.ClaimValuePrefix.Contains(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINNAME))
                     {
                         tokenFound = true;
-                        domainOnly = OperationContext.GetDomainFromFullAccountName(requestInfo.IncomingEntity.Value);
+                        domainOnly = OperationContext.GetDomainFromFullAccountName(currentContext.IncomingEntity.Value);
                     }
-                    else if (requestInfo.CurrentClaimTypeConfig.ClaimValuePrefix.Contains(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINFQDN))
+                    else if (currentContext.IncomingEntityClaimTypeConfig.ClaimValuePrefix.Contains(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINFQDN))
                     {
                         tokenFound = true;
-                        string fqdn = OperationContext.GetDomainFromFullAccountName(requestInfo.IncomingEntity.Value);
+                        string fqdn = OperationContext.GetDomainFromFullAccountName(currentContext.IncomingEntity.Value);
                         domainOnly = OperationContext.GetFirstSubString(fqdn, ".");
                     }
 
@@ -684,15 +683,14 @@ namespace ldapcp
         /// <param name="requestInfo">Information about current context and operation</param>
         /// <param name="LDAPSearchResultWrappers"></param>
         /// <returns></returns>
-        protected virtual ConsolidatedResultCollection ProcessLdapResults(OperationContext requestInfo, ref List<LDAPSearchResultWrapper> LDAPSearchResultWrappers)
+        protected virtual ConsolidatedResultCollection ProcessLdapResults(OperationContext currentContext, ref List<LDAPSearchResultWrapper> LDAPSearchResultWrappers)
         {
             ConsolidatedResultCollection results = new ConsolidatedResultCollection();
             ResultPropertyCollection resultPropertyCollection;
             IEnumerable<ClaimTypeConfig> attributes;
-            // If exactSearch is true, we don't care about attributes with UseMainClaimTypeOfDirectoryObject = true
-            //FINDTOWHERE
-            if (requestInfo.ExactSearch) attributes = requestInfo.CurrentClaimTypeConfigList.Where(x => !x.UseMainClaimTypeOfDirectoryObject);
-            else attributes = requestInfo.CurrentClaimTypeConfigList;
+            // If ExactSearch is true, we don't care about attributes with UseMainClaimTypeOfDirectoryObject = true
+            if (currentContext.ExactSearch) attributes = currentContext.CurrentClaimTypeConfigList.Where(x => !x.UseMainClaimTypeOfDirectoryObject);
+            else attributes = currentContext.CurrentClaimTypeConfigList;
 
             foreach (LDAPSearchResultWrapper LDAPresult in LDAPSearchResultWrappers)
             {
@@ -739,20 +737,20 @@ namespace ldapcp
                     // TODO: investigate http://ldapcp.codeplex.com/discussions/648655
                     string value = resultPropertyCollection[resultPropertyCollectionPropertyNames.Where(x => x.ToLowerInvariant() == attr.LDAPAttribute.ToLowerInvariant()).First()][0].ToString();
                     // Check if current attribute matches the input
-                    if (requestInfo.ExactSearch)
+                    if (currentContext.ExactSearch)
                     {
-                        if (!String.Equals(value, requestInfo.Input, StringComparison.InvariantCultureIgnoreCase)) continue;
+                        if (!String.Equals(value, currentContext.Input, StringComparison.InvariantCultureIgnoreCase)) continue;
                     }
                     else
                     {
                         if (this.CurrentConfiguration.AddWildcardAsPrefixOfInput)
                         {
                             // Changed to a case insensitive search
-                            if (value.IndexOf(requestInfo.Input, StringComparison.InvariantCultureIgnoreCase) != -1) continue;
+                            if (value.IndexOf(currentContext.Input, StringComparison.InvariantCultureIgnoreCase) != -1) continue;
                         }
                         else
                         {
-                            if (!value.StartsWith(requestInfo.Input, StringComparison.InvariantCultureIgnoreCase)) continue;
+                            if (!value.StartsWith(currentContext.Input, StringComparison.InvariantCultureIgnoreCase)) continue;
                         }
                     }
 
@@ -801,11 +799,11 @@ namespace ldapcp
         /// <summary>
         /// Override this method to change LDAP filter created by LDAPCP. It's possible to set a different LDAP filter for each LDAP server
         /// </summary>
-        /// <param name="context">Information about current context and operation</param>
+        /// <param name="currentContext">Information about current context and operation</param>
         /// <param name="ldapServers">List to be populated by this method</param>
-        protected virtual void BuildLDAPFilter(OperationContext context, ref List<LDAPConnectionSettings> ldapServers)
+        protected virtual void BuildLDAPFilter(OperationContext currentContext, ref List<LDAPConnectionSettings> ldapServers)
         {
-            string filter = BuildLDAPFilterForCurrentContext(context);
+            string filter = BuildLDAPFilterForCurrentContext(currentContext);
             foreach (LDAPConnectionSettings ldapServer in ldapServers)
             {
                 ldapServer.Filter = filter.ToString();
@@ -936,13 +934,13 @@ namespace ldapcp
         /// <summary>
         /// Override this method to set LDAP connections
         /// </summary>
-        /// <param name="requestInfo">Information about current context and operation</param>
+        /// <param name="currentContext">Information about current context and operation</param>
         /// <returns>Array of LDAP servers to query</returns>
-        protected virtual LDAPConnection[] GetLDAPServers(OperationContext requestInfo)
+        protected virtual LDAPConnection[] GetLDAPServers(OperationContext currentContext)
         {
             if (this.CurrentConfiguration.LDAPConnectionsProp == null) return null;
             IEnumerable<LDAPConnection> ldapConnections = this.CurrentConfiguration.LDAPConnectionsProp;
-            if (requestInfo.OperationType == OperationType.Augmentation) ldapConnections = this.CurrentConfiguration.LDAPConnectionsProp.Where(x => x.AugmentationEnabled);
+            if (currentContext.OperationType == OperationType.Augmentation) ldapConnections = this.CurrentConfiguration.LDAPConnectionsProp.Where(x => x.AugmentationEnabled);
             LDAPConnection[] connections = new LDAPConnection[ldapConnections.Count()];
 
             int i = 0;
@@ -1032,7 +1030,6 @@ namespace ldapcp
         /// <param name="claims"></param>
         protected virtual void AugmentEntity(Uri context, SPClaim entity, SPClaimProviderContext claimProviderContext, List<SPClaim> claims)
         {
-
             SPClaim decodedEntity;
             if (SPClaimProviderManager.IsUserIdentifierClaim(entity))
                 decodedEntity = SPClaimProviderManager.DecodeUserIdentifierClaim(entity);
@@ -1047,7 +1044,8 @@ namespace ldapcp
             SPOriginalIssuerType loginType = SPOriginalIssuers.GetIssuerType(decodedEntity.OriginalIssuer);
             if (loginType != SPOriginalIssuerType.TrustedProvider && loginType != SPOriginalIssuerType.ClaimProvider)
             {
-                ClaimsProviderLogging.LogDebug(String.Format("[{0}] Not trying to augment '{1}' because OriginalIssuer is '{2}'.", ProviderInternalName, decodedEntity.Value, decodedEntity.OriginalIssuer));
+                ClaimsProviderLogging.Log($"[{ProviderInternalName}] Not trying to augment '{decodedEntity.Value}' because his OriginalIssuer is '{decodedEntity.OriginalIssuer}'.",
+                    TraceSeverity.VerboseEx, EventSeverity.Information, TraceCategory.Augmentation);
                 return;
             }
 
@@ -1059,63 +1057,62 @@ namespace ldapcp
                 this.Lock_Config.EnterReadLock();
                 try
                 {
-                    ClaimsProviderLogging.LogDebug(String.Format("[{0}] Original entity to augment: '{1}', augmentation enabled: {2}.", ProviderInternalName, entity.Value, CurrentConfiguration.EnableAugmentation));
                     if (!this.CurrentConfiguration.EnableAugmentation) return;
                     if (String.IsNullOrEmpty(this.CurrentConfiguration.ClaimTypeUsedForAugmentation))
                     {
-                        ClaimsProviderLogging.Log(String.Format("[{0}] Augmentation is enabled but no claim type is configured.", ProviderInternalName),
-                            TraceSeverity.High, EventSeverity.Error, TraceCategory.Augmentation);
+                        ClaimsProviderLogging.Log($"[{ProviderInternalName}] Augmentation is enabled but no claim type is configured.", TraceSeverity.High, EventSeverity.Error, TraceCategory.Augmentation);
                         return;
                     }
-                    var groupAttribute = this.ProcessedClaimTypesList.FirstOrDefault(x => String.Equals(x.ClaimType, this.CurrentConfiguration.ClaimTypeUsedForAugmentation, StringComparison.InvariantCultureIgnoreCase) && !x.UseMainClaimTypeOfDirectoryObject);
-                    if (groupAttribute == null)
+                    ClaimTypeConfig groupCTConfig = this.ProcessedClaimTypesList.FirstOrDefault(x => String.Equals(x.ClaimType, this.CurrentConfiguration.ClaimTypeUsedForAugmentation, StringComparison.InvariantCultureIgnoreCase) && !x.UseMainClaimTypeOfDirectoryObject);
+                    if (groupCTConfig == null)
                     {
-                        ClaimsProviderLogging.Log(String.Format("[{0}] Settings for claim type \"{1}\" cannot be found, its entry may have been deleted from claims mapping table.", ProviderInternalName, this.CurrentConfiguration.ClaimTypeUsedForAugmentation),
+                        ClaimsProviderLogging.Log($"[{ProviderInternalName}] Configuration for claim type '{this.CurrentConfiguration.ClaimTypeUsedForAugmentation}' cannot be found, please add it in claim types configuration list.",
                             TraceSeverity.High, EventSeverity.Error, TraceCategory.Augmentation);
                         return;
                     }
 
-                    OperationContext infos = new OperationContext(CurrentConfiguration, OperationType.Augmentation, ProcessedClaimTypesList, null, decodedEntity, context, null, null, Int32.MaxValue);
-                    LDAPConnection[] connections = GetLDAPServers(infos);
+                    ClaimsProviderLogging.Log($"[{ProviderInternalName}] Starting augmentation for user '{decodedEntity.Value}'.", TraceSeverity.Verbose, EventSeverity.Information, TraceCategory.Augmentation);
+                    OperationContext currentContext = new OperationContext(CurrentConfiguration, OperationType.Augmentation, ProcessedClaimTypesList, null, decodedEntity, context, null, null, Int32.MaxValue);
+                    LDAPConnection[] connections = GetLDAPServers(currentContext);
                     if (connections == null || connections.Length == 0)
                     {
                         ClaimsProviderLogging.Log(String.Format("[{0}] No LDAP server is enabled for augmentation", ProviderInternalName), TraceSeverity.High, EventSeverity.Error, TraceCategory.Augmentation);
                         return;
                     }
 
+                    Stopwatch timer = new Stopwatch();
+                    timer.Start();
                     List<SPClaim> groups = new List<SPClaim>();
                     object lockResults = new object();
-                    Stopwatch stopWatch = new Stopwatch();
-                    stopWatch.Start();
                     Parallel.ForEach(connections, coco =>
                     {
                         List<SPClaim> directoryGroups;
                         if (coco.GetGroupMembershipAsADDomain)
-                            directoryGroups = GetGroupsFromADDirectory(coco.LDAPServer, infos, groupAttribute);
+                            directoryGroups = GetGroupsFromADDirectory(coco.LDAPServer, currentContext, groupCTConfig);
                         else
-                            directoryGroups = GetGroupsFromLDAPDirectory(coco.LDAPServer, infos, groupAttribute);
+                            directoryGroups = GetGroupsFromLDAPDirectory(coco.LDAPServer, currentContext, groupCTConfig);
 
                         lock (lockResults)
                         {
                             groups.AddRange(directoryGroups);
                         }
                     });
-                    stopWatch.Stop();
+                    timer.Stop();
                     ClaimsProviderLogging.Log(String.Format("[{0}] LDAP queries to get group membership on all servers completed in {1}ms",
-                        ProviderInternalName, stopWatch.ElapsedMilliseconds.ToString()),
+                        ProviderInternalName, timer.ElapsedMilliseconds.ToString()),
                         TraceSeverity.Verbose, EventSeverity.Information, TraceCategory.Augmentation);
 
                     foreach (SPClaim group in groups)
                     {
                         claims.Add(group);
-                        ClaimsProviderLogging.Log(String.Format("[{0}] Added group \"{1}\" to user \"{2}\"", ProviderInternalName, group.Value, infos.IncomingEntity.Value),
+                        ClaimsProviderLogging.Log(String.Format("[{0}] Added group \"{1}\" to user \"{2}\"", ProviderInternalName, group.Value, currentContext.IncomingEntity.Value),
                             TraceSeverity.Verbose, EventSeverity.Information, TraceCategory.Augmentation);
                     }
                     if (groups.Count > 0)
-                        ClaimsProviderLogging.Log(String.Format("[{0}] User '{1}' was augmented with {2} groups of claim type '{3}'", ProviderInternalName, infos.IncomingEntity.Value, groups.Count.ToString(), groupAttribute.ClaimType),
+                        ClaimsProviderLogging.Log(String.Format("[{0}] User '{1}' was augmented with {2} groups of claim type '{3}'", ProviderInternalName, currentContext.IncomingEntity.Value, groups.Count.ToString(), groupCTConfig.ClaimType),
                             TraceSeverity.Medium, EventSeverity.Information, TraceCategory.Augmentation);
                     else
-                        ClaimsProviderLogging.Log(String.Format("[{0}] No group found for user '{1}' during augmentation", ProviderInternalName, infos.IncomingEntity.Value),
+                        ClaimsProviderLogging.Log(String.Format("[{0}] No group found for user '{1}' during augmentation", ProviderInternalName, currentContext.IncomingEntity.Value),
                             TraceSeverity.Medium, EventSeverity.Information, TraceCategory.Augmentation);
                 }
                 catch (Exception ex)
@@ -1134,13 +1131,13 @@ namespace ldapcp
         /// UserPrincipal.GetAuthorizationGroups() gets groups using Kerberos protocol transition (preferred way), and falls back to LDAP queries otherwise.
         /// </summary>
         /// <param name="directory"></param>
-        /// <param name="requestInfo"></param>
+        /// <param name="currentContext"></param>
         /// <param name="groupAttribute"></param>
         /// <returns></returns>
-        protected virtual List<SPClaim> GetGroupsFromADDirectory(DirectoryEntry directory, OperationContext requestInfo, ClaimTypeConfig groupAttribute)
+        protected virtual List<SPClaim> GetGroupsFromADDirectory(DirectoryEntry directory, OperationContext currentContext, ClaimTypeConfig groupAttribute)
         {
             List<SPClaim> groups = new List<SPClaim>();
-            using (new SPMonitoredScope(String.Format("[{0}] Getting AD group membership of user {1} in {2}", ProviderInternalName, requestInfo.IncomingEntity.Value, directory.Path), 2000))
+            using (new SPMonitoredScope(String.Format("[{0}] Getting AD group membership of user {1} in {2}", ProviderInternalName, currentContext.IncomingEntity.Value, directory.Path), 2000))
             {
                 UserPrincipal adUser = null;
                 try
@@ -1154,9 +1151,9 @@ namespace ldapcp
                     {
                         // https://github.com/Yvand/LDAPCP/issues/22
                         // UserPrincipal.FindByIdentity() doesn't support emails, so if IncomingEntity is an email, user needs to be retrieved in a different way
-                        if (String.Equals(requestInfo.IncomingEntity.ClaimType, WIF4_5.ClaimTypes.Email, StringComparison.InvariantCultureIgnoreCase))
+                        if (String.Equals(currentContext.IncomingEntity.ClaimType, WIF4_5.ClaimTypes.Email, StringComparison.InvariantCultureIgnoreCase))
                         {
-                            using (UserPrincipal userEmailPrincipal = new UserPrincipal(principalContext) { Enabled = true, EmailAddress = requestInfo.IncomingEntity.Value })
+                            using (UserPrincipal userEmailPrincipal = new UserPrincipal(principalContext) { Enabled = true, EmailAddress = currentContext.IncomingEntity.Value })
                             {
                                 using (PrincipalSearcher userEmailSearcher = new PrincipalSearcher(userEmailPrincipal))
                                 {
@@ -1164,7 +1161,7 @@ namespace ldapcp
                                 }
                             }
                         }
-                        else adUser = UserPrincipal.FindByIdentity(principalContext, requestInfo.IncomingEntity.Value);
+                        else adUser = UserPrincipal.FindByIdentity(principalContext, currentContext.IncomingEntity.Value);
 
                         if (adUser == null) return groups;
 
@@ -1187,17 +1184,17 @@ namespace ldapcp
                 }
                 catch (PrincipalOperationException ex)
                 {
-                    ClaimsProviderLogging.LogException(ProviderInternalName, String.Format("while getting AD group membership of user {0} in {1} using UserPrincipal.GetAuthorizationGroups(). This is likely due to a bug in .NET framework in UserPrincipal.GetAuthorizationGroups (as of v4.6.1), especially if user is member (directly or not) of a group either in a child domain that was migrated, or a group that has special (deny) permissions.", requestInfo.IncomingEntity.Value, directory.Path), TraceCategory.Augmentation, ex);
+                    ClaimsProviderLogging.LogException(ProviderInternalName, String.Format("while getting AD group membership of user {0} in {1} using UserPrincipal.GetAuthorizationGroups(). This is likely due to a bug in .NET framework in UserPrincipal.GetAuthorizationGroups (as of v4.6.1), especially if user is member (directly or not) of a group either in a child domain that was migrated, or a group that has special (deny) permissions.", currentContext.IncomingEntity.Value, directory.Path), TraceCategory.Augmentation, ex);
                     // In this case, fallback to LDAP method to get group membership.
-                    return GetGroupsFromLDAPDirectory(directory, requestInfo, groupAttribute);
+                    return GetGroupsFromLDAPDirectory(directory, currentContext, groupAttribute);
                 }
                 catch (PrincipalServerDownException ex)
                 {
-                    ClaimsProviderLogging.LogException(ProviderInternalName, String.Format("while getting AD group membership of user {0} in {1} using UserPrincipal.GetAuthorizationGroups(). Is this server an Active Directory server?", requestInfo.IncomingEntity.Value, directory.Path), TraceCategory.Augmentation, ex);
+                    ClaimsProviderLogging.LogException(ProviderInternalName, String.Format("while getting AD group membership of user {0} in {1} using UserPrincipal.GetAuthorizationGroups(). Is this server an Active Directory server?", currentContext.IncomingEntity.Value, directory.Path), TraceCategory.Augmentation, ex);
                 }
                 catch (Exception ex)
                 {
-                    ClaimsProviderLogging.LogException(ProviderInternalName, String.Format("while getting AD group membership of user {0} in {1} using UserPrincipal.GetAuthorizationGroups()", requestInfo.IncomingEntity.Value, directory.Path), TraceCategory.Augmentation, ex);
+                    ClaimsProviderLogging.LogException(ProviderInternalName, String.Format("while getting AD group membership of user {0} in {1} using UserPrincipal.GetAuthorizationGroups()", currentContext.IncomingEntity.Value, directory.Path), TraceCategory.Augmentation, ex);
                 }
                 finally
                 {
@@ -1211,13 +1208,13 @@ namespace ldapcp
         /// Get group membership with a LDAP query
         /// </summary>
         /// <param name="directory">LDAP server to query</param>
-        /// <param name="requestInfo">Information about current context and operation</param>
+        /// <param name="currentContext">Information about current context and operation</param>
         /// <param name="groupAttribute"></param>
         /// <returns></returns>
-        protected virtual List<SPClaim> GetGroupsFromLDAPDirectory(DirectoryEntry directory, OperationContext requestInfo, ClaimTypeConfig groupAttribute)
+        protected virtual List<SPClaim> GetGroupsFromLDAPDirectory(DirectoryEntry directory, OperationContext currentContext, ClaimTypeConfig groupAttribute)
         {
             List<SPClaim> groups = new List<SPClaim>();
-            using (new SPMonitoredScope(String.Format("[{0}] Getting LDAP group membership of user {1} in {2}", ProviderInternalName, requestInfo.IncomingEntity.Value, directory.Path), 2000))
+            using (new SPMonitoredScope(String.Format("[{0}] Getting LDAP group membership of user {1} in {2}", ProviderInternalName, currentContext.IncomingEntity.Value, directory.Path), 2000))
             {
                 try
                 {
@@ -1228,7 +1225,7 @@ namespace ldapcp
                     using (DirectorySearcher searcher = new DirectorySearcher(directory))
                     {
                         searcher.ClientTimeout = new TimeSpan(0, 0, this.CurrentConfiguration.LDAPQueryTimeout); // Set the timeout of the query
-                        searcher.Filter = string.Format("(&(ObjectClass={0})({1}={2}){3})", IdentityClaimTypeConfig.LDAPClass, IdentityClaimTypeConfig.LDAPAttribute, requestInfo.IncomingEntity.Value, IdentityClaimTypeConfig.AdditionalLDAPFilter);
+                        searcher.Filter = string.Format("(&(ObjectClass={0})({1}={2}){3})", IdentityClaimTypeConfig.LDAPClass, IdentityClaimTypeConfig.LDAPAttribute, currentContext.IncomingEntity.Value, IdentityClaimTypeConfig.AdditionalLDAPFilter);
                         searcher.PropertiesToLoad.Add("memberOf");
                         searcher.PropertiesToLoad.Add("uniquememberof");
 
@@ -1265,12 +1262,12 @@ namespace ldapcp
                         }
                     }
                     ClaimsProviderLogging.Log(String.Format("[{0}] Domain {1} returned {2} groups for user {3}. Lookup took {4}ms on LDAP server '{5}'",
-                        ProviderInternalName, directoryDomainFqdn, groups.Count, requestInfo.IncomingEntity.Value, stopWatch.ElapsedMilliseconds.ToString(), directory.Path),
+                        ProviderInternalName, directoryDomainFqdn, groups.Count, currentContext.IncomingEntity.Value, stopWatch.ElapsedMilliseconds.ToString(), directory.Path),
                         TraceSeverity.Medium, EventSeverity.Information, TraceCategory.Augmentation);
                 }
                 catch (Exception ex)
                 {
-                    ClaimsProviderLogging.LogException(ProviderInternalName, String.Format("while getting LDAP group membership of user {0} in {1}. This is likely due to a bug in .NET framework in UserPrincipal.GetAuthorizationGroups (as of v4.6.1), especially if user is member (directly or not) of a group either in a child domain that was migrated, or a group that has special (deny) permissions.", requestInfo.IncomingEntity.Value, directory.Path), TraceCategory.Augmentation, ex);
+                    ClaimsProviderLogging.LogException(ProviderInternalName, String.Format("while getting LDAP group membership of user {0} in {1}. This is likely due to a bug in .NET framework in UserPrincipal.GetAuthorizationGroups (as of v4.6.1), especially if user is member (directly or not) of a group either in a child domain that was migrated, or a group that has special (deny) permissions.", currentContext.IncomingEntity.Value, directory.Path), TraceCategory.Augmentation, ex);
                 }
                 finally
                 {
@@ -1280,37 +1277,37 @@ namespace ldapcp
             return groups;
         }
 
-        /// <summary>
-        /// Source: http://www.codeproject.com/Articles/18102/Howto-Almost-Everything-In-Active-Directory-via-C#38
-        /// </summary>
-        /// <param name="attributeName">memberof</param>
-        /// <param name="objectDn"></param>
-        /// <param name="valuesCollection"></param>
-        /// <param name="recursive"></param>
-        /// <returns></returns>
-        public ArrayList AttributeValuesMultiString(string attributeName, string objectDn, ArrayList valuesCollection, bool recursive)
-        {
-            DirectoryEntry ent = new DirectoryEntry(objectDn);
-            PropertyValueCollection ValueCollection = ent.Properties[attributeName];
-            IEnumerator en = ValueCollection.GetEnumerator();
-            while (en.MoveNext())
-            {
-                if (en.Current != null)
-                {
-                    if (!valuesCollection.Contains(en.Current.ToString()))
-                    {
-                        valuesCollection.Add(en.Current.ToString());
-                        if (recursive)
-                        {
-                            AttributeValuesMultiString(attributeName, "LDAP://" + en.Current.ToString(), valuesCollection, true);
-                        }
-                    }
-                }
-            }
-            ent.Close();
-            ent.Dispose();
-            return valuesCollection;
-        }
+        ///// <summary>
+        ///// Source: http://www.codeproject.com/Articles/18102/Howto-Almost-Everything-In-Active-Directory-via-C#38
+        ///// </summary>
+        ///// <param name="attributeName">memberof</param>
+        ///// <param name="objectDn"></param>
+        ///// <param name="valuesCollection"></param>
+        ///// <param name="recursive"></param>
+        ///// <returns></returns>
+        //public ArrayList AttributeValuesMultiString(string attributeName, string objectDn, ArrayList valuesCollection, bool recursive)
+        //{
+        //    DirectoryEntry ent = new DirectoryEntry(objectDn);
+        //    PropertyValueCollection ValueCollection = ent.Properties[attributeName];
+        //    IEnumerator en = ValueCollection.GetEnumerator();
+        //    while (en.MoveNext())
+        //    {
+        //        if (en.Current != null)
+        //        {
+        //            if (!valuesCollection.Contains(en.Current.ToString()))
+        //            {
+        //                valuesCollection.Add(en.Current.ToString());
+        //                if (recursive)
+        //                {
+        //                    AttributeValuesMultiString(attributeName, "LDAP://" + en.Current.ToString(), valuesCollection, true);
+        //                }
+        //            }
+        //        }
+        //    }
+        //    ent.Close();
+        //    ent.Dispose();
+        //    return valuesCollection;
+        //}
 
         /// <summary>
         /// the type of SPClaimEntityTypes that this provider support, such as SPClaimEntityTypes.User or SPClaimEntityTypes.FormsRole
@@ -1349,7 +1346,7 @@ namespace ldapcp
                     if (hierarchyNodeID == null)
                     {
                         // Root level
-                        foreach (var attribute in ProcessedClaimTypesList.Where(x => !x.UseMainClaimTypeOfDirectoryObject && aadEntityTypes.Contains(x.DirectoryObjectType)))
+                        foreach (var attribute in ProcessedClaimTypesList.Where(x => !x.UseMainClaimTypeOfDirectoryObject && aadEntityTypes.Contains(x.EntityType)))
                         {
                             hierarchy.AddChild(
                                 new Microsoft.SharePoint.WebControls.SPProviderHierarchyNode(
@@ -1445,7 +1442,7 @@ namespace ldapcp
                 {
                     permissionClaimType = attribute.ClaimType;
                     result.Attribute.ClaimType = attribute.ClaimType;
-                    result.Attribute.DirectoryObjectType = attribute.DirectoryObjectType;
+                    result.Attribute.EntityType = attribute.EntityType;
                     result.Attribute.ClaimTypeDisplayName = attribute.ClaimTypeDisplayName;
                     permissionValue = result.LDAPResults[attribute.LDAPAttribute][0].ToString();    // Pick value of current result from actual LDAP attribute to use (which is not the LDAP attribute that matches input)
                     result.Attribute.LDAPAttributeToShowAsDisplayText = attribute.LDAPAttributeToShowAsDisplayText;
@@ -1464,7 +1461,7 @@ namespace ldapcp
                     permissionValue,
                     IdentityClaimTypeConfig.ClaimValueType,
                     false);
-                pe.EntityType = IdentityClaimTypeConfig.DirectoryObjectType == DirectoryObjectType.User ? SPClaimEntityTypes.User : ClaimsProviderConstants.GroupClaimEntityType;
+                pe.EntityType = IdentityClaimTypeConfig.EntityType == DirectoryObjectType.User ? SPClaimEntityTypes.User : ClaimsProviderConstants.GroupClaimEntityType;
             }
             else
             {
@@ -1474,7 +1471,7 @@ namespace ldapcp
                     permissionValue,
                     result.Attribute.ClaimValueType,
                     false);
-                pe.EntityType = result.Attribute.DirectoryObjectType == DirectoryObjectType.User ? SPClaimEntityTypes.User : ClaimsProviderConstants.GroupClaimEntityType;
+                pe.EntityType = result.Attribute.EntityType == DirectoryObjectType.User ? SPClaimEntityTypes.User : ClaimsProviderConstants.GroupClaimEntityType;
             }
 
             int nbMetadata = 0;
@@ -1649,7 +1646,7 @@ namespace ldapcp
                         input);
                 }
 
-                pe.EntityType = claimTypeToResolve.DirectoryObjectType == DirectoryObjectType.User ? SPClaimEntityTypes.User : ClaimsProviderConstants.GroupClaimEntityType;
+                pe.EntityType = claimTypeToResolve.EntityType == DirectoryObjectType.User ? SPClaimEntityTypes.User : ClaimsProviderConstants.GroupClaimEntityType;
                 pe.Description = String.Format(
                     EntityOnMouseOver,
                     claimTypeToResolve.LDAPAttribute,
@@ -1659,7 +1656,7 @@ namespace ldapcp
                 pe.IsResolved = true;
                 pe.EntityGroupName = this.CurrentConfiguration.PickerEntityGroupNameProp;
 
-                if (claimTypeToResolve.DirectoryObjectType == DirectoryObjectType.User && !String.IsNullOrEmpty(claimTypeToResolve.EntityDataKey))
+                if (claimTypeToResolve.EntityType == DirectoryObjectType.User && !String.IsNullOrEmpty(claimTypeToResolve.EntityDataKey))
                 {
                     pe.EntityData[claimTypeToResolve.EntityDataKey] = pe.Claim.Value;
                     ClaimsProviderLogging.Log(String.Format("[{0}] Added metadata \"{1}\" with value \"{2}\" to permission", ProviderInternalName, claimTypeToResolve.EntityDataKey, pe.EntityData[claimTypeToResolve.EntityDataKey]), TraceSeverity.Verbose, EventSeverity.Information, TraceCategory.Claims_Picking);
@@ -1773,7 +1770,7 @@ namespace ldapcp
         public SearchResult SearchResult;
         public string DomainName;
         public string DomainFQDN;
-    }    
+    }
 
     public class ConsolidatedResultCollection : Collection<ConsolidatedResult>
     {

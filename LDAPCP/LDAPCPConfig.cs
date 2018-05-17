@@ -398,24 +398,24 @@ namespace ldapcp
             return new ClaimTypeConfigCollection
             {
                 // Claim types most liekly to be set as identity claim types
-                new ClaimTypeConfig{DirectoryObjectType = DirectoryObjectType.User, LDAPClass = "user", LDAPAttribute = "mail", ClaimType = WIF4_5.ClaimTypes.Email, EntityDataKey = PeopleEditorEntityDataKeys.Email},
-                new ClaimTypeConfig{DirectoryObjectType = DirectoryObjectType.User, LDAPClass = "user", LDAPAttribute = "userPrincipalName", ClaimType = WIF4_5.ClaimTypes.Upn},
-                new ClaimTypeConfig{DirectoryObjectType = DirectoryObjectType.User, LDAPClass = "user", LDAPAttribute = "sAMAccountName", ClaimType = WIF4_5.ClaimTypes.WindowsAccountName, AdditionalLDAPFilter = "(!(objectClass=computer))"},
+                new ClaimTypeConfig{EntityType = DirectoryObjectType.User, LDAPClass = "user", LDAPAttribute = "mail", ClaimType = WIF4_5.ClaimTypes.Email, EntityDataKey = PeopleEditorEntityDataKeys.Email},
+                new ClaimTypeConfig{EntityType = DirectoryObjectType.User, LDAPClass = "user", LDAPAttribute = "userPrincipalName", ClaimType = WIF4_5.ClaimTypes.Upn},
+                new ClaimTypeConfig{EntityType = DirectoryObjectType.User, LDAPClass = "user", LDAPAttribute = "sAMAccountName", ClaimType = WIF4_5.ClaimTypes.WindowsAccountName, AdditionalLDAPFilter = "(!(objectClass=computer))"},
 
                 // Additional properties to find user and create entity with the identity claim type (UseMainClaimTypeOfDirectoryObject=true)
-                new ClaimTypeConfig{DirectoryObjectType = DirectoryObjectType.User, LDAPClass = "user", LDAPAttribute = "displayName", UseMainClaimTypeOfDirectoryObject = true, EntityDataKey = PeopleEditorEntityDataKeys.DisplayName},
-                new ClaimTypeConfig{DirectoryObjectType = DirectoryObjectType.User, LDAPClass = "user", LDAPAttribute = "cn", UseMainClaimTypeOfDirectoryObject = true, AdditionalLDAPFilter = "(!(objectClass=computer))"},
-                new ClaimTypeConfig{DirectoryObjectType = DirectoryObjectType.User, LDAPClass = "user", LDAPAttribute = "sn", UseMainClaimTypeOfDirectoryObject = true},
+                new ClaimTypeConfig{EntityType = DirectoryObjectType.User, LDAPClass = "user", LDAPAttribute = "displayName", UseMainClaimTypeOfDirectoryObject = true, EntityDataKey = PeopleEditorEntityDataKeys.DisplayName},
+                new ClaimTypeConfig{EntityType = DirectoryObjectType.User, LDAPClass = "user", LDAPAttribute = "cn", UseMainClaimTypeOfDirectoryObject = true, AdditionalLDAPFilter = "(!(objectClass=computer))"},
+                new ClaimTypeConfig{EntityType = DirectoryObjectType.User, LDAPClass = "user", LDAPAttribute = "sn", UseMainClaimTypeOfDirectoryObject = true},
 
                 // Additional properties to populate metadata of entity created: no claim type set, EntityDataKey is set and UseMainClaimTypeOfDirectoryObject = false (default value)
-                new ClaimTypeConfig{DirectoryObjectType = DirectoryObjectType.User, LDAPClass = "user", LDAPAttribute="physicalDeliveryOfficeName", EntityDataKey = PeopleEditorEntityDataKeys.Location},
-                new ClaimTypeConfig{DirectoryObjectType = DirectoryObjectType.User, LDAPClass = "user", LDAPAttribute="title", EntityDataKey = PeopleEditorEntityDataKeys.JobTitle},
-                new ClaimTypeConfig{DirectoryObjectType = DirectoryObjectType.User, LDAPClass = "user", LDAPAttribute="msRTCSIP-PrimaryUserAddress", EntityDataKey = PeopleEditorEntityDataKeys.SIPAddress},
-                new ClaimTypeConfig{DirectoryObjectType = DirectoryObjectType.User, LDAPClass = "user", LDAPAttribute="telephoneNumber", EntityDataKey = PeopleEditorEntityDataKeys.WorkPhone},
+                new ClaimTypeConfig{EntityType = DirectoryObjectType.User, LDAPClass = "user", LDAPAttribute="physicalDeliveryOfficeName", EntityDataKey = PeopleEditorEntityDataKeys.Location},
+                new ClaimTypeConfig{EntityType = DirectoryObjectType.User, LDAPClass = "user", LDAPAttribute="title", EntityDataKey = PeopleEditorEntityDataKeys.JobTitle},
+                new ClaimTypeConfig{EntityType = DirectoryObjectType.User, LDAPClass = "user", LDAPAttribute="msRTCSIP-PrimaryUserAddress", EntityDataKey = PeopleEditorEntityDataKeys.SIPAddress},
+                new ClaimTypeConfig{EntityType = DirectoryObjectType.User, LDAPClass = "user", LDAPAttribute="telephoneNumber", EntityDataKey = PeopleEditorEntityDataKeys.WorkPhone},
 
                 // Group
-                new ClaimTypeConfig{DirectoryObjectType = DirectoryObjectType.Group, LDAPClass = "group", LDAPAttribute="sAMAccountName", ClaimType = ClaimsProviderConstants.DefaultMainGroupClaimType, ClaimValuePrefix = @"{fqdn}\"},
-                new ClaimTypeConfig{DirectoryObjectType = DirectoryObjectType.Group, LDAPClass = "group", LDAPAttribute="displayName", UseMainClaimTypeOfDirectoryObject = true, EntityDataKey = PeopleEditorEntityDataKeys.DisplayName},
+                new ClaimTypeConfig{EntityType = DirectoryObjectType.Group, LDAPClass = "group", LDAPAttribute="sAMAccountName", ClaimType = ClaimsProviderConstants.DefaultMainGroupClaimType, ClaimValuePrefix = @"{fqdn}\"},
+                new ClaimTypeConfig{EntityType = DirectoryObjectType.Group, LDAPClass = "group", LDAPAttribute="displayName", UseMainClaimTypeOfDirectoryObject = true, EntityDataKey = PeopleEditorEntityDataKeys.DisplayName},
             };
         }
 
@@ -588,7 +588,7 @@ namespace ldapcp
         /// <summary>
         /// Set only if request is a validation or an augmentation, to the ClaimTypeConfig that matches the ClaimType of the incoming entity
         /// </summary>
-        public ClaimTypeConfig CurrentClaimTypeConfig;
+        public ClaimTypeConfig IncomingEntityClaimTypeConfig;
 
         /// <summary>
         /// Contains the relevant list of ClaimTypeConfig for every type of request. In case of validation or augmentation, it will contain only 1 item.
@@ -653,28 +653,28 @@ namespace ldapcp
         protected void InitializeValidation(List<ClaimTypeConfig> processedClaimTypeConfigList)
         {
             if (this.IncomingEntity == null) throw new ArgumentNullException("IncomingEntity");
-            this.CurrentClaimTypeConfig = processedClaimTypeConfigList.FirstOrDefault(x =>
+            this.IncomingEntityClaimTypeConfig = processedClaimTypeConfigList.FirstOrDefault(x =>
                String.Equals(x.ClaimType, this.IncomingEntity.ClaimType, StringComparison.InvariantCultureIgnoreCase) &&
                !x.UseMainClaimTypeOfDirectoryObject);
-            if (this.CurrentClaimTypeConfig == null) return;
+            if (this.IncomingEntityClaimTypeConfig == null) return;
 
             // CurrentClaimTypeConfigList must also be set
             this.CurrentClaimTypeConfigList = new List<ClaimTypeConfig>(1);
-            this.CurrentClaimTypeConfigList.Add(this.CurrentClaimTypeConfig);
+            this.CurrentClaimTypeConfigList.Add(this.IncomingEntityClaimTypeConfig);
             this.ExactSearch = true;
-            this.Input = (!String.IsNullOrEmpty(CurrentClaimTypeConfig.ClaimValuePrefix) && this.IncomingEntity.Value.StartsWith(CurrentClaimTypeConfig.ClaimValuePrefix, StringComparison.InvariantCultureIgnoreCase)) ?
-                this.IncomingEntity.Value.Substring(CurrentClaimTypeConfig.ClaimValuePrefix.Length) : this.IncomingEntity.Value;
+            this.Input = (!String.IsNullOrEmpty(IncomingEntityClaimTypeConfig.ClaimValuePrefix) && this.IncomingEntity.Value.StartsWith(IncomingEntityClaimTypeConfig.ClaimValuePrefix, StringComparison.InvariantCultureIgnoreCase)) ?
+                this.IncomingEntity.Value.Substring(IncomingEntityClaimTypeConfig.ClaimValuePrefix.Length) : this.IncomingEntity.Value;
 
             // When working with domain tokens remove the domain part of the input so it can be found in AD
-            if (CurrentClaimTypeConfig.ClaimValuePrefix != null && (
-                    CurrentClaimTypeConfig.ClaimValuePrefix.Contains(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINNAME) ||
-                    CurrentClaimTypeConfig.ClaimValuePrefix.Contains(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINFQDN)
+            if (IncomingEntityClaimTypeConfig.ClaimValuePrefix != null && (
+                    IncomingEntityClaimTypeConfig.ClaimValuePrefix.Contains(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINNAME) ||
+                    IncomingEntityClaimTypeConfig.ClaimValuePrefix.Contains(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINFQDN)
                 ))
             {
                 Input = GetAccountFromFullAccountName(Input);
             }
 
-            this.InputHasKeyword = (!String.IsNullOrEmpty(CurrentClaimTypeConfig.ClaimValuePrefix) && !IncomingEntity.Value.StartsWith(CurrentClaimTypeConfig.ClaimValuePrefix, StringComparison.InvariantCultureIgnoreCase) && CurrentClaimTypeConfig.DoNotAddClaimValuePrefixIfBypassLookup) ? true : false;
+            this.InputHasKeyword = (!String.IsNullOrEmpty(IncomingEntityClaimTypeConfig.ClaimValuePrefix) && !IncomingEntity.Value.StartsWith(IncomingEntityClaimTypeConfig.ClaimValuePrefix, StringComparison.InvariantCultureIgnoreCase) && IncomingEntityClaimTypeConfig.DoNotAddClaimValuePrefixIfBypassLookup) ? true : false;
         }
 
         /// <summary>
@@ -689,19 +689,19 @@ namespace ldapcp
                 // Restrict search to ClaimType currently selected in the hierarchy (may return multiple results if identity claim type)
                 CurrentClaimTypeConfigList = processedClaimTypeConfigList.FindAll(x =>
                     String.Equals(x.ClaimType, this.HierarchyNodeID, StringComparison.InvariantCultureIgnoreCase) &&
-                    this.DirectoryObjectTypes.Contains(x.DirectoryObjectType));
+                    this.DirectoryObjectTypes.Contains(x.EntityType));
             }
             else
             {
                 // List<T>.FindAll returns an empty list if no result found: http://msdn.microsoft.com/en-us/library/fh1w7y8z(v=vs.110).aspx
-                CurrentClaimTypeConfigList = processedClaimTypeConfigList.FindAll(x => this.DirectoryObjectTypes.Contains(x.DirectoryObjectType));
+                CurrentClaimTypeConfigList = processedClaimTypeConfigList.FindAll(x => this.DirectoryObjectTypes.Contains(x.EntityType));
             }
         }
 
         protected void InitializeAugmentation(List<ClaimTypeConfig> processedClaimTypeConfigList)
         {
             if (this.IncomingEntity == null) throw new ArgumentNullException("IncomingEntity");
-            this.CurrentClaimTypeConfig = processedClaimTypeConfigList.FirstOrDefault(x =>
+            this.IncomingEntityClaimTypeConfig = processedClaimTypeConfigList.FirstOrDefault(x =>
                String.Equals(x.ClaimType, this.IncomingEntity.ClaimType, StringComparison.InvariantCultureIgnoreCase) &&
                !x.UseMainClaimTypeOfDirectoryObject);
         }

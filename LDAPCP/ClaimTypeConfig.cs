@@ -38,7 +38,7 @@ namespace ldapcp
         [Persisted]
         private string _LDAPClass;
 
-        public DirectoryObjectType DirectoryObjectType
+        public DirectoryObjectType EntityType
         {
             get { return (DirectoryObjectType)Enum.ToObject(typeof(DirectoryObjectType), _DirectoryObjectType); }
             set { _DirectoryObjectType = (int)value; }
@@ -295,7 +295,7 @@ namespace ldapcp
 
             if (Contains(item, new ClaimTypeConfigSamePermissionMetadata()))
             {
-                throw new InvalidOperationException($"Entity metadata '{item.EntityDataKey}' already exists in the collection for the object type '{item.DirectoryObjectType}'");
+                throw new InvalidOperationException($"Entity metadata '{item.EntityDataKey}' already exists in the collection for the object type '{item.EntityType}'");
             }
 
             if (Contains(item, new ClaimTypeConfigSameClaimType()))
@@ -316,18 +316,18 @@ namespace ldapcp
                     throw new InvalidOperationException($"This configuration with claim type '{item.ClaimType}' already exists in the collection");
             }
 
-            if (ClaimsProviderConstants.EnforceOnly1ClaimTypeForGroup && item.DirectoryObjectType == DirectoryObjectType.Group)
+            if (ClaimsProviderConstants.EnforceOnly1ClaimTypeForGroup && item.EntityType == DirectoryObjectType.Group)
             {
                 if (Contains(item, new ClaimTypeConfigEnforeOnly1ClaimTypePerObjectType()))
                 {
-                    throw new InvalidOperationException($"A claim type for DirectoryObjectType '{DirectoryObjectType.Group.ToString()}' already exists in the collection");
+                    throw new InvalidOperationException($"A claim type for EntityType '{DirectoryObjectType.Group.ToString()}' already exists in the collection");
                 }
             }
 
             // Cannot add item with UseMainClaimTypeOfDirectoryObject true if collection does not contain an item with same directory object type AND a claim type defined
-            if (item.UseMainClaimTypeOfDirectoryObject && innerCol.FirstOrDefault(x => x.DirectoryObjectType == item.DirectoryObjectType && !String.IsNullOrEmpty(x.ClaimType)) == null)
+            if (item.UseMainClaimTypeOfDirectoryObject && innerCol.FirstOrDefault(x => x.EntityType == item.EntityType && !String.IsNullOrEmpty(x.ClaimType)) == null)
             {
-                throw new InvalidOperationException($"Cannot add this item (with UseMainClaimTypeOfDirectoryObject set to true) because collecton does not contain an item with same DirectoryObjectType '{item.DirectoryObjectType.ToString()}' AND a ClaimType set");
+                throw new InvalidOperationException($"Cannot add this item (with UseMainClaimTypeOfDirectoryObject set to true) because collecton does not contain an item with same EntityType '{item.EntityType.ToString()}' AND a ClaimType set");
             }
 
             // If SPTrustedLoginProvider is set, additional checks can be done
@@ -336,10 +336,10 @@ namespace ldapcp
                 // Specific checks if current claim type is identity claim type
                 if (String.Equals(item.ClaimType, SPTrust.IdentityClaimTypeInformation.MappedClaimType, StringComparison.InvariantCultureIgnoreCase))
                 {
-                    // DirectoryObjectType must be User
-                    if (item.DirectoryObjectType != DirectoryObjectType.User)
+                    // EntityType must be User
+                    if (item.EntityType != DirectoryObjectType.User)
                     {
-                        throw new InvalidOperationException($"Identity claim type must be configured with DirectoryObjectType 'User'");
+                        throw new InvalidOperationException($"Identity claim type must be configured with EntityType 'User'");
                     }
                 }
             }
@@ -369,10 +369,10 @@ namespace ldapcp
                         throw new InvalidOperationException($"Claim type cannot be changed because current item is the configuration of the identity claim type");
                     }
 
-                    // DirectoryObjectType must be User
-                    if (newItem.DirectoryObjectType != DirectoryObjectType.User)
+                    // EntityType must be User
+                    if (newItem.EntityType != DirectoryObjectType.User)
                     {
-                        throw new InvalidOperationException($"Identity claim type must be configured with DirectoryObjectType 'User'");
+                        throw new InvalidOperationException($"Identity claim type must be configured with EntityType 'User'");
                     }
                 }
             }
@@ -580,7 +580,7 @@ namespace ldapcp
 
         public override int GetHashCode(ClaimTypeConfig ct)
         {
-            string hCode = ct.ClaimType + ct.DirectoryObjectType + ct.LDAPAttribute + ct.LDAPClass;
+            string hCode = ct.ClaimType + ct.EntityType + ct.LDAPAttribute + ct.LDAPClass;
             return hCode.GetHashCode();
         }
     }
@@ -591,7 +591,7 @@ namespace ldapcp
         {
             if (!String.IsNullOrEmpty(newCTConfig.EntityDataKey) &&
                 String.Equals(existingCTConfig.EntityDataKey, newCTConfig.EntityDataKey, StringComparison.InvariantCultureIgnoreCase) &&
-                existingCTConfig.DirectoryObjectType == newCTConfig.DirectoryObjectType)
+                existingCTConfig.EntityType == newCTConfig.EntityType)
             {
                 return true;
             }
@@ -603,7 +603,7 @@ namespace ldapcp
 
         public override int GetHashCode(ClaimTypeConfig ct)
         {
-            string hCode = ct.ClaimType + ct.DirectoryObjectType;
+            string hCode = ct.ClaimType + ct.EntityType;
             return hCode.GetHashCode();
         }
     }
@@ -634,14 +634,14 @@ namespace ldapcp
     }
 
     /// <summary>
-    /// Should be used only to ensure that only 1 claim type is set per DirectoryObjectType
+    /// Should be used only to ensure that only 1 claim type is set per EntityType
     /// </summary>
     internal class ClaimTypeConfigEnforeOnly1ClaimTypePerObjectType : EqualityComparer<ClaimTypeConfig>
     {
         public override bool Equals(ClaimTypeConfig existingCTConfig, ClaimTypeConfig newCTConfig)
         {
             if ((!String.IsNullOrEmpty(newCTConfig.ClaimType) && !String.IsNullOrEmpty(existingCTConfig.ClaimType)) &&
-                existingCTConfig.DirectoryObjectType == newCTConfig.DirectoryObjectType &&
+                existingCTConfig.EntityType == newCTConfig.EntityType &&
                 existingCTConfig.UseMainClaimTypeOfDirectoryObject == newCTConfig.UseMainClaimTypeOfDirectoryObject &&
                 newCTConfig.UseMainClaimTypeOfDirectoryObject == false)
             {
@@ -655,7 +655,7 @@ namespace ldapcp
 
         public override int GetHashCode(ClaimTypeConfig ct)
         {
-            string hCode = ct.ClaimType + ct.DirectoryObjectType + ct.UseMainClaimTypeOfDirectoryObject.ToString();
+            string hCode = ct.ClaimType + ct.EntityType + ct.UseMainClaimTypeOfDirectoryObject.ToString();
             return hCode.GetHashCode();
         }
     }

@@ -70,7 +70,7 @@ namespace ldapcp.ControlTemplates
                     DdlNewEntityMetadata.Items.Add(((FieldInfo)field).Name);
                 }
 
-                // Populate DirectoryObjectType DDL
+                // Populate EntityType DDL
                 foreach (var value in Enum.GetValues(typeof(DirectoryObjectType)))
                 {
                     DdlNewDirectoryObjectType.Items.Add(value.ToString());
@@ -191,7 +191,7 @@ namespace ldapcp.ControlTemplates
                         {
                             tr.CssClass = "ldapcp-rowClaimTypeNotUsedInTrust";
                         }
-                        else if (attr.Value.DirectoryObjectType == DirectoryObjectType.Group && String.Equals(this.PersistedObject.ClaimTypeUsedForAugmentation, attr.Value.ClaimType, StringComparison.InvariantCultureIgnoreCase))
+                        else if (attr.Value.EntityType == DirectoryObjectType.Group && String.Equals(this.PersistedObject.ClaimTypeUsedForAugmentation, attr.Value.ClaimType, StringComparison.InvariantCultureIgnoreCase))
                         {
                             tr.CssClass = "ldapcp-rowMainGroupClaimType";
                         }
@@ -204,8 +204,8 @@ namespace ldapcp.ControlTemplates
                         }
                         else
                         {
-                            c = GetTableCell($"Use main claim type of object {attr.Value.DirectoryObjectType}");
-                            if (attr.Value.DirectoryObjectType == DirectoryObjectType.User)
+                            c = GetTableCell($"Use main claim type of object {attr.Value.EntityType}");
+                            if (attr.Value.EntityType == DirectoryObjectType.User)
                             {
                                 tr.CssClass = "ldapcp-rowUserProperty";
                             }
@@ -297,12 +297,12 @@ namespace ldapcp.ControlTemplates
             string option = "<option value=\"{0}\" {1}>{2}</option>";
             StringBuilder directoryObjectTypeOptions = new StringBuilder();
 
-            string selectedText = azureObject.Value.DirectoryObjectType == DirectoryObjectType.User ? "selected" : String.Empty;
+            string selectedText = azureObject.Value.EntityType == DirectoryObjectType.User ? "selected" : String.Empty;
             directoryObjectTypeOptions.Append(String.Format(option, DirectoryObjectType.User.ToString(), selectedText, DirectoryObjectType.User.ToString()));
-            selectedText = azureObject.Value.DirectoryObjectType == DirectoryObjectType.Group ? "selected" : String.Empty;
+            selectedText = azureObject.Value.EntityType == DirectoryObjectType.Group ? "selected" : String.Empty;
             directoryObjectTypeOptions.Append(String.Format(option, DirectoryObjectType.Group.ToString(), selectedText, DirectoryObjectType.Group.ToString()));
 
-            return String.Format(HtmlCellDirectoryObjectType, azureObject.Value.DirectoryObjectType, azureObject.Key, directoryObjectTypeOptions.ToString());
+            return String.Format(HtmlCellDirectoryObjectType, azureObject.Value.EntityType, azureObject.Key, directoryObjectTypeOptions.ToString());
         }
 
         private TableHeaderCell GetTableHeaderCell(string Value)
@@ -351,7 +351,7 @@ namespace ldapcp.ControlTemplates
 
             ClaimTypeConfig newCTConfig = new ClaimTypeConfig();
             newCTConfig.ClaimType = newClaimType;
-            newCTConfig.DirectoryObjectType = directoryObjectTypeSelected;
+            newCTConfig.EntityType = directoryObjectTypeSelected;
             newCTConfig.LDAPClass = formData["input_attrclass_" + itemId].Trim();
             newCTConfig.LDAPAttribute = formData["input_attrname_" + itemId].Trim();
             newCTConfig.LDAPAttributeToShowAsDisplayText = formData["input_LDAPAttrToDisplay_" + itemId];
@@ -429,7 +429,7 @@ namespace ldapcp.ControlTemplates
 
             ClaimTypeConfig newCTConfig = new ClaimTypeConfig();
             newCTConfig.ClaimType = newClaimType;
-            newCTConfig.DirectoryObjectType = newDirectoryObjectType;
+            newCTConfig.EntityType = newDirectoryObjectType;
             newCTConfig.LDAPClass = newLdapClass;
             newCTConfig.LDAPAttribute = newLdapAttribute;
             newCTConfig.UseMainClaimTypeOfDirectoryObject = useMainClaimTypeOfDirectoryObject;
