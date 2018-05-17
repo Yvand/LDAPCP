@@ -61,12 +61,12 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="ADMIN\LDAPCP\ClaimsList.ascx.cs">
-      <DependentUpon>ClaimsList.ascx</DependentUpon>
+    <Compile Include="ADMIN\LDAPCP\ClaimTypesConfig.ascx.cs">
+      <DependentUpon>ClaimTypesConfig.ascx</DependentUpon>
       <SubType>ASPXCodeBehind</SubType>
     </Compile>
-    <Compile Include="ADMIN\LDAPCP\ClaimsList.ascx.designer.cs">
-      <DependentUpon>ClaimsList.ascx.cs</DependentUpon>
+    <Compile Include="ADMIN\LDAPCP\ClaimTypesConfig.ascx.designer.cs">
+      <DependentUpon>ClaimTypesConfig.ascx.cs</DependentUpon>
     </Compile>
     <Compile Include="ADMIN\LDAPCP\GlobalSettings.ascx.cs">
       <DependentUpon>GlobalSettings.ascx</DependentUpon>
@@ -113,9 +113,9 @@
   </ItemGroup>
   <ItemGroup />
   <ItemGroup>
-    <Content Include="ADMIN\LDAPCP\ClaimsTable.aspx" />
+    <Content Include="ADMIN\LDAPCP\ClaimTypesConfig.aspx" />
     <Content Include="ADMIN\LDAPCP\LdapcpSettings.aspx" />
-    <Content Include="ADMIN\LDAPCP\ClaimsList.ascx" />
+    <Content Include="ADMIN\LDAPCP\ClaimTypesConfig.ascx" />
     <Content Include="ADMIN\LDAPCP\GlobalSettings.ascx" />
     <Content Include="Features\LDAPCP.Administration\LDAPCP.Administration.Template.xml">
       <DependentUpon>LDAPCP.Administration.feature</DependentUpon>

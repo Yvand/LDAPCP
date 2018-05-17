@@ -112,8 +112,6 @@ namespace ldapcp.ControlTemplates
         protected static string TextErrorPersistedObjectNameNotSet = "The attribute 'PersistedObjectName' is required but is not set on the user control.";
         protected static string TextErrorPersistedObjectIDNotSet = "The attribute 'PersistedObjectID' is required but is not set on the user control.";
 
-        //abstract protected bool UpdateConfiguration(bool commitChanges);
-
         /// <summary>
         /// Ensures configuration is valid to proceed
         /// </summary>

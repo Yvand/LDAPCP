@@ -12,7 +12,7 @@ using System.Web.UI.WebControls;
 
 namespace ldapcp.ControlTemplates
 {
-    public partial class ClaimsList : LdapcpUserControl
+    public partial class ClaimTypesConfigUserControl : LdapcpUserControl
     {
         public string TrustName = String.Empty; // This must be a field to be accessible from marup code, it cannot be a property
         List<KeyValuePair<int, ClaimTypeConfig>> ClaimsMapping;
@@ -21,12 +21,6 @@ namespace ldapcp.ControlTemplates
 
         string TextErrorFieldsMissing = "Some mandatory fields are missing.";
         string TextErrorUpdateEmptyClaimType = "Claim type must be set.";
-        string TextErrorDuplicateClaimType = "This claim type already exists in the list, you cannot create duplicates.";
-        string TextErrorUpdateItemDuplicate = "You tried to update item {0} with a {1} that already exists ({2}). Duplicates are not allowed.";
-        string TextErrorUpdateIdentityClaimTypeChanged = "You cannot change claim type of identity claim.";
-        string TextErrorIdentityClaimTypeNotUser = "Identity claim type must be set with with object type &quot;User&quot;.";
-        string TextErrorNewMetadataAlreadyUsed = "Metadata {0} is already used for the claim entity type {1}. Duplicates are not allowed.";
-        string TextErrorDuplicateLdapAttrAndClass = "The LDAP attribute/class specified are already used.";
 
         string HtmlCellClaimType = "<span name=\"span_claimtype_{1}\" id=\"span_claimtype_{1}\">{0}</span><input name=\"input_claimtype_{1}\" id=\"input_claimtype_{1}\" style=\"display: none; width: 90%;\" value=\"{0}\"></input>";
         string HtmlCellLAttrName = "<span name=\"span_attrname_{1}\" id=\"span_attrname_{1}\">{0}</span><input name=\"input_attrname_{1}\" id=\"input_attrname_{1}\" style=\"display:none;\" value=\"{0}\"></input>";
@@ -113,7 +107,7 @@ namespace ldapcp.ControlTemplates
             // SECONDE ROW HEADERS
             tr = new TableRow();
             th = new TableHeaderCell();
-            th = GetTableHeaderCell("Object type");
+            th = GetTableHeaderCell("Entity type");
             tr.Cells.Add(th);
             th = GetTableHeaderCell("LDAP class");
             tr.Cells.Add(th);

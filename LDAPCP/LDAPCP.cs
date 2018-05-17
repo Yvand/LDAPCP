@@ -624,7 +624,7 @@ namespace ldapcp
             BuildLDAPFilter(currentContext, ref LDAPServers);
 
             bool resultsfound = false;
-            List<LDAPSearchResultWrapper> LDAPSearchResultWrappers = new List<LDAPSearchResultWrapper>();
+            List<LDAPSearchResult> LDAPSearchResultWrappers = new List<LDAPSearchResult>();
             using (new SPMonitoredScope(String.Format("[{0}] Total time spent in all LDAP server(s)", ProviderInternalName), 1000))
             {
                 resultsfound = QueryLDAPServers(LDAPServers, currentContext, ref LDAPSearchResultWrappers);
@@ -681,108 +681,111 @@ namespace ldapcp
         /// Processes LDAP results stored in LDAPSearchResultWrappers and returns result in parameter results
         /// </summary>
         /// <param name="requestInfo">Information about current context and operation</param>
-        /// <param name="LDAPSearchResultWrappers"></param>
+        /// <param name="LDAPSearchResults"></param>
         /// <returns></returns>
-        protected virtual ConsolidatedResultCollection ProcessLdapResults(OperationContext currentContext, ref List<LDAPSearchResultWrapper> LDAPSearchResultWrappers)
+        protected virtual ConsolidatedResultCollection ProcessLdapResults(OperationContext currentContext, ref List<LDAPSearchResult> LDAPSearchResults)
         {
             ConsolidatedResultCollection results = new ConsolidatedResultCollection();
-            ResultPropertyCollection resultPropertyCollection;
-            IEnumerable<ClaimTypeConfig> attributes;
-            // If ExactSearch is true, we don't care about attributes with UseMainClaimTypeOfDirectoryObject = true
-            if (currentContext.ExactSearch) attributes = currentContext.CurrentClaimTypeConfigList.Where(x => !x.UseMainClaimTypeOfDirectoryObject);
-            else attributes = currentContext.CurrentClaimTypeConfigList;
+            ResultPropertyCollection LDAPResultProperties;
+            IEnumerable<ClaimTypeConfig> ctConfigs = currentContext.CurrentClaimTypeConfigList;
+            if (currentContext.ExactSearch) ctConfigs = currentContext.CurrentClaimTypeConfigList.Where(x => !x.UseMainClaimTypeOfDirectoryObject);
 
-            foreach (LDAPSearchResultWrapper LDAPresult in LDAPSearchResultWrappers)
+            foreach (LDAPSearchResult LDAPResult in LDAPSearchResults)
             {
-                resultPropertyCollection = LDAPresult.SearchResult.Properties;
+                LDAPResultProperties = LDAPResult.SearchResult.Properties;
                 // objectclass attribute should never be missing because it is explicitely requested in LDAP query
-                if (!resultPropertyCollection.Contains(LDAPObjectClassName))
+                if (!LDAPResultProperties.Contains(LDAPObjectClassName))
                 {
-                    ClaimsProviderLogging.Log(String.Format("[{0}] Property \"{1}\" is missing in LDAP result, this is probably due to insufficient permissions of account doing query in LDAP server {2}.", ProviderInternalName, LDAPObjectClassName, LDAPresult.DomainFQDN), TraceSeverity.Unexpected, EventSeverity.Error, TraceCategory.LDAP_Lookup);
+                    ClaimsProviderLogging.Log($"[{ProviderInternalName}] Property '{LDAPObjectClassName}' is missing in LDAP result, this may be due to insufficient permissions of the account connecting to LDAP server '{LDAPResult.DomainFQDN}'. Skipping result.", TraceSeverity.Unexpected, EventSeverity.Error, TraceCategory.LDAP_Lookup);
                     continue;
                 }
 
                 // Cast collection to be able to use StringComparer.InvariantCultureIgnoreCase for case insensitive search of ldap properties
-                var resultPropertyCollectionPropertyNames = resultPropertyCollection.PropertyNames.Cast<string>();
+                IEnumerable<string> LDAPResultPropertyNames = LDAPResultProperties.PropertyNames.Cast<string>();
 
-                // Issue https://github.com/Yvand/LDAPCP/issues/16: Ensure identity attribute exists in current LDAP result
-                if (resultPropertyCollection[LDAPObjectClassName].Cast<string>().Contains(IdentityClaimTypeConfig.LDAPClass, StringComparer.InvariantCultureIgnoreCase))
+                // Issue https://github.com/Yvand/LDAPCP/issues/16: If current result is a user, ensure LDAP attribute of identity ClaimTypeConfig exists in current LDAP result
+                if (LDAPResultProperties[LDAPObjectClassName].Cast<string>().Contains(IdentityClaimTypeConfig.LDAPClass, StringComparer.InvariantCultureIgnoreCase))
                 {
                     // This is a user: check if his identity LDAP attribute (e.g. mail or sAMAccountName) is present
-                    if (!resultPropertyCollectionPropertyNames.Contains(IdentityClaimTypeConfig.LDAPAttribute, StringComparer.InvariantCultureIgnoreCase))
+                    if (!LDAPResultPropertyNames.Contains(IdentityClaimTypeConfig.LDAPAttribute, StringComparer.InvariantCultureIgnoreCase))
                     {
-                        ClaimsProviderLogging.Log(String.Format("[{0}] A user was ignored because it is missing the identity attribute '{1}'", ProviderInternalName, IdentityClaimTypeConfig.LDAPAttribute), TraceSeverity.Medium, EventSeverity.Information, TraceCategory.LDAP_Lookup);
+                        ClaimsProviderLogging.Log($"[{ProviderInternalName}] Ignoring user because he doesn't have the LDAP attribute '{IdentityClaimTypeConfig.LDAPAttribute}'", TraceSeverity.Medium, EventSeverity.Information, TraceCategory.LDAP_Lookup);
                         continue;
                     }
                 }
                 else
                 {
-                    // This is a group: get the identity attribute of groups, and ensure it is present
-                    var groupAttribute = attributes.FirstOrDefault(x => resultPropertyCollection[LDAPObjectClassName].Contains(x.LDAPClass) && x.ClaimType != null);
-                    if (groupAttribute != null && !resultPropertyCollectionPropertyNames.Contains(groupAttribute.LDAPAttribute, StringComparer.InvariantCultureIgnoreCase))
+                    // This is a group: check if the LDAP attribute used to create groups entities is present
+                    if (MainGroupClaimTypeConfig != null && !LDAPResultPropertyNames.Contains(MainGroupClaimTypeConfig.LDAPAttribute, StringComparer.InvariantCultureIgnoreCase))
                     {
-                        ClaimsProviderLogging.Log(String.Format("[{0}] A group was ignored because it is missing the identity attribute '{1}'", ProviderInternalName, groupAttribute.LDAPAttribute), TraceSeverity.Medium, EventSeverity.Information, TraceCategory.LDAP_Lookup);
+                        ClaimsProviderLogging.Log($"[{ProviderInternalName}] Ignoring group because it doesn't have the LDAP attribute '{MainGroupClaimTypeConfig.LDAPAttribute}'", TraceSeverity.Medium, EventSeverity.Information, TraceCategory.LDAP_Lookup);
                         continue;
                     }
                 }
 
-                foreach (var attr in attributes)
+                foreach (ClaimTypeConfig ctConfig in ctConfigs)
                 {
-                    // Check if current attribute object class matches the current LDAP result
-                    if (!resultPropertyCollection[LDAPObjectClassName].Cast<string>().Contains(attr.LDAPClass, StringComparer.InvariantCultureIgnoreCase)) continue;
+                    // Check if LDAPClass of current ClaimTypeConfig matches the current LDAP result
+                    if (!LDAPResultProperties[LDAPObjectClassName].Cast<string>().Contains(ctConfig.LDAPClass, StringComparer.InvariantCultureIgnoreCase)) continue;
 
                     // Check if current LDAP result contains LDAP attribute of current attribute
-                    if (!resultPropertyCollectionPropertyNames.Contains(attr.LDAPAttribute, StringComparer.InvariantCultureIgnoreCase)) continue;
+                    if (!LDAPResultPropertyNames.Contains(ctConfig.LDAPAttribute, StringComparer.InvariantCultureIgnoreCase)) continue;
 
-                    // TODO: investigate http://ldapcp.codeplex.com/discussions/648655
-                    string value = resultPropertyCollection[resultPropertyCollectionPropertyNames.Where(x => x.ToLowerInvariant() == attr.LDAPAttribute.ToLowerInvariant()).First()][0].ToString();
-                    // Check if current attribute matches the input
+                    // Get value with of current LDAP attribute
+                    // TODO: investigate https://github.com/Yvand/LDAPCP/issues/43
+                    string directoryObjectPropertyValue = LDAPResultProperties[LDAPResultPropertyNames.Where(x => x.ToLowerInvariant() == ctConfig.LDAPAttribute.ToLowerInvariant()).First()][0].ToString();
+                    
+                    // Check if current LDAP attribute value matches the input
                     if (currentContext.ExactSearch)
                     {
-                        if (!String.Equals(value, currentContext.Input, StringComparison.InvariantCultureIgnoreCase)) continue;
+                        if (!String.Equals(directoryObjectPropertyValue, currentContext.Input, StringComparison.InvariantCultureIgnoreCase)) continue;
                     }
                     else
                     {
                         if (this.CurrentConfiguration.AddWildcardAsPrefixOfInput)
                         {
-                            // Changed to a case insensitive search
-                            if (value.IndexOf(currentContext.Input, StringComparison.InvariantCultureIgnoreCase) != -1) continue;
+                            if (directoryObjectPropertyValue.IndexOf(currentContext.Input, StringComparison.InvariantCultureIgnoreCase) != -1) continue;
                         }
                         else
                         {
-                            if (!value.StartsWith(currentContext.Input, StringComparison.InvariantCultureIgnoreCase)) continue;
+                            if (!directoryObjectPropertyValue.StartsWith(currentContext.Input, StringComparison.InvariantCultureIgnoreCase)) continue;
                         }
                     }
 
-                    // Add to collection of objectclass/ldap attribute in list of results if it doesn't already exist
-                    ClaimTypeConfig objCompare;
-                    if (attr.UseMainClaimTypeOfDirectoryObject && (String.Equals(attr.LDAPClass, IdentityClaimTypeConfig.LDAPClass, StringComparison.InvariantCultureIgnoreCase)))
+                    // Check if current result (association of LDAP result + ClaimTypeConfig) is not already in results list
+                    // Get ClaimTypeConfig to use to check if result is already present in the results list
+                    ClaimTypeConfig ctConfigToUseForDuplicateCheck = ctConfig;
+                    if (ctConfig.UseMainClaimTypeOfDirectoryObject)
                     {
-                        if (!resultPropertyCollectionPropertyNames.Contains(attr.LDAPAttribute, StringComparer.InvariantCultureIgnoreCase)) continue;
-                        // If exactSearch is true, then IdentityAttribute.LDAPAttribute value should be also equals to input, otherwise igno
-                        objCompare = IdentityClaimTypeConfig;
-                    }
-                    else
-                    {
-                        objCompare = attr;
+                        if (ctConfig.EntityType == DirectoryObjectType.User)
+                        {
+                            if (String.Equals(ctConfig.LDAPClass, IdentityClaimTypeConfig.LDAPClass, StringComparison.InvariantCultureIgnoreCase))
+                                ctConfigToUseForDuplicateCheck = IdentityClaimTypeConfig;
+                            else continue;  // Current ClaimTypeConfig is a user but current LDAP result is not, skip
+                        }
+                        else
+                        {
+                            if (MainGroupClaimTypeConfig != null && String.Equals(ctConfig.LDAPClass, MainGroupClaimTypeConfig.LDAPClass, StringComparison.InvariantCultureIgnoreCase))
+                                ctConfigToUseForDuplicateCheck = MainGroupClaimTypeConfig;
+                            else continue;  // Current ClaimTypeConfig is a group but current LDAP result is not, skip
+                        }
                     }
 
                     // When token domain is present, then ensure we do compare with the actual domain name
-                    // There are 2 scenarios to
-                    bool compareWithDomain = HasPrefixToken(attr.ClaimValuePrefix, ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINNAME) ? true : this.CurrentConfiguration.CompareResultsWithDomainNameProp;
-                    if (!compareWithDomain) compareWithDomain = HasPrefixToken(attr.ClaimValuePrefix, ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINFQDN) ? true : this.CurrentConfiguration.CompareResultsWithDomainNameProp;
-                    if (results.Contains(LDAPresult, objCompare, compareWithDomain))
+                    bool compareWithDomain = HasPrefixToken(ctConfig.ClaimValuePrefix, ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINNAME) ? true : this.CurrentConfiguration.CompareResultsWithDomainNameProp;
+                    if (!compareWithDomain) compareWithDomain = HasPrefixToken(ctConfig.ClaimValuePrefix, ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINFQDN) ? true : this.CurrentConfiguration.CompareResultsWithDomainNameProp;
+                    if (results.Contains(LDAPResult, ctConfigToUseForDuplicateCheck, compareWithDomain))
                         continue;
 
                     results.Add(
                         new ConsolidatedResult
                         {
-                            Attribute = attr,
-                            LDAPResults = resultPropertyCollection,
-                            Value = value,
-                            DomainName = LDAPresult.DomainName,
-                            DomainFQDN = LDAPresult.DomainFQDN,
-                            //DEBUG = String.Format("LDAPAttribute: {0}, LDAPAttributeValue: {1}, AlwaysResolveAgainstIdentityClaim: {2}", attr.LDAPAttribute, resultPropertyCollection[attr.LDAPAttribute][0].ToString(), attr.AlwaysResolveAgainstIdentityClaim.ToString())
+                            Attribute = ctConfig,
+                            LDAPResults = LDAPResultProperties,
+                            Value = directoryObjectPropertyValue,
+                            DomainName = LDAPResult.DomainName,
+                            DomainFQDN = LDAPResult.DomainFQDN,
+                            //DEBUG = String.Format("LDAPAttribute: {0}, LDAPAttributeValue: {1}, AlwaysResolveAgainstIdentityClaim: {2}", attr.LDAPAttribute, LDAPResultProperties[attr.LDAPAttribute][0].ToString(), attr.AlwaysResolveAgainstIdentityClaim.ToString())
                         });
                 }
             }
@@ -847,11 +850,11 @@ namespace ldapcp
         /// <param name="requestInfo">Information about current context and operation</param>
         /// <param name="LDAPSearchResults">LDAP search results list to be populated by this method</param>
         /// <returns>true if a result was found</returns>
-        protected bool QueryLDAPServers(List<LDAPConnectionSettings> LDAPServers, OperationContext requestInfo, ref List<LDAPSearchResultWrapper> LDAPSearchResults)
+        protected bool QueryLDAPServers(List<LDAPConnectionSettings> LDAPServers, OperationContext requestInfo, ref List<LDAPSearchResult> LDAPSearchResults)
         {
             if (LDAPServers == null || LDAPServers.Count == 0) return false;
             object lockResults = new object();
-            List<LDAPSearchResultWrapper> results = new List<LDAPSearchResultWrapper>();
+            List<LDAPSearchResult> results = new List<LDAPSearchResult>();
             Stopwatch globalStopWatch = new Stopwatch();
             globalStopWatch.Start();
 
@@ -901,7 +904,7 @@ namespace ldapcp
                                         OperationContext.GetDomainInformation(directory, out domainName, out domainFQDN);
                                         foreach (SearchResult item in directoryResults)
                                         {
-                                            results.Add(new LDAPSearchResultWrapper()
+                                            results.Add(new LDAPSearchResult()
                                             {
                                                 SearchResult = item,
                                                 DomainName = domainName,
@@ -1765,7 +1768,7 @@ namespace ldapcp
         //public string DEBUG;
     }
 
-    public class LDAPSearchResultWrapper
+    public class LDAPSearchResult
     {
         public SearchResult SearchResult;
         public string DomainName;
@@ -1782,7 +1785,7 @@ namespace ldapcp
         /// <param name="attribute">AttributeHelper that matches result</param>
         /// <param name="compareWithDomain">if true, don't consider 2 results as identical if they don't are in same domain.</param>
         /// <returns></returns>
-        public bool Contains(LDAPSearchResultWrapper result, ClaimTypeConfig attribute, bool compareWithDomain)
+        public bool Contains(LDAPSearchResult result, ClaimTypeConfig attribute, bool compareWithDomain)
         {
             foreach (var item in base.Items)
             {

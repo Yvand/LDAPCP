@@ -377,26 +377,27 @@ namespace ldapcp
                 }
             }
 
-            // Create a temporary copy of the collection without the old item, to test if new item can be added
-            ClaimTypeConfigCollection temporaryCollection = new ClaimTypeConfigCollection();
-            foreach (ClaimTypeConfig curCTConfig in innerCol.Where(x => !String.Equals(x.ClaimType, oldClaimType, StringComparison.InvariantCultureIgnoreCase)))
+            // Create a temp collection that is a copy of current collection
+            ClaimTypeConfigCollection testUpdateCollection = new ClaimTypeConfigCollection();
+            foreach (ClaimTypeConfig curCTConfig in innerCol)
             {
-                temporaryCollection.Add(curCTConfig);
+                testUpdateCollection.Add(curCTConfig.CopyCurrentObject());
             }
 
-            // ClaimTypeConfigCollection.Add() may thrown an exception if newItem is not valid for any reason
-            temporaryCollection.Add(newItem);
+            // Update ClaimTypeConfig in testUpdateCollection
+            ClaimTypeConfig ctConfigToUpdate = testUpdateCollection.First(x => String.Equals(x.ClaimType, oldClaimType, StringComparison.InvariantCultureIgnoreCase));
+            ctConfigToUpdate.SetFromObject(newItem);
 
-            // ClaimTypeConfigCollection.Add() did not thrown an exception, current item can be safely updated
-            for (int i = 0; i < innerCol.Count; i++)
+            // Test change in testUpdateCollection by adding all items in a new temp collection
+            ClaimTypeConfigCollection testNewItemCollection = new ClaimTypeConfigCollection();
+            foreach (ClaimTypeConfig curCTConfig in testUpdateCollection)
             {
-                ClaimTypeConfig curCT = (ClaimTypeConfig)innerCol[i];
-                if (String.Equals(curCT.ClaimType, oldClaimType, StringComparison.InvariantCultureIgnoreCase))
-                {
-                    innerCol.ElementAt(i).SetFromObject(newItem);
-                    break;
-                }
+                // ClaimTypeConfigCollection.Add() may thrown an exception if newItem is not valid for any reason
+                testNewItemCollection.Add(curCTConfig);
             }
+
+            // No error, current collection can safely be updated
+            innerCol.First(x => String.Equals(x.ClaimType, oldClaimType, StringComparison.InvariantCultureIgnoreCase)).SetFromObject(newItem);
         }
 
         public void Clear()

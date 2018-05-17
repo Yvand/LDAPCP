@@ -10,7 +10,7 @@
 namespace ldapcp.ControlTemplates {
     
     
-    public partial class ClaimsList {
+    public partial class ClaimTypesConfigUserControl {
         
         /// <summary>
         /// LabelMessage control.
