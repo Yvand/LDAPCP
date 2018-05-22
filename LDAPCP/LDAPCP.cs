@@ -289,11 +289,14 @@ namespace ldapcp
         }
 
         /// <summary>
-        /// Override this method to return a custom configuration of LDAPCP.
-        /// DO NOT Override this method if you use a custom persisted object to store configuration in config DB.
-        /// To use a custom persisted object, override property PersistedObjectName and set its name
+        /// Override this method to create read-only configuration that will not be persisted in configuration database, and that cannot be changed with admin pages or PowerShell.
+        /// DO NOT Override this method if you want to store configuration in config DB, and be able to updated it with admin pages or PowerShel.
+        /// For that, override property PersistedObjectName and set its name
         /// </summary>
-        /// <returns></returns>
+        /// <param name="context"></param>
+        /// <param name="entityTypes"></param>
+        /// <param name="persistedObjectName"></param>
+        /// <returns>Read-only configuration to use</returns>
         protected virtual ILDAPCPConfiguration GetConfiguration(Uri context, string[] entityTypes, string persistedObjectName)
         {
             return LDAPCPConfig.GetConfiguration(persistedObjectName);

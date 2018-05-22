@@ -1,6 +1,6 @@
 ﻿<%@ Assembly Name="$SharePoint.Project.AssemblyFullName$" %>
-<%@ Register TagPrefix="asp" Namespace="System.Web.UI" Assembly="System.Web.Extensions, Version=3.5.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35" %>
 <%@ Control Language="C#" AutoEventWireup="true" CodeBehind="ClaimTypesConfig.ascx.cs" Inherits="ldapcp.ControlTemplates.ClaimTypesConfigUserControl" %>
+<%@ Register TagPrefix="asp" Namespace="System.Web.UI" Assembly="System.Web.Extensions, Version=3.5.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35" %>
 
 <script type="text/javascript" src="/_layouts/15/ldapcp/jquery-1.9.1.min.js"></script>
 <style type="text/css">

@@ -105,12 +105,12 @@ namespace ldapcp.ControlTemplates
 
         protected static string ViewStatePersistedObjectVersionKey = "PersistedObjectVersion";
         protected static string TextErrorPersistedObjectNotFound = "PersistedObject cannot be found.";
-        protected static string TextErrorPersistedObjectStale = "Modification is cancelled because persisted object was modified since last load of the page. Please refresh the page and try again.";
-        protected static string TextErrorNoSPTrustAssociation = "{0} is currently not associated with any TrustedLoginProvider. It is mandatory because it cannot create permission for a trust if it is not associated to it.<br/>Visit <a href=\"" + ClaimsProviderConstants.PUBLICSITEURL + "\" target=\"_blank\">ldapcp.com</a> for more information.<br/>Settings on this page will not be available as long as LDAPCP will not associated to a trut.";
-        protected static string TextErrorNoIdentityClaimType = "The TrustedLoginProvider {0} is set with identity claim type \"{1}\" but it is not in the claims list of LDAPCP.<br/>Please visit LDAPCP page \"claims mapping\" in Security tab to set it and return to this page afterwards.";
-        protected static string TextErrorClaimsProviderNameNotSet = "The attribute 'ClaimsProviderName' is required but is not set on the user control.";
-        protected static string TextErrorPersistedObjectNameNotSet = "The attribute 'PersistedObjectName' is required but is not set on the user control.";
-        protected static string TextErrorPersistedObjectIDNotSet = "The attribute 'PersistedObjectID' is required but is not set on the user control.";
+        protected static string TextErrorPersistedObjectStale = "Modifications where not applied because the persisted object was modified after this page was loaded. Please refresh the page and try again.";
+        protected static string TextErrorNoSPTrustAssociation = "{0} is currently not associated with any TrustedLoginProvider, which is required to create entities.<br/>Visit <a href=\"" + ClaimsProviderConstants.PUBLICSITEURL + "\" target=\"_blank\">ldapcp.com</a> for more information.<br/>Refresh this page once '{0}' is associated with a TrustedLoginProvider.";
+        protected static string TextErrorNoIdentityClaimType = "The TrustedLoginProvider {0} is set with identity claim type '{1}', but is not set in claim types configuration list.<br/>Please visit claim types configuration page to add it.";
+        protected static string TextErrorClaimsProviderNameNotSet = "The attribute 'ClaimsProviderName' must be set in the user control.";
+        protected static string TextErrorPersistedObjectNameNotSet = "The attribute 'PersistedObjectName' must be set in the user control.";
+        protected static string TextErrorPersistedObjectIDNotSet = "The attribute 'PersistedObjectID' must be set in the user control.";
 
         /// <summary>
         /// Ensures configuration is valid to proceed
