@@ -514,6 +514,8 @@ namespace ldapcp
         /// </summary>
         public DirectoryEntry LDAPServer;
 
+        public string Filter;
+
         public LDAPConnection()
         {
         }
@@ -826,11 +828,5 @@ namespace ldapcp
         Search,
         Validation,
         Augmentation,
-    }
-
-    public class LDAPConnectionSettings
-    {
-        public DirectoryEntry Directory;
-        public string Filter;
     }
 }

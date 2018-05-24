@@ -206,6 +206,7 @@ namespace ldapcp
                 _ClaimValuePrefix = this._ClaimValuePrefix,
                 _UseMainClaimTypeOfDirectoryObject = this._UseMainClaimTypeOfDirectoryObject,
                 _ShowClaimNameInDisplayText = this._ShowClaimNameInDisplayText,
+                _SupportsWildcard = this._SupportsWildcard,
             };
         }
 
@@ -226,6 +227,7 @@ namespace ldapcp
             _ClaimValuePrefix = objectToCopy._ClaimValuePrefix;
             _UseMainClaimTypeOfDirectoryObject = objectToCopy._UseMainClaimTypeOfDirectoryObject;
             _ShowClaimNameInDisplayText = objectToCopy._ShowClaimNameInDisplayText;
+            _SupportsWildcard = objectToCopy._SupportsWildcard;
         }
 
         public bool Equals(ClaimTypeConfig other)

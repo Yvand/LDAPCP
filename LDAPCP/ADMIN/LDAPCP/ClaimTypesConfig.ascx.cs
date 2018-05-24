@@ -194,7 +194,7 @@ namespace ldapcp.ControlTemplates
                     {
                         if (!attr.Value.UseMainClaimTypeOfDirectoryObject)
                         {
-                            c = GetTableCell("Map property with a PickerEntity metadata");
+                            c = GetTableCell("Map LDAP attribute with a PickerEntity metadata");
                         }
                         else
                         {
