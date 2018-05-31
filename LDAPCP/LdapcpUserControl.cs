@@ -29,7 +29,7 @@ namespace ldapcp.ControlTemplates
         {
             get
             {
-                return (this._PersistedObjectID == null || this._PersistedObjectID == Guid.Empty ) ? String.Empty : this._PersistedObjectID.ToString();
+                return (this._PersistedObjectID == null || this._PersistedObjectID == Guid.Empty) ? String.Empty : this._PersistedObjectID.ToString();
             }
             set
             {
@@ -118,9 +118,23 @@ namespace ldapcp.ControlTemplates
         /// <returns></returns>
         public virtual ConfigStatus ValidatePrerequisite()
         {
+            if (!this.IsPostBack)
+            {
+                // DataBind() must be called to bind attributes that are set as "<%# #>"in .aspx
+                // But only during initial page load, otherwise it would reset bindings in other controls like SPGridView
+                DataBind();
+                ViewState.Add("ClaimsProviderName", ClaimsProviderName);
+                ViewState.Add("PersistedObjectName", PersistedObjectName);
+                ViewState.Add("PersistedObjectID", PersistedObjectID);
+            }
+            else
+            {
+                ClaimsProviderName = ViewState["ClaimsProviderName"].ToString();
+                PersistedObjectName = ViewState["PersistedObjectName"].ToString();
+                PersistedObjectID = ViewState["PersistedObjectID"].ToString();
+            }
+
             Status = ConfigStatus.AllGood;
-            // DataBind() must be called to bind attributes that are set as "<%# #>"in .aspx
-            DataBind();
             if (String.IsNullOrEmpty(ClaimsProviderName)) Status |= ConfigStatus.ClaimsProviderNamePropNotSet;
             if (String.IsNullOrEmpty(PersistedObjectName)) Status |= ConfigStatus.PersistedObjectNamePropNotSet;
             if (String.IsNullOrEmpty(PersistedObjectID)) Status |= ConfigStatus.PersistedObjectIDPropNotSet;

@@ -1044,8 +1044,11 @@ namespace ldapcp
                         ClaimsProviderLogging.Log($"[{ProviderInternalName}] Augmentation is enabled but no claim type is configured.", TraceSeverity.High, EventSeverity.Error, TraceCategory.Augmentation);
                         return;
                     }
-                    ClaimTypeConfig groupCTConfig = this.ProcessedClaimTypesList.FirstOrDefault(x => String.Equals(x.ClaimType, this.CurrentConfiguration.ClaimTypeUsedForAugmentation, StringComparison.InvariantCultureIgnoreCase) && !x.UseMainClaimTypeOfDirectoryObject);
-                    if (groupCTConfig == null)
+
+                    IEnumerable<ClaimTypeConfig> allGroupsCTConfig = this.ProcessedClaimTypesList.Where(x => x.EntityType == DirectoryObjectType.Group && !x.UseMainClaimTypeOfDirectoryObject);
+                    IEnumerable<ClaimTypeConfig> allGroupsExceptMainGroupCTConfig = allGroupsCTConfig.Where(x => !String.Equals(x.ClaimType, this.CurrentConfiguration.ClaimTypeUsedForAugmentation, StringComparison.InvariantCultureIgnoreCase));
+                    ClaimTypeConfig mainGroupCTConfig = allGroupsCTConfig.FirstOrDefault(x => String.Equals(x.ClaimType, this.CurrentConfiguration.ClaimTypeUsedForAugmentation, StringComparison.InvariantCultureIgnoreCase));
+                    if (mainGroupCTConfig == null)
                     {
                         ClaimsProviderLogging.Log($"[{ProviderInternalName}] Configuration for claim type '{this.CurrentConfiguration.ClaimTypeUsedForAugmentation}' cannot be found, please add it in claim types configuration list.",
                             TraceSeverity.High, EventSeverity.Error, TraceCategory.Augmentation);
@@ -1069,9 +1072,14 @@ namespace ldapcp
                     {
                         List<SPClaim> directoryGroups;
                         if (coco.GetGroupMembershipAsADDomain)
-                            directoryGroups = GetGroupsFromADDirectory(coco.LDAPServer, currentContext, groupCTConfig);
+                        {
+                            directoryGroups = GetGroupsFromADDirectory(coco.LDAPServer, currentContext, mainGroupCTConfig);
+                            directoryGroups.AddRange(GetGroupsFromLDAPDirectory(coco.LDAPServer, currentContext, allGroupsCTConfig.Where(x => !String.Equals(x.ClaimType, this.CurrentConfiguration.ClaimTypeUsedForAugmentation, StringComparison.InvariantCultureIgnoreCase))));
+                        }
                         else
-                            directoryGroups = GetGroupsFromLDAPDirectory(coco.LDAPServer, currentContext, groupCTConfig);
+                        {
+                            directoryGroups = GetGroupsFromLDAPDirectory(coco.LDAPServer, currentContext, allGroupsCTConfig);
+                        }
 
                         lock (lockResults)
                         {
@@ -1086,11 +1094,11 @@ namespace ldapcp
                     foreach (SPClaim group in groups)
                     {
                         claims.Add(group);
-                        ClaimsProviderLogging.Log(String.Format("[{0}] Added group \"{1}\" to user \"{2}\"", ProviderInternalName, group.Value, currentContext.IncomingEntity.Value),
+                        ClaimsProviderLogging.Log($"[{ProviderInternalName}] Added group '{group.Value}', claim type '{group.ClaimType}' to user '{currentContext.IncomingEntity.Value}'",
                             TraceSeverity.Verbose, EventSeverity.Information, TraceCategory.Augmentation);
                     }
                     if (groups.Count > 0)
-                        ClaimsProviderLogging.Log(String.Format("[{0}] User '{1}' was augmented with {2} groups of claim type '{3}'", ProviderInternalName, currentContext.IncomingEntity.Value, groups.Count.ToString(), groupCTConfig.ClaimType),
+                        ClaimsProviderLogging.Log(String.Format("[{0}] User '{1}' was augmented with {2} groups of claim type '{3}'", ProviderInternalName, currentContext.IncomingEntity.Value, groups.Count.ToString(), mainGroupCTConfig.ClaimType),
                             TraceSeverity.Medium, EventSeverity.Information, TraceCategory.Augmentation);
                     else
                         ClaimsProviderLogging.Log(String.Format("[{0}] No group found for user '{1}' during augmentation", ProviderInternalName, currentContext.IncomingEntity.Value),
@@ -1167,7 +1175,7 @@ namespace ldapcp
                 {
                     ClaimsProviderLogging.LogException(ProviderInternalName, String.Format("while getting AD group membership of user {0} in {1} using UserPrincipal.GetAuthorizationGroups(). This is likely due to a bug in .NET framework in UserPrincipal.GetAuthorizationGroups (as of v4.6.1), especially if user is member (directly or not) of a group either in a child domain that was migrated, or a group that has special (deny) entities.", currentContext.IncomingEntity.Value, directory.Path), TraceCategory.Augmentation, ex);
                     // In this case, fallback to LDAP method to get group membership.
-                    return GetGroupsFromLDAPDirectory(directory, currentContext, groupCTConfig);
+                    return GetGroupsFromLDAPDirectory(directory, currentContext, new List<ClaimTypeConfig>(1) { groupCTConfig });
                 }
                 catch (PrincipalServerDownException ex)
                 {
@@ -1190,11 +1198,12 @@ namespace ldapcp
         /// </summary>
         /// <param name="directory">LDAP server to query</param>
         /// <param name="currentContext">Information about current context and operation</param>
-        /// <param name="groupCTConfig"></param>
+        /// <param name="groupsCTConfig"></param>
         /// <returns></returns>
-        protected virtual List<SPClaim> GetGroupsFromLDAPDirectory(DirectoryEntry directory, OperationContext currentContext, ClaimTypeConfig groupCTConfig)
+        protected virtual List<SPClaim> GetGroupsFromLDAPDirectory(DirectoryEntry directory, OperationContext currentContext, IEnumerable<ClaimTypeConfig> groupsCTConfig)
         {
             List<SPClaim> groups = new List<SPClaim>();
+            if (groupsCTConfig == null) return groups;
             using (new SPMonitoredScope(String.Format("[{0}] Getting LDAP group membership of user {1} in {2}", ProviderInternalName, currentContext.IncomingEntity.Value, directory.Path), 2000))
             {
                 try
@@ -1209,6 +1218,10 @@ namespace ldapcp
                         searcher.Filter = string.Format("(&(ObjectClass={0})({1}={2}){3})", IdentityClaimTypeConfig.LDAPClass, IdentityClaimTypeConfig.LDAPAttribute, currentContext.IncomingEntity.Value, IdentityClaimTypeConfig.AdditionalLDAPFilter);
                         searcher.PropertiesToLoad.Add("memberOf");
                         searcher.PropertiesToLoad.Add("uniquememberof");
+                        foreach (ClaimTypeConfig groupCTConfig in groupsCTConfig)
+                        {
+                            searcher.PropertiesToLoad.Add(groupCTConfig.LDAPAttribute);
+                        }
 
                         stopWatch.Start();
                         SearchResult result = searcher.FindOne();
@@ -1216,30 +1229,61 @@ namespace ldapcp
 
                         if (result == null) return groups;  // user was not found in this directory
 
-                        int propertyCount = result.Properties["memberOf"].Count;
-                        var groupCollection = result.Properties["memberOf"];
-
-                        if (propertyCount == 0)
+                        foreach (ClaimTypeConfig groupCTConfig in groupsCTConfig)
                         {
-                            propertyCount = result.Properties["uniquememberof"].Count;
-                            groupCollection = result.Properties["uniquememberof"];
-                        }
+                            int propertyCount = 0;
+                            ResultPropertyValueCollection groupValues = null;
+                            bool valueIsDistinguishedNameFormat;
+                            if (groupCTConfig.ClaimType == MainGroupClaimTypeConfig.ClaimType)
+                            {
+                                valueIsDistinguishedNameFormat = true;
+                                if (result.Properties.Contains("memberOf"))
+                                {
+                                    propertyCount = result.Properties["memberOf"].Count;
+                                    groupValues = result.Properties["memberOf"];
+                                }
 
-                        string groupDN;
-                        for (int propertyCounter = 0; propertyCounter < propertyCount; propertyCounter++)
-                        {
-                            groupDN = (string)groupCollection[propertyCounter];
-                            string claimValue = OperationContext.GetValueFromDistinguishedName(groupDN);
-                            if (String.IsNullOrEmpty(claimValue)) continue;
+                                if (propertyCount == 0 && result.Properties.Contains("uniquememberof"))
+                                {
+                                    propertyCount = result.Properties["uniquememberof"].Count;
+                                    groupValues = result.Properties["uniquememberof"];
+                                }
+                            }
+                            else
+                            {
+                                valueIsDistinguishedNameFormat = false;
+                                if (result.Properties.Contains(groupCTConfig.LDAPAttribute))
+                                {
+                                    propertyCount = result.Properties[groupCTConfig.LDAPAttribute].Count;
+                                    groupValues = result.Properties[groupCTConfig.LDAPAttribute];
+                                }
+                            }
 
-                            string groupDomainName, groupDomainFqdn;
-                            OperationContext.GetDomainInformation(groupDN, out groupDomainName, out groupDomainFqdn);
-                            if (!String.IsNullOrEmpty(groupCTConfig.ClaimValuePrefix) && groupCTConfig.ClaimValuePrefix.Contains(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINNAME))
-                                claimValue = groupCTConfig.ClaimValuePrefix.Replace(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINNAME, groupDomainName) + claimValue;
-                            else if (!String.IsNullOrEmpty(groupCTConfig.ClaimValuePrefix) && groupCTConfig.ClaimValuePrefix.Contains(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINFQDN))
-                                claimValue = groupCTConfig.ClaimValuePrefix.Replace(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINFQDN, groupDomainFqdn) + claimValue;
-                            SPClaim claim = CreateClaim(groupCTConfig.ClaimType, claimValue, groupCTConfig.ClaimValueType, false);
-                            groups.Add(claim);
+                            string value;
+                            for (int propertyCounter = 0; propertyCounter < propertyCount; propertyCounter++)
+                            {
+                                value = groupValues[propertyCounter].ToString();
+                                string claimValue;
+                                if (valueIsDistinguishedNameFormat)
+                                {
+                                    claimValue = OperationContext.GetValueFromDistinguishedName(value);
+                                    if (String.IsNullOrEmpty(claimValue)) continue;
+
+                                    string groupDomainName, groupDomainFqdn;
+                                    OperationContext.GetDomainInformation(value, out groupDomainName, out groupDomainFqdn);
+                                    if (!String.IsNullOrEmpty(groupCTConfig.ClaimValuePrefix) && groupCTConfig.ClaimValuePrefix.Contains(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINNAME))
+                                        claimValue = groupCTConfig.ClaimValuePrefix.Replace(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINNAME, groupDomainName) + claimValue;
+                                    else if (!String.IsNullOrEmpty(groupCTConfig.ClaimValuePrefix) && groupCTConfig.ClaimValuePrefix.Contains(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINFQDN))
+                                        claimValue = groupCTConfig.ClaimValuePrefix.Replace(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINFQDN, groupDomainFqdn) + claimValue;
+                                }
+                                else
+                                {
+                                    claimValue = value;
+                                }
+
+                                SPClaim claim = CreateClaim(groupCTConfig.ClaimType, claimValue, groupCTConfig.ClaimValueType, false);
+                                groups.Add(claim);
+                            }
                         }
                     }
                     ClaimsProviderLogging.Log(String.Format("[{0}] Domain {1} returned {2} groups for user {3}. Lookup took {4}ms on LDAP server '{5}'",
@@ -1248,7 +1292,7 @@ namespace ldapcp
                 }
                 catch (Exception ex)
                 {
-                    ClaimsProviderLogging.LogException(ProviderInternalName, String.Format("while getting LDAP group membership of user {0} in {1}. This is likely due to a bug in .NET framework in UserPrincipal.GetAuthorizationGroups (as of v4.6.1), especially if user is member (directly or not) of a group either in a child domain that was migrated, or a group that has special (deny) entities.", currentContext.IncomingEntity.Value, directory.Path), TraceCategory.Augmentation, ex);
+                    ClaimsProviderLogging.LogException(ProviderInternalName, String.Format("while getting LDAP group membership of user {0} in {1}.", currentContext.IncomingEntity.Value, directory.Path), TraceCategory.Augmentation, ex);
                 }
                 finally
                 {

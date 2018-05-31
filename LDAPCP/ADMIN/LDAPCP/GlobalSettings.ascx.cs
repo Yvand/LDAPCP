@@ -89,7 +89,7 @@ namespace ldapcp.ControlTemplates
 
         private void InitializeAugmentation()
         {
-            IEnumerable<ClaimTypeConfig> potentialGroupClaimTypes = PersistedObject.ClaimTypes.Where(x => x.EntityType == DirectoryObjectType.Group);
+            IEnumerable<ClaimTypeConfig> potentialGroupClaimTypes = PersistedObject.ClaimTypes.Where(x => x.EntityType == DirectoryObjectType.Group && !x.UseMainClaimTypeOfDirectoryObject);
             if (potentialGroupClaimTypes == null || potentialGroupClaimTypes.Count() == 0)
             {
                 LabelErrorMessage.Text = TextErrorNoGroupClaimType;
@@ -190,7 +190,7 @@ namespace ldapcp.ControlTemplates
         {
             if (ValidatePrerequisite() != ConfigStatus.AllGood) return false;
             UpdateGeneralSettings();
-            UpdateLdapSettings();
+            UpdateAugmentationSettings();
             if (commitChanges) CommitChanges();
             return true;
         }
@@ -224,7 +224,7 @@ namespace ldapcp.ControlTemplates
             PersistedObject.LDAPQueryTimeout = timeOut;
         }
 
-        private void UpdateLdapSettings()
+        private void UpdateAugmentationSettings()
         {
             foreach (GridViewRow item in GridLdapConnections.Rows)
             {
