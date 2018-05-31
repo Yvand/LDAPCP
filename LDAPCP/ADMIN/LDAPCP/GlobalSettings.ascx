@@ -194,7 +194,7 @@
 			<wssawc:EncodedLiteral runat="server" text="Connect to same AD as SharePoint servers, with application pool credentials." EncodeMethod='HtmlEncode'/>
 		</wssawc:InputFormRadioButton>
 		<wssawc:InputFormRadioButton id="RbUseCustomConnection"
-			LabelText="Manually specify LDAP connection"
+			LabelText="Connect to a LDAP server"
 			GroupName="RbLDAPConnection"
 			CausesValidation="false"
 			onclick="window.Ldapcp.AdminGlobalSettingsControl.CheckCustomLdapRB()"

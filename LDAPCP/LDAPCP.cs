@@ -107,27 +107,33 @@ namespace ldapcp
                     {
                         ClaimsProviderLogging.Log($"[{ProviderInternalName}] Configuration '{PersistedObjectName}' was not found. Visit LDAPCP admin pages in central administration to create it.",
                             TraceSeverity.Unexpected, EventSeverity.Error, TraceCategory.Core);
-                        // Create a fake persisted object just to get the default currentContext, it will not be saved in config database
-                        globalConfiguration = LDAPCPConfig.GetDefaultConfiguration();
+                        // Run with default configuration, which creates a connection to connect to current AD domain
+                        globalConfiguration = LDAPCPConfig.ReturnDefaultConfiguration();
                         refreshConfig = true;
                     }
-                    else if (globalConfiguration.ClaimTypes == null || globalConfiguration.ClaimTypes.Count == 0)
+                    else
+                    {
+                        ((LDAPCPConfig)globalConfiguration).CheckAndCleanPersistedObject();
+                    }
+
+                    if (globalConfiguration.ClaimTypes == null || globalConfiguration.ClaimTypes.Count == 0)
                     {
                         ClaimsProviderLogging.Log($"[{ProviderInternalName}] Configuration '{PersistedObjectName}' was found but collection ClaimTypes is null or empty. Visit LDAPCP admin pages in central administration to create it.",
                             TraceSeverity.Unexpected, EventSeverity.Error, TraceCategory.Core);
                         // Cannot continue 
                         success = false;
                     }
-                    else if (globalConfiguration.LDAPConnectionsProp == null || globalConfiguration.LDAPConnectionsProp.Count == 0)
+
+                    if (globalConfiguration.LDAPConnectionsProp == null || globalConfiguration.LDAPConnectionsProp.Count == 0)
                     {
                         ClaimsProviderLogging.Log($"[{ProviderInternalName}] Configuration '{PersistedObjectName}' was found but there is no LDAP connection registered. Visit LDAPCP admin pages in central administration to register one.",
                             TraceSeverity.Unexpected, EventSeverity.Error, TraceCategory.Core);
                         // Cannot continue 
                         success = false;
                     }
-                    else
+
+                    if (success)
                     {
-                        // Persisted object is found
                         if (this.CurrentConfigurationVersion == ((SPPersistedObject)globalConfiguration).Version)
                         {
                             ClaimsProviderLogging.Log($"[{ProviderInternalName}] Configuration '{PersistedObjectName}' was found, version {((SPPersistedObject)globalConfiguration).Version.ToString()}",
@@ -141,9 +147,6 @@ namespace ldapcp
                                 TraceSeverity.Medium, EventSeverity.Information, TraceCategory.Core);
                         }
                     }
-
-                    // At this point, globalConfiguration should be set
-                    if (globalConfiguration == null) success = false;
 
                     // ProcessedClaimTypesList can be null if:
                     // - 1st initialization
@@ -533,8 +536,8 @@ namespace ldapcp
 
                 if (currentContext.OperationType == OperationType.Search)
                 {
-                    entities = SearchOrValidateWithLDAP(currentContext);
-                    
+                    entities = SearchOrValidateInLDAP(currentContext);
+
                     // Check if input starts with a prefix configured on a ClaimTypeConfig. If so an entity should be returned using ClaimTypeConfig found
                     // ClaimTypeConfigEnsureUniquePrefixToBypassLookup ensures that collection cannot contain duplicates
                     ClaimTypeConfig ctConfigWithInputPrefixMatch = currentContext.CurrentClaimTypeConfigList.FirstOrDefault(x =>
@@ -564,26 +567,23 @@ namespace ldapcp
                 }
                 else if (currentContext.OperationType == OperationType.Validation)
                 {
-                    entities = SearchOrValidateWithLDAP(currentContext);
+                    entities = SearchOrValidateInLDAP(currentContext);
+                    if (entities?.Count == 1) return entities;
+
                     if (!String.IsNullOrEmpty(currentContext.IncomingEntityClaimTypeConfig.PrefixToBypassLookup))
                     {
-                        // At this stage, it is impossible to know if input was originally created with the keyword that bypasses LDAP lookup
-                        // But it should be always validated since property PrefixToBypassLookup is set for this ClaimTypeConfig
-                        // If a LDAP server found a result, return it
-                        if (entities.Count == 1) return entities;
-
-                        // If LDAP server(s) didn't return exactly 1 entity, create it manually
+                        // At this stage, it is impossible to know if entity was originally created with the keyword that bypass query to Azure AD
+                        // But it should be always validated since property PrefixToBypassLookup is set for current ClaimTypeConfig, so create entity manually
                         PickerEntity entity = CreatePickerEntityForSpecificClaimType(
                             currentContext.Input,
                             currentContext.IncomingEntityClaimTypeConfig,
                             currentContext.InputHasKeyword);
                         if (entity != null)
                         {
-                            entities.Add(entity);
+                            entities = new List<PickerEntity>(1) { entity };
                             ClaimsProviderLogging.Log($"[{ProviderInternalName}] Validated entity without contacting LDAP server(s) because its claim type ('{currentContext.IncomingEntityClaimTypeConfig.ClaimType}') has property 'PrefixToBypassLookup' set in AzureCPConfig.ClaimTypes. Claim value: '{entity.Claim.Value}', claim type: '{entity.Claim.ClaimType}'",
                                 TraceSeverity.VerboseEx, EventSeverity.Information, TraceCategory.Claims_Picking);
                         }
-                        return entities;
                     }
                 }
             }
@@ -600,7 +600,7 @@ namespace ldapcp
         /// <param name="currentContext">Information about current context and operation</param>
         /// <param name="entities"></param>
         /// <returns></returns>
-        protected virtual List<PickerEntity> SearchOrValidateWithLDAP(OperationContext currentContext)
+        protected virtual List<PickerEntity> SearchOrValidateInLDAP(OperationContext currentContext)
         {
             LDAPConnection[] connections = GetLDAPServers(currentContext);
             if (connections == null || connections.Length == 0)
@@ -768,7 +768,7 @@ namespace ldapcp
                     results.Add(
                         new ConsolidatedResult
                         {
-                            Attribute = ctConfig,
+                            ClaimTypeConfig = ctConfig,
                             LDAPResults = LDAPResultProperties,
                             Value = directoryObjectPropertyValue,
                             DomainName = LDAPResult.DomainName,
@@ -1113,9 +1113,9 @@ namespace ldapcp
         /// </summary>
         /// <param name="directory"></param>
         /// <param name="currentContext"></param>
-        /// <param name="groupAttribute"></param>
+        /// <param name="groupCTConfig"></param>
         /// <returns></returns>
-        protected virtual List<SPClaim> GetGroupsFromADDirectory(DirectoryEntry directory, OperationContext currentContext, ClaimTypeConfig groupAttribute)
+        protected virtual List<SPClaim> GetGroupsFromADDirectory(DirectoryEntry directory, OperationContext currentContext, ClaimTypeConfig groupCTConfig)
         {
             List<SPClaim> groups = new List<SPClaim>();
             using (new SPMonitoredScope(String.Format("[{0}] Getting AD group membership of user {1} in {2}", ProviderInternalName, currentContext.IncomingEntity.Value, directory.Path), 2000))
@@ -1154,11 +1154,11 @@ namespace ldapcp
                             string groupDomainName, groupDomainFqdn;
                             OperationContext.GetDomainInformation(group.DistinguishedName, out groupDomainName, out groupDomainFqdn);
                             string claimValue = group.Name;
-                            if (!String.IsNullOrEmpty(groupAttribute.ClaimValuePrefix) && groupAttribute.ClaimValuePrefix.Contains(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINNAME))
-                                claimValue = groupAttribute.ClaimValuePrefix.Replace(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINNAME, groupDomainName) + group.Name;
-                            else if (!String.IsNullOrEmpty(groupAttribute.ClaimValuePrefix) && groupAttribute.ClaimValuePrefix.Contains(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINFQDN))
-                                claimValue = groupAttribute.ClaimValuePrefix.Replace(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINFQDN, groupDomainFqdn) + group.Name;
-                            SPClaim claim = CreateClaim(groupAttribute.ClaimType, claimValue, groupAttribute.ClaimValueType, false);
+                            if (!String.IsNullOrEmpty(groupCTConfig.ClaimValuePrefix) && groupCTConfig.ClaimValuePrefix.Contains(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINNAME))
+                                claimValue = groupCTConfig.ClaimValuePrefix.Replace(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINNAME, groupDomainName) + group.Name;
+                            else if (!String.IsNullOrEmpty(groupCTConfig.ClaimValuePrefix) && groupCTConfig.ClaimValuePrefix.Contains(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINFQDN))
+                                claimValue = groupCTConfig.ClaimValuePrefix.Replace(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINFQDN, groupDomainFqdn) + group.Name;
+                            SPClaim claim = CreateClaim(groupCTConfig.ClaimType, claimValue, groupCTConfig.ClaimValueType, false);
                             groups.Add(claim);
                         }
                     }
@@ -1167,7 +1167,7 @@ namespace ldapcp
                 {
                     ClaimsProviderLogging.LogException(ProviderInternalName, String.Format("while getting AD group membership of user {0} in {1} using UserPrincipal.GetAuthorizationGroups(). This is likely due to a bug in .NET framework in UserPrincipal.GetAuthorizationGroups (as of v4.6.1), especially if user is member (directly or not) of a group either in a child domain that was migrated, or a group that has special (deny) entities.", currentContext.IncomingEntity.Value, directory.Path), TraceCategory.Augmentation, ex);
                     // In this case, fallback to LDAP method to get group membership.
-                    return GetGroupsFromLDAPDirectory(directory, currentContext, groupAttribute);
+                    return GetGroupsFromLDAPDirectory(directory, currentContext, groupCTConfig);
                 }
                 catch (PrincipalServerDownException ex)
                 {
@@ -1190,9 +1190,9 @@ namespace ldapcp
         /// </summary>
         /// <param name="directory">LDAP server to query</param>
         /// <param name="currentContext">Information about current context and operation</param>
-        /// <param name="groupAttribute"></param>
+        /// <param name="groupCTConfig"></param>
         /// <returns></returns>
-        protected virtual List<SPClaim> GetGroupsFromLDAPDirectory(DirectoryEntry directory, OperationContext currentContext, ClaimTypeConfig groupAttribute)
+        protected virtual List<SPClaim> GetGroupsFromLDAPDirectory(DirectoryEntry directory, OperationContext currentContext, ClaimTypeConfig groupCTConfig)
         {
             List<SPClaim> groups = new List<SPClaim>();
             using (new SPMonitoredScope(String.Format("[{0}] Getting LDAP group membership of user {1} in {2}", ProviderInternalName, currentContext.IncomingEntity.Value, directory.Path), 2000))
@@ -1234,11 +1234,11 @@ namespace ldapcp
 
                             string groupDomainName, groupDomainFqdn;
                             OperationContext.GetDomainInformation(groupDN, out groupDomainName, out groupDomainFqdn);
-                            if (!String.IsNullOrEmpty(groupAttribute.ClaimValuePrefix) && groupAttribute.ClaimValuePrefix.Contains(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINNAME))
-                                claimValue = groupAttribute.ClaimValuePrefix.Replace(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINNAME, groupDomainName) + claimValue;
-                            else if (!String.IsNullOrEmpty(groupAttribute.ClaimValuePrefix) && groupAttribute.ClaimValuePrefix.Contains(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINFQDN))
-                                claimValue = groupAttribute.ClaimValuePrefix.Replace(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINFQDN, groupDomainFqdn) + claimValue;
-                            SPClaim claim = CreateClaim(groupAttribute.ClaimType, claimValue, groupAttribute.ClaimValueType, false);
+                            if (!String.IsNullOrEmpty(groupCTConfig.ClaimValuePrefix) && groupCTConfig.ClaimValuePrefix.Contains(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINNAME))
+                                claimValue = groupCTConfig.ClaimValuePrefix.Replace(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINNAME, groupDomainName) + claimValue;
+                            else if (!String.IsNullOrEmpty(groupCTConfig.ClaimValuePrefix) && groupCTConfig.ClaimValuePrefix.Contains(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINFQDN))
+                                claimValue = groupCTConfig.ClaimValuePrefix.Replace(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINFQDN, groupDomainFqdn) + claimValue;
+                            SPClaim claim = CreateClaim(groupCTConfig.ClaimType, claimValue, groupCTConfig.ClaimValueType, false);
                             groups.Add(claim);
                         }
                     }
@@ -1406,33 +1406,33 @@ namespace ldapcp
             PickerEntity pe = CreatePickerEntity();
             SPClaim claim;
             string permissionValue = result.Value;
-            string permissionClaimType = result.Attribute.ClaimType;
+            string permissionClaimType = result.ClaimTypeConfig.ClaimType;
             bool isIdentityClaimType = false;
 
             if ((String.Equals(permissionClaimType, SPTrust.IdentityClaimTypeInformation.MappedClaimType, StringComparison.InvariantCultureIgnoreCase)
-                || result.Attribute.UseMainClaimTypeOfDirectoryObject) && result.Attribute.LDAPClass == IdentityClaimTypeConfig.LDAPClass)
+                || result.ClaimTypeConfig.UseMainClaimTypeOfDirectoryObject) && result.ClaimTypeConfig.LDAPClass == IdentityClaimTypeConfig.LDAPClass)
             {
                 isIdentityClaimType = true;
             }
 
-            if (result.Attribute.UseMainClaimTypeOfDirectoryObject && result.Attribute.LDAPClass != IdentityClaimTypeConfig.LDAPClass)
+            if (result.ClaimTypeConfig.UseMainClaimTypeOfDirectoryObject && result.ClaimTypeConfig.LDAPClass != IdentityClaimTypeConfig.LDAPClass)
             {
                 // Get reference attribute to use to create actual entity (claim type and its LDAPAttribute) from current result
-                ClaimTypeConfig attribute = ProcessedClaimTypesList.FirstOrDefault(x => !x.UseMainClaimTypeOfDirectoryObject && x.LDAPClass == result.Attribute.LDAPClass);
+                ClaimTypeConfig attribute = ProcessedClaimTypesList.FirstOrDefault(x => !x.UseMainClaimTypeOfDirectoryObject && x.LDAPClass == result.ClaimTypeConfig.LDAPClass);
                 if (attribute != null)
                 {
                     permissionClaimType = attribute.ClaimType;
-                    result.Attribute.ClaimType = attribute.ClaimType;
-                    result.Attribute.EntityType = attribute.EntityType;
-                    result.Attribute.ClaimTypeDisplayName = attribute.ClaimTypeDisplayName;
+                    result.ClaimTypeConfig.ClaimType = attribute.ClaimType;
+                    result.ClaimTypeConfig.EntityType = attribute.EntityType;
+                    result.ClaimTypeConfig.ClaimTypeDisplayName = attribute.ClaimTypeDisplayName;
                     permissionValue = result.LDAPResults[attribute.LDAPAttribute][0].ToString();    // Pick value of current result from actual LDAP attribute to use (which is not the LDAP attribute that matches input)
-                    result.Attribute.LDAPAttributeToShowAsDisplayText = attribute.LDAPAttributeToShowAsDisplayText;
-                    result.Attribute.ClaimValuePrefix = attribute.ClaimValuePrefix;
-                    result.Attribute.PrefixToBypassLookup = attribute.PrefixToBypassLookup;
+                    result.ClaimTypeConfig.LDAPAttributeToShowAsDisplayText = attribute.LDAPAttributeToShowAsDisplayText;
+                    result.ClaimTypeConfig.ClaimValuePrefix = attribute.ClaimValuePrefix;
+                    result.ClaimTypeConfig.PrefixToBypassLookup = attribute.PrefixToBypassLookup;
                 }
             }
 
-            if (result.Attribute.UseMainClaimTypeOfDirectoryObject && result.Attribute.LDAPClass == IdentityClaimTypeConfig.LDAPClass)
+            if (result.ClaimTypeConfig.UseMainClaimTypeOfDirectoryObject && result.ClaimTypeConfig.LDAPClass == IdentityClaimTypeConfig.LDAPClass)
             {
                 // This attribute is not directly linked to a claim type, so entity is created with identity claim type
                 permissionClaimType = IdentityClaimTypeConfig.ClaimType;
@@ -1446,19 +1446,19 @@ namespace ldapcp
             }
             else
             {
-                permissionValue = FormatPermissionValue(result.Attribute.ClaimType, permissionValue, result.DomainName, result.DomainFQDN, isIdentityClaimType, result);
+                permissionValue = FormatPermissionValue(result.ClaimTypeConfig.ClaimType, permissionValue, result.DomainName, result.DomainFQDN, isIdentityClaimType, result);
                 claim = CreateClaim(
                     permissionClaimType,
                     permissionValue,
-                    result.Attribute.ClaimValueType,
+                    result.ClaimTypeConfig.ClaimValueType,
                     false);
-                pe.EntityType = result.Attribute.EntityType == DirectoryObjectType.User ? SPClaimEntityTypes.User : ClaimsProviderConstants.GroupClaimEntityType;
+                pe.EntityType = result.ClaimTypeConfig.EntityType == DirectoryObjectType.User ? SPClaimEntityTypes.User : ClaimsProviderConstants.GroupClaimEntityType;
             }
 
             int nbMetadata = 0;
             // Populate metadata of new PickerEntity
             // Change condition to fix bug http://ldapcp.codeplex.com/discussions/653087: only rely on the LDAP class
-            foreach (ClaimTypeConfig ctConfig in MetadataConfig.Where(x => String.Equals(x.LDAPClass, result.Attribute.LDAPClass, StringComparison.InvariantCultureIgnoreCase)))
+            foreach (ClaimTypeConfig ctConfig in MetadataConfig.Where(x => String.Equals(x.LDAPClass, result.ClaimTypeConfig.LDAPClass, StringComparison.InvariantCultureIgnoreCase)))
             {
                 // if there is actally a value in the LDAP result, then it can be set
                 if (result.LDAPResults.Contains(ctConfig.LDAPAttribute) && result.LDAPResults[ctConfig.LDAPAttribute].Count > 0)
@@ -1474,10 +1474,10 @@ namespace ldapcp
             pe.EntityGroupName = this.CurrentConfiguration.PickerEntityGroupNameProp;
             pe.Description = String.Format(
                 EntityOnMouseOver,
-                result.Attribute.LDAPAttribute,
+                result.ClaimTypeConfig.LDAPAttribute,
                 result.Value);
 
-            pe.DisplayText = FormatPermissionDisplayText(permissionClaimType, permissionValue, isIdentityClaimType, result, pe);
+            pe.DisplayText = FormatPermissionDisplayText(pe, isIdentityClaimType, result);
 
             ClaimsProviderLogging.Log($"[{ProviderInternalName}] Created entity: display text: '{pe.DisplayText}', value: '{pe.Claim.Value}', claim type: '{pe.Claim.ClaimType}', and filled with {nbMetadata.ToString()} metadata.", TraceSeverity.VerboseEx, EventSeverity.Information, TraceCategory.Claims_Picking);
             return pe;
@@ -1512,87 +1512,86 @@ namespace ldapcp
         /// <summary>
         /// Override this method to customize display text of entity created
         /// </summary>
-        /// <param name="displayText"></param>
-        /// <param name="claimType"></param>
-        /// <param name="claimValue"></param>
-        /// <param name="isIdentityClaim"></param>
+        /// <param name="entity"></param>
+        /// <param name="isIdentityClaimType"></param>
         /// <param name="result"></param>
-        /// <param name="entityInfo"></param>
         /// <returns>Display text of entity</returns>
-        protected virtual string FormatPermissionDisplayText(string claimType, string claimValue, bool isIdentityClaimType, ConsolidatedResult result, PickerEntity entityInfo)
+        protected virtual string FormatPermissionDisplayText(PickerEntity entity, bool isIdentityClaimType, ConsolidatedResult result)
         {
-            string permissionDisplayText = String.Empty;
+            string entityDisplayText = this.CurrentConfiguration.EntityDisplayTextPrefix;
+            string claimValue = entity.Claim.Value;
             string valueDisplayedInPermission = String.Empty;
             bool displayLdapMatchForIdentityClaimType = false;
             string prefixToAdd = string.Empty;
 
-            //if (result == null)
-            //{
-            //    // Permission created without actual lookup
-            //    if (isIdentityClaimType) return claimValue;
-            //    else return String.Format(PickerEntityDisplayText, claimTypeToResolve.ClaimTypeMappingName, claimValue);
-            //}
-            var attr = result.Attribute;
-            if (HasPrefixToken(attr.ClaimValuePrefix, ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINNAME))
-                prefixToAdd = string.Format("{0}", attr.ClaimValuePrefix.Replace(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINNAME, result.DomainName));
-
-            if (HasPrefixToken(attr.ClaimValuePrefix, ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINFQDN))
-                prefixToAdd = string.Format("{0}", attr.ClaimValuePrefix.Replace(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINFQDN, result.DomainFQDN));
-
-            if (isIdentityClaimType) displayLdapMatchForIdentityClaimType = this.CurrentConfiguration.DisplayLdapMatchForIdentityClaimTypeProp;
-
-            if (!String.IsNullOrEmpty(result.Attribute.LDAPAttributeToShowAsDisplayText) && result.LDAPResults.Contains(result.Attribute.LDAPAttributeToShowAsDisplayText))
-            {   // AttributeHelper is set to use a specific LDAP attribute as display text of entity
-                if (!isIdentityClaimType && result.Attribute.ShowClaimNameInDisplayText)
-                    permissionDisplayText = "(" + result.Attribute.ClaimTypeDisplayName + ") ";
-                permissionDisplayText += prefixToAdd;
-                permissionDisplayText += valueDisplayedInPermission = result.LDAPResults[result.Attribute.LDAPAttributeToShowAsDisplayText][0].ToString();
+            if (result.LDAPResults == null)
+            {
+                // Result does not come from a LDAP server, it was created manually
+                if (isIdentityClaimType) entityDisplayText += claimValue;
+                else entityDisplayText += String.Format(EntityDisplayText, result.ClaimTypeConfig.ClaimTypeDisplayName, claimValue);
             }
             else
-            {   // AttributeHelper is set to use its actual LDAP attribute as display text of entity
-                if (!isIdentityClaimType)
-                {
-                    valueDisplayedInPermission = claimValue.StartsWith(prefixToAdd) ? claimValue : prefixToAdd + claimValue;
-                    if (result.Attribute.ShowClaimNameInDisplayText)
-                    {
-                        permissionDisplayText = String.Format(
-                            EntityDisplayText,
-                            result.Attribute.ClaimTypeDisplayName,
-                            valueDisplayedInPermission);
-                    }
-                    else permissionDisplayText = valueDisplayedInPermission;
+            {
+                if (HasPrefixToken(result.ClaimTypeConfig.ClaimValuePrefix, ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINNAME))
+                    prefixToAdd = string.Format("{0}", result.ClaimTypeConfig.ClaimValuePrefix.Replace(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINNAME, result.DomainName));
+
+                if (HasPrefixToken(result.ClaimTypeConfig.ClaimValuePrefix, ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINFQDN))
+                    prefixToAdd = string.Format("{0}", result.ClaimTypeConfig.ClaimValuePrefix.Replace(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINFQDN, result.DomainFQDN));
+
+                if (isIdentityClaimType) displayLdapMatchForIdentityClaimType = this.CurrentConfiguration.DisplayLdapMatchForIdentityClaimTypeProp;
+
+                if (!String.IsNullOrEmpty(result.ClaimTypeConfig.LDAPAttributeToShowAsDisplayText) && result.LDAPResults.Contains(result.ClaimTypeConfig.LDAPAttributeToShowAsDisplayText))
+                {   // AttributeHelper is set to use a specific LDAP attribute as display text of entity
+                    if (!isIdentityClaimType && result.ClaimTypeConfig.ShowClaimNameInDisplayText)
+                        entityDisplayText += "(" + result.ClaimTypeConfig.ClaimTypeDisplayName + ") ";
+                    entityDisplayText += prefixToAdd;
+                    entityDisplayText += valueDisplayedInPermission = result.LDAPResults[result.ClaimTypeConfig.LDAPAttributeToShowAsDisplayText][0].ToString();
                 }
                 else
-                {   // Always specifically use LDAP attribute of identity claim type
-                    permissionDisplayText = prefixToAdd;
-                    permissionDisplayText += valueDisplayedInPermission = result.LDAPResults[IdentityClaimTypeConfig.LDAPAttribute][0].ToString();
+                {   // AttributeHelper is set to use its actual LDAP attribute as display text of entity
+                    if (!isIdentityClaimType)
+                    {
+                        valueDisplayedInPermission = claimValue.StartsWith(prefixToAdd) ? claimValue : prefixToAdd + claimValue;
+                        if (result.ClaimTypeConfig.ShowClaimNameInDisplayText)
+                        {
+                            entityDisplayText += String.Format(
+                                EntityDisplayText,
+                                result.ClaimTypeConfig.ClaimTypeDisplayName,
+                                valueDisplayedInPermission);
+                        }
+                        else entityDisplayText = valueDisplayedInPermission;
+                    }
+                    else
+                    {   // Always specifically use LDAP attribute of identity claim type
+                        entityDisplayText += prefixToAdd;
+                        entityDisplayText += valueDisplayedInPermission = result.LDAPResults[IdentityClaimTypeConfig.LDAPAttribute][0].ToString();
+                    }
+                }
+
+                // Check if LDAP value that actually resolved this result should be included in the display text of the entity
+                if (displayLdapMatchForIdentityClaimType && result.LDAPResults.Contains(result.ClaimTypeConfig.LDAPAttribute)
+                    && !String.Equals(valueDisplayedInPermission, claimValue, StringComparison.InvariantCultureIgnoreCase))
+                {
+                    entityDisplayText += String.Format(" ({0})", claimValue);
                 }
             }
-
-            // Check if LDAP value that actually resolved this result should be included in the display text of the entity
-            if (displayLdapMatchForIdentityClaimType && result.LDAPResults.Contains(result.Attribute.LDAPAttribute)
-                && !String.Equals(valueDisplayedInPermission, claimValue, StringComparison.InvariantCultureIgnoreCase))
-            {
-                permissionDisplayText += String.Format(" ({0})", claimValue);
-            }
-
-            return permissionDisplayText;
+            return entityDisplayText;
         }
 
         /// <summary>
         /// Create a PickerEntity of the input for the claim type specified in parameter
         /// </summary>
         /// <param name="input">Value of the entity</param>
-        /// <param name="claimTypesToResolve">claim type of the entity</param>
+        /// <param name="ctConfig">claim type of the entity</param>
         /// <param name="inputHasKeyword">Did the original input contain a keyword?</param>
         /// <returns></returns>
-        protected virtual PickerEntity CreatePickerEntityForSpecificClaimType(string input, ClaimTypeConfig claimTypesToResolve, bool inputHasKeyword)
+        protected virtual PickerEntity CreatePickerEntityForSpecificClaimType(string input, ClaimTypeConfig ctConfig, bool inputHasKeyword)
         {
             List<PickerEntity> entities = CreatePickerEntityForSpecificClaimTypes(
                 input,
                 new List<ClaimTypeConfig>()
                     {
-                        claimTypesToResolve,
+                        ctConfig,
                     },
                 inputHasKeyword);
             return entities == null ? null : entities.First();
@@ -1602,44 +1601,34 @@ namespace ldapcp
         /// Create a PickerEntity of the input for each claim type specified in parameter
         /// </summary>
         /// <param name="input">Value of the entity</param>
-        /// <param name="claimTypesToResolve">claim types of the entity</param>
+        /// <param name="ctConfigs">claim types of the entity</param>
         /// <param name="inputHasKeyword">Did the original input contain a keyword?</param>
         /// <returns></returns>
-        protected virtual List<PickerEntity> CreatePickerEntityForSpecificClaimTypes(string input, IEnumerable<ClaimTypeConfig> claimTypesToResolve, bool inputHasKeyword)
+        protected virtual List<PickerEntity> CreatePickerEntityForSpecificClaimTypes(string input, IEnumerable<ClaimTypeConfig> ctConfigs, bool inputHasKeyword)
         {
             List<PickerEntity> entities = new List<PickerEntity>();
-            foreach (ClaimTypeConfig ctConfig in claimTypesToResolve)
+            foreach (ClaimTypeConfig ctConfig in ctConfigs)
             {
-                PickerEntity pe = CreatePickerEntity();
                 SPClaim claim = CreateClaim(ctConfig.ClaimType, input, ctConfig.ClaimValueType, inputHasKeyword);
-
-                if (String.Equals(claim.ClaimType, SPTrust.IdentityClaimTypeInformation.MappedClaimType, StringComparison.InvariantCultureIgnoreCase))
-                {
-                    pe.DisplayText = input;
-                }
-                else
-                {
-                    pe.DisplayText = String.Format(
-                        EntityDisplayText,
-                        ctConfig.ClaimTypeDisplayName,
-                        input);
-                }
-
-                pe.EntityType = ctConfig.EntityType == DirectoryObjectType.User ? SPClaimEntityTypes.User : ClaimsProviderConstants.GroupClaimEntityType;
-                pe.Description = String.Format(
-                    EntityOnMouseOver,
-                    ctConfig.LDAPAttribute,
-                    input);
-
+                PickerEntity pe = CreatePickerEntity();
                 pe.Claim = claim;
                 pe.IsResolved = true;
+                pe.EntityType = ctConfig.EntityType == DirectoryObjectType.User ? SPClaimEntityTypes.User : ClaimsProviderConstants.GroupClaimEntityType;
                 pe.EntityGroupName = this.CurrentConfiguration.PickerEntityGroupNameProp;
+                pe.Description = String.Format(EntityOnMouseOver, ctConfig.LDAPAttribute, input);
 
-                if (ctConfig.EntityType == DirectoryObjectType.User && !String.IsNullOrEmpty(ctConfig.EntityDataKey))
+                if (!String.IsNullOrEmpty(ctConfig.EntityDataKey))
                 {
                     pe.EntityData[ctConfig.EntityDataKey] = pe.Claim.Value;
                     ClaimsProviderLogging.Log($"[{ProviderInternalName}] Set metadata '{ctConfig.EntityDataKey}' of new entity to '{pe.EntityData[ctConfig.EntityDataKey]}'", TraceSeverity.VerboseEx, EventSeverity.Information, TraceCategory.Claims_Picking);
                 }
+
+                ConsolidatedResult result = new ConsolidatedResult();
+                result.ClaimTypeConfig = ctConfig;
+                result.Value = input;
+                bool isIdentityClaimType = String.Equals(claim.ClaimType, IdentityClaimTypeConfig.ClaimType, StringComparison.InvariantCultureIgnoreCase);
+                pe.DisplayText = FormatPermissionDisplayText(pe, isIdentityClaimType, result);
+
                 entities.Add(pe);
                 ClaimsProviderLogging.Log($"[{ProviderInternalName}] Created entity: display text: '{pe.DisplayText}', value: '{pe.Claim.Value}', claim type: '{pe.Claim.ClaimType}'.", TraceSeverity.VerboseEx, EventSeverity.Information, TraceCategory.Claims_Picking);
             }
@@ -1734,7 +1723,7 @@ namespace ldapcp
 
     public class ConsolidatedResult
     {
-        public ClaimTypeConfig Attribute;
+        public ClaimTypeConfig ClaimTypeConfig;
         public PickerEntity PickerEntity;
         public ResultPropertyCollection LDAPResults;
         public int nbMatch = 0;
@@ -1765,7 +1754,7 @@ namespace ldapcp
         {
             foreach (var item in base.Items)
             {
-                if (item.Attribute.ClaimType != attribute.ClaimType)
+                if (item.ClaimTypeConfig.ClaimType != attribute.ClaimType)
                     continue;
 
                 if (!item.LDAPResults.Contains(attribute.LDAPAttribute))

@@ -105,7 +105,7 @@ namespace ldapcp.ControlTemplates
 
         protected static string ViewStatePersistedObjectVersionKey = "PersistedObjectVersion";
         protected static string TextErrorPersistedObjectNotFound = "PersistedObject cannot be found.";
-        protected static string TextErrorPersistedObjectStale = "Modifications where not applied because the persisted object was modified after this page was loaded. Please refresh the page and try again.";
+        protected static string TextErrorPersistedObjectStale = "Modifications were not applied because the persisted object was modified after this page was loaded. Please refresh the page and try again.";
         protected static string TextErrorNoSPTrustAssociation = "{0} is currently not associated with any TrustedLoginProvider, which is required to create entities.<br/>Visit <a href=\"" + ClaimsProviderConstants.PUBLICSITEURL + "\" target=\"_blank\">ldapcp.com</a> for more information.<br/>Refresh this page once '{0}' is associated with a TrustedLoginProvider.";
         protected static string TextErrorNoIdentityClaimType = "The TrustedLoginProvider {0} is set with identity claim type '{1}', but is not set in claim types configuration list.<br/>Please visit claim types configuration page to add it.";
         protected static string TextErrorClaimsProviderNameNotSet = "The attribute 'ClaimsProviderName' must be set in the user control.";
@@ -140,6 +140,14 @@ namespace ldapcp.ControlTemplates
                 CurrentTrustedLoginProvider = LDAPCP.GetSPTrustAssociatedWithCP(this.ClaimsProviderName);
                 if (CurrentTrustedLoginProvider == null) Status |= ConfigStatus.NoSPTrustAssociation;
             }
+            if (Status != ConfigStatus.AllGood)
+            {
+                ClaimsProviderLogging.Log($"[{ClaimsProviderName}] {MostImportantError}", TraceSeverity.Unexpected, EventSeverity.Error, TraceCategory.Configuration);
+                // Should not go further if those requirements are not met
+                return Status;
+            }
+
+            PersistedObject.CheckAndCleanPersistedObject();
             PersistedObject.ClaimTypes.SPTrust = CurrentTrustedLoginProvider;
             if (IdentityClaim == null && Status == ConfigStatus.AllGood)
             {

@@ -72,21 +72,26 @@ namespace ldapcp
         {
             try
             {
-                string message = "[{0}] Unexpected error {1}: {2}: {3}, Callstack: {4}";
                 if (ex is AggregateException)
                 {
+                    string message = String.Format("[{0}] Unexpected error(s) occurred {1}:", ProviderInternalName, faultyAction);
+                    string excetpionMessage = Environment.NewLine + "[EXCEPTION {0}]: {1}: {2}. Callstack: {3}";
                     var aggEx = ex as AggregateException;
+                    int count = 1;
                     foreach (var innerEx in aggEx.InnerExceptions)
                     {
+                        string currentMessage;
                         if (innerEx.InnerException != null)
-                            message = String.Format(message, ProviderInternalName, faultyAction, innerEx.InnerException.GetType().FullName, innerEx.InnerException.Message, innerEx.InnerException.StackTrace);
+                            currentMessage = String.Format(excetpionMessage, count++.ToString(), innerEx.InnerException.GetType().FullName, innerEx.InnerException.Message, innerEx.InnerException.StackTrace);
                         else
-                            message = String.Format(message, ProviderInternalName, faultyAction, innerEx.GetType().FullName, innerEx.Message, innerEx.StackTrace);
-                        WriteTrace(category, TraceSeverity.Unexpected, message);
+                            currentMessage = String.Format(excetpionMessage, count++.ToString(), innerEx.GetType().FullName, innerEx.Message, innerEx.StackTrace);
+                        message += currentMessage;
                     }
+                    WriteTrace(category, TraceSeverity.Unexpected, message);
                 }
                 else
                 {
+                    string message = "[{0}] Unexpected error occurred {1}: {2}: {3}, Callstack: {4}";
                     if (ex.InnerException != null)
                         message = String.Format(message, ProviderInternalName, faultyAction, ex.InnerException.GetType().FullName, ex.InnerException.Message, ex.InnerException.StackTrace);
                     else
