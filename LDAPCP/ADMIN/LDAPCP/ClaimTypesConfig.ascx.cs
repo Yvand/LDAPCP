@@ -185,7 +185,7 @@ namespace ldapcp.ControlTemplates
                         {
                             tr.CssClass = "ldapcp-rowClaimTypeNotUsedInTrust";
                         }
-                        else if (attr.Value.EntityType == DirectoryObjectType.Group && String.Equals(this.PersistedObject.ClaimTypeUsedForAugmentation, attr.Value.ClaimType, StringComparison.InvariantCultureIgnoreCase))
+                        else if (attr.Value.EntityType == DirectoryObjectType.Group && String.Equals(this.PersistedObject.MainGroupClaimType, attr.Value.ClaimType, StringComparison.InvariantCultureIgnoreCase))
                         {
                             tr.CssClass = "ldapcp-rowMainGroupClaimType";
                         }

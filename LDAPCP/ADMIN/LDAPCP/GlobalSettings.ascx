@@ -245,9 +245,10 @@
         <p class="ms-error"><asp:Label ID="Label1" runat="server" EnableViewState="False" /></p>
         <asp:Checkbox Checked="false" Runat="server" Name="ChkEnableAugmentation" ID="ChkEnableAugmentation" OnClick="window.Ldapcp.AdminGlobalSettingsControl.InitAugmentationControls();" Text="Enable augmentation" />
         <div id="AugmentationControls" style="padding: 15px;">
-            <wssawc:EncodedLiteral runat="server" text="Select the claim type of the claims that will contain the group membership of users:" EncodeMethod='HtmlEncodeAllowSimpleTextFormatting'/>
+            <wssawc:EncodedLiteral runat="server" text="Select what claim type LDAPCP will use to create claims with the group membership of users:" EncodeMethod='HtmlEncodeAllowSimpleTextFormatting'/>
             <br />
             <asp:DropDownList ID="DdlClaimTypes" runat="server">
+                <asp:ListItem Selected="True" Value="None"></asp:ListItem>
             </asp:DropDownList>
 			<tr><td>
 			<wssawc:EncodedLiteral runat="server" text="<p>For Active Directory servers, the preferred way to get groups is using <a href='https://msdn.microsoft.com/en-us/library/system.directoryservices.accountmanagement.userprincipal.getauthorizationgroups.aspx' target='_blank'>UserPrincipal.GetAuthorizationGroups()</a>.<br />Otherwise LDAPCP reads LDAP attribute memberOf/uniquememberof of the user.</p>" EncodeMethod='NoEncode'/>

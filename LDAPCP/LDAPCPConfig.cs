@@ -28,7 +28,7 @@ namespace ldapcp
         int LDAPQueryTimeout { get; set; }
         bool CompareResultsWithDomainNameProp { get; set; }
         bool EnableAugmentation { get; set; }
-        string ClaimTypeUsedForAugmentation { get; set; }
+        string MainGroupClaimType { get; set; }
         string EntityDisplayTextPrefix { get; set; }
     }
 
@@ -174,7 +174,7 @@ namespace ldapcp
         private bool CompareResultsWithDomainName = false;
 
         /// <summary>
-        /// Set to true to enable augmentation. Property ClaimTypeUsedForAugmentation must also be set for augmentation to work.
+        /// Set to true to enable augmentation. Property MainGroupClaimType must also be set for augmentation to work.
         /// </summary>
         public bool EnableAugmentation
         {
@@ -185,9 +185,9 @@ namespace ldapcp
         private bool AugmentationEnabled;
 
         /// <summary>
-        /// Claim type to use for the groups created by LDAPCP during augmentation
+        /// Set the claim type that LDAPCP will use to create claims with the group membership of users during augmentation
         /// </summary>
-        public string ClaimTypeUsedForAugmentation
+        public string MainGroupClaimType
         {
             get { return AugmentationClaimType; }
             set { AugmentationClaimType = value; }
@@ -221,7 +221,7 @@ namespace ldapcp
         //        this.FilterExactMatchOnlyProp = false;
         //        this.LDAPQueryTimeout = ClaimsProviderConstants.LDAPCPCONFIG_TIMEOUT;
         //        this.EnableAugmentation = false;
-        //        this.ClaimTypeUsedForAugmentation = ClaimsProviderConstants.DefaultMainGroupClaimType;
+        //        this.MainGroupClaimType = ClaimsProviderConstants.DefaultMainGroupClaimType;
         //    }
         //}
 
@@ -329,7 +329,7 @@ namespace ldapcp
             this.LDAPQueryTimeout = configToApply.LDAPQueryTimeout;
             this.CompareResultsWithDomainNameProp = configToApply.CompareResultsWithDomainNameProp;
             this.EnableAugmentation = configToApply.EnableAugmentation;
-            this.ClaimTypeUsedForAugmentation = configToApply.ClaimTypeUsedForAugmentation;
+            this.MainGroupClaimType = configToApply.MainGroupClaimType;
             this.EntityDisplayTextPrefix = configToApply.EntityDisplayTextPrefix;
         }
 
@@ -345,7 +345,7 @@ namespace ldapcp
             copy.ClaimTypes = new ClaimTypeConfigCollection();
             foreach (ClaimTypeConfig currentObject in this.ClaimTypes)
             {
-                copy.ClaimTypes.Add(currentObject.CopyCurrentObject());
+                copy.ClaimTypes.Add(currentObject.CopyCurrentObject(), false);
             }
             copy.BypassLDAPLookup = this.BypassLDAPLookup;
             copy.AddWildcardAsPrefixOfInput = this.AddWildcardAsPrefixOfInput;
@@ -357,7 +357,7 @@ namespace ldapcp
             copy.LDAPQueryTimeout = this.LDAPQueryTimeout;
             copy.CompareResultsWithDomainNameProp = this.CompareResultsWithDomainNameProp;
             copy.EnableAugmentation = this.EnableAugmentation;
-            copy.ClaimTypeUsedForAugmentation = this.ClaimTypeUsedForAugmentation;
+            copy.MainGroupClaimType = this.MainGroupClaimType;
             copy.EntityDisplayTextPrefix = this.EntityDisplayTextPrefix;
             return copy;
         }
@@ -366,7 +366,7 @@ namespace ldapcp
         {
             ClaimTypes.Clear();
             ClaimTypes = ReturnDefaultClaimTypesConfig();
-            ClaimTypeUsedForAugmentation = ClaimsProviderConstants.DefaultMainGroupClaimType;
+            MainGroupClaimType = ClaimsProviderConstants.DefaultMainGroupClaimType;
             ClaimsProviderLogging.Log($"Claim types list of configuration '{Name}' was successfully reset to default configuration",
                 TraceSeverity.High, EventSeverity.Information, TraceCategory.Core);
         }
@@ -413,7 +413,7 @@ namespace ldapcp
             defaultConfig.FilterExactMatchOnlyProp = false;
             defaultConfig.LDAPQueryTimeout = ClaimsProviderConstants.LDAPCPCONFIG_TIMEOUT;
             defaultConfig.EnableAugmentation = false;
-            defaultConfig.ClaimTypeUsedForAugmentation = ClaimsProviderConstants.DefaultMainGroupClaimType;
+            defaultConfig.MainGroupClaimType = ClaimsProviderConstants.DefaultMainGroupClaimType;
             return defaultConfig;
         }
 

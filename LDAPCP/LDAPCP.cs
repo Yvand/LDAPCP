@@ -229,21 +229,22 @@ namespace ldapcp
                     }
                     else if (!groupClaimTypeFound && claimTypeConfig.EntityType == DirectoryObjectType.Group)
                     {
-                        // If ClaimTypeUsedForAugmentation is set, try to set MainGroupClaimTypeConfig with the ClaimTypeConfig that has the same ClaimType
-                        // Otherwise, use arbitrarily the first valid group ClaimTypeConfig found
-                        if (!String.IsNullOrEmpty(this.CurrentConfiguration.ClaimTypeUsedForAugmentation))
+                        if (!String.IsNullOrEmpty(this.CurrentConfiguration.MainGroupClaimType))
                         {
-                            if (String.Equals(claimTypeConfig.ClaimType, this.CurrentConfiguration.ClaimTypeUsedForAugmentation, StringComparison.InvariantCultureIgnoreCase))
+                            // If MainGroupClaimType is set, try to set MainGroupClaimTypeConfig with the ClaimTypeConfig that has the same ClaimType
+                            if (String.Equals(claimTypeConfig.ClaimType, this.CurrentConfiguration.MainGroupClaimType, StringComparison.InvariantCultureIgnoreCase))
                             {
-                                groupClaimTypeFound = true;
                                 MainGroupClaimTypeConfig = claimTypeConfig;
+                                groupClaimTypeFound = true;
                             }
                         }
                         else
                         {
-                            groupClaimTypeFound = true;
-                            MainGroupClaimTypeConfig = claimTypeConfig;
-                            this.CurrentConfiguration.ClaimTypeUsedForAugmentation = claimTypeConfig.ClaimType;
+                            // Otherwise, use arbitrarily the first valid group ClaimTypeConfig found
+                            // EDIT: setting this arbitrarily may not be a good option as LDAPCP may not behave as the actual configuration
+                            //MainGroupClaimTypeConfig = claimTypeConfig;
+                            //this.CurrentConfiguration.MainGroupClaimType = claimTypeConfig.ClaimType;
+                            //groupClaimTypeFound = true;
                         }
                     }
                 }
@@ -703,12 +704,12 @@ namespace ldapcp
                 else
                 {
                     // This is a group: check if the LDAP attribute used to create groups entities is present
-                    // TODO: since groups can have multiple claim types, this check may not make sense
-                    if (MainGroupClaimTypeConfig != null && !LDAPResultPropertyNames.Contains(MainGroupClaimTypeConfig.LDAPAttribute, StringComparer.InvariantCultureIgnoreCase))
-                    {
-                        ClaimsProviderLogging.Log($"[{ProviderInternalName}] Ignoring a group because it doesn't have the LDAP attribute '{MainGroupClaimTypeConfig.LDAPAttribute}'", TraceSeverity.VerboseEx, EventSeverity.Information, TraceCategory.LDAP_Lookup);
-                        continue;
-                    }
+                    // EDIT: since groups can have multiple claim types, this check does not make sense
+                    //if (MainGroupClaimTypeConfig != null && !LDAPResultPropertyNames.Contains(MainGroupClaimTypeConfig.LDAPAttribute, StringComparer.InvariantCultureIgnoreCase))
+                    //{
+                    //    ClaimsProviderLogging.Log($"[{ProviderInternalName}] Ignoring a group because it doesn't have the LDAP attribute '{MainGroupClaimTypeConfig.LDAPAttribute}'", TraceSeverity.VerboseEx, EventSeverity.Information, TraceCategory.LDAP_Lookup);
+                    //    continue;
+                    //}
                 }
 
                 foreach (ClaimTypeConfig ctConfig in ctConfigs)
@@ -1039,18 +1040,18 @@ namespace ldapcp
                 try
                 {
                     if (!this.CurrentConfiguration.EnableAugmentation) return;
-                    if (String.IsNullOrEmpty(this.CurrentConfiguration.ClaimTypeUsedForAugmentation))
+                    if (String.IsNullOrEmpty(this.CurrentConfiguration.MainGroupClaimType))
                     {
-                        ClaimsProviderLogging.Log($"[{ProviderInternalName}] Augmentation is enabled but no claim type is configured.", TraceSeverity.High, EventSeverity.Error, TraceCategory.Augmentation);
+                        ClaimsProviderLogging.Log($"[{ProviderInternalName}] Augmentation is enabled but property MainGroupClaimType is not set.", TraceSeverity.High, EventSeverity.Error, TraceCategory.Augmentation);
                         return;
                     }
 
                     IEnumerable<ClaimTypeConfig> allGroupsCTConfig = this.ProcessedClaimTypesList.Where(x => x.EntityType == DirectoryObjectType.Group && !x.UseMainClaimTypeOfDirectoryObject);
-                    IEnumerable<ClaimTypeConfig> allGroupsExceptMainGroupCTConfig = allGroupsCTConfig.Where(x => !String.Equals(x.ClaimType, this.CurrentConfiguration.ClaimTypeUsedForAugmentation, StringComparison.InvariantCultureIgnoreCase));
-                    ClaimTypeConfig mainGroupCTConfig = allGroupsCTConfig.FirstOrDefault(x => String.Equals(x.ClaimType, this.CurrentConfiguration.ClaimTypeUsedForAugmentation, StringComparison.InvariantCultureIgnoreCase));
+                    IEnumerable<ClaimTypeConfig> allGroupsExceptMainGroupCTConfig = allGroupsCTConfig.Where(x => !String.Equals(x.ClaimType, this.CurrentConfiguration.MainGroupClaimType, StringComparison.InvariantCultureIgnoreCase));
+                    ClaimTypeConfig mainGroupCTConfig = allGroupsCTConfig.FirstOrDefault(x => String.Equals(x.ClaimType, this.CurrentConfiguration.MainGroupClaimType, StringComparison.InvariantCultureIgnoreCase));
                     if (mainGroupCTConfig == null)
                     {
-                        ClaimsProviderLogging.Log($"[{ProviderInternalName}] Configuration for claim type '{this.CurrentConfiguration.ClaimTypeUsedForAugmentation}' cannot be found, please add it in claim types configuration list.",
+                        ClaimsProviderLogging.Log($"[{ProviderInternalName}] Configuration for claim type '{this.CurrentConfiguration.MainGroupClaimType}' cannot be found, please add it in claim types configuration list.",
                             TraceSeverity.High, EventSeverity.Error, TraceCategory.Augmentation);
                         return;
                     }
@@ -1074,7 +1075,7 @@ namespace ldapcp
                         if (coco.GetGroupMembershipAsADDomain)
                         {
                             directoryGroups = GetGroupsFromADDirectory(coco.LDAPServer, currentContext, mainGroupCTConfig);
-                            directoryGroups.AddRange(GetGroupsFromLDAPDirectory(coco.LDAPServer, currentContext, allGroupsCTConfig.Where(x => !String.Equals(x.ClaimType, this.CurrentConfiguration.ClaimTypeUsedForAugmentation, StringComparison.InvariantCultureIgnoreCase))));
+                            directoryGroups.AddRange(GetGroupsFromLDAPDirectory(coco.LDAPServer, currentContext, allGroupsCTConfig.Where(x => !String.Equals(x.ClaimType, this.CurrentConfiguration.MainGroupClaimType, StringComparison.InvariantCultureIgnoreCase))));
                         }
                         else
                         {
@@ -1087,8 +1088,7 @@ namespace ldapcp
                         }
                     });
                     timer.Stop();
-                    ClaimsProviderLogging.Log(String.Format("[{0}] LDAP queries to get group membership on all servers completed in {1}ms",
-                        ProviderInternalName, timer.ElapsedMilliseconds.ToString()),
+                    ClaimsProviderLogging.Log($"[{ProviderInternalName}] LDAP queries to get group membership on all servers completed in {timer.ElapsedMilliseconds.ToString()}ms",
                         TraceSeverity.Verbose, EventSeverity.Information, TraceCategory.Augmentation);
 
                     foreach (SPClaim group in groups)
@@ -1098,10 +1098,10 @@ namespace ldapcp
                             TraceSeverity.Verbose, EventSeverity.Information, TraceCategory.Augmentation);
                     }
                     if (groups.Count > 0)
-                        ClaimsProviderLogging.Log(String.Format("[{0}] User '{1}' was augmented with {2} groups of claim type '{3}'", ProviderInternalName, currentContext.IncomingEntity.Value, groups.Count.ToString(), mainGroupCTConfig.ClaimType),
+                        ClaimsProviderLogging.Log($"[{ProviderInternalName}] User '{currentContext.IncomingEntity.Value}' was augmented with {groups.Count.ToString()} groups", 
                             TraceSeverity.Medium, EventSeverity.Information, TraceCategory.Augmentation);
                     else
-                        ClaimsProviderLogging.Log(String.Format("[{0}] No group found for user '{1}' during augmentation", ProviderInternalName, currentContext.IncomingEntity.Value),
+                        ClaimsProviderLogging.Log($"[{ProviderInternalName}] No group found for user '{currentContext.IncomingEntity.Value}' during augmentation",
                             TraceSeverity.Medium, EventSeverity.Information, TraceCategory.Augmentation);
                 }
                 catch (Exception ex)
@@ -1203,7 +1203,7 @@ namespace ldapcp
         protected virtual List<SPClaim> GetGroupsFromLDAPDirectory(DirectoryEntry directory, OperationContext currentContext, IEnumerable<ClaimTypeConfig> groupsCTConfig)
         {
             List<SPClaim> groups = new List<SPClaim>();
-            if (groupsCTConfig == null) return groups;
+            if (groupsCTConfig == null || groupsCTConfig.Count() == 0) return groups;
             using (new SPMonitoredScope(String.Format("[{0}] Getting LDAP group membership of user {1} in {2}", ProviderInternalName, currentContext.IncomingEntity.Value, directory.Path), 2000))
             {
                 try

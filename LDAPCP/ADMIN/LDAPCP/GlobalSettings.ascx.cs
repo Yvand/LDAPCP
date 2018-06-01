@@ -103,8 +103,8 @@ namespace ldapcp.ControlTemplates
 
             ChkEnableAugmentation.Checked = PersistedObject.EnableAugmentation;
 
-            if (!String.IsNullOrEmpty(PersistedObject.ClaimTypeUsedForAugmentation) && DdlClaimTypes.Items.FindByValue(PersistedObject.ClaimTypeUsedForAugmentation) != null)
-                DdlClaimTypes.SelectedValue = PersistedObject.ClaimTypeUsedForAugmentation;
+            if (!String.IsNullOrEmpty(PersistedObject.MainGroupClaimType) && DdlClaimTypes.Items.FindByValue(PersistedObject.MainGroupClaimType) != null)
+                DdlClaimTypes.SelectedValue = PersistedObject.MainGroupClaimType;
 
             // Initialize grid for LDAP connections
             var spDomainCoco = PersistedObject.LDAPConnectionsProp.FirstOrDefault(x => x.UserServerDirectoryEntry);
@@ -213,7 +213,7 @@ namespace ldapcp.ControlTemplates
             PersistedObject.FilterSecurityGroupsOnlyProp = this.ChkFilterSecurityGroupsOnly.Checked;
             PersistedObject.FilterExactMatchOnlyProp = this.ChkFilterExactMatchOnly.Checked;
             PersistedObject.EnableAugmentation = ChkEnableAugmentation.Checked;
-            PersistedObject.ClaimTypeUsedForAugmentation = DdlClaimTypes.SelectedValue.Equals("none", StringComparison.InvariantCultureIgnoreCase) ? String.Empty : DdlClaimTypes.SelectedValue;
+            PersistedObject.MainGroupClaimType = DdlClaimTypes.SelectedValue.Equals("none", StringComparison.InvariantCultureIgnoreCase) ? String.Empty : DdlClaimTypes.SelectedValue;
             // Deprecated options that are not shown anymore in LDAPCP configuration page
             //PersistedObject.AddWildcardInFrontOfQuery = this.ChkAddWildcardInFront.Checked;
             //PersistedObject.PickerEntityGroupName = this.TxtPickerEntityGroupName.Text;

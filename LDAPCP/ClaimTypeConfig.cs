@@ -280,6 +280,11 @@ namespace ldapcp
 
         public void Add(ClaimTypeConfig item)
         {
+            Add(item, true);
+        }
+
+        internal void Add(ClaimTypeConfig item, bool strictChecks)
+        {
             if (String.IsNullOrEmpty(item.LDAPAttribute) || String.IsNullOrEmpty(item.LDAPClass))
             {
                 throw new InvalidOperationException($"Properties LDAPAttribute and LDAPClass are required");
@@ -326,20 +331,22 @@ namespace ldapcp
                 }
             }
 
-            // EDIT: it's better to add it and not throw an exception, as another valid item may be added later, and even if not, code should handle that scenario
-            //// Cannot add item with UseMainClaimTypeOfDirectoryObject true if collection does not contain an item with same directory object type AND a claim type defined
-            //if (item.UseMainClaimTypeOfDirectoryObject && innerCol.FirstOrDefault(x => x.EntityType == item.EntityType && !String.IsNullOrEmpty(x.ClaimType)) == null)
-            //{
-            //    throw new InvalidOperationException($"Cannot add this item (with UseMainClaimTypeOfDirectoryObject set to true) because collecton does not contain an item with same EntityType '{item.EntityType.ToString()}' AND a ClaimType set");
-            //}
+            if (strictChecks)
+            {
+                // If current item has UseMainClaimTypeOfDirectoryObject = true: check if another item with same EntityType AND a claim type defined
+                // Another valid item may be added later, and even if not, code should handle that scenario
+                if (item.UseMainClaimTypeOfDirectoryObject && innerCol.FirstOrDefault(x => x.EntityType == item.EntityType && !String.IsNullOrEmpty(x.ClaimType)) == null)
+                {
+                    throw new InvalidOperationException($"Cannot add this item (with UseMainClaimTypeOfDirectoryObject set to true) because collecton does not contain an item with same EntityType '{item.EntityType.ToString()}' AND a ClaimType set");
+                }
+            }
 
             // If SPTrustedLoginProvider is set, additional checks can be done
             if (SPTrust != null)
             {
-                // Specific checks if current claim type is identity claim type
+                // If current claim type is identity claim type: EntityType must be User
                 if (String.Equals(item.ClaimType, SPTrust.IdentityClaimTypeInformation.MappedClaimType, StringComparison.InvariantCultureIgnoreCase))
                 {
-                    // EntityType must be User
                     if (item.EntityType != DirectoryObjectType.User)
                     {
                         throw new InvalidOperationException($"Identity claim type must be configured with EntityType 'User'");
