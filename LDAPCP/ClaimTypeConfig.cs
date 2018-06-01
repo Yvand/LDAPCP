@@ -391,7 +391,7 @@ namespace ldapcp
             ClaimTypeConfigCollection testUpdateCollection = new ClaimTypeConfigCollection();
             foreach (ClaimTypeConfig curCTConfig in innerCol)
             {
-                testUpdateCollection.Add(curCTConfig.CopyCurrentObject());
+                testUpdateCollection.Add(curCTConfig.CopyCurrentObject(), false);
             }
 
             // Update ClaimTypeConfig in testUpdateCollection
@@ -403,7 +403,7 @@ namespace ldapcp
             foreach (ClaimTypeConfig curCTConfig in testUpdateCollection)
             {
                 // ClaimTypeConfigCollection.Add() may thrown an exception if newItem is not valid for any reason
-                testNewItemCollection.Add(curCTConfig);
+                testNewItemCollection.Add(curCTConfig, false);
             }
 
             // No error, current collection can safely be updated
