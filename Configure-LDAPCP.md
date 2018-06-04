@@ -1,25 +1,51 @@
-# Configure LDAPCP
+# Configure LDAPCP with administration pages
 
-LDAPCP has a default mapping between claim types and LDAP attributes:
+LDAPCP comes with 2 administration pages added in central administration > Security:
 
-| Claim type                                                                 | LDAP attribute name        | LDAP object class |
-|----------------------------------------------------------------------------|----------------------------|-------------------|
-| http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress         | mail                       | user              |
-| http://schemas.microsoft.com/ws/2008/06/identity/claims/windowsaccountname | sAMAccountName             | user              |
-| http://schemas.xmlsoap.org/ws/2005/05/identity/claims/upn                  | userPrincipalName          | user              |
-| http://schemas.xmlsoap.org/ws/2005/05/identity/claims/givenname            | givenName                  | user              |
-| http://schemas.microsoft.com/ws/2008/06/identity/claims/role               | sAMAccountName             | group             |
-| linked to identity claim                                                   | displayName                | user              |
-| linked to identity claim                                                   | cn                         | user              |
-| linked to identity claim                                                   | sn                         | user              |
-| linked to identity claim                                                   | displayName                | group             |
+- Global configuration: Add/remove LDAP servers and configure general settings
+- Claim types configuration: Define the claim types, and their mapping with LDAP attributes
 
-<br />
-This list can be customized to fit your environment in Central Administration > Security > "Claims mapping" page.
+# Configure LDAPCP with PowerShell
 
-- The identity claim type is displayed in bold green, it is mandatory since it uniquely identifies trusted users.
-- Claim types in green are defined in the SPTrustedLoginProvider set with LDAPCP.
-- Claim types in red are not defined in the SPTrustedLoginProvider set with LDAPCP, so they can be safely deleted from LDAPCP.
-- "linked to identity claim": To enhance search experience, LDAPCP also queries common LDAP attributes such as the display name (displayName) and the common name (cn).
+Starting with v10, LDAPCP can be configured with PowerShell:
 
-If possible, only use indexed LDAP attributes to guarantee best performance during LDAP queries. For Active Directory, indexed attribute are listed in [this page](https://msdn.microsoft.com/en-us/library/ms675095.aspx).
+```powershell
+Add-Type -AssemblyName "ldapcp, Version=1.0.0.0, Culture=neutral, PublicKeyToken=80be731bc1a1a740"
+$config = [ldapcp.LDAPCPConfig]::GetConfiguration("LDAPCPConfig")
+
+# To view current configuration
+$config
+$config.ClaimTypes
+
+# Change some properties, e.g. configure augmentation:
+$config.EnableAugmentation = $true
+$config.MainGroupClaimType = "http://schemas.microsoft.com/ws/2008/06/identity/claims/role"
+$config.Update()
+
+# Reset claim types configuration list to default
+$config.ResetClaimTypesList()
+$config.Update()
+
+# Reset the whole configuration to default
+$config.ResetCurrentConfiguration()
+$config.Update()
+
+# Add a new entry to the claim types configuration list
+$newCTConfig = New-Object ldapcp.ClaimTypeConfig
+$newCTConfig.ClaimType = "ClaimTypeValue"
+$newCTConfig.EntityType = [ldapcp.DirectoryObjectType]::User
+$newCTConfig.LDAPClass = "LDAPClassVALUE"
+$newCTConfig.LDAPAttribute = "LDAPAttributeVALUE"
+$config.ClaimTypes.Add($newCTConfig)
+$config.Update()
+
+# Remove a claim type from the claim types configuration list
+$claimTypes.Remove("ClaimTypeValue")
+$config.Update()
+```
+
+LDAPCP configuration is stored in SharePoint configuration database, in persisted object "LDAPCPConfig", that can be displayed with this SQL command:
+
+```sql
+SELECT Id, Name, cast (properties as xml) AS XMLProps FROM Objects WHERE Name = 'LdapcpConfig'
+```
