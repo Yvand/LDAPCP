@@ -1,9 +1,11 @@
 # Fix setup issues
 
-Sometimes, install, uninstall or update of LDAPCP solution fails. It has nothing to do with LDAPCP solution itself, but it is caused by various reasons in SharePoint.
+Sometimes, install/uninstall/update of LDAPCP solution fails. Most of the time, it occurs when cmdlets were executed in an old PowerShell console that had stale persisted objects. This caused concurrency update errors and SharePoint cancelled operation in the middle of the process.  
+When this happens, some LDAPCP features are in an inconsistent state that must be fixed, this page will walk you through the steps to clean this.
 
-When this happens, most of the time LDAPCP features are in a half installed state which must be fixed.
-To fix it, open a new **PowerShell console** and perform all the step below on the server **running central administration**, in this order:
+> **Important:**  
+> Start a **new PowerShell console** to ensure you use up to date persisted objects, this avoids concurrency update errors.  
+> Make all operations in the server **running central administration**, in this order.
 
 ## Remove LDAPCP claims provider
 
@@ -11,7 +13,7 @@ To fix it, open a new **PowerShell console** and perform all the step below on t
 Get-SPClaimProvider| ?{$_.DisplayName -like "LDAPCP"}| Remove-SPClaimProvider
 ```
 
-## Identify LDAPCP features installed
+## Identify LDAPCP features still installed
 
 ```powershell
 # Identify all LDAPCP features installed on the farm
@@ -20,14 +22,14 @@ Get-SPFeature| ?{$_.DisplayName -like 'LDAPCP*'}| fl DisplayName, Scope, Id, Roo
 
 Usually, only LDAPCP farm feature is listed:
 
-```Text
+```text
 DisplayName   : LDAPCP
 Scope         :
 Id            : b37e0696-f48c-47ab-aa30-834d78033ba8
 RootDirectory : C:\Program Files\Common Files\Microsoft Shared\Web Server Extensions\16\Template\Features\LDAPCP
 ```
 
-## Identify LDAPCP features to fix
+## Recreate required features folders
 
 For each feature listed, check if its "RootDirectory" actually exists in the file system of the server.
 If it does not exist:
@@ -40,7 +42,7 @@ If it does not exist:
 ## Deactivate and remove the features
 
 ```powershell
-# Deactivate LDAPCP features
+# Deactivate LDAPCP features (it may thrown an error if feature is already deactivated)
 Get-SPFeature| ?{$_.DisplayName -like 'LDAPCP*'}| Disable-SPFeature -Confirm:$false
 # Uninstall LDAPCP features
 Get-SPFeature| ?{$_.DisplayName -like 'LDAPCP*'}| Uninstall-SPFeature -Confirm:$false

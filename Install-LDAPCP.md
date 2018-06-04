@@ -1,16 +1,18 @@
 # How to install LDAPCP
 
-- Download LDAPCP.wsp.
-- Install and deploy the solution (that will automatically activate the "LDAPCP" farm-scoped feature):
+> **Important:**  
+> Start a **new PowerShell console** to ensure you use up to date persisted objects, this avoids concurrency update errors.  
+> If something goes wrong, [check this page](Fix-setup-issues.html) to fix issues.
 
-> **Important:** Always start a new PowerShell console to ensure it uses up to date persisted objects, this avoids concurrency update errors.
+- Download LDAPCP.wsp.
+- Install and deploy the solution:
 
 ```powershell
-Add-SPSolution -LiteralPath "PATH TO WSP FILE"
+Add-SPSolution -LiteralPath "F:\Data\Dev\LDAPCP.wsp"
 Install-SPSolution -Identity "LDAPCP.wsp" -GACDeployment
 ```
 
-- At this point claim provider is inactive and it must be associated to an SPTrustedIdentityTokenIssuer to work:
+- Associate LDAPCP with a SPTrustedIdentityTokenIssuer:
 
 ```powershell
 $trust = Get-SPTrustedIdentityTokenIssuer "SPTRUST NAME"
@@ -20,14 +22,14 @@ $trust.Update()
 
 ## Important - Limitations
 
-Due to limitations of SharePoint API, do not associate LDAPCP with more than 1 SPTrustedIdentityTokenIssuer. Developers can bypass this limitation by inheriting LDAPCP to create new claims providers (with different names). Read “Developers section” below for further information.
+- Due to limitations of SharePoint API, do not associate LDAPCP with more than 1 SPTrustedIdentityTokenIssuer. Developers can bypass this limitation, [check this page](For-Developers.html) for more information.
 
-You must manually deploy ldapcp.dll on SharePoint servers that do not have SharePoint service "Microsoft SharePoint Foundation Web Application" started. You can use this PowerShell script:
+- You must manually install ldapcp.dll in the GAC of SharePoint servers that do not run SharePoint service "Microsoft SharePoint Foundation Web Application".
+
+You can extract ldapcp.dll from LDAPCP.wsp using [7-zip](https://www.7-zip.org/), and install it in the GAC using this PowerShell script:
 
 ```powershell
 [System.Reflection.Assembly]::Load("System.EnterpriseServices, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a")
 $publish = New-Object System.EnterpriseServices.Internal.Publish
-$publish.GacInstall("C:\Data\Dev\ldapcp.dll")
+$publish.GacInstall("F:\Data\Dev\ldapcp.dll")
 ```
-
-> **Note:** If something goes wrong, [check this page](Fix-setup-issues.html) to resolve problems.

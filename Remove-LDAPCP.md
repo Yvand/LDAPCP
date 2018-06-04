@@ -1,9 +1,12 @@
 # How to remove LDAPCP
 
+> **Important:**  
+> Start a **new PowerShell console** to ensure you use up to date persisted objects, this avoids concurrency update errors.  
+> If something goes wrong, [check this page](Fix-setup-issues.html) to fix issues.
+
 ## Step 1: Reset property ClaimProviderName in the SPTrustedIdentityTokenIssuer
 
-Unfortunately, the only supported way to reset property ClaimProviderName is to remove and recreate the SPTrustedIdentityTokenIssuer object, which requires to remove the trust from all the zones where it is used first, which is time consuming.
-
+Unfortunately, the only supported way to reset property ClaimProviderName is to remove and recreate the SPTrustedIdentityTokenIssuer object, which requires to remove the trust from all the zones where it is used first, which is time consuming.  
 Alternatively, it's possible to use reflection to reset this property, but it is not supported and you do this at your own risks. Here is the script:
 
 ```powershell
@@ -18,21 +21,9 @@ Randomly, SharePoint doesn’t uninstall the solution correctly: it removes the 
 
 To uninstall safely, **deactivate the farm feature before retracting the solution**:
 
-> **Important:** Always start a new PowerShell console to ensure it uses up to date persisted objects, this avoids concurrency update errors.
-
 ```powershell
 Disable-SPFeature -identity "LDAPCP"
 Uninstall-SPSolution -Identity "LDAPCP.wsp"
 # Wait for the timer job to complete
 Remove-SPSolution -Identity "LDAPCP.wsp"
 ```
-
-Validate that claims provider was removed:
-
-```powershell
-Get-SPClaimProvider| ft DisplayName
-# If LDAPCP appears in cmdlet above, remove it:
-Remove-SPClaimProvider LDAPCP
-```
-
-> **Note:** If something goes wrong, [check this page](Fix-setup-issues.html) to resolve problems.
