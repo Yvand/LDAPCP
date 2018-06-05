@@ -394,7 +394,7 @@ namespace ldapcp
                 this.Lock_Config.EnterReadLock();
                 try
                 {
-                    OperationContext currentContext = new OperationContext(CurrentConfiguration, OperationType.Validation, ProcessedClaimTypesList, resolveInput.Value, resolveInput, context, entityTypes, null, Int32.MaxValue);
+                    OperationContext currentContext = new OperationContext(CurrentConfiguration, OperationType.Validation, ProcessedClaimTypesList, resolveInput.Value, resolveInput, context, entityTypes, null, 1);
                     List<PickerEntity> entities = SearchOrValidate(currentContext);
                     if (entities?.Count == 1)
                     {
@@ -438,7 +438,8 @@ namespace ldapcp
                 this.Lock_Config.EnterReadLock();
                 try
                 {
-                    OperationContext currentContext = new OperationContext(CurrentConfiguration, OperationType.Search, ProcessedClaimTypesList, resolveInput, null, context, entityTypes, null, Int32.MaxValue);
+                    int maxCount = 30;  // SharePoint sets maxCount to 30 in method FillSearch
+                    OperationContext currentContext = new OperationContext(CurrentConfiguration, OperationType.Search, ProcessedClaimTypesList, resolveInput, null, context, entityTypes, null, maxCount);
                     List<PickerEntity> entities = SearchOrValidate(currentContext);
                     FillEntities(context, entityTypes, resolveInput, ref entities);
                     if (entities == null || entities.Count == 0) return;
@@ -826,10 +827,10 @@ namespace ldapcp
         /// Query LDAP servers in parallel
         /// </summary>
         /// <param name="LDAPServers">LDAP servers to query</param>
-        /// <param name="requestInfo">Information about current context and operation</param>
+        /// <param name="currentContext">Information about current context and operation</param>
         /// <param name="LDAPSearchResults">LDAP search results list to be populated by this method</param>
         /// <returns>true if a result was found</returns>
-        protected bool QueryLDAPServers(LDAPConnection[] LDAPServers, OperationContext requestInfo, ref List<LDAPSearchResult> LDAPSearchResults)
+        protected bool QueryLDAPServers(LDAPConnection[] LDAPServers, OperationContext currentContext, ref List<LDAPSearchResult> LDAPSearchResults)
         {
             if (LDAPServers == null || LDAPServers.Length == 0) return false;
             object lockResults = new object();
@@ -849,6 +850,7 @@ namespace ldapcp
                 using (DirectorySearcher ds = new DirectorySearcher(LDAPServer.Filter))
                 {
                     ds.SearchRoot = directory;
+                    ds.SizeLimit = currentContext.MaxCount;
                     ds.ClientTimeout = new TimeSpan(0, 0, this.CurrentConfiguration.LDAPQueryTimeout); // Set the timeout of the query
                     ds.PropertiesToLoad.Add(LDAPObjectClassName);
                     ds.PropertiesToLoad.Add("nETBIOSName");
@@ -863,19 +865,19 @@ namespace ldapcp
                         if (!ds.PropertiesToLoad.Contains(metadataAttribute.LDAPAttribute)) ds.PropertiesToLoad.Add(metadataAttribute.LDAPAttribute);
                     }
 
-                    using (new SPMonitoredScope(String.Format("[{0}] Connecting to \"{1}\" with AuthenticationType \"{2}\" and filter \"{3}\"", ProviderInternalName, directory.Path, directory.AuthenticationType.ToString(), ds.Filter), 3000)) // threshold of 3 seconds before it's considered too much. If exceeded it is recorded in a higher logging level
+                    using (new SPMonitoredScope($"[{ProviderInternalName}] Connecting to '{directory.Path}' with AuthenticationType '{directory.AuthenticationType.ToString()}' and filter '{ds.Filter}'", 3000)) // threshold of 3 seconds before it's considered too much. If exceeded it is recorded in a higher logging level
                     {
                         try
                         {
-                            ClaimsProviderLogging.Log(String.Format("[{0}] Connecting to \"{1}\" with AuthenticationType \"{2}\" and filter \"{3}\"", ProviderInternalName, directory.Path, directory.AuthenticationType.ToString(), ds.Filter), TraceSeverity.Verbose, EventSeverity.Information, TraceCategory.LDAP_Lookup);
+                            ClaimsProviderLogging.Log($"[{ProviderInternalName}] Connecting to '{directory.Path}' with AuthenticationType '{directory.AuthenticationType.ToString()}' and filter '{ds.Filter}'", TraceSeverity.Verbose, EventSeverity.Information, TraceCategory.LDAP_Lookup);
                             Stopwatch stopWatch = new Stopwatch();
                             stopWatch.Start();
                             using (SearchResultCollection directoryResults = ds.FindAll())
                             {
                                 stopWatch.Stop();
-                                ClaimsProviderLogging.Log(String.Format("[{0}] Got {1} result(s) in {2}ms from \"{3}\" with query \"{4}\"", ProviderInternalName, directoryResults.Count.ToString(), stopWatch.ElapsedMilliseconds.ToString(), directory.Path, ds.Filter), TraceSeverity.Medium, EventSeverity.Information, TraceCategory.LDAP_Lookup);
                                 if (directoryResults != null && directoryResults.Count > 0)
                                 {
+                                    ClaimsProviderLogging.Log($"[{ProviderInternalName}] Got {directoryResults.Count.ToString()} result(s) in {stopWatch.ElapsedMilliseconds.ToString()}ms from '{directory.Path}' with filter '{ds.Filter}'", TraceSeverity.Medium, EventSeverity.Information, TraceCategory.LDAP_Lookup);
                                     lock (lockResults)
                                     {
                                         // Retrieve FQDN and domain name of current DirectoryEntry
@@ -891,7 +893,6 @@ namespace ldapcp
                                             });
                                         }
                                     }
-                                    ClaimsProviderLogging.Log(String.Format("[{0}] Got {1} result(s) from {2}", ProviderInternalName, directoryResults.Count.ToString(), directory.Path), TraceSeverity.Verbose, EventSeverity.Information, TraceCategory.LDAP_Lookup);
                                 }
                             }
                         }
@@ -1098,7 +1099,7 @@ namespace ldapcp
                             TraceSeverity.Verbose, EventSeverity.Information, TraceCategory.Augmentation);
                     }
                     if (groups.Count > 0)
-                        ClaimsProviderLogging.Log($"[{ProviderInternalName}] User '{currentContext.IncomingEntity.Value}' was augmented with {groups.Count.ToString()} groups", 
+                        ClaimsProviderLogging.Log($"[{ProviderInternalName}] User '{currentContext.IncomingEntity.Value}' was augmented with {groups.Count.ToString()} groups",
                             TraceSeverity.Medium, EventSeverity.Information, TraceCategory.Augmentation);
                     else
                         ClaimsProviderLogging.Log($"[{ProviderInternalName}] No group found for user '{currentContext.IncomingEntity.Value}' during augmentation",

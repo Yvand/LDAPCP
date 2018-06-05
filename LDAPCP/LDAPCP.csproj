@@ -124,7 +124,7 @@
       <DependentUpon>LDAPCP.feature</DependentUpon>
     </Content>
     <Content Include="Layouts\ldapcp\jquery-1.9.1.min.js" />
-    <Content Include="Layouts\ldapcp\ldapcp_logo_50x27.png" />
+    <Content Include="Layouts\ldapcp\LDAPCP_logo_small.png" />
     <Content Include="LDAPCP.AdminLinks\Elements.xml">
       <SubType>Designer</SubType>
     </Content>

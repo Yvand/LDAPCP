@@ -5,7 +5,7 @@
     Location = "Microsoft.SharePoint.Administration.Security"
     Sequence = "500"
     Title = "LDAPCP Configuration"
-    ImageUrl="/_layouts/15/ldapcp/ldapcp_logo_50x27.png">
+    ImageUrl="/_layouts/15/ldapcp/LDAPCP_logo_small.png">
   </CustomActionGroup>
 
   <CustomAction
