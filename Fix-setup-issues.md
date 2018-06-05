@@ -16,7 +16,7 @@ Get-SPClaimProvider| ?{$_.DisplayName -like "LDAPCP"}| Remove-SPClaimProvider
 ## Identify LDAPCP features still installed
 
 ```powershell
-# Identify all LDAPCP features installed on the farm
+# Identify all LDAPCP features still installed on the farm, and that need to be manually uninstalled
 Get-SPFeature| ?{$_.DisplayName -like 'LDAPCP*'}| fl DisplayName, Scope, Id, RootDirectory
 ```
 
@@ -29,15 +29,13 @@ Id            : b37e0696-f48c-47ab-aa30-834d78033ba8
 RootDirectory : C:\Program Files\Common Files\Microsoft Shared\Web Server Extensions\16\Template\Features\LDAPCP
 ```
 
-## Recreate required features folders
+## Recreate missing features folders and add feature.xml
 
-For each feature listed, check if its "RootDirectory" actually exists in the file system of the server.
-If it does not exist:
+For each feature listed, check if its "RootDirectory" actually exists in the file system of the current server. If it does not exist:
 
-* Create the RootDirectory (e.g. LDAPCP in Features folder)
-* Use [7-zip](http://www.7-zip.org/) to unzip LDAPCP.wsp
-* Copy the feature.xml of the corresponding feature from the LDAPCP.wsp unzipped
-* Paste it into the "RootDirectory" that you just created
+* Create the "RootDirectory" (e.g. "LDAPCP" in "Features" folder)
+* Use [7-zip](http://www.7-zip.org/) to open LDAPCP.wsp and extract the feature.xml of the corresponding feature
+* Copy the feature.xml into the "RootDirectory"
 
 ## Deactivate and remove the features
 

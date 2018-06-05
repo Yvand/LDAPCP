@@ -17,7 +17,7 @@ $config = [ldapcp.LDAPCPConfig]::GetConfiguration("LDAPCPConfig")
 $config
 $config.ClaimTypes
 
-# Change some properties, e.g. configure augmentation:
+# Update some settings, e.g. configure augmentation:
 $config.EnableAugmentation = $true
 $config.MainGroupClaimType = "http://schemas.microsoft.com/ws/2008/06/identity/claims/role"
 $config.Update()
