@@ -1,7 +1,7 @@
 # How to install LDAPCP
 
 > **Important:**  
-> Start a **new PowerShell console** to ensure you use up to date persisted objects, this avoids concurrency update errors.  
+> Start a **new PowerShell console** to ensure the use of up to date persisted objects, which avoids concurrency update errors.  
 > If something goes wrong, [check this page](Fix-setup-issues.html) to fix issues.
 
 - Download LDAPCP.wsp.
@@ -20,9 +20,9 @@ $trust.ClaimProviderName = "LDAPCP"
 $trust.Update()
 ```
 
-## Important - Limitations
+## Important
 
-- Due to limitations of SharePoint API, do not associate LDAPCP with more than 1 SPTrustedIdentityTokenIssuer. Developers can bypass this limitation, [check this page](For-Developers.html) for more information.
+- Due to limitations of SharePoint API, do not associate LDAPCP with more than 1 SPTrustedIdentityTokenIssuer. Developers can [bypass this limitation](For-Developers.html).
 
 - You must manually install ldapcp.dll in the GAC of SharePoint servers that do not run SharePoint service "Microsoft SharePoint Foundation Web Application".
 
