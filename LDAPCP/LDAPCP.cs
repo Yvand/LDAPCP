@@ -1051,7 +1051,7 @@ namespace ldapcp
                     timer.Start();
                     List<SPClaim> groups = new List<SPClaim>();
                     object lockResults = new object();
-                    Parallel.ForEach(this.CurrentConfiguration.LDAPConnectionsProp.Where(x => x.AugmentationEnabledProp), ldapConnection =>
+                    Parallel.ForEach(this.CurrentConfiguration.LDAPConnectionsProp.Where(x => x.AugmentationEnabled), ldapConnection =>
                     {
                         List<SPClaim> directoryGroups;
                         if (ldapConnection.GetGroupMembershipAsADDomain)
@@ -1115,7 +1115,7 @@ namespace ldapcp
                 path = de.Path;
                 de.Dispose();
             }
-            using (new SPMonitoredScope(String.Format("[{0}] Getting AD group membership of user {1} in {2}", ProviderInternalName, currentContext.IncomingEntity.Value, path), 2000))
+            using (new SPMonitoredScope($"[{ProviderInternalName}] Getting AD groups of user {currentContext.IncomingEntity.Value} in {path}", 2000))
             {
                 string directoryDomainName, directoryDomainFqdn;
                 OperationContext.GetDomainInformation(path, out directoryDomainName, out directoryDomainFqdn);
@@ -1143,8 +1143,7 @@ namespace ldapcp
                 }
                 try
                 {
-                    // https://github.com/Yvand/LDAPCP/issues/22
-                    // UserPrincipal.FindByIdentity() doesn't support emails, so if IncomingEntity is an email, user needs to be retrieved in a different way
+                    // https://github.com/Yvand/LDAPCP/issues/22: UserPrincipal.FindByIdentity() doesn't support emails, so if IncomingEntity is an email, user needs to be retrieved in a different way
                     if (String.Equals(currentContext.IncomingEntity.ClaimType, WIF4_5.ClaimTypes.Email, StringComparison.InvariantCultureIgnoreCase))
                     {
                         using (UserPrincipal userEmailPrincipal = new UserPrincipal(principalContext) { Enabled = true, EmailAddress = currentContext.IncomingEntity.Value })
@@ -1174,20 +1173,23 @@ namespace ldapcp
                         SPClaim claim = CreateClaim(groupCTConfig.ClaimType, claimValue, groupCTConfig.ClaimValueType, false);
                         groups.Add(claim);
                     }
+
+                    ClaimsProviderLogging.Log($"[{ProviderInternalName}] Got {groups.Count} group(s) for {currentContext.IncomingEntity.Value} in {stopWatch.ElapsedMilliseconds.ToString()} ms from Active Directory server \"{path}\"",
+                        TraceSeverity.Medium, EventSeverity.Information, TraceCategory.Augmentation);
                 }
                 catch (PrincipalOperationException ex)
                 {
-                    ClaimsProviderLogging.LogException(ProviderInternalName, String.Format("while getting AD group membership of user {0} in {1} using UserPrincipal.GetAuthorizationGroups(). This is likely due to a bug in .NET framework in UserPrincipal.GetAuthorizationGroups (as of v4.6.1), especially if user is member (directly or not) of a group either in a child domain that was migrated, or a group that has special (deny) entities.", currentContext.IncomingEntity.Value, path), TraceCategory.Augmentation, ex);
+                    ClaimsProviderLogging.LogException(ProviderInternalName, $"while getting AD groups of {currentContext.IncomingEntity.Value} in {path} using UserPrincipal.GetAuthorizationGroups(). This is likely due to a bug in .NET framework in UserPrincipal.GetAuthorizationGroups (as of v4.6.1), especially if user is member (directly or not) of a group either in a child domain that was migrated, or a group that has special (deny) entities.", TraceCategory.Augmentation, ex);
                     // In this case, fallback to LDAP method to get group membership.
                     return GetGroupsFromLDAPDirectory(ldapConnection, currentContext, new List<ClaimTypeConfig>(1) { groupCTConfig });
                 }
                 catch (PrincipalServerDownException ex)
                 {
-                    ClaimsProviderLogging.LogException(ProviderInternalName, String.Format("while getting AD group membership of user {0} in {1} using UserPrincipal.GetAuthorizationGroups(). Is this server an Active Directory server?", currentContext.IncomingEntity.Value, path), TraceCategory.Augmentation, ex);
+                    ClaimsProviderLogging.LogException(ProviderInternalName, $"while getting AD groups of user {currentContext.IncomingEntity.Value} in {path} using UserPrincipal.GetAuthorizationGroups(). Is this server an Active Directory server?", TraceCategory.Augmentation, ex);
                 }
                 catch (Exception ex)
                 {
-                    ClaimsProviderLogging.LogException(ProviderInternalName, String.Format("while getting AD group membership of user {0} in {1} using UserPrincipal.GetAuthorizationGroups()", currentContext.IncomingEntity.Value, path), TraceCategory.Augmentation, ex);
+                    ClaimsProviderLogging.LogException(ProviderInternalName, $"while getting AD groups of user {currentContext.IncomingEntity.Value} in {path} using UserPrincipal.GetAuthorizationGroups()", TraceCategory.Augmentation, ex);
                 }
                 finally
                 {
@@ -1210,7 +1212,7 @@ namespace ldapcp
             List<SPClaim> groups = new List<SPClaim>();
             if (groupsCTConfig == null || groupsCTConfig.Count() == 0) return groups;
             SetLDAPConnection(currentContext, ldapConnection);
-            using (new SPMonitoredScope($"[{ProviderInternalName}] Getting LDAP group membership of user {currentContext.IncomingEntity.Value} in {ldapConnection.Directory.Path}", 2000))
+            using (new SPMonitoredScope($"[{ProviderInternalName}] Getting LDAP groups of user {currentContext.IncomingEntity.Value} in {ldapConnection.Directory.Path}", 2000))
             {
                 try
                 {
@@ -1292,12 +1294,12 @@ namespace ldapcp
                             }
                         }
                     }
-                    ClaimsProviderLogging.Log($"[{ProviderInternalName}] Domain {directoryDomainFqdn} returned {groups.Count} groups for user {currentContext.IncomingEntity.Value}. Lookup took {stopWatch.ElapsedMilliseconds.ToString()} ms on LDAP server '{ldapConnection.Directory.Path}'",
+                    ClaimsProviderLogging.Log($"[{ProviderInternalName}] Got {groups.Count} group(s) for {currentContext.IncomingEntity.Value} in {stopWatch.ElapsedMilliseconds.ToString()} ms from LDAP server \"{ldapConnection.Directory.Path}\"",
                         TraceSeverity.Medium, EventSeverity.Information, TraceCategory.Augmentation);
                 }
                 catch (Exception ex)
                 {
-                    ClaimsProviderLogging.LogException(ProviderInternalName, String.Format("while getting LDAP group membership of user {0} in {1}.", currentContext.IncomingEntity.Value, ldapConnection.Path), TraceCategory.Augmentation, ex);
+                    ClaimsProviderLogging.LogException(ProviderInternalName, $"while getting LDAP groups of {currentContext.IncomingEntity.Value} in {ldapConnection.Path}.", TraceCategory.Augmentation, ex);
                 }
                 finally
                 {

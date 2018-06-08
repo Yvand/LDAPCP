@@ -232,9 +232,9 @@ namespace ldapcp.ControlTemplates
                 CheckBox chkIsADDomain = (CheckBox)item.FindControl("ChkGetGroupMembershipAsADDomain");
                 TextBox txtId = (TextBox)item.FindControl("IdPropHidden");
 
-                var coco = PersistedObject.LDAPConnectionsProp.First(x => x.IdProp == new Guid(txtId.Text));
-                coco.AugmentationEnabledProp = chkAugEn.Checked;
-                coco.GetGroupMembershipAsADDomainProp = chkIsADDomain.Checked;
+                var coco = PersistedObject.LDAPConnectionsProp.First(x => x.Id == new Guid(txtId.Text));
+                coco.AugmentationEnabled = chkAugEn.Checked;
+                coco.GetGroupMembershipAsADDomain = chkIsADDomain.Checked;
             }
         }
 

@@ -538,20 +538,10 @@ namespace ldapcp
     public class LDAPConnection : SPAutoSerializingObject
     {
         [Persisted]
-        internal Guid Id = Guid.NewGuid();
-        public Guid IdProp
-        {
-            get { return Id; }
-            set { Id = value; }
-        }
-
+        public Guid Id = Guid.NewGuid();
+        
         [Persisted]
-        internal string Path;
-        public string PathProp
-        {
-            get { return Path; }
-            set { Path = value; }
-        }
+        public string Path;
 
         [Persisted]
         internal string Username;
@@ -562,10 +552,6 @@ namespace ldapcp
         [Persisted]
         internal string Metadata;
 
-        /// <summary>
-        /// Specifies the types of authentication
-        /// http://msdn.microsoft.com/en-us/library/system.directoryservices.authenticationtypes(v=vs.110).aspx
-        /// </summary>
         [Persisted]
         internal AuthenticationTypes AuthenticationTypes;
 
@@ -573,16 +559,10 @@ namespace ldapcp
         internal bool UserServerDirectoryEntry;
 
         /// <summary>
-        /// If true: this server will be queried to perform augmentation
+        /// If true: this LDAPConnection will be be used for augmentation
         /// </summary>
         [Persisted]
         public bool AugmentationEnabled;
-        public bool AugmentationEnabledProp
-        {
-            get { return AugmentationEnabled; }
-            set { AugmentationEnabled = value; }
-        }
-
 
         /// <summary>
         /// If true: get group membership with UserPrincipal.GetAuthorizationGroups()
@@ -590,11 +570,6 @@ namespace ldapcp
         /// </summary>
         [Persisted]
         public bool GetGroupMembershipAsADDomain = true;
-        public bool GetGroupMembershipAsADDomainProp
-        {
-            get { return GetGroupMembershipAsADDomain; }
-            set { GetGroupMembershipAsADDomain = value; }
-        }
 
         /// <summary>
         /// DirectoryEntry used to make LDAP queries
@@ -623,8 +598,6 @@ namespace ldapcp
             };
         }
     }
-
-
 
     /// <summary>
     /// Contains information about current operation
