@@ -539,9 +539,19 @@ namespace ldapcp
     {
         [Persisted]
         public Guid Id = Guid.NewGuid();
-        
+        public Guid IdProp
+        {
+            get => Id;
+            set => Id = value;
+        }
+
         [Persisted]
         public string Path;
+        public string PathProp
+        {
+            get => Path;
+            set => Path = value;
+        }
 
         [Persisted]
         internal string Username;
@@ -563,6 +573,11 @@ namespace ldapcp
         /// </summary>
         [Persisted]
         public bool AugmentationEnabled;
+        public bool AugmentationEnabledProp
+        {
+            get => AugmentationEnabled;
+            set => AugmentationEnabled = value;
+        }
 
         /// <summary>
         /// If true: get group membership with UserPrincipal.GetAuthorizationGroups()
@@ -570,6 +585,11 @@ namespace ldapcp
         /// </summary>
         [Persisted]
         public bool GetGroupMembershipAsADDomain = true;
+        public bool GetGroupMembershipAsADDomainProp
+        {
+            get => GetGroupMembershipAsADDomain;
+            set => GetGroupMembershipAsADDomain = value;
+        }
 
         /// <summary>
         /// DirectoryEntry used to make LDAP queries
