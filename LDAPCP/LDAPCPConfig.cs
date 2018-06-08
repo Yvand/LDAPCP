@@ -599,7 +599,7 @@ namespace ldapcp
         /// <summary>
         /// DirectoryEntry used to make LDAP queries
         /// </summary>
-        public DirectoryEntry LDAPServer;
+        public DirectoryEntry Directory;
 
         public string Filter;
 

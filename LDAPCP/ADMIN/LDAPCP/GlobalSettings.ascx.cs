@@ -371,7 +371,7 @@ namespace ldapcp.ControlTemplates
             {
                 PersistedObject.LDAPConnectionsProp.Remove(connectionToRemove);
                 CommitChanges();
-                ClaimsProviderLogging.Log($"LDAP server '{connectionToRemove.LDAPServer}' was successfully removed from configuration '{PersistedObjectName}'", TraceSeverity.Medium, EventSeverity.Information, TraceCategory.Configuration);
+                ClaimsProviderLogging.Log($"LDAP server '{connectionToRemove.Directory}' was successfully removed from configuration '{PersistedObjectName}'", TraceSeverity.Medium, EventSeverity.Information, TraceCategory.Configuration);
                 InitializeAugmentation();
                 PopulateLdapConnectionGrid();
             }
