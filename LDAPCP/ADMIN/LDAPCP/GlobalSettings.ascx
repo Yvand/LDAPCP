@@ -240,7 +240,7 @@
 	</template_inputformcontrols>
 </wssuc:InputFormSection>
 
-<wssuc:inputformsection ID="AugmentationSection" runat="server" Visible="<%# ShowAugmentationSection %>" title="Augmentation" description="Enable augmentation to let LDAPCP get group membership of federated users.<br/><br/><b>Important:</b> During augmentation LDAPCP only knows the identity claim of the user, so it is strongly recommended to use an identity claim that ensures the uniqueness of the value across all domains, such as the email or the UPN.">
+<wssuc:inputformsection ID="AugmentationSection" runat="server" Visible="<%# ShowAugmentationSection %>" title="Augmentation" description="Enable augmentation to let LDAPCP get group membership of federated users.<br/><br/>If not enabled, permissions granted on federated groups may not work.">
     <template_inputformcontrols>
         <p class="ms-error"><asp:Label ID="Label1" runat="server" EnableViewState="False" /></p>
         <asp:Checkbox Checked="false" Runat="server" Name="ChkEnableAugmentation" ID="ChkEnableAugmentation" OnClick="window.Ldapcp.AdminGlobalSettingsControl.InitAugmentationControls();" Text="Enable augmentation" />
