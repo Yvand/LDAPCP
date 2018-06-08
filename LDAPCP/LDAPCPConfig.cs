@@ -287,6 +287,20 @@ namespace ldapcp
         /// </summary>
         public override void Update()
         {
+            // In case ClaimTypes collection was modified, test if it is still valid before committed changes to database
+            try
+            {
+                ClaimTypeConfigCollection testUpdateCollection = new ClaimTypeConfigCollection();
+                foreach (ClaimTypeConfig curCTConfig in this.ClaimTypes)
+                {
+                    testUpdateCollection.Add(curCTConfig, false);
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Some changes made to list ClaimTypes are invalid and cannot be committed to configuration database. Inspect inner exception for more details about the error.", ex);
+            }
+
             base.Update();
             ClaimsProviderLogging.Log($"Configuration '{base.DisplayName}' was updated successfully to version {base.Version} in configuration database.",
                 TraceSeverity.Medium, EventSeverity.Information, TraceCategory.Core);

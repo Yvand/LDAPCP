@@ -11,7 +11,7 @@ using System.Security;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("GitHub.com/Yvand - Yvan Duhamel")]
 [assembly: AssemblyProduct("LDAPCP")]
-[assembly: AssemblyCopyright("Copyright © 2017, Yvan Duhamel, All rights reserved")]
+[assembly: AssemblyCopyright("Copyright © 2018, Yvan Duhamel, All rights reserved")]
 [assembly: AssemblyTrademark("LDAPCP")]
 [assembly: AssemblyCulture("")]
 
