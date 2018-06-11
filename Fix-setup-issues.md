@@ -24,7 +24,7 @@ Usually, only LDAPCP farm feature is listed:
 
 ```text
 DisplayName   : LDAPCP
-Scope         :
+Scope         : Farm
 Id            : b37e0696-f48c-47ab-aa30-834d78033ba8
 RootDirectory : C:\Program Files\Common Files\Microsoft Shared\Web Server Extensions\16\Template\Features\LDAPCP
 ```

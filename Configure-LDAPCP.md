@@ -40,11 +40,11 @@ $config.ClaimTypes.Add($newCTConfig)
 $config.Update()
 
 # Remove a claim type from the claim types configuration list
-$claimTypes.Remove("ClaimTypeValue")
+$config.ClaimTypes.Remove("ClaimTypeValue")
 $config.Update()
 ```
 
-LDAPCP configuration is stored in SharePoint configuration database, in persisted object "LDAPCPConfig", that can be displayed with this SQL command:
+LDAPCP configuration is stored as a persisted object in SharePoint configuration database, and it can be returned with this SQL command:
 
 ```sql
 SELECT Id, Name, cast (properties as xml) AS XMLProps FROM Objects WHERE Name = 'LdapcpConfig'
