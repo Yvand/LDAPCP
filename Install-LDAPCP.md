@@ -20,6 +20,8 @@ $trust.ClaimProviderName = "LDAPCP"
 $trust.Update()
 ```
 
+- [Read this page](Configure-LDAPCP.html) to configure LDAPCP for your environment.
+
 ## Important
 
 - Due to limitations of SharePoint API, do not associate LDAPCP with more than 1 SPTrustedIdentityTokenIssuer. Developers can [bypass this limitation](For-Developers.html).

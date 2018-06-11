@@ -10,7 +10,6 @@ If you want to try and see LDAPCP in action, check [this template](https://azure
 - Get group membership of federated users.
 - Connect to multiple AD / LDAP servers in parallel (multi-threaded connections).
 - Populate metadata (e.g. email, display name) of entities.
-- Support rehydration for provider-hosted add-ins.
 
 ## Customization capabilities
 
