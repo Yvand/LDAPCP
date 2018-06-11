@@ -6,7 +6,7 @@ timezone: Europe/Paris
 # Theme data
 #theme: jekyll-theme-cayman
 #title: LDAPCP
-tagline: Most popular, free and open source claims provider for SharePoint 2013 and 2016
+tagline: SharePoint 2013/2016 claims provider for Active Directory and LDAP servers
 show_downloads: true
 repository: Yvand/LDAPCP
 author:

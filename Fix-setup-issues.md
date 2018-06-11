@@ -1,7 +1,7 @@
 ## Fix setup issues
 
 Sometimes, install/uninstall/update of LDAPCP solution fails. Most of the time, it occurs when cmdlets were executed in an old PowerShell console that had stale persisted objects. This caused concurrency update errors and SharePoint cancelled operation in the middle of the process.  
-When this happens, some LDAPCP features are in an inconsistent state that must be fixed, this page will walk you through the steps to clean this.
+When this happens, some LDAPCP features are in an inconsistent state, this page will walk you through the steps to clean this.
 
 > **Important:**  
 > Start a **new PowerShell console** to ensure the use of up to date persisted objects, which avoids concurrency update errors.  
@@ -46,9 +46,11 @@ Get-SPFeature| ?{$_.DisplayName -like 'LDAPCP*'}| Disable-SPFeature -Confirm:$fa
 Get-SPFeature| ?{$_.DisplayName -like 'LDAPCP*'}| Uninstall-SPFeature -Confirm:$false
 ```
 
+Once all features are uninstalled, delete the "RootDirectory" folder(s) (in "16\Template\Features").
+
 ### Delete the LDAPCP persisted object
 
-LDAPCP stores its configuration is its own persisted object, and sometimes this object may not be deleted. In such scenario, this stsadm command can delete it:
+LDAPCP stores its configuration is its own persisted object. This stsadm command will delete it if it was not already deleted:
 
 ```
 stsadm -o deleteconfigurationobject -id 5D306A02-A262-48AC-8C44-BDB927620227
