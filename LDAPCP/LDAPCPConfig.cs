@@ -554,19 +554,19 @@ namespace ldapcp
         }
 
         [Persisted]
-        internal string Username;
+        public string Username;
 
         [Persisted]
-        internal string Password;
+        public string Password;
 
         [Persisted]
         internal string Metadata;
 
         [Persisted]
-        internal AuthenticationTypes AuthenticationTypes;
+        public AuthenticationTypes AuthenticationTypes;
 
         [Persisted]
-        internal bool UserServerDirectoryEntry;
+        public bool UserServerDirectoryEntry;
 
         /// <summary>
         /// If true: this LDAPConnection will be be used for augmentation
