@@ -159,9 +159,9 @@
     </template_buttons>
 </wssuc:ButtonSection>
 
-<wssuc:InputFormSection ID="CurrentLdapConnectionSection" Title="Current LDAP connections" runat="server" Visible="<%# ShowCurrentLdapConnectionSection %>">
+<wssuc:InputFormSection ID="CurrentLdapConnectionSection" Title="Existing LDAP connections" runat="server" Visible="<%# ShowCurrentLdapConnectionSection %>">
     <template_description>
-		<wssawc:EncodedLiteral runat="server" text="Current LDAP connections." EncodeMethod='HtmlEncodeAllowSimpleTextFormatting'/>
+		<wssawc:EncodedLiteral runat="server" text="LDAP connections registered." EncodeMethod='HtmlEncodeAllowSimpleTextFormatting'/>
 	</template_description>
     <template_inputformcontrols>
 		<tr><td>
@@ -179,7 +179,7 @@
 
 <wssuc:InputFormSection ID="NewLdapConnectionSection" Title="New LDAP connection" runat="server" Visible="<%# ShowNewLdapConnectionSection %>">
     <template_description>
-		<wssawc:EncodedLiteral runat="server" text="Create a new LDAP connection. By default, LDAPCP adds a connection to the Active Directory domain of SharePoint servers, labelled 'Connect to SharePoint domain'." EncodeMethod='HtmlEncodeAllowSimpleTextFormatting'/>
+		<wssawc:EncodedLiteral runat="server" text="Register a new LDAP connection. By default, LDAPCP adds a connection to the Active Directory domain of SharePoint servers, labelled 'Connect to SharePoint domain'." EncodeMethod='HtmlEncodeAllowSimpleTextFormatting'/>
 	</template_description>
     <template_inputformcontrols>
 		<tr><td>
@@ -194,7 +194,7 @@
 			<wssawc:EncodedLiteral runat="server" text="Connect to same AD as SharePoint servers, with application pool credentials." EncodeMethod='HtmlEncode'/>
 		</wssawc:InputFormRadioButton>
 		<wssawc:InputFormRadioButton id="RbUseCustomConnection"
-			LabelText="Manually specify LDAP connection"
+			LabelText="Connect to a LDAP server"
 			GroupName="RbLDAPConnection"
 			CausesValidation="false"
 			onclick="window.Ldapcp.AdminGlobalSettingsControl.CheckCustomLdapRB()"
@@ -240,12 +240,12 @@
 	</template_inputformcontrols>
 </wssuc:InputFormSection>
 
-<wssuc:inputformsection ID="AugmentationSection" runat="server" Visible="<%# ShowAugmentationSection %>" title="Augmentation" description="Enable augmentation to let LDAPCP get group membership of federated users.<br/><br/><b>Important:</b> During augmentation LDAPCP only knows the identity claim of the user, so it is strongly recommended to use an identity claim that ensures the uniqueness of the value across all domains, such as the email or the UPN.">
+<wssuc:inputformsection ID="AugmentationSection" runat="server" Visible="<%# ShowAugmentationSection %>" title="Augmentation" description="Enable augmentation to let LDAPCP get group membership of federated users.<br/><br/>If not enabled, permissions granted on federated groups may not work.">
     <template_inputformcontrols>
         <p class="ms-error"><asp:Label ID="Label1" runat="server" EnableViewState="False" /></p>
         <asp:Checkbox Checked="false" Runat="server" Name="ChkEnableAugmentation" ID="ChkEnableAugmentation" OnClick="window.Ldapcp.AdminGlobalSettingsControl.InitAugmentationControls();" Text="Enable augmentation" />
         <div id="AugmentationControls" style="padding: 15px;">
-            <wssawc:EncodedLiteral runat="server" text="Select the claim type to use for the groups:" EncodeMethod='HtmlEncodeAllowSimpleTextFormatting'/>
+            <wssawc:EncodedLiteral runat="server" text="Select what claim type LDAPCP will use to create claims with the group membership of users:" EncodeMethod='HtmlEncodeAllowSimpleTextFormatting'/>
             <br />
             <asp:DropDownList ID="DdlClaimTypes" runat="server">
                 <asp:ListItem Selected="True" Value="None"></asp:ListItem>
@@ -280,7 +280,7 @@
     </template_inputformcontrols>
 </wssuc:InputFormSection>
 
-<wssuc:InputFormSection runat="server" Title="Display of permissions created with identity claim" Description="Customize the display text of permissions created with identity claim. Identity claim is defined in the TrustedLoginProvider.<br/> It does not impact the actual value of the permission that will always be the LDAP attribute associated with the identity claim.">
+<wssuc:InputFormSection runat="server" Title="Display of entities created with identity claim type" Description="Customize the display text of entities created with identity claim type (which is defined in the TrustedLoginProvider).<br/>It does not change the actual value of the entity.">
     <template_inputformcontrols>
 		<wssawc:InputFormRadioButton id="RbIdentityDefault"
 			LabelText="Display LDAP attribute mapped to identity claim"
@@ -341,7 +341,7 @@
         <p class="ldapcp-success"><asp:Label ID="LabelUpdateAdditionalLdapFilterOk" Runat="server" EnableViewState="False" /></p>
 	</template_inputformcontrols>
 </wssuc:InputFormSection>
-<wssuc:InputFormSection runat="server" Title="Reset LDAPCP configuration" Description="This will delete the LDAPCP persisted object in configuration database and recreate one with default values. Every custom settings, including customized claim types, will be deleted.">
+<wssuc:InputFormSection runat="server" Title="Reset LDAPCP configuration" description="Restore configuration to its default values. Every changes, including claim types configuration, will be reset.">
     <template_inputformcontrols>
 		<asp:Button runat="server" ID="BtnResetLDAPCPConfig" Text="Reset LDAPCP configuration" onclick="BtnResetLDAPCPConfig_Click" class="ms-ButtonHeightWidth" OnClientClick="return confirm('Do you really want to reset LDAPCP configuration?');" />
 	</template_inputformcontrols>

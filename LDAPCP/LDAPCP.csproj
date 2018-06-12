@@ -28,6 +28,7 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <UseVSHostingProcess>false</UseVSHostingProcess>
+    <PlatformTarget>AnyCPU</PlatformTarget>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -45,11 +46,6 @@
     <AssemblyOriginatorKeyFile>LDAPCP.pfx</AssemblyOriginatorKeyFile>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Microsoft.IdentityModel, Version=3.5.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\..\Program Files\Reference Assemblies\Microsoft\Windows Identity Foundation\v3.5\Microsoft.IdentityModel.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Data" />
@@ -66,12 +62,12 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="ADMIN\LDAPCP\ClaimsList.ascx.cs">
-      <DependentUpon>ClaimsList.ascx</DependentUpon>
+    <Compile Include="ADMIN\LDAPCP\ClaimTypesConfig.ascx.cs">
+      <DependentUpon>ClaimTypesConfig.ascx</DependentUpon>
       <SubType>ASPXCodeBehind</SubType>
     </Compile>
-    <Compile Include="ADMIN\LDAPCP\ClaimsList.ascx.designer.cs">
-      <DependentUpon>ClaimsList.ascx.cs</DependentUpon>
+    <Compile Include="ADMIN\LDAPCP\ClaimTypesConfig.ascx.designer.cs">
+      <DependentUpon>ClaimTypesConfig.ascx.cs</DependentUpon>
     </Compile>
     <Compile Include="ADMIN\LDAPCP\GlobalSettings.ascx.cs">
       <DependentUpon>GlobalSettings.ascx</DependentUpon>
@@ -80,6 +76,7 @@
     <Compile Include="ADMIN\LDAPCP\GlobalSettings.ascx.designer.cs">
       <DependentUpon>GlobalSettings.ascx.cs</DependentUpon>
     </Compile>
+    <Compile Include="ClaimTypeConfig.cs" />
     <Compile Include="LdapcpLoggingService.cs" />
     <Compile Include="Features\LDAPCP\LDAPCP.EventReceiver.cs">
       <DependentUpon>LDAPCP.feature</DependentUpon>
@@ -117,9 +114,9 @@
   </ItemGroup>
   <ItemGroup />
   <ItemGroup>
-    <Content Include="ADMIN\LDAPCP\ClaimsTable.aspx" />
+    <Content Include="ADMIN\LDAPCP\ClaimTypesConfig.aspx" />
     <Content Include="ADMIN\LDAPCP\LdapcpSettings.aspx" />
-    <Content Include="ADMIN\LDAPCP\ClaimsList.ascx" />
+    <Content Include="ADMIN\LDAPCP\ClaimTypesConfig.ascx" />
     <Content Include="ADMIN\LDAPCP\GlobalSettings.ascx" />
     <Content Include="Features\LDAPCP.Administration\LDAPCP.Administration.Template.xml">
       <DependentUpon>LDAPCP.Administration.feature</DependentUpon>
@@ -128,7 +125,10 @@
       <DependentUpon>LDAPCP.feature</DependentUpon>
     </Content>
     <Content Include="Layouts\ldapcp\jquery-1.9.1.min.js" />
-    <Content Include="LDAPCP.AdminLinks\Elements.xml" />
+    <Content Include="Layouts\ldapcp\LDAPCP_logo_small.png" />
+    <Content Include="LDAPCP.AdminLinks\Elements.xml">
+      <SubType>Designer</SubType>
+    </Content>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>

@@ -3,24 +3,52 @@ using Microsoft.SharePoint.Administration;
 using Microsoft.SharePoint.Administration.Claims;
 using Microsoft.SharePoint.WebControls;
 using System;
+using System.Linq;
 using System.Web.UI;
+using static ldapcp.ClaimsProviderLogging;
 
 namespace ldapcp.ControlTemplates
 {
     public abstract class LdapcpUserControl : UserControl
     {
+        /// <summary>
+        /// This is an attribute that must be set in the markup code, with the name of the claims provider
+        /// </summary>
+        public string ClaimsProviderName;
+
+        /// <summary>
+        /// This is an attribute that must be set in the markup code, with the name of the persisted object that holds the configuration
+        /// </summary>
+        public string PersistedObjectName;
+
+        private Guid _PersistedObjectID;
+        /// <summary>
+        /// This is an attribute that must be set in the markup code, with the GUID of the persisted object that holds the configuration
+        /// </summary>
+        public string PersistedObjectID
+        {
+            get
+            {
+                return (this._PersistedObjectID == null || this._PersistedObjectID == Guid.Empty) ? String.Empty : this._PersistedObjectID.ToString();
+            }
+            set
+            {
+                this._PersistedObjectID = new Guid(value);
+            }
+        }
+
         private ILDAPCPConfiguration _PersistedObject;
-        public virtual LDAPCPConfig PersistedObject
+        protected LDAPCPConfig PersistedObject
         {
             get
             {
                 SPSecurity.RunWithElevatedPrivileges(delegate ()
                 {
-                    if (_PersistedObject == null) _PersistedObject = LDAPCPConfig.GetFromConfigDB();
+                    if (_PersistedObject == null) _PersistedObject = LDAPCPConfig.GetConfiguration(PersistedObjectName);
                     if (_PersistedObject == null)
                     {
                         SPContext.Current.Web.AllowUnsafeUpdates = true;
-                        _PersistedObject = LDAPCPConfig.CreatePersistedObject();
+                        _PersistedObject = LDAPCPConfig.CreateConfiguration(this.PersistedObjectID, this.PersistedObjectName);
                         SPContext.Current.Web.AllowUnsafeUpdates = false;
                     }
                 });
@@ -30,10 +58,10 @@ namespace ldapcp.ControlTemplates
         }
 
         protected SPTrustedLoginProvider CurrentTrustedLoginProvider;
-        protected AttributeHelper IdentityClaim;
-        public ConfigStatus Status;
+        protected ClaimTypeConfig IdentityClaim;
+        protected ConfigStatus Status;
 
-        public long PersistedObjectVersion
+        protected long PersistedObjectVersion
         {
             get
             {
@@ -44,14 +72,14 @@ namespace ldapcp.ControlTemplates
             set { ViewState[ViewStatePersistedObjectVersionKey] = value; }
         }
 
-        public string MostImportantError
+        protected string MostImportantError
         {
             get
             {
                 if (Status == ConfigStatus.AllGood) return String.Empty;
 
                 if ((Status & ConfigStatus.NoSPTrustAssociation) == ConfigStatus.NoSPTrustAssociation)
-                    return TextErrorNoSPTrustAssociation;
+                    return String.Format(TextErrorNoSPTrustAssociation, ClaimsProviderName);
 
                 if ((Status & ConfigStatus.PersistedObjectNotFound) == ConfigStatus.PersistedObjectNotFound)
                     return TextErrorPersistedObjectNotFound;
@@ -62,17 +90,27 @@ namespace ldapcp.ControlTemplates
                 if ((Status & ConfigStatus.PersistedObjectStale) == ConfigStatus.PersistedObjectStale)
                     return TextErrorPersistedObjectStale;
 
+                if ((Status & ConfigStatus.ClaimsProviderNamePropNotSet) == ConfigStatus.ClaimsProviderNamePropNotSet)
+                    return TextErrorClaimsProviderNameNotSet;
+
+                if ((Status & ConfigStatus.PersistedObjectNamePropNotSet) == ConfigStatus.PersistedObjectNamePropNotSet)
+                    return TextErrorPersistedObjectNameNotSet;
+
+                if ((Status & ConfigStatus.PersistedObjectIDPropNotSet) == ConfigStatus.PersistedObjectIDPropNotSet)
+                    return TextErrorPersistedObjectIDNotSet;
+
                 return String.Empty;
             }
         }
 
-        public static string ViewStatePersistedObjectVersionKey = "PersistedObjectVersion";
-        public static string TextErrorPersistedObjectNotFound = "PersistedObject cannot be found.";
-        public static string TextErrorPersistedObjectStale = "Modification is cancelled because persisted object was modified since last load of the page. Please refresh the page and try again.";
-        public static string TextErrorNoSPTrustAssociation = "LDAPCP is currently not associated with any TrustedLoginProvider. It is mandatory because it cannot create permission for a trust if it is not associated to it.<br/>Visit <a href=\"http://ldapcp.codeplex.com/\" target=\"_blank\">http://ldapcp.codeplex.com/</a> to see how to associate it.<br/>Settings on this page will not be available as long as LDAPCP will not associated to a trut.";
-        public static string TextErrorNoIdentityClaimType = "The TrustedLoginProvider {0} is set with identity claim type \"{1}\" but it is not in the claims list of LDAPCP.<br/>Please visit LDAPCP page \"claims mapping\" in Security tab to set it and return to this page afterwards.";
-
-        abstract public bool UpdatePersistedObjectProperties(bool commitChanges);
+        protected static string ViewStatePersistedObjectVersionKey = "PersistedObjectVersion";
+        protected static string TextErrorPersistedObjectNotFound = "PersistedObject cannot be found.";
+        protected static string TextErrorPersistedObjectStale = "Modifications were not applied because the persisted object was modified after this page was loaded. Please refresh the page and try again.";
+        protected static string TextErrorNoSPTrustAssociation = "{0} is currently not associated with any TrustedLoginProvider, which is required to create entities.<br/>Visit <a href=\"" + ClaimsProviderConstants.PUBLICSITEURL + "\" target=\"_blank\">ldapcp.com</a> for more information.<br/>Refresh this page once '{0}' is associated with a TrustedLoginProvider.";
+        protected static string TextErrorNoIdentityClaimType = "The TrustedLoginProvider {0} is set with identity claim type '{1}', but is not set in claim types configuration list.<br/>Please visit claim types configuration page to add it.";
+        protected static string TextErrorClaimsProviderNameNotSet = "The attribute 'ClaimsProviderName' must be set in the user control.";
+        protected static string TextErrorPersistedObjectNameNotSet = "The attribute 'PersistedObjectName' must be set in the user control.";
+        protected static string TextErrorPersistedObjectIDNotSet = "The attribute 'PersistedObjectID' must be set in the user control.";
 
         /// <summary>
         /// Ensures configuration is valid to proceed
@@ -80,19 +118,54 @@ namespace ldapcp.ControlTemplates
         /// <returns></returns>
         public virtual ConfigStatus ValidatePrerequisite()
         {
+            if (!this.IsPostBack)
+            {
+                // DataBind() must be called to bind attributes that are set as "<%# #>"in .aspx
+                // But only during initial page load, otherwise it would reset bindings in other controls like SPGridView
+                DataBind();
+                ViewState.Add("ClaimsProviderName", ClaimsProviderName);
+                ViewState.Add("PersistedObjectName", PersistedObjectName);
+                ViewState.Add("PersistedObjectID", PersistedObjectID);
+            }
+            else
+            {
+                ClaimsProviderName = ViewState["ClaimsProviderName"].ToString();
+                PersistedObjectName = ViewState["PersistedObjectName"].ToString();
+                PersistedObjectID = ViewState["PersistedObjectID"].ToString();
+            }
+
             Status = ConfigStatus.AllGood;
+            if (String.IsNullOrEmpty(ClaimsProviderName)) Status |= ConfigStatus.ClaimsProviderNamePropNotSet;
+            if (String.IsNullOrEmpty(PersistedObjectName)) Status |= ConfigStatus.PersistedObjectNamePropNotSet;
+            if (String.IsNullOrEmpty(PersistedObjectID)) Status |= ConfigStatus.PersistedObjectIDPropNotSet;
+            if (Status != ConfigStatus.AllGood)
+            {
+                ClaimsProviderLogging.Log($"[{ClaimsProviderName}] {MostImportantError}", TraceSeverity.Unexpected, EventSeverity.Error, TraceCategory.Configuration);
+                // Should not go further if those requirements are not met
+                return Status;
+            }
+
             if (PersistedObject == null)
             {
                 Status |= ConfigStatus.PersistedObjectNotFound;
             }
             if (CurrentTrustedLoginProvider == null)
             {
-                CurrentTrustedLoginProvider = LDAPCP.GetSPTrustAssociatedWithCP(LDAPCP._ProviderInternalName);
+                CurrentTrustedLoginProvider = LDAPCP.GetSPTrustAssociatedWithCP(this.ClaimsProviderName);
                 if (CurrentTrustedLoginProvider == null) Status |= ConfigStatus.NoSPTrustAssociation;
             }
+            if (Status != ConfigStatus.AllGood)
+            {
+                ClaimsProviderLogging.Log($"[{ClaimsProviderName}] {MostImportantError}", TraceSeverity.Unexpected, EventSeverity.Error, TraceCategory.Configuration);
+                // Should not go further if those requirements are not met
+                return Status;
+            }
+
+            PersistedObject.CheckAndCleanPersistedObject();
+            PersistedObject.ClaimTypes.SPTrust = CurrentTrustedLoginProvider;
             if (IdentityClaim == null && Status == ConfigStatus.AllGood)
             {
-                IdentityClaim = this.IdentityClaim = PersistedObject.AttributesListProp.Find(x => String.Equals(CurrentTrustedLoginProvider.IdentityClaimTypeInformation.MappedClaimType, x.ClaimType, StringComparison.InvariantCultureIgnoreCase) && !x.CreateAsIdentityClaim);
+                IdentityClaim = this.IdentityClaim = PersistedObject.ClaimTypes.FirstOrDefault(x => String.Equals(CurrentTrustedLoginProvider.IdentityClaimTypeInformation.MappedClaimType, x.ClaimType, StringComparison.InvariantCultureIgnoreCase) && !x.UseMainClaimTypeOfDirectoryObject);
                 if (IdentityClaim == null) Status |= ConfigStatus.NoIdentityClaimType;
             }
             if (PersistedObjectVersion != PersistedObject.Version)
@@ -100,7 +173,7 @@ namespace ldapcp.ControlTemplates
                 Status |= ConfigStatus.PersistedObjectStale;
             }
 
-            if (Status != ConfigStatus.AllGood) LdapcpLogging.Log(String.Format(MostImportantError), TraceSeverity.High, EventSeverity.Information, LdapcpLogging.Categories.Configuration);
+            if (Status != ConfigStatus.AllGood) ClaimsProviderLogging.Log($"[{ClaimsProviderName}] {MostImportantError}", TraceSeverity.Unexpected, EventSeverity.Error, TraceCategory.Configuration);
             return Status;
         }
 
@@ -108,14 +181,19 @@ namespace ldapcp.ControlTemplates
         {
             PersistedObject.Update();
             PersistedObjectVersion = PersistedObject.Version;
-            LdapcpLogging.Log(
-               String.Format("Updated PersistedObject {0} to version {1}", PersistedObject.DisplayName, PersistedObject.Version),
-               TraceSeverity.Medium,
-               EventSeverity.Information,
-               LdapcpLogging.Categories.Configuration);
         }
     }
 
     [Flags]
-    public enum ConfigStatus { AllGood = 0x0, PersistedObjectNotFound = 0x1, NoSPTrustAssociation = 0x2, NoIdentityClaimType = 0x4, PersistedObjectStale = 0x8 };
+    public enum ConfigStatus
+    {
+        AllGood = 0x0,
+        PersistedObjectNotFound = 0x1,
+        NoSPTrustAssociation = 0x2,
+        NoIdentityClaimType = 0x4,
+        PersistedObjectStale = 0x8,
+        ClaimsProviderNamePropNotSet = 0x10,
+        PersistedObjectNamePropNotSet = 0x20,
+        PersistedObjectIDPropNotSet = 0x40
+    };
 }

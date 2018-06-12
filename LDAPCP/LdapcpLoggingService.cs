@@ -11,110 +11,87 @@ namespace ldapcp
     /// Implemented as documented in http://www.sbrickey.com/Tech/Blog/Post/Custom_Logging_in_SharePoint_2010
     /// </summary>
     [System.Runtime.InteropServices.GuidAttribute("1317F638-A5A1-4980-8570-C8F72EC9EF37")]
-    public class LdapcpLogging : SPDiagnosticsServiceBase
+    public class ClaimsProviderLogging : SPDiagnosticsServiceBase
     {
         public static string DiagnosticsAreaName = "LDAPCP";
 
-        public enum Categories
+        public enum TraceCategory
         {
             [CategoryName("Core"),
-#if DEBUG
-             DefaultTraceSeverity(TraceSeverity.VerboseEx),
-#else
              DefaultTraceSeverity(TraceSeverity.Medium),
-#endif
             DefaultEventSeverity(EventSeverity.Error)]
             Core,
             [CategoryName("Configuration"),
-#if DEBUG
-             DefaultTraceSeverity(TraceSeverity.VerboseEx),
-#else
              DefaultTraceSeverity(TraceSeverity.Medium),
-#endif
             DefaultEventSeverity(EventSeverity.Error)]
             Configuration,
             [CategoryName("LDAP Lookup"),
-#if DEBUG
-             DefaultTraceSeverity(TraceSeverity.VerboseEx),
-#else
              DefaultTraceSeverity(TraceSeverity.Medium),
-#endif
              DefaultEventSeverity(EventSeverity.Error)]
             LDAP_Lookup,
             [CategoryName("Claims Picking"),
-#if DEBUG
-             DefaultTraceSeverity(TraceSeverity.VerboseEx),
-#else
              DefaultTraceSeverity(TraceSeverity.Medium),
-#endif
              DefaultEventSeverity(EventSeverity.Error)]
             Claims_Picking,
             [CategoryName("Rehydration"),
-#if DEBUG
-             DefaultTraceSeverity(TraceSeverity.VerboseEx),
-#else
              DefaultTraceSeverity(TraceSeverity.Medium),
-#endif
              DefaultEventSeverity(EventSeverity.Error)]
             Rehydration,
             [CategoryName("Augmentation"),
-#if DEBUG
-             DefaultTraceSeverity(TraceSeverity.VerboseEx),
-#else
              DefaultTraceSeverity(TraceSeverity.Medium),
-#endif
              DefaultEventSeverity(EventSeverity.Error)]
             Augmentation,
             [CategoryName("Debug"),
 #if DEBUG
-             DefaultTraceSeverity(TraceSeverity.VerboseEx),
+             DefaultTraceSeverity(TraceSeverity.Verbose),
 #else
-             DefaultTraceSeverity(TraceSeverity.High),
+             DefaultTraceSeverity(TraceSeverity.VerboseEx),
 #endif
              DefaultEventSeverity(EventSeverity.Error)]
             Debug,
             [CategoryName("Custom"),
-#if DEBUG
-             DefaultTraceSeverity(TraceSeverity.VerboseEx),
-#else
              DefaultTraceSeverity(TraceSeverity.Medium),
-#endif
              DefaultEventSeverity(EventSeverity.Error)]
             Custom,
         }
 
 
-        public static void Log(string message, TraceSeverity traceSeverity, EventSeverity eventSeverity, LdapcpLogging.Categories category)
+        public static void Log(string message, TraceSeverity traceSeverity, EventSeverity eventSeverity, TraceCategory category)
         {
             try
             {
                 WriteTrace(category, traceSeverity, message);
-                //LdapcpLoggingService.WriteEvent(LdapcpLoggingService.Categories.LDAPCP, eventSeverity, message);
+                //LdapcpLoggingService.WriteEvent(LdapcpLoggingService.TraceCategory.LDAPCP, eventSeverity, message);
             }
             catch
             {   // Don't want to do anything if logging goes wrong, just ignore and continue
             }
         }
 
-        public static void LogException(string ProviderInternalName, string faultyAction, LdapcpLogging.Categories category, Exception ex)
+        public static void LogException(string ProviderInternalName, string faultyAction, TraceCategory category, Exception ex)
         {
             try
             {
-                string message = "[{0}] Unexpected error {1}: {2}: {3}, Callstack: {4}";
                 if (ex is AggregateException)
                 {
+                    string message = String.Format("[{0}] Unexpected error(s) occurred {1}:", ProviderInternalName, faultyAction);
+                    string excetpionMessage = Environment.NewLine + "[EXCEPTION {0}]: {1}: {2}. Callstack: {3}";
                     var aggEx = ex as AggregateException;
+                    int count = 1;
                     foreach (var innerEx in aggEx.InnerExceptions)
                     {
+                        string currentMessage;
                         if (innerEx.InnerException != null)
-                            message = String.Format(message, ProviderInternalName, faultyAction, innerEx.InnerException.GetType().FullName, innerEx.InnerException.Message, innerEx.InnerException.StackTrace);
+                            currentMessage = String.Format(excetpionMessage, count++.ToString(), innerEx.InnerException.GetType().FullName, innerEx.InnerException.Message, innerEx.InnerException.StackTrace);
                         else
-                            message = String.Format(message, ProviderInternalName, faultyAction, innerEx.GetType().FullName, innerEx.Message, innerEx.StackTrace);
-                        WriteTrace(category, TraceSeverity.Unexpected, message);
+                            currentMessage = String.Format(excetpionMessage, count++.ToString(), innerEx.GetType().FullName, innerEx.Message, innerEx.StackTrace);
+                        message += currentMessage;
                     }
+                    WriteTrace(category, TraceSeverity.Unexpected, message);
                 }
                 else
                 {
+                    string message = "[{0}] Unexpected error occurred {1}: {2}: {3}, Callstack: {4}";
                     if (ex.InnerException != null)
                         message = String.Format(message, ProviderInternalName, faultyAction, ex.InnerException.GetType().FullName, ex.InnerException.Message, ex.InnerException.StackTrace);
                     else
@@ -131,10 +108,8 @@ namespace ldapcp
         {
             try
             {
-                TraceSeverity severity;
 #if DEBUG
-                severity = TraceSeverity.VerboseEx;
-                WriteTrace(LdapcpLogging.Categories.Debug, severity, message);
+                WriteTrace(TraceCategory.Debug, TraceSeverity.VerboseEx, message);
                 Debug.WriteLine(message);
 #else
                 // Do nothing
@@ -145,43 +120,43 @@ namespace ldapcp
             }
         }
 
-        public static LdapcpLogging Local
+        public static ClaimsProviderLogging Local
         {
             get
             {
-                var LogSvc = SPDiagnosticsServiceBase.GetLocal<LdapcpLogging>();
+                var LogSvc = SPDiagnosticsServiceBase.GetLocal<ClaimsProviderLogging>();
                 // if the Logging Service is registered, just return it.
                 if (LogSvc != null)
                     return LogSvc;
 
-                LdapcpLogging svc = null;
+                ClaimsProviderLogging svc = null;
                 SPSecurity.RunWithElevatedPrivileges(delegate ()
                 {
                     // otherwise instantiate and register the new instance, which requires farm administrator privileges
-                    svc = new LdapcpLogging();
+                    svc = new ClaimsProviderLogging();
                     //svc.Update();
                 });
                 return svc;
             }
         }
 
-        public LdapcpLogging() : base(DiagnosticsAreaName, SPFarm.Local) { }
-        public LdapcpLogging(string name, SPFarm farm) : base(name, farm) { }
+        public ClaimsProviderLogging() : base(DiagnosticsAreaName, SPFarm.Local) { }
+        public ClaimsProviderLogging(string name, SPFarm farm) : base(name, farm) { }
 
         protected override IEnumerable<SPDiagnosticsArea> ProvideAreas() { yield return Area; }
         public override string DisplayName { get { return DiagnosticsAreaName; } }
 
-        public SPDiagnosticsCategory this[Categories id]
+        public SPDiagnosticsCategory this[TraceCategory id]
         {
             get { return Areas[DiagnosticsAreaName].Categories[id.ToString()]; }
         }
 
-        public static void WriteTrace(Categories Category, TraceSeverity Severity, string message)
+        public static void WriteTrace(TraceCategory Category, TraceSeverity Severity, string message)
         {
             Local.WriteTrace(1337, Local.GetCategory(Category), Severity, message);
         }
 
-        public static void WriteEvent(Categories Category, EventSeverity Severity, string message)
+        public static void WriteEvent(TraceCategory Category, EventSeverity Severity, string message)
         {
             Local.WriteEvent(1337, Local.GetCategory(Category), Severity, message);
         }
@@ -194,7 +169,7 @@ namespace ldapcp
         public static void Unregister()
         {
             SPFarm.Local.Services
-                        .OfType<LdapcpLogging>()
+                        .OfType<ClaimsProviderLogging>()
                         .ToList()
                         .ForEach(s =>
                         {
@@ -213,20 +188,20 @@ namespace ldapcp
                     DiagnosticsAreaName,
                     new List<SPDiagnosticsCategory>()
                     {
-                        CreateCategory(Categories.Claims_Picking),
-                        CreateCategory(Categories.Configuration),
-                        CreateCategory(Categories.LDAP_Lookup),
-                        CreateCategory(Categories.Core),
-                        CreateCategory(Categories.Rehydration),
-                        CreateCategory(Categories.Augmentation),
-                        CreateCategory(Categories.Custom),
-                        CreateCategory(Categories.Debug),
+                        CreateCategory(TraceCategory.Claims_Picking),
+                        CreateCategory(TraceCategory.Configuration),
+                        CreateCategory(TraceCategory.LDAP_Lookup),
+                        CreateCategory(TraceCategory.Core),
+                        CreateCategory(TraceCategory.Rehydration),
+                        CreateCategory(TraceCategory.Augmentation),
+                        CreateCategory(TraceCategory.Custom),
+                        CreateCategory(TraceCategory.Debug),
                     }
                 );
             }
         }
 
-        private static SPDiagnosticsCategory CreateCategory(Categories category)
+        private static SPDiagnosticsCategory CreateCategory(TraceCategory category)
         {
             return new SPDiagnosticsCategory(
                         GetCategoryName(category),
@@ -235,12 +210,12 @@ namespace ldapcp
                     );
         }
 
-        private SPDiagnosticsCategory GetCategory(Categories cat)
+        private SPDiagnosticsCategory GetCategory(TraceCategory cat)
         {
             return base.Areas[DiagnosticsAreaName].Categories[GetCategoryName(cat)];
         }
 
-        private static string GetCategoryName(Categories cat)
+        private static string GetCategoryName(TraceCategory cat)
         {
             // Get the type
             Type type = cat.GetType();
@@ -252,7 +227,7 @@ namespace ldapcp
             return attribs.Length > 0 ? attribs[0].Name : null;
         }
 
-        private static TraceSeverity GetCategoryDefaultTraceSeverity(Categories cat)
+        private static TraceSeverity GetCategoryDefaultTraceSeverity(TraceCategory cat)
         {
             // Get the type
             Type type = cat.GetType();
@@ -264,7 +239,7 @@ namespace ldapcp
             return attribs.Length > 0 ? attribs[0].Severity : TraceSeverity.Unexpected;
         }
 
-        private static EventSeverity GetCategoryDefaultEventSeverity(Categories cat)
+        private static EventSeverity GetCategoryDefaultEventSeverity(TraceCategory cat)
         {
             // Get the type
             Type type = cat.GetType();

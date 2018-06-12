@@ -7,30 +7,31 @@ using System.Data;
 using System.DirectoryServices;
 using System.Linq;
 using System.Web.UI.WebControls;
+using static ldapcp.ClaimsProviderLogging;
 
 namespace ldapcp.ControlTemplates
 {
     public partial class GlobalSettings : LdapcpUserControl
     {
-        public bool ShowValidateSection
+        protected bool ShowValidateSection
         {
             get { return ValidateSection.Visible; }
             set { ValidateSection.Visible = ValidateTopSection.Visible = value; }
         }
 
-        public bool ShowCurrentLdapConnectionSection
+        protected bool ShowCurrentLdapConnectionSection
         {
             get { return CurrentLdapConnectionSection.Visible; }
             set { CurrentLdapConnectionSection.Visible = value; }
         }
 
-        public bool ShowNewLdapConnectionSection
+        protected bool ShowNewLdapConnectionSection
         {
             get { return NewLdapConnectionSection.Visible; }
             set { NewLdapConnectionSection.Visible = value; }
         }
 
-        public bool ShowAugmentationSection
+        protected bool ShowAugmentationSection
         {
             get { return AugmentationSection.Visible; }
             set { AugmentationSection.Visible = value; }
@@ -45,9 +46,20 @@ namespace ldapcp.ControlTemplates
 
         protected void Page_Load(object sender, EventArgs e)
         {
+            Initialize();
+        }
+
+        /// <summary>
+        /// Initialize controls as needed if prerequisites are ok, otherwise deactivate controls and show error message
+        /// </summary>
+        protected void Initialize()
+        {
+            // Set default values of IsDefaultADConnectionCreated and ForceCheckCustomLdapConnection
+            // They are overridden later if needed
             ViewState["IsDefaultADConnectionCreated"] = false;
             ViewState["ForceCheckCustomLdapConnection"] = false;
 
+            // Check prerequisite
             if (ValidatePrerequisite() != ConfigStatus.AllGood)
             {
                 this.LabelErrorMessage.Text = base.MostImportantError;
@@ -55,8 +67,15 @@ namespace ldapcp.ControlTemplates
                 return;
             }
 
-            if (!this.IsPostBack) Initialize();
+            PopulateLdapConnectionGrid();
+            if (!this.IsPostBack)
+            {
+                PopulateCblAuthenticationTypes();
+                InitializeAugmentation();
+                InitializeGeneralSettings();
+            }
 
+            // Handle password storage in ViewState
             if (ViewState["LDAPpwd"] != null)
             {
                 ViewState["LDAPpwd"] = TxtLdapPassword.Text;
@@ -68,17 +87,9 @@ namespace ldapcp.ControlTemplates
             }
         }
 
-        public void Initialize()
-        {
-            PopulateLdapConnectionGrid();
-            PopulateCblAuthenticationTypes();
-            InitializeAugmentation();
-            InitializeGeneralSettings();
-        }
-
         private void InitializeAugmentation()
         {
-            IEnumerable<AttributeHelper> potentialGroupClaimTypes = PersistedObject.AttributesListProp.Where(x => x.ClaimEntityType == SPClaimEntityTypes.FormsRole || x.ClaimEntityType == SPClaimEntityTypes.SecurityGroup);
+            IEnumerable<ClaimTypeConfig> potentialGroupClaimTypes = PersistedObject.ClaimTypes.Where(x => x.EntityType == DirectoryObjectType.Group && !x.UseMainClaimTypeOfDirectoryObject);
             if (potentialGroupClaimTypes == null || potentialGroupClaimTypes.Count() == 0)
             {
                 LabelErrorMessage.Text = TextErrorNoGroupClaimType;
@@ -90,10 +101,10 @@ namespace ldapcp.ControlTemplates
                 DdlClaimTypes.Items.Add(potentialGroup.ClaimType);
             }
 
-            ChkEnableAugmentation.Checked = PersistedObject.AugmentationEnabledProp;
+            ChkEnableAugmentation.Checked = PersistedObject.EnableAugmentation;
 
-            if (!String.IsNullOrEmpty(PersistedObject.AugmentationClaimTypeProp) && DdlClaimTypes.Items.FindByValue(PersistedObject.AugmentationClaimTypeProp) != null)
-                DdlClaimTypes.SelectedValue = PersistedObject.AugmentationClaimTypeProp;
+            if (!String.IsNullOrEmpty(PersistedObject.MainGroupClaimType) && DdlClaimTypes.Items.FindByValue(PersistedObject.MainGroupClaimType) != null)
+                DdlClaimTypes.SelectedValue = PersistedObject.MainGroupClaimType;
 
             // Initialize grid for LDAP connections
             var spDomainCoco = PersistedObject.LDAPConnectionsProp.FirstOrDefault(x => x.UserServerDirectoryEntry);
@@ -128,7 +139,7 @@ namespace ldapcp.ControlTemplates
 
         void PopulateCblAuthenticationTypes()
         {
-            Dictionary<int, string> authenticationTypesDS = EnumToList(typeof(AuthenticationTypes));
+            Dictionary<int, string> authenticationTypesDS = ParseEnumTypeAuthenticationTypes();
             foreach (KeyValuePair<int, string> authNType in authenticationTypesDS)
             {
                 ListItem authNTypeItem = new ListItem();
@@ -138,36 +149,48 @@ namespace ldapcp.ControlTemplates
             }
         }
 
+        protected static Dictionary<int, string> ParseEnumTypeAuthenticationTypes()
+        {
+            Type enumType = typeof(AuthenticationTypes);
+            Dictionary<int, string> list = new Dictionary<int, string>();
+            foreach (var value in Enum.GetValues(enumType))
+            {
+                string valueName = Enum.GetName(enumType, (int)value);
+                // Encryption and SecureSocketsLayer have same value and adding both to Dictionary would violate uniqueness of the key
+                if (String.Equals(valueName, "Encryption", StringComparison.InvariantCultureIgnoreCase) && list.ContainsValue("Encryption")) continue;
+                list.Add((int)value, valueName);
+            }
+            return list;
+        }
+
         private void InitializeGeneralSettings()
         {
             this.ChkIdentityShowAdditionalAttribute.Checked = PersistedObject.DisplayLdapMatchForIdentityClaimTypeProp;
-            if (String.IsNullOrEmpty(IdentityClaim.LDAPAttributeToDisplayProp))
+            if (String.IsNullOrEmpty(IdentityClaim.LDAPAttributeToShowAsDisplayText))
             {
                 this.RbIdentityDefault.Checked = true;
             }
             else
             {
                 this.RbIdentityCustomLDAP.Checked = true;
-                this.TxtLdapAttributeToDisplay.Text = IdentityClaim.LDAPAttributeToDisplayProp;
+                this.TxtLdapAttributeToDisplay.Text = IdentityClaim.LDAPAttributeToShowAsDisplayText;
             }
 
-            this.ChkAlwaysResolveUserInput.Checked = PersistedObject.AlwaysResolveUserInputProp;
+            this.ChkAlwaysResolveUserInput.Checked = PersistedObject.BypassLDAPLookup;
             this.ChkFilterEnabledUsersOnly.Checked = PersistedObject.FilterEnabledUsersOnlyProp;
             this.ChkFilterSecurityGroupsOnly.Checked = PersistedObject.FilterSecurityGroupsOnlyProp;
             this.ChkFilterExactMatchOnly.Checked = PersistedObject.FilterExactMatchOnlyProp;
-            this.txtTimeout.Text = PersistedObject.TimeoutProp.ToString();
-
+            this.txtTimeout.Text = PersistedObject.LDAPQueryTimeout.ToString();
             // Deprecated options that are not shown anymore in LDAPCP configuration page
             //this.ChkAddWildcardInFront.Checked = PersistedObject.AddWildcardInFrontOfQueryProp;
             //this.TxtPickerEntityGroupName.Text = PersistedObject.PickerEntityGroupNameProp;
         }
 
-        public override bool UpdatePersistedObjectProperties(bool commitChanges)
+        protected bool UpdateConfiguration(bool commitChanges)
         {
             if (ValidatePrerequisite() != ConfigStatus.AllGood) return false;
-            UpdateLdapSettings();
-            UpdateAugmentationSettings();
             UpdateGeneralSettings();
+            UpdateAugmentationSettings();
             if (commitChanges) CommitChanges();
             return true;
         }
@@ -178,28 +201,30 @@ namespace ldapcp.ControlTemplates
             PersistedObject.DisplayLdapMatchForIdentityClaimTypeProp = this.ChkIdentityShowAdditionalAttribute.Checked;
             if (this.RbIdentityCustomLDAP.Checked)
             {
-                IdentityClaim.LDAPAttributeToDisplayProp = this.TxtLdapAttributeToDisplay.Text;
+                IdentityClaim.LDAPAttributeToShowAsDisplayText = this.TxtLdapAttributeToDisplay.Text;
             }
             else
             {
-                IdentityClaim.LDAPAttributeToDisplayProp = String.Empty;
+                IdentityClaim.LDAPAttributeToShowAsDisplayText = String.Empty;
             }
 
-            PersistedObject.AlwaysResolveUserInputProp = this.ChkAlwaysResolveUserInput.Checked;
+            PersistedObject.BypassLDAPLookup = this.ChkAlwaysResolveUserInput.Checked;
             PersistedObject.FilterEnabledUsersOnlyProp = this.ChkFilterEnabledUsersOnly.Checked;
             PersistedObject.FilterSecurityGroupsOnlyProp = this.ChkFilterSecurityGroupsOnly.Checked;
             PersistedObject.FilterExactMatchOnlyProp = this.ChkFilterExactMatchOnly.Checked;
+            PersistedObject.EnableAugmentation = ChkEnableAugmentation.Checked;
+            PersistedObject.MainGroupClaimType = DdlClaimTypes.SelectedValue.Equals("none", StringComparison.InvariantCultureIgnoreCase) ? String.Empty : DdlClaimTypes.SelectedValue;
             // Deprecated options that are not shown anymore in LDAPCP configuration page
             //PersistedObject.AddWildcardInFrontOfQuery = this.ChkAddWildcardInFront.Checked;
             //PersistedObject.PickerEntityGroupName = this.TxtPickerEntityGroupName.Text;
 
             int timeOut;
             if (!Int32.TryParse(this.txtTimeout.Text, out timeOut) || timeOut < 0)
-                timeOut = Constants.LDAPCPCONFIG_TIMEOUT; //set to default if unable to parse
-            PersistedObject.TimeoutProp = timeOut;
+                timeOut = ClaimsProviderConstants.LDAPCPCONFIG_TIMEOUT; //set to default if unable to parse
+            PersistedObject.LDAPQueryTimeout = timeOut;
         }
 
-        private void UpdateLdapSettings()
+        private void UpdateAugmentationSettings()
         {
             foreach (GridViewRow item in GridLdapConnections.Rows)
             {
@@ -207,22 +232,16 @@ namespace ldapcp.ControlTemplates
                 CheckBox chkIsADDomain = (CheckBox)item.FindControl("ChkGetGroupMembershipAsADDomain");
                 TextBox txtId = (TextBox)item.FindControl("IdPropHidden");
 
-                var coco = PersistedObject.LDAPConnectionsProp.First(x => x.IdProp == new Guid(txtId.Text));
-                coco.AugmentationEnabledProp = chkAugEn.Checked;
-                coco.GetGroupMembershipAsADDomainProp = chkIsADDomain.Checked;
+                var coco = PersistedObject.LDAPConnectionsProp.First(x => x.Id == new Guid(txtId.Text));
+                coco.AugmentationEnabled = chkAugEn.Checked;
+                coco.GetGroupMembershipAsADDomain = chkIsADDomain.Checked;
             }
-        }
-
-        private void UpdateAugmentationSettings()
-        {
-            PersistedObject.AugmentationEnabledProp = ChkEnableAugmentation.Checked;
-            PersistedObject.AugmentationClaimTypeProp = DdlClaimTypes.SelectedValue.Equals("none", StringComparison.InvariantCultureIgnoreCase) ? String.Empty : DdlClaimTypes.SelectedValue;
         }
 
         protected void BtnOK_Click(Object sender, EventArgs e)
         {
             if (ValidatePrerequisite() != ConfigStatus.AllGood) return;
-            if (UpdatePersistedObjectProperties(true)) Response.Redirect("/Security.aspx", false);
+            if (UpdateConfiguration(true)) Response.Redirect("/Security.aspx", false);
             else LabelErrorMessage.Text = MostImportantError;
         }
 
@@ -233,7 +252,7 @@ namespace ldapcp.ControlTemplates
 
         protected virtual void ResetConfiguration()
         {
-            LDAPCPConfig.DeleteLDAPCPConfig();
+            LDAPCPConfig.DeleteConfiguration(PersistedObjectName);
             Response.Redirect(Request.RawUrl, false);
         }
 
@@ -245,9 +264,9 @@ namespace ldapcp.ControlTemplates
         void UpdateAdditionalUserLdapFilter()
         {
             if (PersistedObject == null) return;
-            foreach (var userAttr in this.PersistedObject.AttributesListProp.FindAll(x => x.ClaimEntityType == SPClaimEntityTypes.User || x.CreateAsIdentityClaim))
+            foreach (var userAttr in this.PersistedObject.ClaimTypes.Where(x => x.EntityType == DirectoryObjectType.User || x.UseMainClaimTypeOfDirectoryObject))
             {
-                userAttr.AdditionalLDAPFilterProp = this.TxtAdditionalUserLdapFilter.Text;
+                userAttr.AdditionalLDAPFilter = this.TxtAdditionalUserLdapFilter.Text;
             }
             this.CommitChanges();
             LabelUpdateAdditionalLdapFilterOk.Text = this.TextUpdateAdditionalLdapFilterOk;
@@ -295,20 +314,15 @@ namespace ldapcp.ControlTemplates
                 );
             }
 
-            // Update object in database
             CommitChanges();
-            LdapcpLogging.Log(
-                   String.Format("Added a new LDAP connection in PersistedObject {0}", Constants.LDAPCPCONFIG_NAME),
-                   TraceSeverity.Medium,
-                   EventSeverity.Information,
-                   LdapcpLogging.Categories.Configuration);
+            ClaimsProviderLogging.Log($"LDAP server '{this.TxtLdapConnectionString.Text}' was successfully added in configuration '{PersistedObjectName}'", TraceSeverity.Medium, EventSeverity.Information, TraceCategory.Configuration);
 
             PopulateLdapConnectionGrid();
             InitializeAugmentation();
             ViewState["LDAPpwd"] = String.Empty;
-            TxtLdapPassword.Attributes.Remove("value");
-            this.TxtLdapUsername.Text = this.TxtLdapPassword.Text = String.Empty;
+            this.TxtLdapPassword.Attributes.Remove("value");
             this.TxtLdapConnectionString.Text = "LDAP://";
+            this.TxtLdapUsername.Text = this.TxtLdapPassword.Text = String.Empty;
         }
 
         protected void ValidateLdapConnection()
@@ -332,7 +346,7 @@ namespace ldapcp.ControlTemplates
             }
             catch (Exception ex)
             {
-                LdapcpLogging.LogException(LDAPCP._ProviderInternalName, "while testing LDAP connection", LdapcpLogging.Categories.Configuration, ex);
+                ClaimsProviderLogging.LogException(ClaimsProviderName, "while testing LDAP connection", TraceCategory.Configuration, ex);
                 this.LabelErrorTestLdapConnection.Text = String.Format(TextErrorTestLdapConnection, ex.Message);
             }
             finally
@@ -349,34 +363,18 @@ namespace ldapcp.ControlTemplates
         {
             if (ValidatePrerequisite() != ConfigStatus.AllGood) return;
             if (PersistedObject.LDAPConnectionsProp == null) return;
+
             GridViewRow rowToDelete = grdLDAPConnections.Rows[e.RowIndex];
-
             Guid Id = new Guid(rowToDelete.Cells[0].Text);
-            PersistedObject.LDAPConnectionsProp.Remove(PersistedObject.LDAPConnectionsProp.Find(x => x.Id == Id));
-
-            // Update object in database
-            CommitChanges();
-            LdapcpLogging.Log(
-                    String.Format("Removed a LDAP connection in PersistedObject {0}", Constants.LDAPCPCONFIG_NAME),
-                    TraceSeverity.Medium,
-                    EventSeverity.Information,
-                    LdapcpLogging.Categories.Configuration);
-
-            InitializeAugmentation();
-            PopulateLdapConnectionGrid();
-        }
-
-        public static Dictionary<int, string> EnumToList(Type t)
-        {
-            Dictionary<int, string> list = new Dictionary<int, string>();
-            foreach (var v in Enum.GetValues(t))
+            LDAPConnection connectionToRemove = PersistedObject.LDAPConnectionsProp.FirstOrDefault(x => x.Id == Id);
+            if (connectionToRemove != null)
             {
-                string name = Enum.GetName(t, (int)v);
-                // Encryption and SecureSocketsLayer have same value and it will violate uniqueness of key if attempt to add both to Dictionary
-                if (String.Equals(name, "Encryption", StringComparison.InvariantCultureIgnoreCase) && list.ContainsValue("Encryption")) continue;
-                list.Add((int)v, name);
+                PersistedObject.LDAPConnectionsProp.Remove(connectionToRemove);
+                CommitChanges();
+                ClaimsProviderLogging.Log($"LDAP server '{connectionToRemove.Directory}' was successfully removed from configuration '{PersistedObjectName}'", TraceSeverity.Medium, EventSeverity.Information, TraceCategory.Configuration);
+                InitializeAugmentation();
+                PopulateLdapConnectionGrid();
             }
-            return list;
         }
 
         /// <summary>
