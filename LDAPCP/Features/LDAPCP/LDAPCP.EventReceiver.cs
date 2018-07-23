@@ -44,10 +44,6 @@ namespace ldapcp
         {
             SPSecurity.RunWithElevatedPrivileges(delegate()
             {
-                //using (StreamWriter outfile = new StreamWriter(@"c:\temp\featurereceiver.txt", true))
-                //{
-                //    outfile.WriteLine(DateTime.Now.ToString() + " - FeatureUninstalling called");
-                //}
                 ClaimsProviderLogging.Unregister();
             });
         }
@@ -56,10 +52,6 @@ namespace ldapcp
         {
             SPSecurity.RunWithElevatedPrivileges(delegate()
             {
-                //using (StreamWriter outfile = new StreamWriter(@"c:\temp\featurereceiver.txt", true))
-                //{
-                //    outfile.WriteLine(DateTime.Now.ToString() + " - FeatureDeactivating called");
-                //}
                 base.RemoveClaimProvider(LDAPCP._ProviderInternalName);
                 LDAPCPConfig.DeleteConfiguration(ClaimsProviderConstants.LDAPCPCONFIG_NAME);
             });

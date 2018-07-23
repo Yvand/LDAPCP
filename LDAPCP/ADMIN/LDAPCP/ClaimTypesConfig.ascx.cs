@@ -1,4 +1,5 @@
 ﻿using Microsoft.SharePoint.Administration.Claims;
+using Microsoft.SharePoint.Utilities;
 using Microsoft.SharePoint.WebControls;
 using System;
 using System.Collections.Generic;
@@ -46,7 +47,7 @@ namespace ldapcp.ControlTemplates
             ConfigStatus status = ValidatePrerequisite();
             if (status != ConfigStatus.AllGood && status != ConfigStatus.NoIdentityClaimType)
             {
-                this.LabelErrorMessage.Text = base.MostImportantError;
+                this.LabelErrorMessage.Text = SPEncode.HtmlEncode(base.MostImportantError);
                 this.HideAllContent = true;
                 this.BtnCreateNewItem.Visible = false;
                 return;

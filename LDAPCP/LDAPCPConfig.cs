@@ -499,7 +499,7 @@ namespace ldapcp
             bool objectCleaned = false;
             try
             {
-                // If AzureCP was updated from a version < v12, this.ClaimTypes.Count will throw a NullReferenceException
+                // If LDAPCP was updated from a version < v10, this.ClaimTypes.Count will throw a NullReferenceException
                 int testClaimTypeCollection = this.ClaimTypes.Count;
             }
             catch (NullReferenceException ex)
