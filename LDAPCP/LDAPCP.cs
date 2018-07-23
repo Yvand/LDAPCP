@@ -102,6 +102,7 @@ namespace ldapcp
                         if (SPTrust == null) return false;
                     }
                     if (!CheckIfShouldProcessInput(context)) return false;
+
                     globalConfiguration = GetConfiguration(context, entityTypes, PersistedObjectName);
                     if (globalConfiguration == null)
                     {
@@ -113,7 +114,7 @@ namespace ldapcp
                     }
                     else
                     {
-                        ((LDAPCPConfig)globalConfiguration).CheckAndCleanPersistedObject();
+                        ((LDAPCPConfig)globalConfiguration).CheckAndCleanConfiguration(SPTrust.Name);
                     }
 
                     if (globalConfiguration.ClaimTypes == null || globalConfiguration.ClaimTypes.Count == 0)

@@ -62,6 +62,11 @@ namespace ldapcp
             SPSecurity.RunWithElevatedPrivileges(delegate ()
             {
                 ClaimsProviderLogging svc = ClaimsProviderLogging.Local;
+                LDAPCPConfig config = LDAPCPConfig.GetConfiguration(ClaimsProviderConstants.LDAPCPCONFIG_NAME);
+                if (config != null)
+                {
+                    config.CheckAndCleanConfiguration(String.Empty);
+                }
             });
         }
     }

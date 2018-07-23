@@ -203,6 +203,22 @@ namespace ldapcp
         [Persisted]
         private string _EntityDisplayTextPrefix;
 
+        /// <summary>
+        /// Name of the SPTrustedLoginProvider where AzureCP is enabled
+        /// </summary>
+        [Persisted]
+        private string SPTrustName;
+
+        private SPTrustedLoginProvider _SPTrust;
+        private SPTrustedLoginProvider SPTrust
+        {
+            get
+            {
+                if (_SPTrust == null) _SPTrust = SPSecurityTokenServiceManager.Local.TrustedLoginProviders.GetProviderByName(SPTrustName);
+                return _SPTrust;
+            }
+        }
+
         public LDAPCPConfig(string name, SPPersistedObject parent) : base(name, parent) { }
 
         public LDAPCPConfig() { }
@@ -254,25 +270,7 @@ namespace ldapcp
             try
             {
                 LDAPCPConfig persistedObject = parent.GetChild<LDAPCPConfig>(persistedObjectName);
-                if (persistedObject != null)
-                {
-                    if (persistedObject.LDAPConnectionsProp == null)
-                    {
-                        // persistedObject.LDAPConnections introduced in v2.1 (SP2013)
-                        // This can happen if LDAPCP was migrated from a previous version and LDAPConnections didn't exist yet in persisted object
-                        persistedObject.LDAPConnectionsProp = ReturnDefaultLDAPConnection();
-                        ClaimsProviderLogging.Log($"LDAP connections list was missing in the persisted object {persistedObjectName} and default configuration was used. Visit LDAPCP admin page and validate it to create the list.",
-                            TraceSeverity.High, EventSeverity.Information, TraceCategory.Configuration);
-                    }
-
-                    if (persistedObject.ClaimTypes == null)
-                    {
-                        // Breaking change in v10: ClaimTypes implementation changed with new name/type/propertyNames, so persisted object from previous versions cannot be read anymore
-                        persistedObject.ClaimTypes = ReturnDefaultClaimTypesConfig();
-                        ClaimsProviderLogging.Log($"ClaimTypes configuration list was missing in the persisted object {persistedObjectName} and default configuration was applied. Visit LDAPCP claims configuration page to check and edit the list.",
-                            TraceSeverity.High, EventSeverity.Information, TraceCategory.Configuration);
-                    }
-                }
+                persistedObject.CheckAndCleanConfiguration(String.Empty);
                 return persistedObject;
             }
             catch (Exception ex)
@@ -321,12 +319,12 @@ namespace ldapcp
         /// <summary>
         /// Set properties of current configuration to their default values
         /// </summary>
-        /// <param name="persistedObjectName"></param>
         /// <returns></returns>
         public void ResetCurrentConfiguration()
         {
             LDAPCPConfig defaultConfig = ReturnDefaultConfiguration() as LDAPCPConfig;
             ApplyConfiguration(defaultConfig);
+            CheckAndCleanConfiguration(String.Empty);
         }
 
         public void ApplyConfiguration(LDAPCPConfig configToApply)
@@ -494,18 +492,39 @@ namespace ldapcp
         /// Check if object is compatible with current version of AzureCP, and fix it if not. If object comes from configuration database, changes are committed in configuration database
         /// </summary>
         /// <returns>True if current object was cleaned</returns>
-        public bool CheckAndCleanPersistedObject()
+        public bool CheckAndCleanConfiguration(string currentSPTrustName)
         {
             bool objectCleaned = false;
+
+            if (!String.IsNullOrEmpty(currentSPTrustName) && !String.Equals(this.SPTrustName, currentSPTrustName, StringComparison.InvariantCultureIgnoreCase))
+            {
+                this.SPTrustName = currentSPTrustName;
+                ClaimsProviderLogging.Log($"Updated the SPTrustedLoginProvider name to '{this.SPTrustName}' in configuration '{base.DisplayName}'.",
+                    TraceSeverity.Medium, EventSeverity.Information, TraceCategory.Core);
+                objectCleaned = true;
+            }
+
             try
             {
-                // If LDAPCP was updated from a version < v10, this.ClaimTypes.Count will throw a NullReferenceException
+                // If LDAPCP is updated from a version < v10, this.ClaimTypes.Count will throw a NullReferenceException
                 int testClaimTypeCollection = this.ClaimTypes.Count;
             }
             catch (NullReferenceException ex)
             {
                 this.ClaimTypes = LDAPCPConfig.ReturnDefaultClaimTypesConfig();
                 objectCleaned = true;
+            }
+
+            if (this.LDAPConnectionsProp == null)
+            {
+                // LDAPConnections was introduced in v2.1 (SP2013). if LDAPCP is updated from an earlier version, LDAPConnections doesn't exist yet
+                this.LDAPConnectionsProp = ReturnDefaultLDAPConnection();
+                objectCleaned = true;
+            }
+
+            if (!String.IsNullOrEmpty(this.SPTrustName))
+            {
+                this.ClaimTypes.SPTrust = this.SPTrust;
             }
 
             if (objectCleaned)

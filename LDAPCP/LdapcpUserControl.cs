@@ -145,15 +145,21 @@ namespace ldapcp.ControlTemplates
                 return Status;
             }
 
+            if (CurrentTrustedLoginProvider == null)
+            {
+                CurrentTrustedLoginProvider = LDAPCP.GetSPTrustAssociatedWithCP(this.ClaimsProviderName);
+                if (CurrentTrustedLoginProvider == null)
+                {
+                    Status |= ConfigStatus.NoSPTrustAssociation;
+                    return Status;
+                }
+            }
+
             if (PersistedObject == null)
             {
                 Status |= ConfigStatus.PersistedObjectNotFound;
             }
-            if (CurrentTrustedLoginProvider == null)
-            {
-                CurrentTrustedLoginProvider = LDAPCP.GetSPTrustAssociatedWithCP(this.ClaimsProviderName);
-                if (CurrentTrustedLoginProvider == null) Status |= ConfigStatus.NoSPTrustAssociation;
-            }
+            
             if (Status != ConfigStatus.AllGood)
             {
                 ClaimsProviderLogging.Log($"[{ClaimsProviderName}] {MostImportantError}", TraceSeverity.Unexpected, EventSeverity.Error, TraceCategory.Configuration);
@@ -161,7 +167,7 @@ namespace ldapcp.ControlTemplates
                 return Status;
             }
 
-            PersistedObject.CheckAndCleanPersistedObject();
+            PersistedObject.CheckAndCleanConfiguration(CurrentTrustedLoginProvider.Name);
             PersistedObject.ClaimTypes.SPTrust = CurrentTrustedLoginProvider;
             if (IdentityClaim == null && Status == ConfigStatus.AllGood)
             {

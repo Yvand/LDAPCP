@@ -463,6 +463,8 @@ namespace ldapcp
 
         public bool Remove(ClaimTypeConfig item)
         {
+            if (SPTrust != null && String.Equals(item.ClaimType, SPTrust.IdentityClaimTypeInformation.MappedClaimType, StringComparison.InvariantCultureIgnoreCase)) throw new InvalidOperationException($"Cannot delete claim type \"{item.ClaimType}\" because it is the identity claim type of \"{SPTrust.Name}\"");
+
             bool result = false;
             for (int i = 0; i < innerCol.Count; i++)
             {
@@ -480,6 +482,8 @@ namespace ldapcp
         public bool Remove(string claimType)
         {
             if (String.IsNullOrEmpty(claimType)) throw new ArgumentNullException("claimType");
+            if (SPTrust != null && String.Equals(claimType, SPTrust.IdentityClaimTypeInformation.MappedClaimType, StringComparison.InvariantCultureIgnoreCase)) throw new InvalidOperationException($"Cannot delete claim type \"{claimType}\" because it is the identity claim type of \"{SPTrust.Name}\"");
+
             bool result = false;
             for (int i = 0; i < innerCol.Count; i++)
             {
