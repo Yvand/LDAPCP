@@ -611,12 +611,21 @@ namespace ldapcp
                 return null;
             }
 
-            BuildLDAPFilter(currentContext);
+            // BUG: FILTERS MUST BE SET IN AN OBJECT CREATED IN THIS METHOD (TO BE BOUND TO CURRENT THREAD), OTHERWISE FILTER MAY BE UPDATED BY MULTIPLE THREADS
+            // Somehow, this constructor is not working, AzureTenant must be explicitely copied into new list
+            //List<AzureTenant> azureTenants = new List<AzureTenant>(this.CurrentConfiguration.AzureTenants);
+            List<LDAPConnection> ldapServers = new List<LDAPConnection>(this.CurrentConfiguration.LDAPConnectionsProp.Count);
+            foreach (LDAPConnection ldapServer in this.CurrentConfiguration.LDAPConnectionsProp)
+            {
+                ldapServers.Add(ldapServer.CopyPersistedProperties());
+            }            
+
+            BuildLDAPFilter(currentContext, ldapServers);
             bool resultsfound = false;
             List<LDAPSearchResult> LDAPSearchResultWrappers = new List<LDAPSearchResult>();
             using (new SPMonitoredScope(String.Format("[{0}] Total time spent in all LDAP server(s)", ProviderInternalName), 1000))
             {
-                resultsfound = QueryLDAPServers(currentContext, ref LDAPSearchResultWrappers);
+                resultsfound = QueryLDAPServers(currentContext, ldapServers, ref LDAPSearchResultWrappers);
             }
 
             if (!resultsfound) return null;
@@ -793,7 +802,7 @@ namespace ldapcp
         /// </summary>
         /// <param name="currentContext">Information about current context and operation</param>
         /// <param name="ldapServers">List to be populated by this method</param>
-        protected virtual void BuildLDAPFilter(OperationContext currentContext)
+        protected virtual void BuildLDAPFilter(OperationContext currentContext, List<LDAPConnection> ldapServers)
         {
             // Build LDAP filter as documented in http://technet.microsoft.com/fr-fr/library/aa996205(v=EXCHG.65).aspx
             StringBuilder filter = new StringBuilder();
@@ -816,7 +825,7 @@ namespace ldapcp
             if (this.CurrentConfiguration.FilterEnabledUsersOnlyProp) filter.Append(")");
             filter.Append(")");     // END OR
 
-            foreach (LDAPConnection ldapServer in this.CurrentConfiguration.LDAPConnectionsProp)
+            foreach (LDAPConnection ldapServer in ldapServers)
             {
                 ldapServer.Filter = filter.ToString();
             }
@@ -829,15 +838,15 @@ namespace ldapcp
         /// <param name="currentContext">Information about current context and operation</param>
         /// <param name="LDAPSearchResults">LDAP search results list to be populated by this method</param>
         /// <returns>true if a result was found</returns>
-        protected bool QueryLDAPServers(OperationContext currentContext, ref List<LDAPSearchResult> LDAPSearchResults)
+        protected bool QueryLDAPServers(OperationContext currentContext, List<LDAPConnection> ldapServers, ref List<LDAPSearchResult> LDAPSearchResults)
         {
-            if (this.CurrentConfiguration.LDAPConnectionsProp == null || this.CurrentConfiguration.LDAPConnectionsProp.Count == 0) return false;
+            if (ldapServers == null || ldapServers.Count == 0) return false;
             object lockResults = new object();
             List<LDAPSearchResult> results = new List<LDAPSearchResult>();
             Stopwatch globalStopWatch = new Stopwatch();
             globalStopWatch.Start();
 
-            Parallel.ForEach(this.CurrentConfiguration.LDAPConnectionsProp.Where(x => !String.IsNullOrEmpty(x.Filter)), ldapConnection =>
+            Parallel.ForEach(ldapServers.Where(x => !String.IsNullOrEmpty(x.Filter)), ldapConnection =>
             {
                 SetLDAPConnection(currentContext, ldapConnection);
                 DirectoryEntry directory = ldapConnection.Directory;

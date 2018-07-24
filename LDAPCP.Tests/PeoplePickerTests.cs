@@ -1,10 +1,7 @@
-﻿using System;
-using System.Collections;
-using Microsoft.SharePoint;
-using Microsoft.SharePoint.Administration;
-using Microsoft.SharePoint.Administration.Claims;
+﻿using Microsoft.SharePoint.Administration.Claims;
 using Microsoft.SharePoint.WebControls;
 using NUnit.Framework;
+using System;
 
 namespace LDAPCP.Tests
 {
@@ -18,10 +15,10 @@ namespace LDAPCP.Tests
             Console.WriteLine($"Before {TestContext.CurrentContext.Test.Name}");
         }
 
-        [Test, TestCaseSource(typeof(PeoplePickerCSVSource), "GetTestCases")]
-        //[MaxTime(MaxTime)]
-        [Repeat(1)]
-        public void RegisterUserTest(PeoplePickerCSVData registrationData)
+        [Test, TestCaseSource(typeof(SearchTestsDataSource), "GetTestData")]
+        [MaxTime(UnitTestsHelper.MaxTime)]
+        [Repeat(100)]
+        public void SearchReturnsEntities(SearchTestsData registrationData)
         {
             SPClaimProviderOperationOptions mode = SPClaimProviderOperationOptions.DisableHierarchyAugmentation;
             string[] providerNames = new string[] { "AllUsers", "LDAPCP", "AzureCP", "AD" };
@@ -29,7 +26,25 @@ namespace LDAPCP.Tests
 
             SPProviderHierarchyTree[] providerResults = SPClaimProviderOperations.Search(UnitTestsHelper.Context, mode, providerNames, entityTypes, registrationData.Input, 30);
 
-            UnitTestsHelper.ValidateEntities(providerResults, Convert.ToInt32(registrationData.ExpectedResultCount), registrationData.ExpectedEntityClaimValue);
+            UnitTestsHelper.ValidateEntities(providerResults, registrationData.ExpectedResultCount, registrationData.ExpectedEntityClaimValue);
         }
-    }    
+
+        [Test, TestCaseSource(typeof(ValidationTestsDataSource), "GetTestData")]
+        [MaxTime(UnitTestsHelper.MaxTime)]
+        [Repeat(100)]
+        public void ValidateClaim(ValidationTestsData registrationData)
+        {
+            SPClaimProviderOperationOptions mode = SPClaimProviderOperationOptions.AllZones | SPClaimProviderOperationOptions.OverrideVisibleConfiguration;
+            string[] providerNames = null;
+            string[] entityTypes = new string[] { "User" };
+            SPClaim inputClaim = new SPClaim("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress", registrationData.ClaimValue, "http://www.w3.org/2001/XMLSchema#string", SPOriginalIssuers.Format(SPOriginalIssuerType.TrustedProvider, UnitTestsHelper.SPTrust.Name));
+
+            PickerEntity[] entities = SPClaimProviderOperations.Resolve(UnitTestsHelper.Context, mode, providerNames, entityTypes, inputClaim);
+            Assert.AreEqual(entities != null && entities.Length == 1, registrationData.ShouldValidate);
+            if (registrationData.ShouldValidate)
+            {
+                StringAssert.AreEqualIgnoringCase(registrationData.ClaimValue, entities[0].Claim.Value);
+            }
+        }
+    }
 }

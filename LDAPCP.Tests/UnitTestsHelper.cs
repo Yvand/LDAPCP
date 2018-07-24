@@ -5,12 +5,8 @@ using Microsoft.SharePoint.Administration.Claims;
 using Microsoft.SharePoint.WebControls;
 using NUnit.Framework;
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 [SetUpFixture]
 public class UnitTestsHelper
@@ -20,11 +16,11 @@ public class UnitTestsHelper
     public const int MaxTime = 30000;
     public const string FarmAdmin = @"i:0#.w|contoso\yvand";
 
-    public const string TrustedGroupToAdd_Id = @"contoso.local\group1";
+    public const string TrustedGroupToAdd_ClaimValue = @"contoso.local\group1";
     public const string TrustedGroupToAdd_ClaimType = "http://schemas.microsoft.com/ws/2008/06/identity/claims/role";
 
-    public const string DataFile_PeoplePickerTests = @"F:\Data\Dev\LDAPCP_PeoplePickerTestsData.csv";
-    public const string DataFile_AugmentationTests = @"F:\Data\Dev\LDAPCP_AugmentationTestsData.csv";
+    public const string DataFile_SearchTests = @"F:\Data\Dev\LDAPCP_SearchTests_Data.csv";
+    public const string DataFile_ValidationTests = @"F:\Data\Dev\LDAPCP_ValidationTests_Data.csv";
 
     public static SPTrustedLoginProvider SPTrust
     {
@@ -39,9 +35,9 @@ public class UnitTestsHelper
         {
             Console.WriteLine($"Web app {wa.Name} found.");
             SPClaimProviderManager claimMgr = SPClaimProviderManager.Local;
-            SPClaim claim = new SPClaim(TrustedGroupToAdd_ClaimType, TrustedGroupToAdd_Id, "http://www.w3.org/2001/XMLSchema#string", SPOriginalIssuers.Format(SPOriginalIssuerType.TrustedProvider, SPTrust.Name));
+            SPClaim claim = new SPClaim(TrustedGroupToAdd_ClaimType, TrustedGroupToAdd_ClaimValue, "http://www.w3.org/2001/XMLSchema#string", SPOriginalIssuers.Format(SPOriginalIssuerType.TrustedProvider, SPTrust.Name));
             string encodedClaim = claimMgr.EncodeClaim(claim);
-            SPUserInfo userInfo = new SPUserInfo { LoginName = encodedClaim, Name = TrustedGroupToAdd_Id };
+            SPUserInfo userInfo = new SPUserInfo { LoginName = encodedClaim, Name = TrustedGroupToAdd_ClaimValue };
 
             if (!SPSite.Exists(Context))
             {
@@ -106,17 +102,16 @@ public class UnitTestsHelper
         Assert.AreEqual(expectedCount, 0);
     }
 }
-public class PeoplePickerCSVSource
+public class SearchTestsDataSource
 {
-    public static IEnumerable<TestCaseData> GetTestCases()
+    public static IEnumerable<TestCaseData> GetTestData()
     {
-        DataTable dt = DataTable.New.ReadCsv(UnitTestsHelper.DataFile_PeoplePickerTests);
-
+        DataTable dt = DataTable.New.ReadCsv(UnitTestsHelper.DataFile_SearchTests);
         foreach (Row row in dt.Rows)
         {
-            var registrationData = new PeoplePickerCSVData();
+            var registrationData = new SearchTestsData();
             registrationData.Input = row["Input"];
-            registrationData.ExpectedResultCount = row["ExpectedResultCount"];
+            registrationData.ExpectedResultCount = Convert.ToInt32(row["ExpectedResultCount"]);
             registrationData.ExpectedEntityClaimValue = row["ExpectedEntityClaimValue"];
             yield return new TestCaseData(new object[] { registrationData });
         }
@@ -138,9 +133,32 @@ public class PeoplePickerCSVSource
     //}
 }
 
-public class PeoplePickerCSVData
+public class SearchTestsData
 {
     public string Input;
-    public string ExpectedResultCount;
+    public int ExpectedResultCount;
     public string ExpectedEntityClaimValue;
+}
+
+public class ValidationTestsDataSource
+{
+    public static IEnumerable<TestCaseData> GetTestData()
+    {
+        DataTable dt = DataTable.New.ReadCsv(UnitTestsHelper.DataFile_ValidationTests);
+        foreach (Row row in dt.Rows)
+        {
+            var registrationData = new ValidationTestsData();
+            registrationData.ClaimValue = row["ClaimValue"];
+            registrationData.ShouldValidate = Convert.ToBoolean(row["ShouldValidate"]);
+            registrationData.IsMemberOfTrustedGroup = Convert.ToBoolean(row["IsMemberOfTrustedGroup"]);
+            yield return new TestCaseData(new object[] { registrationData });
+        }
+    }
+}
+
+public class ValidationTestsData
+{
+    public string ClaimValue;
+    public bool ShouldValidate;
+    public bool IsMemberOfTrustedGroup;
 }

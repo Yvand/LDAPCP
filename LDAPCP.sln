@@ -6,6 +6,9 @@ MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LDAPCP", "LDAPCP\LDAPCP.csproj", "{66F4B88D-7D7E-4435-92DE-94810E2B8F9F}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LDAPCP.Tests", "LDAPCP.Tests\LDAPCP.Tests.csproj", "{4FA40F51-787E-4287-9120-B5F4FE8C3579}"
+	ProjectSection(ProjectDependencies) = postProject
+		{66F4B88D-7D7E-4435-92DE-94810E2B8F9F} = {66F4B88D-7D7E-4435-92DE-94810E2B8F9F}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
