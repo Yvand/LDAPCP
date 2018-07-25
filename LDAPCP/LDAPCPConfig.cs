@@ -415,27 +415,6 @@ namespace ldapcp
             return defaultConfig;
         }
 
-        ///// <summary>
-        ///// Generate and return default configuration
-        ///// </summary>
-        ///// <returns></returns>
-        //public ILDAPCPConfiguration ReturnDefaultConfiguration()
-        //{
-        //    //LDAPCPConfig defaultConfig = new LDAPCPConfig(this.Name, this.Parent, this.SPTrustName);
-        //    defaultConfig.LDAPConnections = ReturnDefaultLDAPConnection();
-        //    defaultConfig.ClaimTypes = ReturnDefaultClaimTypesConfig();
-        //    defaultConfig.PickerEntityGroupNameProp = "Results";
-        //    defaultConfig.BypassLDAPLookup = false;
-        //    defaultConfig.AddWildcardAsPrefixOfInput = false;
-        //    defaultConfig.FilterEnabledUsersOnlyProp = false;
-        //    defaultConfig.FilterSecurityGroupsOnlyProp = false;
-        //    defaultConfig.FilterExactMatchOnlyProp = false;
-        //    defaultConfig.LDAPQueryTimeout = ClaimsProviderConstants.LDAPCPCONFIG_TIMEOUT;
-        //    defaultConfig.EnableAugmentation = false;
-        //    defaultConfig.MainGroupClaimType = ClaimsProviderConstants.DefaultMainGroupClaimType;
-        //    return defaultConfig;
-        //}
-
         /// <summary>
         /// Generate and return default claim types configuration list
         /// </summary>

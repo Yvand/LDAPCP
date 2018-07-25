@@ -1,8 +1,4 @@
-﻿using Microsoft.SharePoint;
-using Microsoft.SharePoint.Administration.Claims;
-using NUnit.Framework;
-using System;
-using System.Security.Claims;
+﻿using NUnit.Framework;
 
 namespace LDAPCP.Tests
 {
@@ -10,14 +6,11 @@ namespace LDAPCP.Tests
     [Parallelizable(ParallelScope.Children)]
     public class AugmentationTests
     {
-        private static SPBasePermissions GroupPermissionsToTest = SPBasePermissions.EditListItems;
-
-        [TestCase("i:05.t|contoso.local|yvand@contoso.local")]
-        [MaxTime(UnitTestsHelper.MaxTime)]
-        public void AugmentEntity_Debug(string entity)
+        [TestCase("i:05.t|contoso.local|yvand@contoso.local", true)]
+        [TestCase("i:05.t|contoso.local|zzzyvand@contoso.local", false)]
+        public void AugmentEntity_Debug(string claimValue, bool shouldHavePermissions)
         {
-            ValidationTestsData registrationData = new ValidationTestsData() { ClaimValue = entity, IsMemberOfTrustedGroup = true, ShouldValidate = true };
-            AugmentEntity(registrationData);
+            UnitTestsHelper.DoAugmentationOperationAndVerifyResult(UnitTestsHelper.SPTrust.IdentityClaimTypeInformation.MappedClaimType, claimValue, shouldHavePermissions);
         }
 
         [Test, TestCaseSource(typeof(ValidationTestsDataSource), "GetTestData")]
@@ -25,17 +18,7 @@ namespace LDAPCP.Tests
         [Repeat(UnitTestsHelper.TestRepeatCount)]
         public void AugmentEntity(ValidationTestsData registrationData)
         {
-            if (!registrationData.IsMemberOfTrustedGroup) return;
-
-            SPClaim inputClaim = new SPClaim(UnitTestsHelper.SPTrust.IdentityClaimTypeInformation.MappedClaimType, registrationData.ClaimValue, ClaimValueTypes.String, SPOriginalIssuers.Format(SPOriginalIssuerType.TrustedProvider, UnitTestsHelper.SPTrust.Name));
-
-            using (SPSite site = new SPSite(UnitTestsHelper.Context.AbsoluteUri))
-            {
-                // SPSite.RootWeb should not be disposed: https://blogs.msdn.microsoft.com/rogerla/2008/10/04/updated-spsite-rootweb-dispose-guidance/
-                SPWeb rootWeb = site.RootWeb;
-                bool entityHasPerm = rootWeb.DoesUserHavePermissions(inputClaim.ToEncodedString(), GroupPermissionsToTest);
-                Assert.IsTrue(entityHasPerm);
-            }
+            UnitTestsHelper.DoAugmentationOperationAndVerifyResult(UnitTestsHelper.SPTrust.IdentityClaimTypeInformation.MappedClaimType, registrationData.ClaimValue, registrationData.IsMemberOfTrustedGroup);
         }
     }
 }

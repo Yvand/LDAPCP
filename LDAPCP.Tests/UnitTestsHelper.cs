@@ -1,4 +1,5 @@
 ﻿using DataAccess;
+using ldapcp;
 using Microsoft.SharePoint;
 using Microsoft.SharePoint.Administration;
 using Microsoft.SharePoint.Administration.Claims;
@@ -7,6 +8,7 @@ using NUnit.Framework;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Claims;
 
 [SetUpFixture]
 public class UnitTestsHelper
@@ -16,9 +18,11 @@ public class UnitTestsHelper
     public const int MaxTime = 30000;
     public const int TestRepeatCount = 50;
     public const string FarmAdmin = @"i:0#.w|contoso\yvand";
+    public const string NonExistentClaimValue = "IDoNotExist";
 
     public const string TrustedGroupToAdd_ClaimValue = @"contoso.local\group1";
-    public const string TrustedGroupToAdd_ClaimType = "http://schemas.microsoft.com/ws/2008/06/identity/claims/role";
+    public const string TrustedGroupToAdd_ClaimType = ClaimsProviderConstants.DefaultMainGroupClaimType;
+    private static SPBasePermissions TrustedGroupToAdd_PermissionsAssigned = SPBasePermissions.EditListItems;
 
     public const string DataFile_SearchTests = @"F:\Data\Dev\LDAPCP_SearchTests_Data.csv";
     public const string DataFile_ValidationTests = @"F:\Data\Dev\LDAPCP_ValidationTests_Data.csv";
@@ -83,6 +87,19 @@ public class UnitTestsHelper
 
         PickerEntity[] entities = SPClaimProviderOperations.Resolve(UnitTestsHelper.Context, mode, providerNames, entityTypes, inputClaim);
         return entities;
+    }
+
+    public static void DoAugmentationOperationAndVerifyResult(string claimType, string claimValue, bool shouldHavePermissions)
+    {
+        SPClaim inputClaim = new SPClaim(claimType, claimValue, ClaimValueTypes.String, SPOriginalIssuers.Format(SPOriginalIssuerType.TrustedProvider, UnitTestsHelper.SPTrust.Name));
+
+        using (SPSite site = new SPSite(UnitTestsHelper.Context.AbsoluteUri))
+        {
+            // SPSite.RootWeb should not be disposed: https://blogs.msdn.microsoft.com/rogerla/2008/10/04/updated-spsite-rootweb-dispose-guidance/
+            SPWeb rootWeb = site.RootWeb;
+            bool entityHasPerms = rootWeb.DoesUserHavePermissions(inputClaim.ToEncodedString(), TrustedGroupToAdd_PermissionsAssigned);
+            if (shouldHavePermissions) Assert.IsTrue(entityHasPerms);
+        }
     }
 
     public static void VerifySearchResult(SPProviderHierarchyTree[] providerResults, int expectedCount, string expectedClaimValue)
