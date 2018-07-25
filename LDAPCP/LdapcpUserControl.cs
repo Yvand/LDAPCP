@@ -48,7 +48,7 @@ namespace ldapcp.ControlTemplates
                     if (_PersistedObject == null)
                     {
                         SPContext.Current.Web.AllowUnsafeUpdates = true;
-                        _PersistedObject = LDAPCPConfig.CreateConfiguration(this.PersistedObjectID, this.PersistedObjectName);
+                        _PersistedObject = LDAPCPConfig.CreateConfiguration(this.PersistedObjectID, this.PersistedObjectName, this.CurrentTrustedLoginProvider.Name);
                         SPContext.Current.Web.AllowUnsafeUpdates = false;
                     }
                 });

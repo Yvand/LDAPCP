@@ -344,7 +344,7 @@ namespace ldapcp.ControlTemplates
                 return;
             }
 
-            ClaimTypeConfig newCTConfig = existingCTConfig.CopyCurrentObject();
+            ClaimTypeConfig newCTConfig = existingCTConfig.CopyPersistedProperties();
             newCTConfig.ClaimType = newClaimType;
             newCTConfig.EntityType = directoryObjectTypeSelected;
             newCTConfig.LDAPClass = formData["input_attrclass_" + itemId].Trim();

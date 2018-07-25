@@ -187,7 +187,7 @@ namespace ldapcp
         {
         }
 
-        public ClaimTypeConfig CopyCurrentObject()
+        public ClaimTypeConfig CopyPersistedProperties()
         {
             return new ClaimTypeConfig()
             {
@@ -391,7 +391,7 @@ namespace ldapcp
             ClaimTypeConfigCollection testUpdateCollection = new ClaimTypeConfigCollection();
             foreach (ClaimTypeConfig curCTConfig in innerCol)
             {
-                testUpdateCollection.Add(curCTConfig.CopyCurrentObject(), false);
+                testUpdateCollection.Add(curCTConfig.CopyPersistedProperties(), false);
             }
 
             // Update ClaimTypeConfig in testUpdateCollection

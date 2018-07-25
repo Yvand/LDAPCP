@@ -109,7 +109,7 @@ namespace ldapcp
                         ClaimsProviderLogging.Log($"[{ProviderInternalName}] Configuration '{PersistedObjectName}' was not found. Visit LDAPCP admin pages in central administration to create it.",
                             TraceSeverity.Unexpected, EventSeverity.Error, TraceCategory.Core);
                         // Run with default configuration, which creates a connection to connect to current AD domain
-                        globalConfiguration = LDAPCPConfig.ReturnDefaultConfiguration();
+                        globalConfiguration = LDAPCPConfig.ReturnDefaultConfiguration(SPTrust.Name);
                         refreshConfig = true;
                     }
                     else
@@ -174,7 +174,7 @@ namespace ldapcp
 
                     // Create local version of the persisted object, that will never be saved in config DB
                     // This copy is unique to current object instance to avoid thread safety issues
-                    this.CurrentConfiguration = ((LDAPCPConfig)globalConfiguration).CopyCurrentObject();
+                    this.CurrentConfiguration = ((LDAPCPConfig)globalConfiguration).CopyPersistedProperties();
 
                     SetCustomConfiguration(context, entityTypes);
                     if (this.CurrentConfiguration.ClaimTypes == null)

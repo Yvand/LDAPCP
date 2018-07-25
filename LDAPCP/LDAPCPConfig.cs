@@ -204,7 +204,7 @@ namespace ldapcp
         private string _EntityDisplayTextPrefix;
 
         /// <summary>
-        /// Name of the SPTrustedLoginProvider where AzureCP is enabled
+        /// Name of the SPTrustedLoginProvider where LDAPCP is enabled
         /// </summary>
         [Persisted]
         private string SPTrustName;
@@ -219,27 +219,12 @@ namespace ldapcp
             }
         }
 
-        public LDAPCPConfig(string name, SPPersistedObject parent) : base(name, parent) { }
+        public LDAPCPConfig(string persistedObjectName, SPPersistedObject parent, string spTrustName) : base(persistedObjectName, parent)
+        {
+            this.SPTrustName = spTrustName;
+        }
 
         public LDAPCPConfig() { }
-
-        //public LDAPCPConfig(bool initializeConfiguration)
-        //{
-        //    if (initializeConfiguration)
-        //    {
-        //        this.LDAPConnections = ReturnDefaultLDAPConnection();
-        //        this.ClaimTypes = ReturnDefaultClaimTypesConfig();
-        //        this.PickerEntityGroupNameProp = "Results";
-        //        this.BypassLDAPLookup = false;
-        //        this.AddWildcardAsPrefixOfInput = false;
-        //        this.FilterEnabledUsersOnlyProp = false;
-        //        this.FilterSecurityGroupsOnlyProp = false;
-        //        this.FilterExactMatchOnlyProp = false;
-        //        this.LDAPQueryTimeout = ClaimsProviderConstants.LDAPCPCONFIG_TIMEOUT;
-        //        this.EnableAugmentation = false;
-        //        this.MainGroupClaimType = ClaimsProviderConstants.DefaultMainGroupClaimType;
-        //    }
-        //}
 
         /// <summary>
         /// Override this method to allow more users to update the object. True specifies that more users can update the object; otherwise, false. The default value is false.
@@ -309,8 +294,9 @@ namespace ldapcp
             LDAPCPConfig previousConfig = GetConfiguration(persistedObjectName);
             if (previousConfig == null) return null;
             Guid configId = previousConfig.Id;
+            string spTrustName = previousConfig.SPTrustName;
             DeleteConfiguration(persistedObjectName);
-            LDAPCPConfig newConfig = CreateConfiguration(configId.ToString(), persistedObjectName);
+            LDAPCPConfig newConfig = CreateConfiguration(configId.ToString(), persistedObjectName, spTrustName);
             ClaimsProviderLogging.Log($"Configuration '{persistedObjectName}' was successfully reset to its default configuration",
                 TraceSeverity.High, EventSeverity.Information, TraceCategory.Core);
             return newConfig;
@@ -322,7 +308,7 @@ namespace ldapcp
         /// <returns></returns>
         public void ResetCurrentConfiguration()
         {
-            LDAPCPConfig defaultConfig = ReturnDefaultConfiguration() as LDAPCPConfig;
+            LDAPCPConfig defaultConfig = ReturnDefaultConfiguration(this.SPTrustName) as LDAPCPConfig;
             ApplyConfiguration(defaultConfig);
             CheckAndCleanConfiguration(String.Empty);
         }
@@ -345,10 +331,9 @@ namespace ldapcp
             this.EntityDisplayTextPrefix = configToApply.EntityDisplayTextPrefix;
         }
 
-        public LDAPCPConfig CopyCurrentObject()
+        public LDAPCPConfig CopyPersistedProperties()
         {
-            //return this.Clone() as LDAPCPConfig;
-            LDAPCPConfig copy = new LDAPCPConfig();
+            LDAPCPConfig copy = new LDAPCPConfig(this.Name, this.Parent, this.SPTrustName);
             copy.LDAPConnectionsProp = new List<LDAPConnection>();
             foreach (LDAPConnection currentCoco in this.LDAPConnectionsProp)
             {
@@ -357,7 +342,7 @@ namespace ldapcp
             copy.ClaimTypes = new ClaimTypeConfigCollection();
             foreach (ClaimTypeConfig currentObject in this.ClaimTypes)
             {
-                copy.ClaimTypes.Add(currentObject.CopyCurrentObject(), false);
+                copy.ClaimTypes.Add(currentObject.CopyPersistedProperties(), false);
             }
             copy.BypassLDAPLookup = this.BypassLDAPLookup;
             copy.AddWildcardAsPrefixOfInput = this.AddWildcardAsPrefixOfInput;
@@ -389,8 +374,13 @@ namespace ldapcp
         /// <param name="persistedObjectID">GUID of persisted object</param>
         /// <param name="persistedObjectName">Name of persisted object</param>
         /// <returns></returns>
-        public static LDAPCPConfig CreateConfiguration(string persistedObjectID, string persistedObjectName)
+        public static LDAPCPConfig CreateConfiguration(string persistedObjectID, string persistedObjectName, string spTrustName)
         {
+            if (String.IsNullOrEmpty(spTrustName))
+            {
+                throw new ArgumentNullException("spTrust");
+            }
+
             // Ensure it doesn't already exists and delete it if so
             LDAPCPConfig existingConfig = LDAPCPConfig.GetConfiguration(persistedObjectName);
             if (existingConfig != null)
@@ -399,7 +389,7 @@ namespace ldapcp
             }
 
             ClaimsProviderLogging.Log($"Creating configuration '{persistedObjectName}' with Id {persistedObjectID}...", TraceSeverity.VerboseEx, EventSeverity.Error, TraceCategory.Core);
-            LDAPCPConfig PersistedObject = new LDAPCPConfig(persistedObjectName, SPFarm.Local);
+            LDAPCPConfig PersistedObject = new LDAPCPConfig(persistedObjectName, SPFarm.Local, spTrustName);
             PersistedObject.ResetCurrentConfiguration();
             PersistedObject.Id = new Guid(persistedObjectID);
             PersistedObject.Update();
@@ -407,14 +397,10 @@ namespace ldapcp
             return PersistedObject;
         }
 
-        /// <summary>
-        /// Generate and return default configuration
-        /// </summary>
-        /// <returns></returns>
-        public static ILDAPCPConfiguration ReturnDefaultConfiguration()
+        public static ILDAPCPConfiguration ReturnDefaultConfiguration(string spTrustName)
         {
-            //ILDAPCPConfiguration defaultConfig = new LDAPCPConfig(true);
             LDAPCPConfig defaultConfig = new LDAPCPConfig();
+            defaultConfig.SPTrustName = spTrustName;
             defaultConfig.LDAPConnections = ReturnDefaultLDAPConnection();
             defaultConfig.ClaimTypes = ReturnDefaultClaimTypesConfig();
             defaultConfig.PickerEntityGroupNameProp = "Results";
@@ -428,6 +414,27 @@ namespace ldapcp
             defaultConfig.MainGroupClaimType = ClaimsProviderConstants.DefaultMainGroupClaimType;
             return defaultConfig;
         }
+
+        ///// <summary>
+        ///// Generate and return default configuration
+        ///// </summary>
+        ///// <returns></returns>
+        //public ILDAPCPConfiguration ReturnDefaultConfiguration()
+        //{
+        //    //LDAPCPConfig defaultConfig = new LDAPCPConfig(this.Name, this.Parent, this.SPTrustName);
+        //    defaultConfig.LDAPConnections = ReturnDefaultLDAPConnection();
+        //    defaultConfig.ClaimTypes = ReturnDefaultClaimTypesConfig();
+        //    defaultConfig.PickerEntityGroupNameProp = "Results";
+        //    defaultConfig.BypassLDAPLookup = false;
+        //    defaultConfig.AddWildcardAsPrefixOfInput = false;
+        //    defaultConfig.FilterEnabledUsersOnlyProp = false;
+        //    defaultConfig.FilterSecurityGroupsOnlyProp = false;
+        //    defaultConfig.FilterExactMatchOnlyProp = false;
+        //    defaultConfig.LDAPQueryTimeout = ClaimsProviderConstants.LDAPCPCONFIG_TIMEOUT;
+        //    defaultConfig.EnableAugmentation = false;
+        //    defaultConfig.MainGroupClaimType = ClaimsProviderConstants.DefaultMainGroupClaimType;
+        //    return defaultConfig;
+        //}
 
         /// <summary>
         /// Generate and return default claim types configuration list
@@ -489,16 +496,17 @@ namespace ldapcp
         }
 
         /// <summary>
-        /// Check if object is compatible with current version of AzureCP, and fix it if not. If object comes from configuration database, changes are committed in configuration database
+        /// Check if current configuration is compatible with current version of AzureCP, and fix it if not. If object comes from configuration database, changes are committed in configuration database
         /// </summary>
-        /// <returns>True if current object was cleaned</returns>
-        public bool CheckAndCleanConfiguration(string currentSPTrustName)
+        /// <param name="spTrustName">Name of the SPTrust if it changed, null or empty string otherwise</param>
+        /// <returns>Bollean indicates whether the configuration was updated in configuration database</returns>
+        public bool CheckAndCleanConfiguration(string spTrustName)
         {
             bool objectCleaned = false;
 
-            if (!String.IsNullOrEmpty(currentSPTrustName) && !String.Equals(this.SPTrustName, currentSPTrustName, StringComparison.InvariantCultureIgnoreCase))
+            if (!String.IsNullOrEmpty(spTrustName) && !String.Equals(this.SPTrustName, spTrustName, StringComparison.InvariantCultureIgnoreCase))
             {
-                this.SPTrustName = currentSPTrustName;
+                this.SPTrustName = spTrustName;
                 ClaimsProviderLogging.Log($"Updated the SPTrustedLoginProvider name to '{this.SPTrustName}' in configuration '{base.DisplayName}'.",
                     TraceSeverity.Medium, EventSeverity.Information, TraceCategory.Core);
                 objectCleaned = true;
