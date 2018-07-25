@@ -14,6 +14,7 @@ public class UnitTestsHelper
     public const string ClaimsProviderName = "LDAPCP";
     public static Uri Context = new Uri("http://spsites/sites/LDAPCP.UnitTests");
     public const int MaxTime = 30000;
+    public const int TestRepeatCount = 50;
     public const string FarmAdmin = @"i:0#.w|contoso\yvand";
 
     public const string TrustedGroupToAdd_ClaimValue = @"contoso.local\group1";
@@ -64,7 +65,27 @@ public class UnitTestsHelper
         }
     }
 
-    public static void ValidateEntities(SPProviderHierarchyTree[] providerResults, int expectedCount, string expectedClaimValue)
+    public static SPProviderHierarchyTree[] DoSearchOperation(string inputValue)
+    {
+        SPClaimProviderOperationOptions mode = SPClaimProviderOperationOptions.DisableHierarchyAugmentation;
+        string[] providerNames = new string[] { "AllUsers", "LDAPCP", "AzureCP", "AD" };
+        string[] entityTypes = new string[] { "User", "SecGroup", "SharePointGroup", "System", "FormsRole" };
+
+        SPProviderHierarchyTree[] providerResults = SPClaimProviderOperations.Search(UnitTestsHelper.Context, mode, providerNames, entityTypes, inputValue, 30);
+        return providerResults;
+    }
+
+    public static PickerEntity[] DoValidationOperation(SPClaim inputClaim)
+    {
+        SPClaimProviderOperationOptions mode = SPClaimProviderOperationOptions.AllZones | SPClaimProviderOperationOptions.OverrideVisibleConfiguration;
+        string[] providerNames = null;
+        string[] entityTypes = new string[] { "User" };
+
+        PickerEntity[] entities = SPClaimProviderOperations.Resolve(UnitTestsHelper.Context, mode, providerNames, entityTypes, inputClaim);
+        return entities;
+    }
+
+    public static void VerifySearchResult(SPProviderHierarchyTree[] providerResults, int expectedCount, string expectedClaimValue)
     {
         foreach (SPProviderHierarchyTree providerResult in providerResults)
         {
@@ -100,6 +121,13 @@ public class UnitTestsHelper
             }
         }
         Assert.AreEqual(expectedCount, 0);
+    }
+
+    public static void VerifyValidationResult(PickerEntity[] entities, bool shouldValidate, string expectedClaimValue)
+    {
+        int expectedCount = shouldValidate ? 1 : 0;
+        Assert.AreEqual(expectedCount, entities.Length);
+        if (shouldValidate) StringAssert.AreEqualIgnoringCase(expectedClaimValue, entities[0].Claim.Value);
     }
 }
 public class SearchTestsDataSource

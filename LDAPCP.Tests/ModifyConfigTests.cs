@@ -1,11 +1,7 @@
 ﻿using ldapcp;
-using Microsoft.SharePoint.Administration.Claims;
 using NUnit.Framework;
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace LDAPCP.Tests
 {
@@ -16,7 +12,7 @@ namespace LDAPCP.Tests
         public const string ClaimsProviderConfigName = "LDAPCPConfig";
         public const string NonExistingClaimType = "http://schemas.yvand.com/ws/claims/random";
 
-        public LDAPCPConfig ReturnDefaultConfig()
+        public static LDAPCPConfig ReturnDefaultConfig()
         {
             LDAPCPConfig configFromConfigDB = LDAPCPConfig.GetConfiguration(ClaimsProviderConfigName);
             // Create a local copy, otherwise changes will impact the whole process (even without calling Update method)
