@@ -687,7 +687,16 @@ namespace ldapcp
         {
             this.OperationType = currentRequestType;
             this.Input = input;
+            //if (input != null)
+            //{
+            //    this.Input = input.Replace(@"\", @"\5c");   // Fix bug https://github.com/Yvand/LDAPCP/issues/53
+            //}
             this.IncomingEntity = incomingEntity;
+            //if (incomingEntity != null)
+            //{
+            //    // Fix bug https://github.com/Yvand/LDAPCP/issues/53
+            //    this.IncomingEntity = new SPClaim(incomingEntity.ClaimType, incomingEntity.Value.Replace(@"\", @"\5c"), incomingEntity.ValueType, incomingEntity.OriginalIssuer);
+            //}
             this.UriContext = context;
             this.HierarchyNodeID = hierarchyNodeID;
             this.MaxCount = maxCount;

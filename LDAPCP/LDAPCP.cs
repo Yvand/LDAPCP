@@ -734,19 +734,20 @@ namespace ldapcp
                     string directoryObjectPropertyValue = LDAPResultProperties[LDAPResultPropertyNames.First(x => String.Equals(x, ctConfig.LDAPAttribute, StringComparison.InvariantCultureIgnoreCase))][0].ToString();
 
                     // Check if current LDAP attribute value matches the input
+                    string inputValueToCompare = currentContext.Input;//.Replace(@"\5c", @"\");    // Fix bug https://github.com/Yvand/LDAPCP/issues/53
                     if (currentContext.ExactSearch)
                     {
-                        if (!String.Equals(directoryObjectPropertyValue, currentContext.Input, StringComparison.InvariantCultureIgnoreCase)) continue;
+                        if (!String.Equals(directoryObjectPropertyValue, inputValueToCompare, StringComparison.InvariantCultureIgnoreCase)) continue;
                     }
                     else
                     {
                         if (this.CurrentConfiguration.AddWildcardAsPrefixOfInput)
                         {
-                            if (directoryObjectPropertyValue.IndexOf(currentContext.Input, StringComparison.InvariantCultureIgnoreCase) != -1) continue;
+                            if (directoryObjectPropertyValue.IndexOf(inputValueToCompare, StringComparison.InvariantCultureIgnoreCase) != -1) continue;
                         }
                         else
                         {
-                            if (!directoryObjectPropertyValue.StartsWith(currentContext.Input, StringComparison.InvariantCultureIgnoreCase)) continue;
+                            if (!directoryObjectPropertyValue.StartsWith(inputValueToCompare, StringComparison.InvariantCultureIgnoreCase)) continue;
                         }
                     }
 
