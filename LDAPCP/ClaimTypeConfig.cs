@@ -506,6 +506,13 @@ namespace ldapcp
         {
             return new ClaimTypeConfigEnumerator(this);
         }
+
+        public ClaimTypeConfig GetByClaimType(string claimType)
+        {
+            if (String.IsNullOrEmpty(claimType)) throw new ArgumentNullException("claimType");
+            ClaimTypeConfig ctConfig = innerCol.FirstOrDefault(x => String.Equals(claimType, x.ClaimType, StringComparison.InvariantCultureIgnoreCase));
+            return ctConfig;
+        }
     }
 
     public class ClaimTypeConfigEnumerator : IEnumerator<ClaimTypeConfig>
