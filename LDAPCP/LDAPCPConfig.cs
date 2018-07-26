@@ -279,9 +279,9 @@ namespace ldapcp
                     testUpdateCollection.Add(curCTConfig, false);
                 }
             }
-            catch (Exception ex)
+            catch (InvalidOperationException ex)
             {
-                throw new Exception("Some changes made to list ClaimTypes are invalid and cannot be committed to configuration database. Inspect inner exception for more details about the error.", ex);
+                throw new InvalidOperationException("Some changes made to list ClaimTypes are invalid and cannot be committed to configuration database. Inspect inner exception for more details about the error.", ex);
             }
 
             base.Update();
