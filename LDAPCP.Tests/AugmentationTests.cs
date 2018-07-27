@@ -6,10 +6,10 @@ namespace LDAPCP.Tests
     [Parallelizable(ParallelScope.Children)]
     public class AugmentationTests
     {
-        [Test, TestCaseSource(typeof(ValidationTestsDataSource), "GetTestData")]
+        [Test, TestCaseSource(typeof(ValidateEntityDataSource), "GetTestData")]
         [MaxTime(UnitTestsHelper.MaxTime)]
         [Repeat(UnitTestsHelper.TestRepeatCount)]
-        public void AugmentEntity(ValidationTestsData registrationData)
+        public void AugmentEntity(ValidateEntityData registrationData)
         {
             UnitTestsHelper.DoAugmentationOperationAndVerifyResult(UnitTestsHelper.SPTrust.IdentityClaimTypeInformation.MappedClaimType, registrationData.ClaimValue, registrationData.IsMemberOfTrustedGroup);
         }

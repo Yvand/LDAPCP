@@ -6,6 +6,7 @@ using Microsoft.SharePoint.Administration.Claims;
 using Microsoft.SharePoint.WebControls;
 using NUnit.Framework;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
@@ -15,7 +16,7 @@ public class UnitTestsHelper
 {
     public const string ClaimsProviderName = "LDAPCP";
     public static Uri Context = new Uri("http://spsites/sites/LDAPCP.UnitTests");
-    public const int MaxTime = 30000;
+    public const int MaxTime = 50000;
     public const int TestRepeatCount = 50;
     public const string FarmAdmin = @"i:0#.w|contoso\yvand";
     public const string NonExistentClaimValue = "IDoNotExist";
@@ -35,7 +36,7 @@ public class UnitTestsHelper
     [OneTimeSetUp]
     public static void InitSiteCollection()
     {
-        return; // Uncommented when debugging LDAPCP code from unit tests
+        //return; // Uncommented when debugging LDAPCP code from unit tests
         SPWebApplication wa = SPWebApplication.Lookup(Context);
         if (wa != null)
         {
@@ -148,14 +149,25 @@ public class UnitTestsHelper
         if (shouldValidate) StringAssert.AreEqualIgnoringCase(expectedClaimValue, entities[0].Claim.Value);
     }
 }
-public class SearchTestsDataSource
+
+public class SearchEntityDataSourceCollection : IEnumerable
+{
+    public IEnumerator GetEnumerator()
+    {
+        yield return new[] { "yvand", "2", "yvand@contoso.local" };
+        yield return new[] { "IDoNotExist", "0", "" };
+        yield return new[] { "group1", "1", @"contoso.local\group1" };
+    }
+}
+
+public class SearchEntityDataSource
 {
     public static IEnumerable<TestCaseData> GetTestData()
     {
         DataTable dt = DataTable.New.ReadCsv(UnitTestsHelper.DataFile_SearchTests);
         foreach (Row row in dt.Rows)
         {
-            var registrationData = new SearchTestsData();
+            var registrationData = new SearchEntityData();
             registrationData.Input = row["Input"];
             registrationData.ExpectedResultCount = Convert.ToInt32(row["ExpectedResultCount"]);
             registrationData.ExpectedEntityClaimValue = row["ExpectedEntityClaimValue"];
@@ -179,21 +191,21 @@ public class SearchTestsDataSource
     //}
 }
 
-public class SearchTestsData
+public class SearchEntityData
 {
     public string Input;
     public int ExpectedResultCount;
     public string ExpectedEntityClaimValue;
 }
 
-public class ValidationTestsDataSource
+public class ValidateEntityDataSource
 {
     public static IEnumerable<TestCaseData> GetTestData()
     {
         DataTable dt = DataTable.New.ReadCsv(UnitTestsHelper.DataFile_ValidationTests);
         foreach (Row row in dt.Rows)
         {
-            var registrationData = new ValidationTestsData();
+            var registrationData = new ValidateEntityData();
             registrationData.ClaimValue = row["ClaimValue"];
             registrationData.ShouldValidate = Convert.ToBoolean(row["ShouldValidate"]);
             registrationData.IsMemberOfTrustedGroup = Convert.ToBoolean(row["IsMemberOfTrustedGroup"]);
@@ -202,7 +214,7 @@ public class ValidationTestsDataSource
     }
 }
 
-public class ValidationTestsData
+public class ValidateEntityData
 {
     public string ClaimValue;
     public bool ShouldValidate;

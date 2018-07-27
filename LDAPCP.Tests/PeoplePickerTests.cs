@@ -1,6 +1,7 @@
 ﻿using Microsoft.SharePoint.Administration.Claims;
 using Microsoft.SharePoint.WebControls;
 using NUnit.Framework;
+using System;
 using System.Security.Claims;
 
 namespace LDAPCP.Tests
@@ -9,23 +10,30 @@ namespace LDAPCP.Tests
     [Parallelizable(ParallelScope.Children)]
     public class PeoplePickerTests
     {
-        [Test, TestCaseSource(typeof(SearchTestsDataSource), "GetTestData")]
+        [Test, TestCaseSource(typeof(SearchEntityDataSource), "GetTestData")]
         [MaxTime(UnitTestsHelper.MaxTime)]
         [Repeat(UnitTestsHelper.TestRepeatCount)]
-        public void SearchEntities(SearchTestsData registrationData)
+        public void SearchEntities(SearchEntityData registrationData)
         {
             SPProviderHierarchyTree[] providerResults = UnitTestsHelper.DoSearchOperation(registrationData.Input);
             UnitTestsHelper.VerifySearchResult(providerResults, registrationData.ExpectedResultCount, registrationData.ExpectedEntityClaimValue);
         }
 
-        [Test, TestCaseSource(typeof(ValidationTestsDataSource), "GetTestData")]
+        [Test, TestCaseSource(typeof(ValidateEntityDataSource), "GetTestData")]
         [MaxTime(UnitTestsHelper.MaxTime)]
         [Repeat(UnitTestsHelper.TestRepeatCount)]
-        public void ValidateClaim(ValidationTestsData registrationData)
+        public void ValidateClaim(ValidateEntityData registrationData)
         {
             SPClaim inputClaim = new SPClaim(UnitTestsHelper.SPTrust.IdentityClaimTypeInformation.MappedClaimType, registrationData.ClaimValue, ClaimValueTypes.String, SPOriginalIssuers.Format(SPOriginalIssuerType.TrustedProvider, UnitTestsHelper.SPTrust.Name));
             PickerEntity[] entities = UnitTestsHelper.DoValidationOperation(inputClaim);
             UnitTestsHelper.VerifyValidationResult(entities, registrationData.ShouldValidate, registrationData.ClaimValue);
+        }
+
+        //[TestCaseSource(typeof(SearchEntityDataSourceCollection))]
+        public void DEBUG_SearchEntitiesFromCollection(string inputValue, string expectedCount, string expectedClaimValue)
+        {
+            SPProviderHierarchyTree[] providerResults = UnitTestsHelper.DoSearchOperation(inputValue);
+            UnitTestsHelper.VerifySearchResult(providerResults, Convert.ToInt32(expectedCount), expectedClaimValue);
         }
 
         //[TestCase(@"group\ch", 1, @"contoso.local\group\chartest")]
