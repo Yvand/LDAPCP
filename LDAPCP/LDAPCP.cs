@@ -734,8 +734,8 @@ namespace ldapcp
                     string directoryObjectPropertyValue = LDAPResultProperties[LDAPResultPropertyNames.First(x => String.Equals(x, ctConfig.LDAPAttribute, StringComparison.InvariantCultureIgnoreCase))][0].ToString();
 
                     // Check if current LDAP attribute value matches the input
-                    // Fix bug https://github.com/Yvand/LDAPCP/issues/53 by escaping '\' with its hex representation '\5c' as documented in https://social.technet.microsoft.com/wiki/contents/articles/5392.active-directory-ldap-syntax-filters.aspx
-                    string inputValueToCompare = currentContext.Input.Replace(@"\5c", @"\");
+                    // Fix bug https://github.com/Yvand/LDAPCP/issues/53 by escaping special characters with their hex representation as documented in https://ldap.com/ldap-filters/
+                    string inputValueToCompare = OperationContext.UnescapeSpecialCharacters(currentContext.Input);
                     if (currentContext.ExactSearch)
                     {
                         if (!String.Equals(directoryObjectPropertyValue, inputValueToCompare, StringComparison.InvariantCultureIgnoreCase)) continue;

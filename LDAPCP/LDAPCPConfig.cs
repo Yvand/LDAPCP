@@ -3,6 +3,7 @@ using Microsoft.SharePoint.Administration;
 using Microsoft.SharePoint.Administration.Claims;
 using Microsoft.SharePoint.WebControls;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.DirectoryServices;
@@ -43,6 +44,17 @@ namespace ldapcp
         public const bool EnforceOnly1ClaimTypeForGroup = false;    // In LDAPCP, multiple claim types can be used to create group permissions
         public const string DefaultMainGroupClaimType = WIF4_5.ClaimTypes.Role;
         public const string PUBLICSITEURL = "https://ldapcp.com";
+
+        /// <summary>
+        /// Escape characters to use for special characters in LDAP filters, as documented in https://ldap.com/ldap-filters/
+        /// </summary>
+        public static Dictionary<string, string> SpecialCharacters = new Dictionary<string, string>()
+            {
+                { @"\", @"\5C" },   // '\' must be the 1st to be evaluated because '\' is also present in the escape characters themselves
+                { "*", @"\2A" },
+                { "(", @"\28" },
+                { ")", @"\29" },
+            };
     }
 
     public class LDAPCPConfig : SPPersistedObject, ILDAPCPConfiguration
@@ -630,7 +642,6 @@ namespace ldapcp
     /// </summary>
     public class OperationContext
     {
-        public const string RegexAccountFromFullAccountName = ".*\\\\(.*)";
         public const string RegexDomainFromFullAccountName = "(.*)\\\\.*";
         public const string RegexFullDomainFromEmail = ".*@(.*)";
 
@@ -689,8 +700,8 @@ namespace ldapcp
             this.Input = input;
             if (input != null)
             {
-                // Fix bug https://github.com/Yvand/LDAPCP/issues/53 by escaping '\' with its hex representation '\5c' as documented in https://social.technet.microsoft.com/wiki/contents/articles/5392.active-directory-ldap-syntax-filters.aspx
-                this.Input = input.Replace(@"\", @"\5c");
+                // Fix bug https://github.com/Yvand/LDAPCP/issues/53 by escaping special characters with their hex representation as documented in https://ldap.com/ldap-filters/
+                this.Input = OperationContext.EscapeSpecialCharacters(input);
             }
             this.IncomingEntity = incomingEntity;
             this.UriContext = context;
@@ -765,10 +776,10 @@ namespace ldapcp
                 ))
             {
                 Input = GetAccountFromFullAccountName(Input);
-
-                // Fix bug https://github.com/Yvand/LDAPCP/issues/53 by escaping '\' with its hex representation '\5c' as documented in https://social.technet.microsoft.com/wiki/contents/articles/5392.active-directory-ldap-syntax-filters.aspx
-                Input = Input.Replace(@"\", @"\5c");
             }
+
+            // Fix bug https://github.com/Yvand/LDAPCP/issues/53 by escaping special characters with their hex representation as documented in https://ldap.com/ldap-filters/
+            Input = OperationContext.EscapeSpecialCharacters(Input);
 
             this.InputHasKeyword = (!String.IsNullOrEmpty(IncomingEntityClaimTypeConfig.ClaimValuePrefix) && !IncomingEntity.Value.StartsWith(IncomingEntityClaimTypeConfig.ClaimValuePrefix, StringComparison.InvariantCultureIgnoreCase) && IncomingEntityClaimTypeConfig.DoNotAddClaimValuePrefixIfBypassLookup) ? true : false;
         }
@@ -802,9 +813,13 @@ namespace ldapcp
                !x.UseMainClaimTypeOfDirectoryObject);
         }
 
+        /// <summary>
+        /// Returns the account from "domain\account"
+        /// </summary>
+        /// <param name="fullAccountName">e.g. "contoso.local\account"</param>
+        /// <returns>account</returns>
         public static string GetAccountFromFullAccountName(string fullAccountName)
         {
-            //return Regex.Replace(fullAccountName, RegexAccountFromFullAccountName, "$1", RegexOptions.None);
             if (fullAccountName.Contains(@"\"))
                 return fullAccountName.Split(new char[] { '\\' }, 2)[1];
             else
@@ -812,13 +827,16 @@ namespace ldapcp
         }
 
         /// <summary>
-        /// Returns the string before the '\'
+        /// Returns the domain from "domain\account"
         /// </summary>
-        /// <param name="fullAccountName">e.g. "mylds.local\ldsgroup1"</param>
-        /// <returns>e.g. "mylds.local"</returns>
+        /// <param name="fullAccountName">e.g. "contoso.local\account"</param>
+        /// <returns>e.g. "contoso.local"</returns>
         public static string GetDomainFromFullAccountName(string fullAccountName)
         {
-            return Regex.Replace(fullAccountName, RegexDomainFromFullAccountName, "$1", RegexOptions.None);
+            if (fullAccountName.Contains(@"\"))
+                return fullAccountName.Split(new char[] { '\\' }, 2)[0];
+            else
+                return fullAccountName;
         }
 
         /// <summary>
@@ -875,28 +893,6 @@ namespace ldapcp
                 if (directory.Properties.Contains("name")) domainName = directory.Properties["name"].Value.ToString();
                 else if (directory.Properties.Contains("cn")) domainName = directory.Properties["cn"].Value.ToString(); // Tivoli sets domain name in cn property (property name does not exist)
             }
-
-            // OLD LOGIC
-            //// Retrieve FQDN and domain name of current DirectoryEntry
-            //domainFQDN = String.Empty;
-            //if (directory.Properties.Contains("distinguishedName"))
-            //{
-            //    distinguishedName = directory.Properties["distinguishedName"].Value.ToString();
-            //    if (distinguishedName.Contains("DC="))
-            //    {
-            //        int start = distinguishedName.IndexOf("DC=", StringComparison.InvariantCultureIgnoreCase);
-            //        string[] dnSplitted = distinguishedName.Substring(start).Split(new string[] { "DC=" }, StringSplitOptions.RemoveEmptyEntries);
-            //        foreach (string dc in dnSplitted)
-            //        {
-            //            domainFQDN += dc.Replace(',', '.');
-            //        }
-            //    }
-            //}
-
-            //// This change is in order to implement the same logic as in LDAPCP.SearchOrValidateInLDAP()
-            //domainName = OperationContext.GetFirstSubString(domainFQDN, ".");
-            ////if (directory.Properties.Contains("name")) domainName = directory.Properties["name"].Value.ToString();
-            ////else if (directory.Properties.Contains("cn")) domainName = directory.Properties["cn"].Value.ToString(); // Tivoli sets domain name in cn property (property name does not exist)
         }
 
         /// <summary>
@@ -912,6 +908,26 @@ namespace ldapcp
                 return distinguishedNameValue.Substring(equalsIndex + 1, commaIndex - equalsIndex - 1);
             else
                 return String.Empty;
+        }
+
+        public static string EscapeSpecialCharacters(string stringWithSpecialChars)
+        {
+            string result = stringWithSpecialChars;
+            foreach (KeyValuePair<string, string> kvp in ClaimsProviderConstants.SpecialCharacters)
+            {
+                result = result.Replace(kvp.Key, kvp.Value);
+            }
+            return result;
+        }
+
+        public static string UnescapeSpecialCharacters(string stringWithEscapedChars)
+        {
+            string result = stringWithEscapedChars;
+            foreach (KeyValuePair<string, string> kvp in ClaimsProviderConstants.SpecialCharacters)
+            {
+                result = result.Replace(kvp.Value, kvp.Key);
+            }
+            return result;
         }
     }
 
