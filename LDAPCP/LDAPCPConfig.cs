@@ -687,16 +687,12 @@ namespace ldapcp
         {
             this.OperationType = currentRequestType;
             this.Input = input;
-            //if (input != null)
-            //{
-            //    this.Input = input.Replace(@"\", @"\5c");   // Fix bug https://github.com/Yvand/LDAPCP/issues/53
-            //}
+            if (input != null)
+            {
+                // Fix bug https://github.com/Yvand/LDAPCP/issues/53 by escaping '\' with its hex representation '\5c' as documented in https://social.technet.microsoft.com/wiki/contents/articles/5392.active-directory-ldap-syntax-filters.aspx
+                this.Input = input.Replace(@"\", @"\5c");
+            }
             this.IncomingEntity = incomingEntity;
-            //if (incomingEntity != null)
-            //{
-            //    // Fix bug https://github.com/Yvand/LDAPCP/issues/53
-            //    this.IncomingEntity = new SPClaim(incomingEntity.ClaimType, incomingEntity.Value.Replace(@"\", @"\5c"), incomingEntity.ValueType, incomingEntity.OriginalIssuer);
-            //}
             this.UriContext = context;
             this.HierarchyNodeID = hierarchyNodeID;
             this.MaxCount = maxCount;
@@ -769,6 +765,9 @@ namespace ldapcp
                 ))
             {
                 Input = GetAccountFromFullAccountName(Input);
+
+                // Fix bug https://github.com/Yvand/LDAPCP/issues/53 by escaping '\' with its hex representation '\5c' as documented in https://social.technet.microsoft.com/wiki/contents/articles/5392.active-directory-ldap-syntax-filters.aspx
+                Input = Input.Replace(@"\", @"\5c");
             }
 
             this.InputHasKeyword = (!String.IsNullOrEmpty(IncomingEntityClaimTypeConfig.ClaimValuePrefix) && !IncomingEntity.Value.StartsWith(IncomingEntityClaimTypeConfig.ClaimValuePrefix, StringComparison.InvariantCultureIgnoreCase) && IncomingEntityClaimTypeConfig.DoNotAddClaimValuePrefixIfBypassLookup) ? true : false;
@@ -805,7 +804,11 @@ namespace ldapcp
 
         public static string GetAccountFromFullAccountName(string fullAccountName)
         {
-            return Regex.Replace(fullAccountName, RegexAccountFromFullAccountName, "$1", RegexOptions.None);
+            //return Regex.Replace(fullAccountName, RegexAccountFromFullAccountName, "$1", RegexOptions.None);
+            if (fullAccountName.Contains(@"\"))
+                return fullAccountName.Split(new char[] { '\\' }, 2)[1];
+            else
+                return fullAccountName;
         }
 
         /// <summary>
