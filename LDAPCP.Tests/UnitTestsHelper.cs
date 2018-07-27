@@ -36,7 +36,7 @@ public class UnitTestsHelper
     [OneTimeSetUp]
     public static void InitSiteCollection()
     {
-        return; // Uncommented when debugging LDAPCP code from unit tests
+        //return; // Uncommented when debugging LDAPCP code from unit tests
         SPWebApplication wa = SPWebApplication.Lookup(Context);
         if (wa != null)
         {

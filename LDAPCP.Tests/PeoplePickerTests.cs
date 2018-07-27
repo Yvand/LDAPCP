@@ -36,18 +36,18 @@ namespace LDAPCP.Tests
             UnitTestsHelper.VerifySearchResult(providerResults, Convert.ToInt32(expectedCount), expectedClaimValue);
         }
 
-        [TestCase(@"group\ch", 1, @"contoso.local\group\chartest")]
-        [TestCase(@"test)", 2, @"test)char@contoso.local")]
-        [TestCase(@"group\ch", 1, @"group\chartest")]
+        //[TestCase(@"group\ch", 1, @"contoso.local\group\chartest")]
+        //[TestCase(@"test)", 2, @"test)char@contoso.local")]
+        //[TestCase(@"group\ch", 1, @"group\chartest")]
         public void DEBUG_SearchEntities(string inputValue, int expectedResultCount, string expectedEntityClaimValue)
         {
             SPProviderHierarchyTree[] providerResults = UnitTestsHelper.DoSearchOperation(inputValue);
             UnitTestsHelper.VerifySearchResult(providerResults, expectedResultCount, expectedEntityClaimValue);
         }
 
-        [TestCase("http://schemas.microsoft.com/ws/2008/06/identity/claims/role", @"contoso.local\group\chartest", true)]
-        [TestCase("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress", @"test)char@contoso.local", true)]
-        [TestCase("http://yvand.com/customType1", @"group\chartest", true)]
+        //[TestCase("http://schemas.microsoft.com/ws/2008/06/identity/claims/role", @"contoso.local\group\chartest", true)]
+        //[TestCase("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress", @"test)char@contoso.local", true)]
+        //[TestCase("http://yvand.com/customType1", @"group\chartest", true)]
         public void DEBUG_ValidateClaim(string claimType, string claimValue, bool shouldValidate)
         {
             SPClaim inputClaim = new SPClaim(claimType, claimValue, ClaimValueTypes.String, SPOriginalIssuers.Format(SPOriginalIssuerType.TrustedProvider, UnitTestsHelper.SPTrust.Name));
