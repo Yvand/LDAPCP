@@ -7,3 +7,4 @@
 * Improved validation of changes made to ClaimTypes collection
 * Added method ClaimTypeConfigCollection.GetByClaimType()
 * Implemented unit tests
+* Explicitely encode HTML messages shown in admin pages and renderred from server side code to comply with tools scanning code to detect security vulnerabilities

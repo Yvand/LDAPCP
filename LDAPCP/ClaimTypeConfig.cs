@@ -315,6 +315,11 @@ namespace ldapcp
                 throw new InvalidOperationException($"Prefix '{item.PrefixToBypassLookup}' is already set with another claim type and must be unique");
             }
 
+            if (Contains(item, new ClaimTypeConfigSameDirectoryConfiguration()))
+            {
+                throw new InvalidOperationException($"An item with LDAP attribute '{item.LDAPAttribute}' and LDAP class '{item.LDAPClass}' already exists for the object type '{item.EntityType}'");
+            }
+
             if (Contains(item))
             {
                 if (String.IsNullOrEmpty(item.ClaimType))
@@ -678,6 +683,32 @@ namespace ldapcp
         public override int GetHashCode(ClaimTypeConfig ct)
         {
             string hCode = ct.ClaimType + ct.EntityType + ct.UseMainClaimTypeOfDirectoryObject.ToString();
+            return hCode.GetHashCode();
+        }
+    }
+
+    /// <summary>
+    /// Check if a given object type (user or group) has 2 ClaimTypeConfig with the same LDAPAttribute and LDAPClass
+    /// </summary>
+    public class ClaimTypeConfigSameDirectoryConfiguration : EqualityComparer<ClaimTypeConfig>
+    {
+        public override bool Equals(ClaimTypeConfig existingCTConfig, ClaimTypeConfig newCTConfig)
+        {
+            if (String.Equals(existingCTConfig.LDAPAttribute, newCTConfig.LDAPAttribute, StringComparison.InvariantCultureIgnoreCase) &&
+                String.Equals(existingCTConfig.LDAPClass, newCTConfig.LDAPClass, StringComparison.InvariantCultureIgnoreCase) &&
+                existingCTConfig.EntityType == newCTConfig.EntityType)
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+        public override int GetHashCode(ClaimTypeConfig ct)
+        {
+            string hCode = ct.LDAPAttribute + ct.LDAPClass + ct.EntityType;
             return hCode.GetHashCode();
         }
     }

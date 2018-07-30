@@ -1,6 +1,7 @@
 ﻿using ldapcp;
 using NUnit.Framework;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace LDAPCP.Tests
@@ -9,7 +10,9 @@ namespace LDAPCP.Tests
     public class ModifyConfigTests
     {
         public const string ClaimsProviderConfigName = "LDAPCPConfig";
-        public const string NonExistingClaimType = "http://schemas.yvand.com/ws/claims/random";
+        public const string AvailableClaimType = "http://schemas.yvand.com/ws/claims/random";
+        public const string AvailableLDAPAttribute = "randomAttribute";
+        public const string AvailableLDAPClass = "randomClass";
 
         private LDAPCPConfig Config;
 
@@ -28,29 +31,42 @@ namespace LDAPCP.Tests
         {
             ClaimTypeConfig ctConfig = new ClaimTypeConfig();
 
-            // Identity claim type already exists and a claim type cannot be added twice
+            // Adding a ClaimTypeConfig with a claim type already set should fail
             ctConfig.ClaimType = UnitTestsHelper.SPTrust.IdentityClaimTypeInformation.MappedClaimType;
+            ctConfig.LDAPAttribute = AvailableLDAPAttribute;
+            ctConfig.LDAPClass = AvailableLDAPClass;
             Assert.Throws<InvalidOperationException>(() => Config.ClaimTypes.Add(ctConfig));
 
-            // Properties LDAPAttribute and LDAPClass should be set
-            ctConfig.ClaimType = NonExistingClaimType;
+            // Adding a ClaimTypeConfig with UseMainClaimTypeOfDirectoryObject = false (default value) and LDAPAttribute / LDAPClass not set should fail
+            ctConfig.ClaimType = AvailableClaimType;
+            ctConfig.LDAPAttribute = String.Empty;
+            ctConfig.LDAPClass = String.Empty;
             Assert.Throws<InvalidOperationException>(() => Config.ClaimTypes.Add(ctConfig));
 
-            // Property ClaimType should be empty if UseMainClaimTypeOfDirectoryObject is true
+            // Adding a ClaimTypeConfig with UseMainClaimTypeOfDirectoryObject = true and ClaimType set should fail
+            ctConfig.ClaimType = AvailableClaimType;
+            ctConfig.LDAPAttribute = AvailableLDAPAttribute;
+            ctConfig.LDAPClass = AvailableLDAPClass;
             ctConfig.UseMainClaimTypeOfDirectoryObject = true;
             Assert.Throws<InvalidOperationException>(() => Config.ClaimTypes.Add(ctConfig));
 
-            // AzureCP allows only 1 claim type for EntityType 'Group'
+            // Adding a valid ClaimTypeConfig with EntityType 'Group' should succeed
+            ctConfig.ClaimType = AvailableClaimType;
+            ctConfig.LDAPAttribute = AvailableLDAPAttribute;
+            ctConfig.LDAPClass = AvailableLDAPClass;
             ctConfig.EntityType = DirectoryObjectType.Group;
             ctConfig.UseMainClaimTypeOfDirectoryObject = false;
-            Assert.Throws<InvalidOperationException>(() => Config.ClaimTypes.Add(ctConfig));
-
-            // Valid ClaimTypeConfig
-            ctConfig.UseMainClaimTypeOfDirectoryObject = false;
-            ctConfig.EntityType = DirectoryObjectType.User;
-            ctConfig.LDAPAttribute = "LDAPAttributeValue";
-            ctConfig.LDAPClass = "LDAPClassValue";
             Config.ClaimTypes.Add(ctConfig);
+            Config.ClaimTypes.Remove(AvailableClaimType);
+
+            // Adding a valid ClaimTypeConfig should succeed
+            ctConfig.ClaimType = AvailableClaimType;
+            ctConfig.LDAPAttribute = AvailableLDAPAttribute;
+            ctConfig.LDAPClass = AvailableLDAPClass;
+            ctConfig.EntityType = DirectoryObjectType.User;
+            ctConfig.UseMainClaimTypeOfDirectoryObject = false;
+            Config.ClaimTypes.Add(ctConfig);
+            Config.ClaimTypes.Remove(ctConfig);
         }
 
         [Test]
@@ -92,7 +108,7 @@ namespace LDAPCP.Tests
             // Set a PrefixToBypassLookup on an existing item and add a new item with the same PrefixToBypassLookup
             var firstCTConfig = Config.ClaimTypes.FirstOrDefault(x => !String.IsNullOrEmpty(x.ClaimType));
             firstCTConfig.PrefixToBypassLookup = prefixToBypassLookup;
-            ClaimTypeConfig ctConfig = new ClaimTypeConfig() { ClaimType = NonExistingClaimType, PrefixToBypassLookup = prefixToBypassLookup, LDAPAttribute = "ldap", LDAPClass = "class" };
+            ClaimTypeConfig ctConfig = new ClaimTypeConfig() { ClaimType = AvailableClaimType, PrefixToBypassLookup = prefixToBypassLookup, LDAPAttribute = "ldap", LDAPClass = "class" };
             Assert.Throws<InvalidOperationException>(() => Config.Update());
         }
 
@@ -108,7 +124,27 @@ namespace LDAPCP.Tests
             // Set a EntityDataKey on an existing item and add a new item with the same EntityDataKey
             var firstCTConfig = Config.ClaimTypes.FirstOrDefault(x => !String.IsNullOrEmpty(x.ClaimType));
             firstCTConfig.EntityDataKey = entityDataKey;
-            ClaimTypeConfig ctConfig = new ClaimTypeConfig() { ClaimType = NonExistingClaimType, EntityDataKey = entityDataKey, LDAPAttribute = "ldap", LDAPClass = "class" };
+            ClaimTypeConfig ctConfig = new ClaimTypeConfig() { ClaimType = AvailableClaimType, EntityDataKey = entityDataKey, LDAPAttribute = AvailableLDAPAttribute, LDAPClass = AvailableLDAPClass };
+            Assert.Throws<InvalidOperationException>(() => Config.Update());
+        }
+
+        [Test]
+        public void DuplicateLDAPAttributeAndClass()
+        {
+            ClaimTypeConfig existingCTConfig = Config.ClaimTypes.FirstOrDefault(x => !String.IsNullOrEmpty(x.ClaimType) && x.EntityType == DirectoryObjectType.User);
+
+            // Create a new ClaimTypeConfig with a LDAPAttribute / LDAPClass already set should fail
+            ClaimTypeConfig ctConfig = new ClaimTypeConfig() { ClaimType = AvailableClaimType, EntityType = DirectoryObjectType.User, LDAPAttribute = existingCTConfig.LDAPAttribute, LDAPClass = existingCTConfig.LDAPClass };
+            Assert.Throws<InvalidOperationException>(() => Config.ClaimTypes.Add(ctConfig));
+
+            // Should be added successfully (for next test)
+            ctConfig.LDAPAttribute = AvailableLDAPAttribute;
+            ctConfig.LDAPClass = AvailableLDAPClass;
+            Config.ClaimTypes.Add(ctConfig);
+            
+            // Update an existing ClaimTypeConfig with a LDAPAttribute / LDAPClass already set should fail
+            ctConfig.LDAPAttribute = existingCTConfig.LDAPAttribute;
+            ctConfig.LDAPClass = existingCTConfig.LDAPClass;
             Assert.Throws<InvalidOperationException>(() => Config.Update());
         }
     }
