@@ -286,6 +286,7 @@ namespace ldapcp
             try
             {
                 ClaimTypeConfigCollection testUpdateCollection = new ClaimTypeConfigCollection();
+                testUpdateCollection.SPTrust = this.SPTrust;
                 foreach (ClaimTypeConfig curCTConfig in this.ClaimTypes)
                 {
                     testUpdateCollection.Add(curCTConfig, false);
