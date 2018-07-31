@@ -267,8 +267,11 @@ namespace ldapcp
             try
             {
                 LDAPCPConfig persistedObject = parent.GetChild<LDAPCPConfig>(persistedObjectName);
-                persistedObject.CheckAndCleanConfiguration(String.Empty);
-                return persistedObject;
+                if (persistedObject != null)
+                {
+                    persistedObject.CheckAndCleanConfiguration(String.Empty);
+                    return persistedObject;
+                }
             }
             catch (Exception ex)
             {
@@ -346,7 +349,8 @@ namespace ldapcp
 
         public LDAPCPConfig CopyPersistedProperties()
         {
-            LDAPCPConfig copy = new LDAPCPConfig(this.Name, this.Parent, this.SPTrustName);
+            LDAPCPConfig copy = new LDAPCPConfig();
+            copy.SPTrustName = this.SPTrustName;
             copy.LDAPConnectionsProp = new List<LDAPConnection>();
             foreach (LDAPConnection currentCoco in this.LDAPConnectionsProp)
             {
