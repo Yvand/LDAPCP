@@ -15,11 +15,16 @@ using System.Security.Claims;
 public class UnitTestsHelper
 {
     public const string ClaimsProviderName = "LDAPCP";
+    public const string ClaimsProviderConfigName = "LDAPCPConfig";
     public static Uri Context = new Uri("http://spsites/sites/LDAPCP.UnitTests");
     public const int MaxTime = 50000;
     public const int TestRepeatCount = 50;
     public const string FarmAdmin = @"i:0#.w|contoso\yvand";
-    public const string NonExistentClaimValue = "IDoNotExist";
+
+    public const string RandomClaimType = "http://schemas.yvand.com/ws/claims/random";
+    public const string RandomClaimValue = "IDoNotExist";
+    public const string RandomLDAPAttribute = "randomAttribute";
+    public const string RandomLDAPClass = "randomClass";
 
     public const string TrustedGroupToAdd_ClaimValue = @"contoso.local\group1";
     public const string TrustedGroupToAdd_ClaimType = ClaimsProviderConstants.DefaultMainGroupClaimType;
@@ -37,12 +42,19 @@ public class UnitTestsHelper
     public static void InitSiteCollection()
     {
         //return; // Uncommented when debugging LDAPCP code from unit tests
+
+        LDAPCPConfig config = LDAPCPConfig.GetConfiguration(UnitTestsHelper.ClaimsProviderConfigName);
+        if (config == null)
+        {
+            LDAPCPConfig.CreateConfiguration(ClaimsProviderConstants.LDAPCPCONFIG_ID, ClaimsProviderConstants.LDAPCPCONFIG_NAME, SPTrust.Name);
+        }
+
         SPWebApplication wa = SPWebApplication.Lookup(Context);
         if (wa != null)
         {
             Console.WriteLine($"Web app {wa.Name} found.");
             SPClaimProviderManager claimMgr = SPClaimProviderManager.Local;
-            SPClaim claim = new SPClaim(TrustedGroupToAdd_ClaimType, TrustedGroupToAdd_ClaimValue, "http://www.w3.org/2001/XMLSchema#string", SPOriginalIssuers.Format(SPOriginalIssuerType.TrustedProvider, SPTrust.Name));
+            SPClaim claim = new SPClaim(TrustedGroupToAdd_ClaimType, TrustedGroupToAdd_ClaimValue, ClaimValueTypes.String, SPOriginalIssuers.Format(SPOriginalIssuerType.TrustedProvider, SPTrust.Name));
             string encodedClaim = claimMgr.EncodeClaim(claim);
             SPUserInfo userInfo = new SPUserInfo { LoginName = encodedClaim, Name = TrustedGroupToAdd_ClaimValue };
 
@@ -74,7 +86,7 @@ public class UnitTestsHelper
     public static SPProviderHierarchyTree[] DoSearchOperation(string inputValue)
     {
         SPClaimProviderOperationOptions mode = SPClaimProviderOperationOptions.DisableHierarchyAugmentation;
-        string[] providerNames = new string[] { "AllUsers", "LDAPCP", "AzureCP", "AD" };
+        string[] providerNames = new string[] { "AllUsers", ClaimsProviderName, "AD" };
         string[] entityTypes = new string[] { "User", "SecGroup", "SharePointGroup", "System", "FormsRole" };
 
         SPProviderHierarchyTree[] providerResults = SPClaimProviderOperations.Search(UnitTestsHelper.Context, mode, providerNames, entityTypes, inputValue, 30);
@@ -99,8 +111,10 @@ public class UnitTestsHelper
         {
             // SPSite.RootWeb should not be disposed: https://blogs.msdn.microsoft.com/rogerla/2008/10/04/updated-spsite-rootweb-dispose-guidance/
             SPWeb rootWeb = site.RootWeb;
-            bool entityHasPerms = rootWeb.DoesUserHavePermissions(inputClaim.ToEncodedString(), TrustedGroupToAdd_PermissionsAssigned);
-            if (shouldHavePermissions) Assert.IsTrue(entityHasPerms);
+            SPBasePermissions effectivePermissions = rootWeb.GetUserEffectivePermissions(inputClaim.ToEncodedString());
+            bool hasPermissions = (effectivePermissions & TrustedGroupToAdd_PermissionsAssigned) == TrustedGroupToAdd_PermissionsAssigned;
+            if (shouldHavePermissions) Assert.IsTrue(hasPermissions);
+            else Assert.IsFalse(hasPermissions);
         }
     }
 

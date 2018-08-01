@@ -11,10 +11,7 @@ namespace LDAPCP.Tests
     [TestFixture]
     public class CustomConfigTests
     {
-        public const string ClaimsProviderConfigName = "LDAPCPConfig";
-        public const string NonExistingClaimType = "http://schemas.yvand.com/ws/claims/random";
         public static string GroupsClaimType = ClaimsProviderConstants.DefaultMainGroupClaimType;
-
         private LDAPCPConfig Config;
         private LDAPCPConfig BackupConfig;
 
@@ -22,7 +19,7 @@ namespace LDAPCP.Tests
         public void Init()
         {
             Console.WriteLine($"Starting custom config test {TestContext.CurrentContext.Test.Name}...");
-            Config = LDAPCPConfig.GetConfiguration(ClaimsProviderConfigName);
+            Config = LDAPCPConfig.GetConfiguration(UnitTestsHelper.ClaimsProviderConfigName);
             BackupConfig = Config.CopyPersistedProperties();
             Config.ResetClaimTypesList();
         }
@@ -96,12 +93,12 @@ namespace LDAPCP.Tests
             Config.BypassLDAPLookup = true;
             Config.Update();
 
-            SPProviderHierarchyTree[] providerResults = UnitTestsHelper.DoSearchOperation(UnitTestsHelper.NonExistentClaimValue);
-            UnitTestsHelper.VerifySearchResult(providerResults, 3, UnitTestsHelper.NonExistentClaimValue);
+            SPProviderHierarchyTree[] providerResults = UnitTestsHelper.DoSearchOperation(UnitTestsHelper.RandomClaimValue);
+            UnitTestsHelper.VerifySearchResult(providerResults, 3, UnitTestsHelper.RandomClaimValue);
 
-            SPClaim inputClaim = new SPClaim(UnitTestsHelper.SPTrust.IdentityClaimTypeInformation.MappedClaimType, UnitTestsHelper.NonExistentClaimValue, ClaimValueTypes.String, SPOriginalIssuers.Format(SPOriginalIssuerType.TrustedProvider, UnitTestsHelper.SPTrust.Name));
+            SPClaim inputClaim = new SPClaim(UnitTestsHelper.SPTrust.IdentityClaimTypeInformation.MappedClaimType, UnitTestsHelper.RandomClaimValue, ClaimValueTypes.String, SPOriginalIssuers.Format(SPOriginalIssuerType.TrustedProvider, UnitTestsHelper.SPTrust.Name));
             PickerEntity[] entities = UnitTestsHelper.DoValidationOperation(inputClaim);
-            UnitTestsHelper.VerifyValidationResult(entities, true, UnitTestsHelper.NonExistentClaimValue);
+            UnitTestsHelper.VerifyValidationResult(entities, true, UnitTestsHelper.RandomClaimValue);
 
             Config.BypassLDAPLookup = false;
             Config.Update();
