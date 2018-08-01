@@ -90,7 +90,7 @@ namespace ldapcp
             set
             {
                 _ClaimTypes = value;
-                _ClaimTypesCollection = value.innerCol;
+                _ClaimTypesCollection = value == null ? null : value.innerCol;
             }
         }
         [Persisted]

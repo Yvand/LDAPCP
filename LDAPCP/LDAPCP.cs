@@ -106,7 +106,7 @@ namespace ldapcp
                     globalConfiguration = GetConfiguration(context, entityTypes, PersistedObjectName);
                     if (globalConfiguration == null)
                     {
-                        ClaimsProviderLogging.Log($"[{ProviderInternalName}] Configuration '{PersistedObjectName}' was not found. Visit LDAPCP admin pages in central administration to create it.",
+                        ClaimsProviderLogging.Log($"[{ProviderInternalName}] Configuration '{PersistedObjectName}' was not foundin configuration database, use default configuration instead. Visit LDAPCP admin pages in central administration to create it.",
                             TraceSeverity.Unexpected, EventSeverity.Error, TraceCategory.Core);
                         // Run with default configuration, which creates a connection to connect to current AD domain
                         globalConfiguration = LDAPCPConfig.ReturnDefaultConfiguration(SPTrust.Name);
@@ -179,8 +179,7 @@ namespace ldapcp
                     SetCustomConfiguration(context, entityTypes);
                     if (this.CurrentConfiguration.ClaimTypes == null)
                     {
-                        // this.CurrentConfiguration.ClaimTypes was set to null in SetCustomConfiguration, which is bad
-                        ClaimsProviderLogging.Log(String.Format("[{0}] ClaimTypes was set to null in SetCustomConfiguration, don't set it or set it with actual entries.", ProviderInternalName), TraceSeverity.Unexpected, EventSeverity.Error, TraceCategory.Core);
+                        ClaimsProviderLogging.Log($"[{ProviderInternalName}] List if claim types was set to null in method SetCustomConfiguration for configuration '{PersistedObjectName}'.", TraceSeverity.Unexpected, EventSeverity.Error, TraceCategory.Core);
                         return false;
                     }
                     success = InitializeClaimTypeConfigList(this.CurrentConfiguration.ClaimTypes);
