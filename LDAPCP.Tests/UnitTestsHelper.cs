@@ -14,6 +14,7 @@ using System.Security.Claims;
 [SetUpFixture]
 public class UnitTestsHelper
 {
+    public static ldapcp.LDAPCP ClaimsProvider = new ldapcp.LDAPCP(UnitTestsHelper.ClaimsProviderName);
     public const string ClaimsProviderName = "LDAPCP";
     public const string ClaimsProviderConfigName = "LDAPCPConfig";
     public static Uri Context = new Uri("http://spsites/sites/LDAPCP.UnitTests");
@@ -28,10 +29,11 @@ public class UnitTestsHelper
 
     public const string TrustedGroupToAdd_ClaimValue = @"contoso.local\group1";
     public const string TrustedGroupToAdd_ClaimType = ClaimsProviderConstants.DefaultMainGroupClaimType;
-    private static SPBasePermissions TrustedGroupToAdd_PermissionsAssigned = SPBasePermissions.EditListItems;
+    public static SPClaim TrustedGroup = new SPClaim(TrustedGroupToAdd_ClaimType, TrustedGroupToAdd_ClaimValue, ClaimValueTypes.String, SPOriginalIssuers.Format(SPOriginalIssuerType.TrustedProvider, SPTrust.Name));
 
     public const string DataFile_SearchTests = @"F:\Data\Dev\LDAPCP_SearchTests_Data.csv";
     public const string DataFile_ValidationTests = @"F:\Data\Dev\LDAPCP_ValidationTests_Data.csv";
+
 
     public static SPTrustedLoginProvider SPTrust
     {
@@ -54,8 +56,7 @@ public class UnitTestsHelper
         {
             Console.WriteLine($"Web app {wa.Name} found.");
             SPClaimProviderManager claimMgr = SPClaimProviderManager.Local;
-            SPClaim claim = new SPClaim(TrustedGroupToAdd_ClaimType, TrustedGroupToAdd_ClaimValue, ClaimValueTypes.String, SPOriginalIssuers.Format(SPOriginalIssuerType.TrustedProvider, SPTrust.Name));
-            string encodedClaim = claimMgr.EncodeClaim(claim);
+            string encodedClaim = claimMgr.EncodeClaim(TrustedGroup);
             SPUserInfo userInfo = new SPUserInfo { LoginName = encodedClaim, Name = TrustedGroupToAdd_ClaimValue };
 
             if (!SPSite.Exists(Context))
@@ -83,84 +84,61 @@ public class UnitTestsHelper
         }
     }
 
-    public static SPProviderHierarchyTree[] DoSearchOperation(string inputValue)
+    public static void TestSearchOperation(string inputValue, int expectedCount, string expectedClaimValue)
     {
-        SPClaimProviderOperationOptions mode = SPClaimProviderOperationOptions.DisableHierarchyAugmentation;
-        string[] providerNames = new string[] { "AllUsers", ClaimsProviderName, "AD" };
         string[] entityTypes = new string[] { "User", "SecGroup", "SharePointGroup", "System", "FormsRole" };
 
-        SPProviderHierarchyTree[] providerResults = SPClaimProviderOperations.Search(UnitTestsHelper.Context, mode, providerNames, entityTypes, inputValue, 30);
-        return providerResults;
-    }
-
-    public static PickerEntity[] DoValidationOperation(SPClaim inputClaim)
-    {
-        SPClaimProviderOperationOptions mode = SPClaimProviderOperationOptions.AllZones | SPClaimProviderOperationOptions.OverrideVisibleConfiguration;
-        string[] providerNames = null;
-        string[] entityTypes = new string[] { "User" };
-
-        PickerEntity[] entities = SPClaimProviderOperations.Resolve(UnitTestsHelper.Context, mode, providerNames, entityTypes, inputClaim);
-        return entities;
-    }
-
-    public static void DoAugmentationOperationAndVerifyResult(string claimType, string claimValue, bool shouldHavePermissions)
-    {
-        SPClaim inputClaim = new SPClaim(claimType, claimValue, ClaimValueTypes.String, SPOriginalIssuers.Format(SPOriginalIssuerType.TrustedProvider, UnitTestsHelper.SPTrust.Name));
-
-        using (SPSite site = new SPSite(UnitTestsHelper.Context.AbsoluteUri))
+        SPProviderHierarchyTree providerResults = ClaimsProvider.Search(Context, entityTypes, inputValue, null, 30);
+        List<PickerEntity> entities = new List<PickerEntity>();
+        foreach (var children in providerResults.Children)
         {
-            // SPSite.RootWeb should not be disposed: https://blogs.msdn.microsoft.com/rogerla/2008/10/04/updated-spsite-rootweb-dispose-guidance/
-            SPWeb rootWeb = site.RootWeb;
-            SPBasePermissions effectivePermissions = rootWeb.GetUserEffectivePermissions(inputClaim.ToEncodedString());
-            bool hasPermissions = (effectivePermissions & TrustedGroupToAdd_PermissionsAssigned) == TrustedGroupToAdd_PermissionsAssigned;
-            if (shouldHavePermissions) Assert.IsTrue(hasPermissions);
-            else Assert.IsFalse(hasPermissions);
+            entities.AddRange(children.EntityData);
         }
+        VerifySearchTest(entities, expectedCount, expectedClaimValue);
+        
+        entities = ClaimsProvider.Resolve(Context, entityTypes, inputValue).ToList();
+        VerifySearchTest(entities, expectedCount, expectedClaimValue);
     }
 
-    public static void VerifySearchResult(SPProviderHierarchyTree[] providerResults, int expectedCount, string expectedClaimValue)
+    public static void VerifySearchTest(List<PickerEntity> entities, int expectedCount, string expectedClaimValue)
     {
-        foreach (SPProviderHierarchyTree providerResult in providerResults)
-        {
-            if (providerResult.ProviderName == UnitTestsHelper.ClaimsProviderName)
-            {
-                Assert.AreEqual(expectedCount, providerResult.Count);
+        int nbEntity = 0;
+        bool entityValueFound = false;
 
-                if (expectedCount == 0)
-                {
-                    return;
-                }
-                else if (expectedCount == 1)
-                {
-                    PickerEntity entity = providerResult.Children[0].EntityData[0];
-                    StringAssert.AreEqualIgnoringCase(expectedClaimValue, entity.Claim.Value);
-                    return;
-                }
-                else
-                {
-                    foreach (var children in providerResult.Children)
-                    {
-                        foreach (var entity in children.EntityData)
-                        {
-                            if (String.Equals(expectedClaimValue, entity.Claim.Value))
-                            {
-                                StringAssert.AreEqualIgnoringCase(expectedClaimValue, entity.Claim.Value);
-                                return;
-                            }
-                        }
-                    }
-                    Assert.Fail($"No entity with claim value {expectedClaimValue} was found in the entities returned by {UnitTestsHelper.ClaimsProviderName}");
-                }
+        foreach (PickerEntity entity in entities)
+        {
+            nbEntity++;
+            if (String.Equals(expectedClaimValue, entity.Claim.Value, StringComparison.InvariantCultureIgnoreCase))
+            {
+                entityValueFound = true;
             }
         }
-        Assert.AreEqual(expectedCount, 0);
+        if (!entityValueFound && expectedCount > 0) Assert.Fail($"No entity with claim value {expectedClaimValue} was found in the entities returned by {UnitTestsHelper.ClaimsProviderName}");
+
+        Assert.AreEqual(expectedCount, nbEntity);
     }
 
-    public static void VerifyValidationResult(PickerEntity[] entities, bool shouldValidate, string expectedClaimValue)
+    public static void TestValidationOperation(SPClaim inputClaim, bool shouldValidate, string expectedClaimValue)
     {
+        string[] entityTypes = new string[] { "User" };
+
+        PickerEntity[] entities = ClaimsProvider.Resolve(Context, entityTypes, inputClaim);
+
         int expectedCount = shouldValidate ? 1 : 0;
         Assert.AreEqual(expectedCount, entities.Length);
         if (shouldValidate) StringAssert.AreEqualIgnoringCase(expectedClaimValue, entities[0].Claim.Value);
+    }
+
+    public static void TestAugmentationOperation(string claimType, string claimValue, bool isMemberOfTrustedGroup)
+    {
+        SPClaim inputClaim = new SPClaim(claimType, claimValue, ClaimValueTypes.String, SPOriginalIssuers.Format(SPOriginalIssuerType.TrustedProvider, UnitTestsHelper.SPTrust.Name));
+        Uri context = new Uri(UnitTestsHelper.Context.AbsoluteUri);
+
+        SPClaim[] groups = ClaimsProvider.GetClaimsForEntity(context, inputClaim);
+
+        bool groupFound = false;
+        if (groups != null && groups.Contains(TrustedGroup)) groupFound = true;
+        if (isMemberOfTrustedGroup) Assert.IsTrue(groupFound);
     }
 }
 

@@ -39,7 +39,7 @@ namespace LDAPCP.Tests
         [MaxTime(UnitTestsHelper.MaxTime)]
         public void AugmentEntity(ValidateEntityData registrationData)
         {
-            UnitTestsHelper.DoAugmentationOperationAndVerifyResult(UnitTestsHelper.SPTrust.IdentityClaimTypeInformation.MappedClaimType, registrationData.ClaimValue, registrationData.IsMemberOfTrustedGroup);
+            UnitTestsHelper.TestAugmentationOperation(UnitTestsHelper.SPTrust.IdentityClaimTypeInformation.MappedClaimType, registrationData.ClaimValue, registrationData.IsMemberOfTrustedGroup);
 
             foreach (LDAPConnection ldapConn in Config.LDAPConnectionsProp)
             {
@@ -47,14 +47,14 @@ namespace LDAPCP.Tests
             }
             Config.Update();
 
-            UnitTestsHelper.DoAugmentationOperationAndVerifyResult(UnitTestsHelper.SPTrust.IdentityClaimTypeInformation.MappedClaimType, registrationData.ClaimValue, registrationData.IsMemberOfTrustedGroup);
+            UnitTestsHelper.TestAugmentationOperation(UnitTestsHelper.SPTrust.IdentityClaimTypeInformation.MappedClaimType, registrationData.ClaimValue, registrationData.IsMemberOfTrustedGroup);
         }
 
         [TestCase("i:05.t|contoso.local|yvand@contoso.local", true)]
         [TestCase("i:05.t|contoso.local|zzzyvand@contoso.local", false)]
-        public void DEBUG_AugmentEntity(string claimValue, bool shouldHavePermissions)
+        public void DEBUG_AugmentEntity(string claimValue, bool isMemberOfTrustedGroup)
         {
-            UnitTestsHelper.DoAugmentationOperationAndVerifyResult(UnitTestsHelper.SPTrust.IdentityClaimTypeInformation.MappedClaimType, claimValue, shouldHavePermissions);
+            UnitTestsHelper.TestAugmentationOperation(UnitTestsHelper.SPTrust.IdentityClaimTypeInformation.MappedClaimType, claimValue, isMemberOfTrustedGroup);
         }
     }
 }

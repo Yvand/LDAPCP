@@ -40,14 +40,12 @@ namespace LDAPCP.Tests
             ctConfig.PrefixToBypassLookup = "ext:";
             Config.Update();
 
-            SPProviderHierarchyTree[] providerResults = UnitTestsHelper.DoSearchOperation(inputValue);
-            UnitTestsHelper.VerifySearchResult(providerResults, expectedCount, expectedClaimValue);
+            UnitTestsHelper.TestSearchOperation(inputValue, expectedCount, expectedClaimValue);
 
             if (expectedCount > 0)
             {
                 SPClaim inputClaim = new SPClaim(UnitTestsHelper.SPTrust.IdentityClaimTypeInformation.MappedClaimType, expectedClaimValue, ClaimValueTypes.String, SPOriginalIssuers.Format(SPOriginalIssuerType.TrustedProvider, UnitTestsHelper.SPTrust.Name));
-                PickerEntity[] entities = UnitTestsHelper.DoValidationOperation(inputClaim);
-                UnitTestsHelper.VerifyValidationResult(entities, true, expectedClaimValue);
+                UnitTestsHelper.TestValidationOperation(inputClaim, true, expectedClaimValue);
             }
         }
 
@@ -62,29 +60,23 @@ namespace LDAPCP.Tests
             string expectedValue = inputValue;
             ctConfig.ClaimValuePrefix = String.Empty;
             Config.Update();
-            SPProviderHierarchyTree[] providerResults = UnitTestsHelper.DoSearchOperation(inputValue);
-            UnitTestsHelper.VerifySearchResult(providerResults, 1, inputValue);
+            UnitTestsHelper.TestSearchOperation(inputValue, 1, inputValue);
             SPClaim inputClaim = new SPClaim(GroupsClaimType, expectedValue, ClaimValueTypes.String, SPOriginalIssuers.Format(SPOriginalIssuerType.TrustedProvider, UnitTestsHelper.SPTrust.Name));
-            PickerEntity[] entities = UnitTestsHelper.DoValidationOperation(inputClaim);
-            UnitTestsHelper.VerifyValidationResult(entities, true, expectedValue);
+            UnitTestsHelper.TestValidationOperation(inputClaim, true, expectedValue);
 
             expectedValue = $@"{domainNetbios}\{inputValue}";
             ctConfig.ClaimValuePrefix = @"{domain}\";
             Config.Update();
-            providerResults = UnitTestsHelper.DoSearchOperation(inputValue);
-            UnitTestsHelper.VerifySearchResult(providerResults, 1, expectedValue);
+            UnitTestsHelper.TestSearchOperation(inputValue, 1, expectedValue);
             inputClaim = new SPClaim(GroupsClaimType, expectedValue, ClaimValueTypes.String, SPOriginalIssuers.Format(SPOriginalIssuerType.TrustedProvider, UnitTestsHelper.SPTrust.Name));
-            entities = UnitTestsHelper.DoValidationOperation(inputClaim);
-            UnitTestsHelper.VerifyValidationResult(entities, true, expectedValue);
+            UnitTestsHelper.TestValidationOperation(inputClaim, true, expectedValue);
 
             expectedValue = $@"{domainFQDN}\{inputValue}";
             ctConfig.ClaimValuePrefix = @"{fqdn}\";
             Config.Update();
-            providerResults = UnitTestsHelper.DoSearchOperation(inputValue);
-            UnitTestsHelper.VerifySearchResult(providerResults, 1, expectedValue);
+            UnitTestsHelper.TestSearchOperation(inputValue, 1, expectedValue);
             inputClaim = new SPClaim(GroupsClaimType, expectedValue, ClaimValueTypes.String, SPOriginalIssuers.Format(SPOriginalIssuerType.TrustedProvider, UnitTestsHelper.SPTrust.Name));
-            entities = UnitTestsHelper.DoValidationOperation(inputClaim);
-            UnitTestsHelper.VerifyValidationResult(entities, true, expectedValue);
+            UnitTestsHelper.TestValidationOperation(inputClaim, true, expectedValue);
         }
 
         [Test]
@@ -93,12 +85,10 @@ namespace LDAPCP.Tests
             Config.BypassLDAPLookup = true;
             Config.Update();
 
-            SPProviderHierarchyTree[] providerResults = UnitTestsHelper.DoSearchOperation(UnitTestsHelper.RandomClaimValue);
-            UnitTestsHelper.VerifySearchResult(providerResults, 3, UnitTestsHelper.RandomClaimValue);
+            UnitTestsHelper.TestSearchOperation(UnitTestsHelper.RandomClaimValue, 3, UnitTestsHelper.RandomClaimValue);
 
             SPClaim inputClaim = new SPClaim(UnitTestsHelper.SPTrust.IdentityClaimTypeInformation.MappedClaimType, UnitTestsHelper.RandomClaimValue, ClaimValueTypes.String, SPOriginalIssuers.Format(SPOriginalIssuerType.TrustedProvider, UnitTestsHelper.SPTrust.Name));
-            PickerEntity[] entities = UnitTestsHelper.DoValidationOperation(inputClaim);
-            UnitTestsHelper.VerifyValidationResult(entities, true, UnitTestsHelper.RandomClaimValue);
+            UnitTestsHelper.TestValidationOperation(inputClaim, true, UnitTestsHelper.RandomClaimValue);
 
             Config.BypassLDAPLookup = false;
             Config.Update();

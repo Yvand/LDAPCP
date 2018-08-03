@@ -8,3 +8,15 @@
 * Added method ClaimTypeConfigCollection.GetByClaimType()
 * Implemented unit tests
 * Explicitely encode HTML messages shown in admin pages and renderred from server side code to comply with tools scanning code to detect security vulnerabilities
+
+
+## LDAPCP v10 enhancements & bug-fixes - Published in June 12, 2018
+
+* LDAPCP can be entirely [configured with PowerShell](https://ldapcp.com/Configure-LDAPCP.html), including claim types configuration
+* LDAPCP administration pages were updated to be easier to udnerstand, especially the page that configures claim types.
+* LDAPCP administration pages can now be easily reused by developers.
+* Augmentation can now handle multiple group claim types, and uses the credentials set when LDAP connection was added.
+* Number of results returned by LDAP servers is now limited to improve performance of LDAP servers.
+* Logging is more relevant and generates less messages.
+* **Beaking change**: Due to the amount of changes in this area, the claim types configuration will be reset if you update from an earlier version.
+* Many bug fixes and optimizations
