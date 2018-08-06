@@ -94,28 +94,28 @@ public class UnitTestsHelper
         {
             entities.AddRange(children.EntityData);
         }
-        VerifySearchTest(entities, expectedCount, expectedClaimValue);
-        
+        VerifySearchTest(entities, inputValue, expectedCount, expectedClaimValue);
+
         entities = ClaimsProvider.Resolve(Context, entityTypes, inputValue).ToList();
-        VerifySearchTest(entities, expectedCount, expectedClaimValue);
+        VerifySearchTest(entities, inputValue, expectedCount, expectedClaimValue);
     }
 
-    public static void VerifySearchTest(List<PickerEntity> entities, int expectedCount, string expectedClaimValue)
+    public static void VerifySearchTest(List<PickerEntity> entities, string input, int expectedCount, string expectedClaimValue)
     {
-        int nbEntity = 0;
         bool entityValueFound = false;
-
         foreach (PickerEntity entity in entities)
         {
-            nbEntity++;
             if (String.Equals(expectedClaimValue, entity.Claim.Value, StringComparison.InvariantCultureIgnoreCase))
             {
                 entityValueFound = true;
             }
         }
-        if (!entityValueFound && expectedCount > 0) Assert.Fail($"No entity with claim value {expectedClaimValue} was found in the entities returned by {UnitTestsHelper.ClaimsProviderName}");
 
-        Assert.AreEqual(expectedCount, nbEntity);
+        if (!entityValueFound && expectedCount > 0)
+        {
+            Assert.Fail($"Input \"{input}\" returned no entity with claim value \"{expectedClaimValue}\".");
+        }
+        Assert.AreEqual(expectedCount, entities.Count, $"Input \"{input}\" should have returned {expectedCount} entities, but it returned {entities.Count} instead.");
     }
 
     public static void TestValidationOperation(SPClaim inputClaim, bool shouldValidate, string expectedClaimValue)
@@ -125,8 +125,11 @@ public class UnitTestsHelper
         PickerEntity[] entities = ClaimsProvider.Resolve(Context, entityTypes, inputClaim);
 
         int expectedCount = shouldValidate ? 1 : 0;
-        Assert.AreEqual(expectedCount, entities.Length);
-        if (shouldValidate) StringAssert.AreEqualIgnoringCase(expectedClaimValue, entities[0].Claim.Value);
+        Assert.AreEqual(expectedCount, entities.Length, $"Validation of entity \"{inputClaim.Value}\" should have returned {expectedCount} entity, but it returned {entities.Length} instead.");
+        if (shouldValidate)
+        {
+            StringAssert.AreEqualIgnoringCase(expectedClaimValue, entities[0].Claim.Value, $"Validation of entity \"{inputClaim.Value}\" should have returned value \"{expectedClaimValue}\", but it returned \"{entities[0].Claim.Value}\" instead.");
+        }
     }
 
     public static void TestAugmentationOperation(string claimType, string claimValue, bool isMemberOfTrustedGroup)
@@ -138,7 +141,10 @@ public class UnitTestsHelper
 
         bool groupFound = false;
         if (groups != null && groups.Contains(TrustedGroup)) groupFound = true;
-        if (isMemberOfTrustedGroup) Assert.IsTrue(groupFound);
+        if (isMemberOfTrustedGroup)
+        {
+            Assert.IsTrue(groupFound, $"Entity \"{claimValue}\" should be member of group \"{TrustedGroupToAdd_ClaimValue}\" but is not.");
+        }
     }
 }
 
