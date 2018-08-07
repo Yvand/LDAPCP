@@ -36,18 +36,18 @@ namespace LDAPCP.Tests
         }
 
         [Test, TestCaseSource(typeof(ValidateEntityDataSource), "GetTestData")]
-        [MaxTime(UnitTestsHelper.MaxTime)]
+        [Repeat(UnitTestsHelper.TestRepeatCount)]
         public void AugmentEntity(ValidateEntityData registrationData)
         {
             UnitTestsHelper.TestAugmentationOperation(UnitTestsHelper.SPTrust.IdentityClaimTypeInformation.MappedClaimType, registrationData.ClaimValue, registrationData.IsMemberOfTrustedGroup);
 
-            foreach (LDAPConnection ldapConn in Config.LDAPConnectionsProp)
-            {
-                ldapConn.GetGroupMembershipAsADDomainProp = !ldapConn.GetGroupMembershipAsADDomainProp;
-            }
-            Config.Update();
+            //foreach (LDAPConnection ldapConn in Config.LDAPConnectionsProp)
+            //{
+            //    ldapConn.GetGroupMembershipAsADDomainProp = !ldapConn.GetGroupMembershipAsADDomainProp;
+            //}
+            //Config.Update();
 
-            UnitTestsHelper.TestAugmentationOperation(UnitTestsHelper.SPTrust.IdentityClaimTypeInformation.MappedClaimType, registrationData.ClaimValue, registrationData.IsMemberOfTrustedGroup);
+            //UnitTestsHelper.TestAugmentationOperation(UnitTestsHelper.SPTrust.IdentityClaimTypeInformation.MappedClaimType, registrationData.ClaimValue, registrationData.IsMemberOfTrustedGroup);
         }
 
         [TestCase("i:05.t|contoso.local|yvand@contoso.local", true)]

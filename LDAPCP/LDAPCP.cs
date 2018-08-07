@@ -610,9 +610,7 @@ namespace ldapcp
                 return null;
             }
 
-            // BUG: FILTERS MUST BE SET IN AN OBJECT CREATED IN THIS METHOD (TO BE BOUND TO CURRENT THREAD), OTHERWISE FILTER MAY BE UPDATED BY MULTIPLE THREADS
-            // Somehow, this constructor is not working, AzureTenant must be explicitely copied into new list
-            //List<AzureTenant> azureTenants = new List<AzureTenant>(this.CurrentConfiguration.AzureTenants);
+            // BUG: Filters must be set in an object created in this method (to be bound to current thread), otherwise filter may be updated by multiple threads
             List<LDAPConnection> ldapServers = new List<LDAPConnection>(this.CurrentConfiguration.LDAPConnectionsProp.Count);
             foreach (LDAPConnection ldapServer in this.CurrentConfiguration.LDAPConnectionsProp)
             {
@@ -1062,7 +1060,15 @@ namespace ldapcp
                     timer.Start();
                     List<SPClaim> groups = new List<SPClaim>();
                     object lockResults = new object();
-                    Parallel.ForEach(this.CurrentConfiguration.LDAPConnectionsProp.Where(x => x.AugmentationEnabled), ldapConnection =>
+
+                    // BUG: Filters must be set in an object created in this method (to be bound to current thread), otherwise filter may be updated by multiple threads
+                    List<LDAPConnection> ldapServers = new List<LDAPConnection>(this.CurrentConfiguration.LDAPConnectionsProp.Count);
+                    foreach (LDAPConnection ldapServer in this.CurrentConfiguration.LDAPConnectionsProp.Where(x => x.AugmentationEnabled))
+                    {
+                        ldapServers.Add(ldapServer.CopyPersistedProperties());
+                    }
+
+                    Parallel.ForEach(ldapServers, ldapConnection =>
                     {
                         List<SPClaim> directoryGroups;
                         if (ldapConnection.GetGroupMembershipAsADDomain)
