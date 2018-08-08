@@ -85,13 +85,18 @@ namespace LDAPCP.Tests
             Config.BypassLDAPLookup = true;
             Config.Update();
 
-            UnitTestsHelper.TestSearchOperation(UnitTestsHelper.RandomClaimValue, 3, UnitTestsHelper.RandomClaimValue);
+            try
+            {
+                UnitTestsHelper.TestSearchOperation(UnitTestsHelper.RandomClaimValue, 4, UnitTestsHelper.RandomClaimValue);
 
-            SPClaim inputClaim = new SPClaim(UnitTestsHelper.SPTrust.IdentityClaimTypeInformation.MappedClaimType, UnitTestsHelper.RandomClaimValue, ClaimValueTypes.String, SPOriginalIssuers.Format(SPOriginalIssuerType.TrustedProvider, UnitTestsHelper.SPTrust.Name));
-            UnitTestsHelper.TestValidationOperation(inputClaim, true, UnitTestsHelper.RandomClaimValue);
-
-            Config.BypassLDAPLookup = false;
-            Config.Update();
+                SPClaim inputClaim = new SPClaim(UnitTestsHelper.SPTrust.IdentityClaimTypeInformation.MappedClaimType, UnitTestsHelper.RandomClaimValue, ClaimValueTypes.String, SPOriginalIssuers.Format(SPOriginalIssuerType.TrustedProvider, UnitTestsHelper.SPTrust.Name));
+                UnitTestsHelper.TestValidationOperation(inputClaim, true, UnitTestsHelper.RandomClaimValue);
+            }
+            finally
+            {
+                Config.BypassLDAPLookup = false;
+                Config.Update();
+            }
         }
 
         [Test, TestCaseSource(typeof(ValidateEntityDataSource), "GetTestData")]
