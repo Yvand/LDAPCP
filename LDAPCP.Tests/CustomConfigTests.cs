@@ -93,5 +93,17 @@ namespace LDAPCP.Tests
             Config.BypassLDAPLookup = false;
             Config.Update();
         }
+
+        [Test, TestCaseSource(typeof(ValidateEntityDataSource), "GetTestData")]
+        [Repeat(UnitTestsHelper.TestRepeatCount)]
+        public void TestAlternativeAugmentation(ValidateEntityData registrationData)
+        {
+            foreach (LDAPConnection ldapConn in Config.LDAPConnectionsProp)
+            {
+                ldapConn.GetGroupMembershipAsADDomainProp = !ldapConn.GetGroupMembershipAsADDomainProp;
+            }
+            Config.Update();
+            UnitTestsHelper.TestAugmentationOperation(UnitTestsHelper.SPTrust.IdentityClaimTypeInformation.MappedClaimType, registrationData.ClaimValue, registrationData.IsMemberOfTrustedGroup);
+        }
     }
 }
