@@ -1,6 +1,7 @@
 ﻿using Microsoft.SharePoint;
 using Microsoft.SharePoint.Administration;
 using Microsoft.SharePoint.Administration.Claims;
+using Microsoft.SharePoint.Utilities;
 using Microsoft.SharePoint.WebControls;
 using System;
 using System.Linq;
@@ -79,7 +80,7 @@ namespace ldapcp.ControlTemplates
                 if (Status == ConfigStatus.AllGood) return String.Empty;
 
                 if ((Status & ConfigStatus.NoSPTrustAssociation) == ConfigStatus.NoSPTrustAssociation)
-                    return String.Format(TextErrorNoSPTrustAssociation, ClaimsProviderName);
+                    return String.Format(TextErrorNoSPTrustAssociation, SPEncode.HtmlEncode(ClaimsProviderName));
 
                 if ((Status & ConfigStatus.PersistedObjectNotFound) == ConfigStatus.PersistedObjectNotFound)
                     return TextErrorPersistedObjectNotFound;

@@ -1,6 +1,4 @@
 ﻿using Microsoft.SharePoint.Administration;
-using Microsoft.SharePoint.Administration.Claims;
-using Microsoft.SharePoint.Utilities;
 using Microsoft.SharePoint.WebControls;
 using System;
 using System.Collections.Generic;
@@ -63,7 +61,7 @@ namespace ldapcp.ControlTemplates
             // Check prerequisite
             if (ValidatePrerequisite() != ConfigStatus.AllGood)
             {
-                this.LabelErrorMessage.Text = SPEncode.HtmlEncode(base.MostImportantError);
+                this.LabelErrorMessage.Text = base.MostImportantError;
                 this.BtnOK.Enabled = this.BtnOKTop.Enabled = false;
                 return;
             }
@@ -243,7 +241,7 @@ namespace ldapcp.ControlTemplates
         {
             if (ValidatePrerequisite() != ConfigStatus.AllGood) return;
             if (UpdateConfiguration(true)) Response.Redirect("/Security.aspx", false);
-            else LabelErrorMessage.Text = SPEncode.HtmlEncode(base.MostImportantError);
+            else LabelErrorMessage.Text = base.MostImportantError;
         }
 
         protected void BtnResetLDAPCPConfig_Click(Object sender, EventArgs e)
