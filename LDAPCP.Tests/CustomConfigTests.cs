@@ -110,5 +110,24 @@ namespace LDAPCP.Tests
             Config.Update();
             UnitTestsHelper.TestAugmentationOperation(UnitTestsHelper.SPTrust.IdentityClaimTypeInformation.MappedClaimType, registrationData.ClaimValue, registrationData.IsMemberOfTrustedGroup);
         }
+
+        [Test, TestCaseSource(typeof(ValidateEntityDataSource), "GetTestData")]
+        [Repeat(UnitTestsHelper.TestRepeatCount)]
+        public void RequireExactMatchDuringSearch(ValidateEntityData registrationData)
+        {
+            Config.FilterExactMatchOnlyProp = true;
+            Config.Update();
+
+            try
+            {
+                int expectedCount = registrationData.ShouldValidate ? 1 : 0;
+                UnitTestsHelper.TestSearchOperation(registrationData.ClaimValue, expectedCount, registrationData.ClaimValue);
+            }
+            finally
+            {
+                Config.FilterExactMatchOnlyProp = false;
+                Config.Update();
+            }
+        }
     }
 }
