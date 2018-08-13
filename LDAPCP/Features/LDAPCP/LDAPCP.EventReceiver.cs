@@ -1,8 +1,11 @@
 using Microsoft.SharePoint;
+using Microsoft.SharePoint.Administration;
 using Microsoft.SharePoint.Administration.Claims;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.InteropServices;
+using static ldapcp.ClaimsProviderLogging;
 
 namespace ldapcp
 {
@@ -17,7 +20,7 @@ namespace ldapcp
     public class LDAPCPEventReceiver : SPClaimProviderFeatureReceiver
     {
         public override string ClaimProviderAssembly => typeof(LDAPCP).Assembly.FullName;
-        
+
         public override string ClaimProviderDescription => LDAPCP._ProviderInternalName;
 
         public override string ClaimProviderDisplayName => LDAPCP._ProviderInternalName;
@@ -34,15 +37,29 @@ namespace ldapcp
             // Wrapper function for base FeatureActivated. 
             // Used because base keywork can lead to unverifiable code inside lambda expression
             base.FeatureActivated(properties);
-            SPSecurity.RunWithElevatedPrivileges(delegate()
+            SPSecurity.RunWithElevatedPrivileges(delegate ()
             {
-                ClaimsProviderLogging svc = ClaimsProviderLogging.Local;
+                try
+                {
+                    ClaimsProviderLogging.Log($"Activating farm-scoped feature for {LDAPCP._ProviderInternalName}", TraceSeverity.High, EventSeverity.Information, ClaimsProviderLogging.TraceCategory.Configuration);
+                    ClaimsProviderLogging svc = ClaimsProviderLogging.Local;
+
+                    var spTrust = LDAPCP.GetSPTrustAssociatedWithCP(LDAPCP._ProviderInternalName);
+                    if (spTrust != null)
+                    {
+                        LDAPCPConfig config = LDAPCPConfig.CreateConfiguration(ClaimsProviderConstants.LDAPCPCONFIG_ID, ClaimsProviderConstants.LDAPCPCONFIG_NAME, spTrust.Name);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    ClaimsProviderLogging.LogException(LDAPCP._ProviderInternalName, $"activating farm-scoped feature for {LDAPCP._ProviderInternalName}", ClaimsProviderLogging.TraceCategory.Configuration, ex);
+                }
             });
-        }        
+        }
 
         public override void FeatureUninstalling(SPFeatureReceiverProperties properties)
         {
-            SPSecurity.RunWithElevatedPrivileges(delegate()
+            SPSecurity.RunWithElevatedPrivileges(delegate ()
             {
                 ClaimsProviderLogging.Unregister();
             });
@@ -50,22 +67,46 @@ namespace ldapcp
 
         public override void FeatureDeactivating(SPFeatureReceiverProperties properties)
         {
-            SPSecurity.RunWithElevatedPrivileges(delegate()
+            SPSecurity.RunWithElevatedPrivileges(delegate ()
             {
-                base.RemoveClaimProvider(LDAPCP._ProviderInternalName);
-                LDAPCPConfig.DeleteConfiguration(ClaimsProviderConstants.LDAPCPCONFIG_NAME);
+                try
+                {
+                    ClaimsProviderLogging.Log($"Deactivating farm-scoped feature for {LDAPCP._ProviderInternalName}: Removing claims provider and its configuration from the farm", TraceSeverity.High, EventSeverity.Information, ClaimsProviderLogging.TraceCategory.Configuration);
+                    base.RemoveClaimProvider(LDAPCP._ProviderInternalName);
+                    LDAPCPConfig.DeleteConfiguration(ClaimsProviderConstants.LDAPCPCONFIG_NAME);
+                }
+                catch (Exception ex)
+                {
+                    ClaimsProviderLogging.LogException(LDAPCP._ProviderInternalName, $"deactivating farm-scoped feature for {LDAPCP._ProviderInternalName}", ClaimsProviderLogging.TraceCategory.Configuration, ex);
+                }
             });
         }
 
         public override void FeatureUpgrading(SPFeatureReceiverProperties properties, string upgradeActionName, IDictionary<string, string> parameters)
         {
+            // Upgrade must be explicitely triggered as documented in https://www.sharepointnutsandbolts.com/2010/06/feature-upgrade-part-1-fundamentals.html
+            // In PowerShell: 
+            // $feature = [Microsoft.SharePoint.Administration.SPWebService]::AdministrationService.Features["b37e0696-f48c-47ab-aa30-834d78033ba8"]
+            // $feature.Upgrade($false)
             SPSecurity.RunWithElevatedPrivileges(delegate ()
             {
-                ClaimsProviderLogging svc = ClaimsProviderLogging.Local;
-                LDAPCPConfig config = LDAPCPConfig.GetConfiguration(ClaimsProviderConstants.LDAPCPCONFIG_NAME);
-                if (config != null)
+                try
                 {
-                    config.CheckAndCleanConfiguration(String.Empty);
+                    ClaimsProviderLogging.Log($"Upgrading farm-scoped feature for {LDAPCP._ProviderInternalName}", TraceSeverity.High, EventSeverity.Information, ClaimsProviderLogging.TraceCategory.Configuration);
+                    LDAPCPConfig config = LDAPCPConfig.GetConfiguration(ClaimsProviderConstants.LDAPCPCONFIG_NAME);
+                    if (config != null)
+                    {
+                        var spTrust = LDAPCP.GetSPTrustAssociatedWithCP(LDAPCP._ProviderInternalName);
+                        if (spTrust != null)
+                            config.SPTrustName = spTrust.Name;
+                        bool objectUpdated = config.EnsureCompatibility(upgradeActionName);
+                        if (!objectUpdated && spTrust != null)
+                            config.Update();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    ClaimsProviderLogging.LogException(LDAPCP._ProviderInternalName, $"upgrading farm-scoped feature for {LDAPCP._ProviderInternalName}", ClaimsProviderLogging.TraceCategory.Configuration, ex);
                 }
             });
         }

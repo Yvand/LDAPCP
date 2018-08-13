@@ -219,7 +219,7 @@ namespace ldapcp
         /// Name of the SPTrustedLoginProvider where LDAPCP is enabled
         /// </summary>
         [Persisted]
-        private string SPTrustName;
+        public string SPTrustName;
 
         private SPTrustedLoginProvider _SPTrust;
         private SPTrustedLoginProvider SPTrust
@@ -386,7 +386,7 @@ namespace ldapcp
         }
 
         /// <summary>
-        /// Create a persisted object with default configuration of LDAPCP.
+        /// Create a persisted object with default configuration of LDAPCP. If it already exists, it will be deleted.
         /// </summary>
         /// <param name="persistedObjectID">GUID of persisted object</param>
         /// <param name="persistedObjectName">Name of persisted object</param>
@@ -499,14 +499,14 @@ namespace ldapcp
         /// <returns>Bollean indicates whether the configuration was updated in configuration database</returns>
         public bool CheckAndCleanConfiguration(string spTrustName)
         {
-            bool objectCleaned = false;
+            bool configUpdated = false;
 
             if (!String.IsNullOrEmpty(spTrustName) && !String.Equals(this.SPTrustName, spTrustName, StringComparison.InvariantCultureIgnoreCase))
             {
                 this.SPTrustName = spTrustName;
                 ClaimsProviderLogging.Log($"Updated the SPTrustedLoginProvider name to '{this.SPTrustName}' in configuration '{base.DisplayName}'.",
                     TraceSeverity.Medium, EventSeverity.Information, TraceCategory.Core);
-                objectCleaned = true;
+                configUpdated = true;
             }
 
             try
@@ -517,14 +517,14 @@ namespace ldapcp
             catch (NullReferenceException ex)
             {
                 this.ClaimTypes = LDAPCPConfig.ReturnDefaultClaimTypesConfig();
-                objectCleaned = true;
+                configUpdated = true;
             }
 
             if (this.LDAPConnectionsProp == null)
             {
                 // LDAPConnections was introduced in v2.1 (SP2013). if LDAPCP is updated from an earlier version, LDAPConnections doesn't exist yet
                 this.LDAPConnectionsProp = ReturnDefaultLDAPConnection();
-                objectCleaned = true;
+                configUpdated = true;
             }
 
             if (!String.IsNullOrEmpty(this.SPTrustName))
@@ -532,7 +532,21 @@ namespace ldapcp
                 this.ClaimTypes.SPTrust = this.SPTrust;
             }
 
-            if (objectCleaned)
+            // This triggers a 1 time upgrade to do upgrade operations that need to be done only 1 time
+            SPFeature farmFeature = SPWebService.AdministrationService.Features[new Guid("91e8e631-b3be-4d05-84c4-8653bddac278")];
+            if (farmFeature != null)
+            {
+                ClaimsProviderLogging.Log($"Starting upgrade of configuration '{this.Name}'...",
+                    TraceSeverity.High, EventSeverity.Information, TraceCategory.Core);
+                farmFeature.Upgrade(false);
+            }
+            else
+            {
+                ClaimsProviderLogging.Log($"Farm feature was not found",
+                    TraceSeverity.High, EventSeverity.Information, TraceCategory.Core);
+            }
+
+            if (configUpdated)
             {
                 if (Version > 0)
                 {
@@ -556,7 +570,77 @@ namespace ldapcp
                     }
                 }
             }
-            return objectCleaned;
+            return configUpdated;
+        }
+
+        public bool EnsureCompatibility(string versionNumber)
+        {
+            bool configUpdated = false;
+            switch (versionNumber)
+            {
+                case "v11":
+                    // What's new in v11: 
+                    // Added property SPTrust / SPTrustName (SPTrustName must be set before this function runs to avoid deleting identity claim type)
+                    // Adding 2 times a ClaimTypeConfig with the same EntityType and same LDAPClass/LDAPAttribute now throws an InvalidOperationException
+                    // But this was possible before, so list this.ClaimTypes must be checked to be sure we are not in this scenario, and cleaned if so
+                    foreach (DirectoryObjectType entityType in Enum.GetValues(typeof(DirectoryObjectType)))
+                    {
+                        var duplicatedPropertiesList = this.ClaimTypes.Where(x => x.EntityType == entityType)   // Check 1 EntityType
+                                                                  .GroupBy(x => new
+                                                                  {                           // Group by LDAPClass/LDAPAttribute
+                                                                      x.LDAPClass,
+                                                                      x.LDAPAttribute
+                                                                  })
+                                                                  .Select(x => new
+                                                                  {
+                                                                      LDAPProperties = x.Key,
+                                                                      ObjectCount = x.Count()       // For each LDAPClass/LDAPAttribute, how many items found
+                                                                  })
+                                                                  .Where(x => x.ObjectCount > 1);               // Keep only LDAPClass/LDAPAttribute found more than 1 time (for a given EntityType)
+                        foreach (var duplicatedProperty in duplicatedPropertiesList)
+                        {
+                            ClaimTypeConfig ctConfigToDelete = null;
+                            if (SPTrust != null && entityType == DirectoryObjectType.User)
+                                ctConfigToDelete = this.ClaimTypes.FirstOrDefault(x => x.LDAPClass == duplicatedProperty.LDAPProperties.LDAPClass && x.LDAPAttribute == duplicatedProperty.LDAPProperties.LDAPAttribute && x.EntityType == entityType && !String.Equals(x.ClaimType, SPTrust.IdentityClaimTypeInformation.MappedClaimType, StringComparison.InvariantCultureIgnoreCase));
+                            else if (entityType == DirectoryObjectType.Group && !String.IsNullOrEmpty(this.MainGroupClaimType))
+                                ctConfigToDelete = this.ClaimTypes.FirstOrDefault(x => x.LDAPClass == duplicatedProperty.LDAPProperties.LDAPClass && x.LDAPAttribute == duplicatedProperty.LDAPProperties.LDAPAttribute && x.EntityType == entityType && !String.Equals(x.ClaimType, this.MainGroupClaimType, StringComparison.InvariantCultureIgnoreCase));
+                            else
+                                ctConfigToDelete = this.ClaimTypes.FirstOrDefault(x => x.LDAPClass == duplicatedProperty.LDAPProperties.LDAPClass && x.LDAPAttribute == duplicatedProperty.LDAPProperties.LDAPAttribute && x.EntityType == entityType);
+
+                            //this.ClaimTypes.Remove(ctConfigToDelete);
+                            //configUpdated = true;
+                            ClaimsProviderLogging.Log($"Removed claim type '{ctConfigToDelete.ClaimType}' from claim types configuration list because it duplicates LDAP attribute {ctConfigToDelete.LDAPAttribute} and LDAP class {ctConfigToDelete.LDAPClass}",
+                               TraceSeverity.High, EventSeverity.Information, TraceCategory.Core);
+                        }
+                    }
+                    break;
+            }
+
+            if (configUpdated)
+            {
+                if (Version > 0)
+                {
+                    try
+                    {
+                        // SPContext may be null if code does not run in a SharePoint process (e.g. in unit tests process)
+                        if (SPContext.Current != null) SPContext.Current.Web.AllowUnsafeUpdates = true;
+                        this.Update();
+                        ClaimsProviderLogging.Log($"Configuration '{this.Name}' was not compatible with current version of LDAPCP and was updated in configuration database. Some settings were reset to their default configuration",
+                            TraceSeverity.High, EventSeverity.Information, TraceCategory.Core);
+                    }
+                    catch (Exception ex)
+                    {
+                        // It may fail if current user doesn't have permission to update the object in configuration database
+                        ClaimsProviderLogging.Log($"Configuration '{this.Name}' is not compatible with current version of LDAPCP and was updated locally, but change could not be applied in configuration database. Please visit admin pages in central administration to fix configuration globally.",
+                            TraceSeverity.High, EventSeverity.Information, TraceCategory.Core);
+                    }
+                    finally
+                    {
+                        if (SPContext.Current != null) SPContext.Current.Web.AllowUnsafeUpdates = false;
+                    }
+                }
+            }
+            return configUpdated;
         }
     }
 

@@ -42,7 +42,7 @@ public class UnitTestsHelper
     [OneTimeSetUp]
     public static void InitSiteCollection()
     {
-        //return; // Uncommented when debugging LDAPCP code from unit tests
+        return; // Uncommented when debugging LDAPCP code from unit tests
 
         LDAPCPConfig config = LDAPCPConfig.GetConfiguration(UnitTestsHelper.ClaimsProviderConfigName);
         if (config == null)
