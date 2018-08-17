@@ -103,7 +103,7 @@ namespace ldapcp
                     }
                     if (!CheckIfShouldProcessInput(context)) return false;
 
-                    globalConfiguration = GetConfiguration(context, entityTypes, PersistedObjectName);
+                    globalConfiguration = GetConfiguration(context, entityTypes, PersistedObjectName, SPTrust.Name);
                     if (globalConfiguration == null)
                     {
                         ClaimsProviderLogging.Log($"[{ProviderInternalName}] Configuration '{PersistedObjectName}' was not foundin configuration database, use default configuration instead. Visit LDAPCP admin pages in central administration to create it.",
@@ -301,9 +301,9 @@ namespace ldapcp
         /// <param name="entityTypes"></param>
         /// <param name="persistedObjectName"></param>
         /// <returns>Read-only configuration to use</returns>
-        protected virtual ILDAPCPConfiguration GetConfiguration(Uri context, string[] entityTypes, string persistedObjectName)
+        protected virtual ILDAPCPConfiguration GetConfiguration(Uri context, string[] entityTypes, string persistedObjectName, string spTrustName)
         {
-            return LDAPCPConfig.GetConfiguration(persistedObjectName);
+            return LDAPCPConfig.GetConfiguration(persistedObjectName, spTrustName);
         }
 
         /// <summary>

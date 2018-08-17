@@ -14,7 +14,7 @@ namespace LDAPCP.Tests
         [OneTimeSetUp]
         public void Init()
         {
-            LDAPCPConfig configFromConfigDB = LDAPCPConfig.GetConfiguration(UnitTestsHelper.ClaimsProviderConfigName);
+            LDAPCPConfig configFromConfigDB = LDAPCPConfig.GetConfiguration(UnitTestsHelper.ClaimsProviderConfigName, UnitTestsHelper.SPTrust.Name);
             // Create a local copy, otherwise changes will impact the whole process (even without calling Update method)
             Config = configFromConfigDB.CopyPersistedProperties();
             // Reset configuration to test its default for the tests

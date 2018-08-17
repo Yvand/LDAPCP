@@ -19,7 +19,7 @@ namespace LDAPCP.Tests
         public void Init()
         {
             Console.WriteLine($"Starting custom config test {TestContext.CurrentContext.Test.Name}...");
-            Config = LDAPCPConfig.GetConfiguration(UnitTestsHelper.ClaimsProviderConfigName);
+            Config = LDAPCPConfig.GetConfiguration(UnitTestsHelper.ClaimsProviderConfigName, UnitTestsHelper.SPTrust.Name);
             BackupConfig = Config.CopyPersistedProperties();
             Config.ResetClaimTypesList();
         }
@@ -92,6 +92,7 @@ namespace LDAPCP.Tests
                 SPClaim inputClaim = new SPClaim(UnitTestsHelper.SPTrust.IdentityClaimTypeInformation.MappedClaimType, UnitTestsHelper.RandomClaimValue, ClaimValueTypes.String, SPOriginalIssuers.Format(SPOriginalIssuerType.TrustedProvider, UnitTestsHelper.SPTrust.Name));
                 UnitTestsHelper.TestValidationOperation(inputClaim, true, UnitTestsHelper.RandomClaimValue);
             }
+            catch { }
             finally
             {
                 Config.BypassLDAPLookup = false;
@@ -123,6 +124,7 @@ namespace LDAPCP.Tests
                 int expectedCount = registrationData.ShouldValidate ? 1 : 0;
                 UnitTestsHelper.TestSearchOperation(registrationData.ClaimValue, expectedCount, registrationData.ClaimValue);
             }
+            catch { }
             finally
             {
                 Config.FilterExactMatchOnlyProp = false;

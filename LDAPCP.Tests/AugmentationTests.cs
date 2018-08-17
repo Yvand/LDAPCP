@@ -15,7 +15,7 @@ namespace LDAPCP.Tests
         public void Init()
         {
             Console.WriteLine($"Starting augmentation test {TestContext.CurrentContext.Test.Name}...");
-            Config = LDAPCPConfig.GetConfiguration(UnitTestsHelper.ClaimsProviderConfigName);
+            Config = LDAPCPConfig.GetConfiguration(UnitTestsHelper.ClaimsProviderConfigName, UnitTestsHelper.SPTrust.Name);
             BackupConfig = Config.CopyPersistedProperties();
             Config.EnableAugmentation = true;
             Config.MainGroupClaimType = ClaimsProviderConstants.DefaultMainGroupClaimType;

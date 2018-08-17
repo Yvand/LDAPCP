@@ -3,9 +3,7 @@ using Microsoft.SharePoint.Administration;
 using Microsoft.SharePoint.Administration.Claims;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.InteropServices;
-using static ldapcp.ClaimsProviderLogging;
 
 namespace ldapcp
 {
@@ -15,7 +13,6 @@ namespace ldapcp
     /// <remarks>
     /// The GUID attached to this class may be used during packaging and should not be modified.
     /// </remarks>
-
     [Guid("91e8e631-b3be-4d05-84c4-8653bddac278")]
     public class LDAPCPEventReceiver : SPClaimProviderFeatureReceiver
     {
@@ -90,24 +87,15 @@ namespace ldapcp
             // $feature.Upgrade($false)
             SPSecurity.RunWithElevatedPrivileges(delegate ()
             {
-                try
-                {
-                    ClaimsProviderLogging.Log($"Upgrading farm-scoped feature for {LDAPCP._ProviderInternalName}", TraceSeverity.High, EventSeverity.Information, ClaimsProviderLogging.TraceCategory.Configuration);
-                    LDAPCPConfig config = LDAPCPConfig.GetConfiguration(ClaimsProviderConstants.LDAPCPCONFIG_NAME);
-                    if (config != null)
-                    {
-                        var spTrust = LDAPCP.GetSPTrustAssociatedWithCP(LDAPCP._ProviderInternalName);
-                        if (spTrust != null)
-                            config.SPTrustName = spTrust.Name;
-                        bool objectUpdated = config.EnsureCompatibility(upgradeActionName);
-                        if (!objectUpdated && spTrust != null)
-                            config.Update();
-                    }
-                }
-                catch (Exception ex)
-                {
-                    ClaimsProviderLogging.LogException(LDAPCP._ProviderInternalName, $"upgrading farm-scoped feature for {LDAPCP._ProviderInternalName}", ClaimsProviderLogging.TraceCategory.Configuration, ex);
-                }
+                ClaimsProviderLogging svc = ClaimsProviderLogging.Local;
+                var spTrust = LDAPCP.GetSPTrustAssociatedWithCP(LDAPCP._ProviderInternalName);
+                string spTrustName = spTrust == null ? String.Empty : spTrust.Name;
+                // LDAPCPConfig.GetConfiguration will call method AzureCPConfig.CheckAndCleanConfiguration();
+                LDAPCPConfig config = LDAPCPConfig.GetConfiguration(ClaimsProviderConstants.LDAPCPCONFIG_NAME, spTrustName);
+                //if (config != null)
+                //{
+                //    config.CheckAndCleanConfiguration(spTrustName);
+                //}
             });
         }
     }

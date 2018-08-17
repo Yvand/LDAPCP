@@ -45,7 +45,7 @@ namespace ldapcp.ControlTemplates
             {
                 SPSecurity.RunWithElevatedPrivileges(delegate ()
                 {
-                    if (_PersistedObject == null) _PersistedObject = LDAPCPConfig.GetConfiguration(PersistedObjectName);
+                    if (_PersistedObject == null) _PersistedObject = LDAPCPConfig.GetConfiguration(PersistedObjectName, this.CurrentTrustedLoginProvider.Name);
                     if (_PersistedObject == null)
                     {
                         SPContext.Current.Web.AllowUnsafeUpdates = true;
