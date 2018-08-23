@@ -79,24 +79,18 @@ namespace ldapcp
             });
         }
 
-        public override void FeatureUpgrading(SPFeatureReceiverProperties properties, string upgradeActionName, IDictionary<string, string> parameters)
-        {
-            // Upgrade must be explicitely triggered as documented in https://www.sharepointnutsandbolts.com/2010/06/feature-upgrade-part-1-fundamentals.html
-            // In PowerShell: 
-            // $feature = [Microsoft.SharePoint.Administration.SPWebService]::AdministrationService.Features["b37e0696-f48c-47ab-aa30-834d78033ba8"]
-            // $feature.Upgrade($false)
-            SPSecurity.RunWithElevatedPrivileges(delegate ()
-            {
-                ClaimsProviderLogging svc = ClaimsProviderLogging.Local;
-                var spTrust = LDAPCP.GetSPTrustAssociatedWithCP(LDAPCP._ProviderInternalName);
-                string spTrustName = spTrust == null ? String.Empty : spTrust.Name;
-                // LDAPCPConfig.GetConfiguration will call method AzureCPConfig.CheckAndCleanConfiguration();
-                LDAPCPConfig config = LDAPCPConfig.GetConfiguration(ClaimsProviderConstants.LDAPCPCONFIG_NAME, spTrustName);
-                //if (config != null)
-                //{
-                //    config.CheckAndCleanConfiguration(spTrustName);
-                //}
-            });
-        }
+        /// <summary>
+        /// Upgrade must be explicitely triggered as documented in https://www.sharepointnutsandbolts.com/2010/06/feature-upgrade-part-1-fundamentals.html
+        /// In PowerShell: 
+        /// $feature = [Microsoft.SharePoint.Administration.SPWebService]::AdministrationService.Features["d1817470-ca9f-4b0c-83c5-ea61f9b0660d"]
+        /// $feature.Upgrade($false)
+        /// Since it's not automatic, this mechanism won't be used at all
+        /// </summary>
+        /// <param name="properties"></param>
+        /// <param name="upgradeActionName"></param>
+        /// <param name="parameters"></param>
+        //public override void FeatureUpgrading(SPFeatureReceiverProperties properties, string upgradeActionName, IDictionary<string, string> parameters)
+        //{
+        //}
     }
 }
