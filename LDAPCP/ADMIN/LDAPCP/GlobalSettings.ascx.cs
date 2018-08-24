@@ -165,15 +165,17 @@ namespace ldapcp.ControlTemplates
         private void InitializeGeneralSettings()
         {
             this.ChkIdentityShowAdditionalAttribute.Checked = PersistedObject.DisplayLdapMatchForIdentityClaimTypeProp;
-            if (String.IsNullOrEmpty(IdentityClaim.LDAPAttributeToShowAsDisplayText))
+            if (String.IsNullOrEmpty(IdentityCTConfig.LDAPAttributeToShowAsDisplayText))
             {
                 this.RbIdentityDefault.Checked = true;
             }
             else
             {
                 this.RbIdentityCustomLDAP.Checked = true;
-                this.TxtLdapAttributeToDisplay.Text = IdentityClaim.LDAPAttributeToShowAsDisplayText;
+                this.TxtLdapAttributeToDisplay.Text = IdentityCTConfig.LDAPAttributeToShowAsDisplayText;
             }
+            this.TxtUserIdentifierLDAPClass.Text = IdentityCTConfig.LDAPClass;
+            this.TxtUserIdentifierLDAPAttribute.Text = IdentityCTConfig.LDAPAttribute;
 
             this.ChkAlwaysResolveUserInput.Checked = PersistedObject.BypassLDAPLookup;
             this.ChkFilterEnabledUsersOnly.Checked = PersistedObject.FilterEnabledUsersOnlyProp;
@@ -200,12 +202,15 @@ namespace ldapcp.ControlTemplates
             PersistedObject.DisplayLdapMatchForIdentityClaimTypeProp = this.ChkIdentityShowAdditionalAttribute.Checked;
             if (this.RbIdentityCustomLDAP.Checked)
             {
-                IdentityClaim.LDAPAttributeToShowAsDisplayText = this.TxtLdapAttributeToDisplay.Text;
+                IdentityCTConfig.LDAPAttributeToShowAsDisplayText = this.TxtLdapAttributeToDisplay.Text;
             }
             else
             {
-                IdentityClaim.LDAPAttributeToShowAsDisplayText = String.Empty;
+                IdentityCTConfig.LDAPAttributeToShowAsDisplayText = String.Empty;
             }
+
+            if (!String.IsNullOrWhiteSpace(TxtUserIdentifierLDAPClass.Text) && !String.IsNullOrWhiteSpace(TxtUserIdentifierLDAPAttribute.Text))
+                PersistedObject.ClaimTypes.UpdateUserIdentifier(TxtUserIdentifierLDAPClass.Text, TxtUserIdentifierLDAPAttribute.Text);
 
             PersistedObject.BypassLDAPLookup = this.ChkAlwaysResolveUserInput.Checked;
             PersistedObject.FilterEnabledUsersOnlyProp = this.ChkFilterEnabledUsersOnly.Checked;

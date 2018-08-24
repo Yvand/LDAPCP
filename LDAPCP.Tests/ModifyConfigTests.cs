@@ -154,5 +154,22 @@ namespace LDAPCP.Tests
             // Delete the ClaimTypeConfig should succeed
             Assert.IsTrue(Config.ClaimTypes.Remove(ctConfig), "Delete the ClaimTypeConfig should succeed");
         }
+
+        [Test]
+        public void ModifyUserIdentifier()
+        {
+            ClaimTypeConfig backupIdentityCTConfig = Config.ClaimTypes.GetByClaimType(UnitTestsHelper.SPTrust.IdentityClaimTypeInformation.MappedClaimType).CopyPersistedProperties();
+
+            Assert.Throws<ArgumentNullException>(() => Config.ClaimTypes.UpdateUserIdentifier(String.Empty, String.Empty), $"Update user identifier with either LDAPAttribute / LDAPClass null or empty should throw exception ArgumentNullException");
+
+            bool configUpdated = Config.ClaimTypes.UpdateUserIdentifier(UnitTestsHelper.RandomLDAPClass, UnitTestsHelper.RandomLDAPAttribute);
+            Assert.IsTrue(configUpdated, $"Update user identifier with any LDAPAttribute / LDAPClass should succeed and return true");
+
+            configUpdated = Config.ClaimTypes.UpdateUserIdentifier(backupIdentityCTConfig.LDAPClass, backupIdentityCTConfig.LDAPAttribute);
+            Assert.IsTrue(configUpdated, $"Update user identifier with any LDAPAttribute / LDAPClass should succeed and return true");
+
+            configUpdated = Config.ClaimTypes.UpdateUserIdentifier(backupIdentityCTConfig.LDAPClass, backupIdentityCTConfig.LDAPAttribute);
+            Assert.IsFalse(configUpdated, $"Update user identifier with the same LDAPAttribute / LDAPClass should not change anything and return false");
+        }
     }
 }

@@ -1287,6 +1287,7 @@ namespace ldapcp
                                 }
                             }
 
+                            if (groupValues == null) continue;
                             string value;
                             for (int propertyCounter = 0; propertyCounter < propertyCount; propertyCounter++)
                             {

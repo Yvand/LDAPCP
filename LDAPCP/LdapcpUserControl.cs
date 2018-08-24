@@ -59,7 +59,7 @@ namespace ldapcp.ControlTemplates
         }
 
         protected SPTrustedLoginProvider CurrentTrustedLoginProvider;
-        protected ClaimTypeConfig IdentityClaim;
+        protected ClaimTypeConfig IdentityCTConfig;
         protected ConfigStatus Status;
 
         protected long PersistedObjectVersion
@@ -170,10 +170,10 @@ namespace ldapcp.ControlTemplates
 
             PersistedObject.CheckAndCleanConfiguration(CurrentTrustedLoginProvider.Name);
             PersistedObject.ClaimTypes.SPTrust = CurrentTrustedLoginProvider;
-            if (IdentityClaim == null && Status == ConfigStatus.AllGood)
+            if (IdentityCTConfig == null && Status == ConfigStatus.AllGood)
             {
-                IdentityClaim = this.IdentityClaim = PersistedObject.ClaimTypes.FirstOrDefault(x => String.Equals(CurrentTrustedLoginProvider.IdentityClaimTypeInformation.MappedClaimType, x.ClaimType, StringComparison.InvariantCultureIgnoreCase) && !x.UseMainClaimTypeOfDirectoryObject);
-                if (IdentityClaim == null) Status |= ConfigStatus.NoIdentityClaimType;
+                IdentityCTConfig = this.IdentityCTConfig = PersistedObject.ClaimTypes.FirstOrDefault(x => String.Equals(CurrentTrustedLoginProvider.IdentityClaimTypeInformation.MappedClaimType, x.ClaimType, StringComparison.InvariantCultureIgnoreCase) && !x.UseMainClaimTypeOfDirectoryObject);
+                if (IdentityCTConfig == null) Status |= ConfigStatus.NoIdentityClaimType;
             }
             if (PersistedObjectVersion != PersistedObject.Version)
             {

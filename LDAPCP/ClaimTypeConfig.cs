@@ -415,6 +415,48 @@ namespace ldapcp
             innerCol.First(x => String.Equals(x.ClaimType, oldClaimType, StringComparison.InvariantCultureIgnoreCase)).SetFromObject(newItem);
         }
 
+        /// <summary>
+        /// Update the LDAPClass and LDAPAttribute of the identity ClaimTypeConfig. If new values duplicate an existing item, it will be removed from the collection
+        /// </summary>
+        /// <param name="newLDAPClass">new LDAPClass</param>
+        /// <param name="newLDAPAttribute">new newLDAPAttribute</param>
+        /// <returns>True if the identity ClaimTypeConfig was successfully updated</returns>
+        public bool UpdateUserIdentifier(string newLDAPClass, string newLDAPAttribute)
+        {
+            if (String.IsNullOrEmpty(newLDAPClass)) throw new ArgumentNullException("newLDAPClass");
+            if (String.IsNullOrEmpty(newLDAPAttribute)) throw new ArgumentNullException("newLDAPAttribute");
+
+            bool identifierUpdated = false;
+            if (SPTrust == null)
+                return identifierUpdated;
+
+            ClaimTypeConfig identityClaimType = innerCol.FirstOrDefault(x => String.Equals(x.ClaimType, SPTrust.IdentityClaimTypeInformation.MappedClaimType, StringComparison.InvariantCultureIgnoreCase));
+            if (identityClaimType == null)
+                return identifierUpdated;
+
+            if (String.Equals(identityClaimType.LDAPClass, newLDAPClass, StringComparison.InvariantCultureIgnoreCase) &&
+                String.Equals(identityClaimType.LDAPAttribute, newLDAPAttribute, StringComparison.InvariantCultureIgnoreCase))
+                return identifierUpdated;
+
+            // Check if the new LDAPAttribute / LDAPClass duplicates an existing item, and delete it if so
+            for (int i = 0; i < innerCol.Count; i++)
+            {
+                ClaimTypeConfig curCT = (ClaimTypeConfig)innerCol[i];
+                if (curCT.EntityType == DirectoryObjectType.User &&
+                    String.Equals(curCT.LDAPAttribute, newLDAPAttribute, StringComparison.InvariantCultureIgnoreCase) &&
+                    String.Equals(curCT.LDAPClass, newLDAPClass, StringComparison.InvariantCultureIgnoreCase))
+                {
+                    innerCol.RemoveAt(i);
+                    break;  // There can be only 1 potential duplicate
+                }
+            }            
+
+            identityClaimType.LDAPClass = newLDAPClass;
+            identityClaimType.LDAPAttribute = newLDAPAttribute;
+            identifierUpdated = true;
+            return identifierUpdated;
+        }
+
         public void Clear()
         {
             innerCol.Clear();
