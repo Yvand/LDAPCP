@@ -45,7 +45,21 @@ namespace ldapcp
         public const bool EnforceOnly1ClaimTypeForGroup = false;    // In LDAPCP, multiple claim types can be used to create group permissions
         public const string DefaultMainGroupClaimType = WIF4_5.ClaimTypes.Role;
         public const string PUBLICSITEURL = "https://ldapcp.com";
-        public static string ClaimsProviderVersion = FileVersionInfo.GetVersionInfo(Assembly.GetAssembly(typeof(LDAPCP)).Location).FileVersion;
+        public static string ClaimsProviderVersion
+        {
+            get
+            {
+                try
+                {
+                    return FileVersionInfo.GetVersionInfo(Assembly.GetAssembly(typeof(LDAPCP)).Location).FileVersion;
+                }
+                // If assembly was removed from the GAC, CLR will throw that a FileNotFoundException
+                catch (System.IO.FileNotFoundException)
+                {
+                    return String.Empty;
+                }
+            }
+        }
 
         /// <summary>
         /// Escape characters to use for special characters in LDAP filters, as documented in https://ldap.com/ldap-filters/
@@ -290,7 +304,7 @@ namespace ldapcp
             }
             catch (Exception ex)
             {
-                ClaimsProviderLogging.Log($"Error while retrieving configuration '{persistedObjectName}': {ex.Message}", TraceSeverity.Unexpected, EventSeverity.Error, TraceCategory.Core);
+                ClaimsProviderLogging.LogException(String.Empty, $"while retrieving configuration '{persistedObjectName}'", TraceCategory.Configuration, ex);
             }
             return null;
         }
@@ -514,6 +528,10 @@ namespace ldapcp
         /// <returns>Bollean indicates whether the configuration was updated in configuration database</returns>
         public bool CheckAndCleanConfiguration(string spTrustName)
         {
+            // ClaimsProviderConstants.ClaimsProviderVersion can be null if assembly was removed from GAC
+            if (String.IsNullOrEmpty(ClaimsProviderConstants.ClaimsProviderVersion))
+                return false;
+
             bool configUpdated = false;
 
             if (!String.IsNullOrEmpty(spTrustName) && !String.Equals(this.SPTrustName, spTrustName, StringComparison.InvariantCultureIgnoreCase))
@@ -576,14 +594,14 @@ namespace ldapcp
                     var duplicatedPropertiesList = this.ClaimTypes.Where(x => x.EntityType == entityType)   // Check 1 EntityType
                                                               .GroupBy(x => new
                                                               {                           // Group by LDAPClass/LDAPAttribute
-                                                                      x.LDAPClass,
+                                                                  x.LDAPClass,
                                                                   x.LDAPAttribute
                                                               })
                                                               .Select(x => new
                                                               {
                                                                   LDAPProperties = x.Key,
                                                                   ObjectCount = x.Count()       // For each LDAPClass/LDAPAttribute, how many items found
-                                                                  })
+                                                              })
                                                               .Where(x => x.ObjectCount > 1);               // Keep only LDAPClass/LDAPAttribute found more than 1 time (for a given EntityType)
                     foreach (var duplicatedProperty in duplicatedPropertiesList)
                     {
@@ -624,7 +642,7 @@ namespace ldapcp
                 }
             }
             return configUpdated;
-        }        
+        }
     }
 
     public class LDAPConnection : SPAutoSerializingObject
