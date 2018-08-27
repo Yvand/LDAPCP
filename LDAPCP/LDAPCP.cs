@@ -35,7 +35,7 @@ namespace ldapcp
         public const string _ProviderInternalName = "LDAPCP";
         public virtual string ProviderInternalName => "LDAPCP";
 
-        public virtual string PersistedObjectName => ClaimsProviderConstants.LDAPCPCONFIG_NAME;
+        public virtual string PersistedObjectName => ClaimsProviderConstants.CONFIG_NAME;
 
         /// <summary>
         /// Contains configuration currently in use by claims provider

@@ -36,8 +36,8 @@ namespace ldapcp
 
     public class ClaimsProviderConstants
     {
-        public const string LDAPCPCONFIG_ID = "5D306A02-A262-48AC-8C44-BDB927620227";
-        public const string LDAPCPCONFIG_NAME = "LdapcpConfig";
+        public const string CONFIG_ID = "5D306A02-A262-48AC-8C44-BDB927620227";
+        public const string CONFIG_NAME = "LdapcpConfig";
         public const string LDAPCPCONFIG_TOKENDOMAINNAME = "{domain}";
         public const string LDAPCPCONFIG_TOKENDOMAINFQDN = "{fqdn}";
         public const int LDAPCPCONFIG_TIMEOUT = 10;
@@ -253,19 +253,29 @@ namespace ldapcp
         }
 
         /// <summary>
-        /// Returns configuration of LDAPCP
+        /// Returns the configuration of LDAPCP
         /// </summary>
         /// <returns></returns>
         public static LDAPCPConfig GetConfiguration()
         {
-            return GetConfiguration(ClaimsProviderConstants.LDAPCPCONFIG_NAME, String.Empty);
+            return GetConfiguration(ClaimsProviderConstants.CONFIG_NAME, String.Empty);
         }
 
         /// <summary>
-        /// Returns configuration specified by persistedObjectName
+        /// Returns the configuration of LDAPCP
         /// </summary>
-        /// <param name="persistedObjectName">Name of the persisted object that holds configuration to return</param>
+        /// <param name="persistedObjectName"></param>
         /// <returns></returns>
+        public static LDAPCPConfig GetConfiguration(string persistedObjectName)
+        {
+            return GetConfiguration(persistedObjectName, String.Empty);
+        }
+
+        /// <summary>
+        /// Returns the configuration of LDAPCP
+        /// </summary>
+        /// <param name="persistedObjectName">Name of the configuration</param>
+        /// <param name="spTrustName">Name of the SPTrustedLoginProvider using the claims provider</param>
         public static LDAPCPConfig GetConfiguration(string persistedObjectName, string spTrustName)
         {
             SPPersistedObject parent = SPFarm.Local;

@@ -12,6 +12,6 @@
 </asp:Content>
 <asp:Content ID="Main" ContentPlaceHolderID="PlaceHolderMain" runat="server">
     <table border="0" cellspacing="0" cellpadding="0" width="100%">
-        <Ldapcp:GlobalSettings ID="LdapcpGlobalSettings" Runat="server" ClaimsProviderName="LDAPCP" PersistedObjectName="<%# ClaimsProviderConstants.LDAPCPCONFIG_NAME %>" PersistedObjectID="<%# ClaimsProviderConstants.LDAPCPCONFIG_ID %>" />
+        <Ldapcp:GlobalSettings ID="LdapcpGlobalSettings" Runat="server" ClaimsProviderName="LDAPCP" PersistedObjectName="<%# ClaimsProviderConstants.CONFIG_NAME %>" PersistedObjectID="<%# ClaimsProviderConstants.CONFIG_ID %>" />
     </table>
 </asp:Content>

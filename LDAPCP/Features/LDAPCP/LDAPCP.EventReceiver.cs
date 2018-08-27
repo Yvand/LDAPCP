@@ -38,13 +38,17 @@ namespace ldapcp
             {
                 try
                 {
-                    ClaimsProviderLogging.Log($"Activating farm-scoped feature for {LDAPCP._ProviderInternalName}", TraceSeverity.High, EventSeverity.Information, ClaimsProviderLogging.TraceCategory.Configuration);
                     ClaimsProviderLogging svc = ClaimsProviderLogging.Local;
+                    ClaimsProviderLogging.Log($"[{LDAPCP._ProviderInternalName}] Activating farm-scoped feature for claims provider \"{LDAPCP._ProviderInternalName}\"", TraceSeverity.High, EventSeverity.Information, ClaimsProviderLogging.TraceCategory.Configuration);
 
                     var spTrust = LDAPCP.GetSPTrustAssociatedWithCP(LDAPCP._ProviderInternalName);
                     if (spTrust != null)
                     {
-                        LDAPCPConfig config = LDAPCPConfig.CreateConfiguration(ClaimsProviderConstants.LDAPCPCONFIG_ID, ClaimsProviderConstants.LDAPCPCONFIG_NAME, spTrust.Name);
+                        LDAPCPConfig existingConfig = LDAPCPConfig.GetConfiguration(ClaimsProviderConstants.CONFIG_NAME);
+                        if (existingConfig == null)
+                            LDAPCPConfig.CreateConfiguration(ClaimsProviderConstants.CONFIG_ID, ClaimsProviderConstants.CONFIG_NAME, spTrust.Name);
+                        else
+                            ClaimsProviderLogging.Log($"[{LDAPCP._ProviderInternalName}] Use configuration \"{ClaimsProviderConstants.CONFIG_NAME}\" found in the configuration database", TraceSeverity.High, EventSeverity.Information, ClaimsProviderLogging.TraceCategory.Configuration);
                     }
                 }
                 catch (Exception ex)
@@ -58,7 +62,16 @@ namespace ldapcp
         {
             SPSecurity.RunWithElevatedPrivileges(delegate ()
             {
-                ClaimsProviderLogging.Unregister();
+                try
+                {
+                    ClaimsProviderLogging.Log($"[{LDAPCP._ProviderInternalName}] Uninstalling farm-scoped feature for claims provider \"{LDAPCP._ProviderInternalName}\": Deleting configuration from the farm", TraceSeverity.High, EventSeverity.Information, ClaimsProviderLogging.TraceCategory.Configuration);
+                    LDAPCPConfig.DeleteConfiguration(ClaimsProviderConstants.CONFIG_NAME);
+                    ClaimsProviderLogging.Unregister();
+                }
+                catch (Exception ex)
+                {
+                    ClaimsProviderLogging.LogException(LDAPCP._ProviderInternalName, $"deactivating farm-scoped feature for claims provider \"{LDAPCP._ProviderInternalName}\"", ClaimsProviderLogging.TraceCategory.Configuration, ex);
+                }
             });
         }
 
@@ -68,13 +81,12 @@ namespace ldapcp
             {
                 try
                 {
-                    ClaimsProviderLogging.Log($"Deactivating farm-scoped feature for {LDAPCP._ProviderInternalName}: Removing claims provider and its configuration from the farm", TraceSeverity.High, EventSeverity.Information, ClaimsProviderLogging.TraceCategory.Configuration);
+                    ClaimsProviderLogging.Log($"[{LDAPCP._ProviderInternalName}] Deactivating farm-scoped feature for claims provider \"{LDAPCP._ProviderInternalName}\": Removing claims provider from the farm (but not its configuration)", TraceSeverity.High, EventSeverity.Information, ClaimsProviderLogging.TraceCategory.Configuration);
                     base.RemoveClaimProvider(LDAPCP._ProviderInternalName);
-                    LDAPCPConfig.DeleteConfiguration(ClaimsProviderConstants.LDAPCPCONFIG_NAME);
                 }
                 catch (Exception ex)
                 {
-                    ClaimsProviderLogging.LogException(LDAPCP._ProviderInternalName, $"deactivating farm-scoped feature for {LDAPCP._ProviderInternalName}", ClaimsProviderLogging.TraceCategory.Configuration, ex);
+                    ClaimsProviderLogging.LogException(LDAPCP._ProviderInternalName, $"deactivating farm-scoped feature for claims provider \"{LDAPCP._ProviderInternalName}\"", ClaimsProviderLogging.TraceCategory.Configuration, ex);
                 }
             });
         }

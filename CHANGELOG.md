@@ -10,6 +10,7 @@
 * Added method ClaimTypeConfigCollection.GetByClaimType()
 * Implemented unit tests
 * Explicitely encode HTML messages shown in admin pages and renderred from server side code to comply with tools scanning code to detect security vulnerabilities
+* Deactivating farm-scoped feature "LDAPCP" removes the claims provider from the farm, but it does not delete its configuration anymore. Configuration is now deleted when feature is uninstalled (typically when retracting the solution)
 
 
 ## LDAPCP v10 enhancements & bug-fixes - Published in June 12, 2018
