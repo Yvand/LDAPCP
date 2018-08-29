@@ -304,20 +304,19 @@
 <wssuc:InputFormSection runat="server" Title="Display of user identifier results" description="Configure how entities created with identity claim type are shown in the people picker.<br/>It does not change the actual value of the entity, that is the user identifier.">
     <template_inputformcontrols>
 		<wssawc:InputFormRadioButton id="RbIdentityDefault"
-			LabelText="Display LDAP attribute mapped to identity claim"
+			LabelText="Show the user identifier value"
 			Checked="true"
 			GroupName="RbIdentityDisplay"
 			CausesValidation="false"
 			runat="server" >
         </wssawc:InputFormRadioButton>
 		<wssawc:InputFormRadioButton id="RbIdentityCustomLDAP"
-			LabelText="Display another LDAP attribute"
+			LabelText="Show the value of another LDAP attribute, e.g. displayName:"
 			GroupName="RbIdentityDisplay"
 			CausesValidation="false"
 			runat="server" >
         <wssuc:InputFormControl LabelText="InputFormControlLabelText">
 			<Template_control>
-				<wssawc:EncodedLiteral runat="server" text="This is useful if LDAP attribute used doesn't mean anything to users (for example a corporate ID).<br/>LDAP attribute to display:<br/>" EncodeMethod='HtmlEncodeAllowSimpleTextFormatting'/>
 				<wssawc:InputFormTextBox onclick="window.Ldapcp.AdminGlobalSettingsControl.CheckRbIdentityCustomLDAP()" title="LDAP attribute to display" class="ms-input" ID="TxtLdapAttributeToDisplay" Columns="50" Runat="server" MaxLength=255 />
 			</Template_control>
 		</wssuc:InputFormControl>
