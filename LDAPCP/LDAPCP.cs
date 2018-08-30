@@ -35,7 +35,7 @@ namespace ldapcp
         public const string _ProviderInternalName = "LDAPCP";
         public virtual string ProviderInternalName => "LDAPCP";
 
-        public virtual string PersistedObjectName => ClaimsProviderConstants.LDAPCPCONFIG_NAME;
+        public virtual string PersistedObjectName => ClaimsProviderConstants.CONFIG_NAME;
 
         /// <summary>
         /// Contains configuration currently in use by claims provider
@@ -102,18 +102,19 @@ namespace ldapcp
                         if (SPTrust == null) return false;
                     }
                     if (!CheckIfShouldProcessInput(context)) return false;
-                    globalConfiguration = GetConfiguration(context, entityTypes, PersistedObjectName);
+
+                    globalConfiguration = GetConfiguration(context, entityTypes, PersistedObjectName, SPTrust.Name);
                     if (globalConfiguration == null)
                     {
-                        ClaimsProviderLogging.Log($"[{ProviderInternalName}] Configuration '{PersistedObjectName}' was not found. Visit LDAPCP admin pages in central administration to create it.",
+                        ClaimsProviderLogging.Log($"[{ProviderInternalName}] Configuration '{PersistedObjectName}' was not foundin configuration database, use default configuration instead. Visit LDAPCP admin pages in central administration to create it.",
                             TraceSeverity.Unexpected, EventSeverity.Error, TraceCategory.Core);
                         // Run with default configuration, which creates a connection to connect to current AD domain
-                        globalConfiguration = LDAPCPConfig.ReturnDefaultConfiguration();
+                        globalConfiguration = LDAPCPConfig.ReturnDefaultConfiguration(SPTrust.Name);
                         refreshConfig = true;
                     }
                     else
                     {
-                        ((LDAPCPConfig)globalConfiguration).CheckAndCleanPersistedObject();
+                        ((LDAPCPConfig)globalConfiguration).CheckAndCleanConfiguration(SPTrust.Name);
                     }
 
                     if (globalConfiguration.ClaimTypes == null || globalConfiguration.ClaimTypes.Count == 0)
@@ -173,13 +174,12 @@ namespace ldapcp
 
                     // Create local version of the persisted object, that will never be saved in config DB
                     // This copy is unique to current object instance to avoid thread safety issues
-                    this.CurrentConfiguration = ((LDAPCPConfig)globalConfiguration).CopyCurrentObject();
+                    this.CurrentConfiguration = ((LDAPCPConfig)globalConfiguration).CopyPersistedProperties();
 
                     SetCustomConfiguration(context, entityTypes);
                     if (this.CurrentConfiguration.ClaimTypes == null)
                     {
-                        // this.CurrentConfiguration.ClaimTypes was set to null in SetCustomConfiguration, which is bad
-                        ClaimsProviderLogging.Log(String.Format("[{0}] ClaimTypes was set to null in SetCustomConfiguration, don't set it or set it with actual entries.", ProviderInternalName), TraceSeverity.Unexpected, EventSeverity.Error, TraceCategory.Core);
+                        ClaimsProviderLogging.Log($"[{ProviderInternalName}] List if claim types was set to null in method SetCustomConfiguration for configuration '{PersistedObjectName}'.", TraceSeverity.Unexpected, EventSeverity.Error, TraceCategory.Core);
                         return false;
                     }
                     success = InitializeClaimTypeConfigList(this.CurrentConfiguration.ClaimTypes);
@@ -301,9 +301,9 @@ namespace ldapcp
         /// <param name="entityTypes"></param>
         /// <param name="persistedObjectName"></param>
         /// <returns>Read-only configuration to use</returns>
-        protected virtual ILDAPCPConfiguration GetConfiguration(Uri context, string[] entityTypes, string persistedObjectName)
+        protected virtual ILDAPCPConfiguration GetConfiguration(Uri context, string[] entityTypes, string persistedObjectName, string spTrustName)
         {
-            return LDAPCPConfig.GetConfiguration(persistedObjectName);
+            return LDAPCPConfig.GetConfiguration(persistedObjectName, spTrustName);
         }
 
         /// <summary>
@@ -610,12 +610,19 @@ namespace ldapcp
                 return null;
             }
 
-            BuildLDAPFilter(currentContext);
+            // BUG: Filters must be set in an object created in this method (to be bound to current thread), otherwise filter may be updated by multiple threads
+            List<LDAPConnection> ldapServers = new List<LDAPConnection>(this.CurrentConfiguration.LDAPConnectionsProp.Count);
+            foreach (LDAPConnection ldapServer in this.CurrentConfiguration.LDAPConnectionsProp)
+            {
+                ldapServers.Add(ldapServer.CopyPersistedProperties());
+            }            
+
+            BuildLDAPFilter(currentContext, ldapServers);
             bool resultsfound = false;
             List<LDAPSearchResult> LDAPSearchResultWrappers = new List<LDAPSearchResult>();
             using (new SPMonitoredScope(String.Format("[{0}] Total time spent in all LDAP server(s)", ProviderInternalName), 1000))
             {
-                resultsfound = QueryLDAPServers(currentContext, ref LDAPSearchResultWrappers);
+                resultsfound = QueryLDAPServers(currentContext, ldapServers, ref LDAPSearchResultWrappers);
             }
 
             if (!resultsfound) return null;
@@ -724,19 +731,21 @@ namespace ldapcp
                     string directoryObjectPropertyValue = LDAPResultProperties[LDAPResultPropertyNames.First(x => String.Equals(x, ctConfig.LDAPAttribute, StringComparison.InvariantCultureIgnoreCase))][0].ToString();
 
                     // Check if current LDAP attribute value matches the input
+                    // Fix bug https://github.com/Yvand/LDAPCP/issues/53 by escaping special characters with their hex representation as documented in https://ldap.com/ldap-filters/
+                    string inputValueToCompare = OperationContext.UnescapeSpecialCharacters(currentContext.Input);
                     if (currentContext.ExactSearch)
                     {
-                        if (!String.Equals(directoryObjectPropertyValue, currentContext.Input, StringComparison.InvariantCultureIgnoreCase)) continue;
+                        if (!String.Equals(directoryObjectPropertyValue, inputValueToCompare, StringComparison.InvariantCultureIgnoreCase)) continue;
                     }
                     else
                     {
                         if (this.CurrentConfiguration.AddWildcardAsPrefixOfInput)
                         {
-                            if (directoryObjectPropertyValue.IndexOf(currentContext.Input, StringComparison.InvariantCultureIgnoreCase) != -1) continue;
+                            if (directoryObjectPropertyValue.IndexOf(inputValueToCompare, StringComparison.InvariantCultureIgnoreCase) != -1) continue;
                         }
                         else
                         {
-                            if (!directoryObjectPropertyValue.StartsWith(currentContext.Input, StringComparison.InvariantCultureIgnoreCase)) continue;
+                            if (!directoryObjectPropertyValue.StartsWith(inputValueToCompare, StringComparison.InvariantCultureIgnoreCase)) continue;
                         }
                     }
 
@@ -792,7 +801,7 @@ namespace ldapcp
         /// </summary>
         /// <param name="currentContext">Information about current context and operation</param>
         /// <param name="ldapServers">List to be populated by this method</param>
-        protected virtual void BuildLDAPFilter(OperationContext currentContext)
+        protected virtual void BuildLDAPFilter(OperationContext currentContext, List<LDAPConnection> ldapServers)
         {
             // Build LDAP filter as documented in http://technet.microsoft.com/fr-fr/library/aa996205(v=EXCHG.65).aspx
             StringBuilder filter = new StringBuilder();
@@ -815,7 +824,7 @@ namespace ldapcp
             if (this.CurrentConfiguration.FilterEnabledUsersOnlyProp) filter.Append(")");
             filter.Append(")");     // END OR
 
-            foreach (LDAPConnection ldapServer in this.CurrentConfiguration.LDAPConnectionsProp)
+            foreach (LDAPConnection ldapServer in ldapServers)
             {
                 ldapServer.Filter = filter.ToString();
             }
@@ -828,15 +837,15 @@ namespace ldapcp
         /// <param name="currentContext">Information about current context and operation</param>
         /// <param name="LDAPSearchResults">LDAP search results list to be populated by this method</param>
         /// <returns>true if a result was found</returns>
-        protected bool QueryLDAPServers(OperationContext currentContext, ref List<LDAPSearchResult> LDAPSearchResults)
+        protected bool QueryLDAPServers(OperationContext currentContext, List<LDAPConnection> ldapServers, ref List<LDAPSearchResult> LDAPSearchResults)
         {
-            if (this.CurrentConfiguration.LDAPConnectionsProp == null || this.CurrentConfiguration.LDAPConnectionsProp.Count == 0) return false;
+            if (ldapServers == null || ldapServers.Count == 0) return false;
             object lockResults = new object();
             List<LDAPSearchResult> results = new List<LDAPSearchResult>();
             Stopwatch globalStopWatch = new Stopwatch();
             globalStopWatch.Start();
 
-            Parallel.ForEach(this.CurrentConfiguration.LDAPConnectionsProp.Where(x => !String.IsNullOrEmpty(x.Filter)), ldapConnection =>
+            Parallel.ForEach(ldapServers.Where(x => !String.IsNullOrEmpty(x.Filter)), ldapConnection =>
             {
                 SetLDAPConnection(currentContext, ldapConnection);
                 DirectoryEntry directory = ldapConnection.Directory;
@@ -903,7 +912,7 @@ namespace ldapcp
 
             globalStopWatch.Stop();
             LDAPSearchResults = results;
-            ClaimsProviderLogging.Log(String.Format("[{0}] Got {1} result(s) in {2}ms from all servers with query \"{3}\"", ProviderInternalName, LDAPSearchResults.Count, globalStopWatch.ElapsedMilliseconds.ToString(), this.CurrentConfiguration.LDAPConnectionsProp[0].Filter), TraceSeverity.Verbose, EventSeverity.Information, TraceCategory.LDAP_Lookup);
+            ClaimsProviderLogging.Log(String.Format("[{0}] Got {1} result(s) in {2}ms from all servers with query \"{3}\"", ProviderInternalName, LDAPSearchResults.Count, globalStopWatch.ElapsedMilliseconds.ToString(), ldapServers[0].Filter), TraceSeverity.Verbose, EventSeverity.Information, TraceCategory.LDAP_Lookup);
             return LDAPSearchResults.Count > 0;
         }
 
@@ -1051,7 +1060,15 @@ namespace ldapcp
                     timer.Start();
                     List<SPClaim> groups = new List<SPClaim>();
                     object lockResults = new object();
-                    Parallel.ForEach(this.CurrentConfiguration.LDAPConnectionsProp.Where(x => x.AugmentationEnabled), ldapConnection =>
+
+                    // BUG: Filters must be set in an object created in this method (to be bound to current thread), otherwise filter may be updated by multiple threads
+                    List<LDAPConnection> ldapServers = new List<LDAPConnection>(this.CurrentConfiguration.LDAPConnectionsProp.Count);
+                    foreach (LDAPConnection ldapServer in this.CurrentConfiguration.LDAPConnectionsProp.Where(x => x.AugmentationEnabled))
+                    {
+                        ldapServers.Add(ldapServer.CopyPersistedProperties());
+                    }
+
+                    Parallel.ForEach(ldapServers, ldapConnection =>
                     {
                         List<SPClaim> directoryGroups;
                         if (ldapConnection.GetGroupMembershipAsADDomain)
@@ -1158,6 +1175,9 @@ namespace ldapcp
 
                     if (adUser == null) return groups;
 
+                    // https://docs.microsoft.com/en-us/dotnet/api/system.directoryservices.accountmanagement.userprincipal.getauthorizationgroups?view=netframework-4.7.1#System_DirectoryServices_AccountManagement_UserPrincipal_GetAuthorizationGroups
+                    // UserPrincipal.GetAuthorizationGroups() only returns groups that are security groups; distribution groups are not returned.
+                    // UserPrincipal.GetAuthorizationGroups() searches all groups recursively and returns the groups in which the user is a member. The returned set may also include additional groups that system would consider the user a member of for authorization purposes.
                     IEnumerable<Principal> ADGroups = adUser.GetAuthorizationGroups().Where(x => !String.IsNullOrEmpty(x.DistinguishedName));
                     stopWatch.Stop();
 
@@ -1267,6 +1287,7 @@ namespace ldapcp
                                 }
                             }
 
+                            if (groupValues == null) continue;
                             string value;
                             for (int propertyCounter = 0; propertyCounter < propertyCount; propertyCounter++)
                             {

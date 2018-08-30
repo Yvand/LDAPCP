@@ -1,6 +1,7 @@
 ﻿using Microsoft.SharePoint;
 using Microsoft.SharePoint.Administration;
 using Microsoft.SharePoint.Administration.Claims;
+using Microsoft.SharePoint.Utilities;
 using Microsoft.SharePoint.WebControls;
 using System;
 using System.Linq;
@@ -44,11 +45,11 @@ namespace ldapcp.ControlTemplates
             {
                 SPSecurity.RunWithElevatedPrivileges(delegate ()
                 {
-                    if (_PersistedObject == null) _PersistedObject = LDAPCPConfig.GetConfiguration(PersistedObjectName);
+                    if (_PersistedObject == null) _PersistedObject = LDAPCPConfig.GetConfiguration(PersistedObjectName, this.CurrentTrustedLoginProvider.Name);
                     if (_PersistedObject == null)
                     {
                         SPContext.Current.Web.AllowUnsafeUpdates = true;
-                        _PersistedObject = LDAPCPConfig.CreateConfiguration(this.PersistedObjectID, this.PersistedObjectName);
+                        _PersistedObject = LDAPCPConfig.CreateConfiguration(this.PersistedObjectID, this.PersistedObjectName, this.CurrentTrustedLoginProvider.Name);
                         SPContext.Current.Web.AllowUnsafeUpdates = false;
                     }
                 });
@@ -58,7 +59,7 @@ namespace ldapcp.ControlTemplates
         }
 
         protected SPTrustedLoginProvider CurrentTrustedLoginProvider;
-        protected ClaimTypeConfig IdentityClaim;
+        protected ClaimTypeConfig IdentityCTConfig;
         protected ConfigStatus Status;
 
         protected long PersistedObjectVersion
@@ -79,7 +80,7 @@ namespace ldapcp.ControlTemplates
                 if (Status == ConfigStatus.AllGood) return String.Empty;
 
                 if ((Status & ConfigStatus.NoSPTrustAssociation) == ConfigStatus.NoSPTrustAssociation)
-                    return String.Format(TextErrorNoSPTrustAssociation, ClaimsProviderName);
+                    return String.Format(TextErrorNoSPTrustAssociation, SPEncode.HtmlEncode(ClaimsProviderName));
 
                 if ((Status & ConfigStatus.PersistedObjectNotFound) == ConfigStatus.PersistedObjectNotFound)
                     return TextErrorPersistedObjectNotFound;
@@ -145,15 +146,21 @@ namespace ldapcp.ControlTemplates
                 return Status;
             }
 
+            if (CurrentTrustedLoginProvider == null)
+            {
+                CurrentTrustedLoginProvider = LDAPCP.GetSPTrustAssociatedWithCP(this.ClaimsProviderName);
+                if (CurrentTrustedLoginProvider == null)
+                {
+                    Status |= ConfigStatus.NoSPTrustAssociation;
+                    return Status;
+                }
+            }
+
             if (PersistedObject == null)
             {
                 Status |= ConfigStatus.PersistedObjectNotFound;
             }
-            if (CurrentTrustedLoginProvider == null)
-            {
-                CurrentTrustedLoginProvider = LDAPCP.GetSPTrustAssociatedWithCP(this.ClaimsProviderName);
-                if (CurrentTrustedLoginProvider == null) Status |= ConfigStatus.NoSPTrustAssociation;
-            }
+            
             if (Status != ConfigStatus.AllGood)
             {
                 ClaimsProviderLogging.Log($"[{ClaimsProviderName}] {MostImportantError}", TraceSeverity.Unexpected, EventSeverity.Error, TraceCategory.Configuration);
@@ -161,12 +168,12 @@ namespace ldapcp.ControlTemplates
                 return Status;
             }
 
-            PersistedObject.CheckAndCleanPersistedObject();
+            PersistedObject.CheckAndCleanConfiguration(CurrentTrustedLoginProvider.Name);
             PersistedObject.ClaimTypes.SPTrust = CurrentTrustedLoginProvider;
-            if (IdentityClaim == null && Status == ConfigStatus.AllGood)
+            if (IdentityCTConfig == null && Status == ConfigStatus.AllGood)
             {
-                IdentityClaim = this.IdentityClaim = PersistedObject.ClaimTypes.FirstOrDefault(x => String.Equals(CurrentTrustedLoginProvider.IdentityClaimTypeInformation.MappedClaimType, x.ClaimType, StringComparison.InvariantCultureIgnoreCase) && !x.UseMainClaimTypeOfDirectoryObject);
-                if (IdentityClaim == null) Status |= ConfigStatus.NoIdentityClaimType;
+                IdentityCTConfig = this.IdentityCTConfig = PersistedObject.ClaimTypes.FirstOrDefault(x => String.Equals(CurrentTrustedLoginProvider.IdentityClaimTypeInformation.MappedClaimType, x.ClaimType, StringComparison.InvariantCultureIgnoreCase) && !x.UseMainClaimTypeOfDirectoryObject);
+                if (IdentityCTConfig == null) Status |= ConfigStatus.NoIdentityClaimType;
             }
             if (PersistedObjectVersion != PersistedObject.Version)
             {

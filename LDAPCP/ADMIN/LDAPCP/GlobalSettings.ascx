@@ -22,7 +22,7 @@
         // Variables initialized from server side code
         IsDefaultADConnectionCreated = <%= ViewState["IsDefaultADConnectionCreated"].ToString().ToLower() %>;
         ForceCheckCustomLdapConnection = <%= ViewState["ForceCheckCustomLdapConnection"].ToString().ToLower() %>;
-			
+
         if (IsDefaultADConnectionCreated) {
             // Disable radio button to create default connection and select other one.
             $('#<%= RbUseServerDomain.ClientID %>').prop('disabled', true);
@@ -126,6 +126,12 @@
         width: 100px;
     }
 
+    #divUserIdentifiers label {
+        display: inline-block;
+        line-height: 1.8;
+        width: 100px;
+    }
+
     #divNewLdapConnection fieldset {
         border: 0;
         margin: 0;
@@ -151,7 +157,8 @@
 </style>
 
 <p class="ms-error">
-    <asp:Label ID="LabelErrorMessage" runat="server" EnableViewState="False" /></p>
+    <asp:Label ID="LabelErrorMessage" runat="server" EnableViewState="False" />
+</p>
 
 <wssuc:ButtonSection ID="ValidateTopSection" runat="server">
     <template_buttons>
@@ -280,23 +287,36 @@
     </template_inputformcontrols>
 </wssuc:InputFormSection>
 
-<wssuc:InputFormSection runat="server" Title="Display of entities created with identity claim type" Description="Customize the display text of entities created with identity claim type (which is defined in the TrustedLoginProvider).<br/>It does not change the actual value of the entity.">
+<wssuc:inputformsection runat="server" title="User identifier properties" description="Set the LDAP class and attribute that identify users in AD / LDAP.">
+    <template_inputformcontrols>
+		<div id="divUserIdentifiers">
+		<label>LDAP class:</label>
+		<asp:TextBox runat="server" ID="TxtUserIdentifierLDAPClass" class="ms-input">
+		</asp:TextBox>
+		<br/>
+		<label>LDAP attribute:</label>
+		<asp:TextBox runat="server" ID="TxtUserIdentifierLDAPAttribute" class="ms-input">
+		</asp:TextBox>
+		</div> 
+	</template_inputformcontrols>
+</wssuc:inputformsection>
+
+<wssuc:InputFormSection runat="server" Title="Display of user identifier results" description="Configure how entities created with identity claim type are shown in the people picker.<br/>It does not change the actual value of the entity, that is the user identifier.">
     <template_inputformcontrols>
 		<wssawc:InputFormRadioButton id="RbIdentityDefault"
-			LabelText="Display LDAP attribute mapped to identity claim"
+			LabelText="Show the user identifier value"
 			Checked="true"
 			GroupName="RbIdentityDisplay"
 			CausesValidation="false"
 			runat="server" >
         </wssawc:InputFormRadioButton>
 		<wssawc:InputFormRadioButton id="RbIdentityCustomLDAP"
-			LabelText="Display another LDAP attribute"
+			LabelText="Show the value of another LDAP attribute, e.g. displayName:"
 			GroupName="RbIdentityDisplay"
 			CausesValidation="false"
 			runat="server" >
         <wssuc:InputFormControl LabelText="InputFormControlLabelText">
 			<Template_control>
-				<wssawc:EncodedLiteral runat="server" text="This is useful if LDAP attribute used doesn't mean anything to users (for example a corporate ID).<br/>LDAP attribute to display:<br/>" EncodeMethod='HtmlEncodeAllowSimpleTextFormatting'/>
 				<wssawc:InputFormTextBox onclick="window.Ldapcp.AdminGlobalSettingsControl.CheckRbIdentityCustomLDAP()" title="LDAP attribute to display" class="ms-input" ID="TxtLdapAttributeToDisplay" Columns="50" Runat="server" MaxLength=255 />
 			</Template_control>
 		</wssuc:InputFormControl>

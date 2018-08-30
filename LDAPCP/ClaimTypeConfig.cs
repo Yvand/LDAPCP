@@ -187,7 +187,7 @@ namespace ldapcp
         {
         }
 
-        public ClaimTypeConfig CopyCurrentObject()
+        public ClaimTypeConfig CopyPersistedProperties()
         {
             return new ClaimTypeConfig()
             {
@@ -315,6 +315,11 @@ namespace ldapcp
                 throw new InvalidOperationException($"Prefix '{item.PrefixToBypassLookup}' is already set with another claim type and must be unique");
             }
 
+            if (Contains(item, new ClaimTypeConfigSameDirectoryConfiguration()))
+            {
+                throw new InvalidOperationException($"An item with LDAP attribute '{item.LDAPAttribute}' and LDAP class '{item.LDAPClass}' already exists for the object type '{item.EntityType}'");
+            }
+
             if (Contains(item))
             {
                 if (String.IsNullOrEmpty(item.ClaimType))
@@ -391,7 +396,7 @@ namespace ldapcp
             ClaimTypeConfigCollection testUpdateCollection = new ClaimTypeConfigCollection();
             foreach (ClaimTypeConfig curCTConfig in innerCol)
             {
-                testUpdateCollection.Add(curCTConfig.CopyCurrentObject(), false);
+                testUpdateCollection.Add(curCTConfig.CopyPersistedProperties(), false);
             }
 
             // Update ClaimTypeConfig in testUpdateCollection
@@ -408,6 +413,48 @@ namespace ldapcp
 
             // No error, current collection can safely be updated
             innerCol.First(x => String.Equals(x.ClaimType, oldClaimType, StringComparison.InvariantCultureIgnoreCase)).SetFromObject(newItem);
+        }
+
+        /// <summary>
+        /// Update the LDAPClass and LDAPAttribute of the identity ClaimTypeConfig. If new values duplicate an existing item, it will be removed from the collection
+        /// </summary>
+        /// <param name="newLDAPClass">new LDAPClass</param>
+        /// <param name="newLDAPAttribute">new newLDAPAttribute</param>
+        /// <returns>True if the identity ClaimTypeConfig was successfully updated</returns>
+        public bool UpdateUserIdentifier(string newLDAPClass, string newLDAPAttribute)
+        {
+            if (String.IsNullOrEmpty(newLDAPClass)) throw new ArgumentNullException("newLDAPClass");
+            if (String.IsNullOrEmpty(newLDAPAttribute)) throw new ArgumentNullException("newLDAPAttribute");
+
+            bool identifierUpdated = false;
+            if (SPTrust == null)
+                return identifierUpdated;
+
+            ClaimTypeConfig identityClaimType = innerCol.FirstOrDefault(x => String.Equals(x.ClaimType, SPTrust.IdentityClaimTypeInformation.MappedClaimType, StringComparison.InvariantCultureIgnoreCase));
+            if (identityClaimType == null)
+                return identifierUpdated;
+
+            if (String.Equals(identityClaimType.LDAPClass, newLDAPClass, StringComparison.InvariantCultureIgnoreCase) &&
+                String.Equals(identityClaimType.LDAPAttribute, newLDAPAttribute, StringComparison.InvariantCultureIgnoreCase))
+                return identifierUpdated;
+
+            // Check if the new LDAPAttribute / LDAPClass duplicates an existing item, and delete it if so
+            for (int i = 0; i < innerCol.Count; i++)
+            {
+                ClaimTypeConfig curCT = (ClaimTypeConfig)innerCol[i];
+                if (curCT.EntityType == DirectoryObjectType.User &&
+                    String.Equals(curCT.LDAPAttribute, newLDAPAttribute, StringComparison.InvariantCultureIgnoreCase) &&
+                    String.Equals(curCT.LDAPClass, newLDAPClass, StringComparison.InvariantCultureIgnoreCase))
+                {
+                    innerCol.RemoveAt(i);
+                    break;  // There can be only 1 potential duplicate
+                }
+            }            
+
+            identityClaimType.LDAPClass = newLDAPClass;
+            identityClaimType.LDAPAttribute = newLDAPAttribute;
+            identifierUpdated = true;
+            return identifierUpdated;
         }
 
         public void Clear()
@@ -463,6 +510,8 @@ namespace ldapcp
 
         public bool Remove(ClaimTypeConfig item)
         {
+            if (SPTrust != null && String.Equals(item.ClaimType, SPTrust.IdentityClaimTypeInformation.MappedClaimType, StringComparison.InvariantCultureIgnoreCase)) throw new InvalidOperationException($"Cannot delete claim type \"{item.ClaimType}\" because it is the identity claim type of \"{SPTrust.Name}\"");
+
             bool result = false;
             for (int i = 0; i < innerCol.Count; i++)
             {
@@ -480,6 +529,8 @@ namespace ldapcp
         public bool Remove(string claimType)
         {
             if (String.IsNullOrEmpty(claimType)) throw new ArgumentNullException("claimType");
+            if (SPTrust != null && String.Equals(claimType, SPTrust.IdentityClaimTypeInformation.MappedClaimType, StringComparison.InvariantCultureIgnoreCase)) throw new InvalidOperationException($"Cannot delete claim type \"{claimType}\" because it is the identity claim type of \"{SPTrust.Name}\"");
+
             bool result = false;
             for (int i = 0; i < innerCol.Count; i++)
             {
@@ -501,6 +552,13 @@ namespace ldapcp
         IEnumerator IEnumerable.GetEnumerator()
         {
             return new ClaimTypeConfigEnumerator(this);
+        }
+
+        public ClaimTypeConfig GetByClaimType(string claimType)
+        {
+            if (String.IsNullOrEmpty(claimType)) throw new ArgumentNullException("claimType");
+            ClaimTypeConfig ctConfig = innerCol.FirstOrDefault(x => String.Equals(claimType, x.ClaimType, StringComparison.InvariantCultureIgnoreCase));
+            return ctConfig;
         }
     }
 
@@ -667,6 +725,32 @@ namespace ldapcp
         public override int GetHashCode(ClaimTypeConfig ct)
         {
             string hCode = ct.ClaimType + ct.EntityType + ct.UseMainClaimTypeOfDirectoryObject.ToString();
+            return hCode.GetHashCode();
+        }
+    }
+
+    /// <summary>
+    /// Check if a given object type (user or group) has 2 ClaimTypeConfig with the same LDAPAttribute and LDAPClass
+    /// </summary>
+    public class ClaimTypeConfigSameDirectoryConfiguration : EqualityComparer<ClaimTypeConfig>
+    {
+        public override bool Equals(ClaimTypeConfig existingCTConfig, ClaimTypeConfig newCTConfig)
+        {
+            if (String.Equals(existingCTConfig.LDAPAttribute, newCTConfig.LDAPAttribute, StringComparison.InvariantCultureIgnoreCase) &&
+                String.Equals(existingCTConfig.LDAPClass, newCTConfig.LDAPClass, StringComparison.InvariantCultureIgnoreCase) &&
+                existingCTConfig.EntityType == newCTConfig.EntityType)
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+        public override int GetHashCode(ClaimTypeConfig ct)
+        {
+            string hCode = ct.LDAPAttribute + ct.LDAPClass + ct.EntityType;
             return hCode.GetHashCode();
         }
     }
