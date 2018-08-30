@@ -1,6 +1,6 @@
 # Change log for LDAPCP
 
-## LDAPCP v11 enhancements & bug-fixes
+## LDAPCP v11 enhancements & bug-fixes - Published in August 30, 2018
 
 * Fixed no result returned under high load, caused by a thread safety issue where the same filter was used in all threads regardless of the actual input
 * Fixed the augmentation that randomly failed under high load, caused by a thread safety issue on list ILDAPCPConfiguration.LDAPConnectionsProp
