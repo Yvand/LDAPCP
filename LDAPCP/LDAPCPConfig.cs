@@ -408,7 +408,7 @@ namespace ldapcp
         public void ResetClaimTypesList()
         {
             ClaimTypes.Clear();
-            ClaimTypes = ReturnDefaultClaimTypesConfig();
+            ClaimTypes = ReturnDefaultClaimTypesConfig(this.SPTrustName);
             MainGroupClaimType = ClaimsProviderConstants.DefaultMainGroupClaimType;
             ClaimsProviderLogging.Log($"Claim types list of configuration '{Name}' was successfully reset to default configuration",
                 TraceSeverity.High, EventSeverity.Information, TraceCategory.Core);
@@ -448,7 +448,7 @@ namespace ldapcp
             LDAPCPConfig defaultConfig = new LDAPCPConfig();
             defaultConfig.SPTrustName = spTrustName;
             defaultConfig.LDAPConnections = ReturnDefaultLDAPConnection();
-            defaultConfig.ClaimTypes = ReturnDefaultClaimTypesConfig();
+            defaultConfig.ClaimTypes = ReturnDefaultClaimTypesConfig(spTrustName);
             defaultConfig.PickerEntityGroupNameProp = "Results";
             defaultConfig.BypassLDAPLookup = false;
             defaultConfig.AddWildcardAsPrefixOfInput = false;
@@ -465,7 +465,7 @@ namespace ldapcp
         /// Generate and return default claim types configuration list
         /// </summary>
         /// <returns></returns>
-        public static ClaimTypeConfigCollection ReturnDefaultClaimTypesConfig()
+        public static ClaimTypeConfigCollection ReturnDefaultClaimTypesConfig(string spTrustName)
         {
             return new ClaimTypeConfigCollection
             {
@@ -569,7 +569,7 @@ namespace ldapcp
                 }
                 catch (NullReferenceException ex)
                 {
-                    this.ClaimTypes = LDAPCPConfig.ReturnDefaultClaimTypesConfig();
+                    this.ClaimTypes = LDAPCPConfig.ReturnDefaultClaimTypesConfig(this.SPTrustName);
                     configUpdated = true;
                 }
 
