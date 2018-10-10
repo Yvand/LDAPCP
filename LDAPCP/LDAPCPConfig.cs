@@ -467,7 +467,16 @@ namespace ldapcp
         /// <returns></returns>
         public static ClaimTypeConfigCollection ReturnDefaultClaimTypesConfig(string spTrustName)
         {
-            return new ClaimTypeConfigCollection
+            if (String.IsNullOrWhiteSpace(spTrustName)) throw new ArgumentNullException("spTrustName cannot be null.");
+
+            SPTrustedLoginProvider spTrust = SPSecurityTokenServiceManager.Local.TrustedLoginProviders.GetProviderByName(spTrustName);
+            if (spTrust == null)
+            {
+                ClaimsProviderLogging.Log($"SPTrustedLoginProvider '{spTrustName}' was not found ", TraceSeverity.Unexpected, EventSeverity.Error, TraceCategory.Core);
+                return null;
+            }
+
+            ClaimTypeConfigCollection newCTConfigCollection = new ClaimTypeConfigCollection()
             {
                 // Claim types most liekly to be set as identity claim types
                 new ClaimTypeConfig{EntityType = DirectoryObjectType.User, LDAPClass = "user", LDAPAttribute = "mail", ClaimType = WIF4_5.ClaimTypes.Email, EntityDataKey = PeopleEditorEntityDataKeys.Email},
@@ -491,6 +500,8 @@ namespace ldapcp
                 new ClaimTypeConfig{EntityType = DirectoryObjectType.Group, LDAPClass = "group", LDAPAttribute="displayName", UseMainClaimTypeOfDirectoryObject = true, EntityDataKey = PeopleEditorEntityDataKeys.DisplayName},
                 new ClaimTypeConfig{EntityType = DirectoryObjectType.Group, LDAPClass = "user", LDAPAttribute="primaryGroupID", ClaimType = WIF4_5.ClaimTypes.PrimaryGroupSid, SupportsWildcard = false},
             };
+            newCTConfigCollection.SPTrust = spTrust;
+            return newCTConfigCollection;
         }
 
         /// <summary>
