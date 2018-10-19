@@ -1,5 +1,9 @@
 # Change log for LDAPCP
 
+## Unreleased
+
+* Added more strict checks on the claim type passed during augmentation and validation, to record a more meaningful error if needed
+
 ## LDAPCP v11 enhancements & bug-fixes - Published in August 30, 2018
 
 * Fixed no result returned under high load, caused by a thread safety issue where the same filter was used in all threads regardless of the actual input
