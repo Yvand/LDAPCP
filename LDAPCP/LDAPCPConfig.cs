@@ -32,6 +32,7 @@ namespace ldapcp
         bool EnableAugmentation { get; set; }
         string MainGroupClaimType { get; set; }
         string EntityDisplayTextPrefix { get; set; }
+        string CustomData { get; set; }
     }
 
     public class ClaimsProviderConstants
@@ -250,6 +251,17 @@ namespace ldapcp
         [Persisted]
         private string ClaimsProviderVersion;
 
+        /// <summary>
+        /// This property is not used by AzureCP and is available to developers for their own needs
+        /// </summary>
+        public string CustomData
+        {
+            get => _CustomData;
+            set => _CustomData = value;
+        }
+        [Persisted]
+        private string _CustomData;
+
         public LDAPCPConfig(string persistedObjectName, SPPersistedObject parent, string spTrustName) : base(persistedObjectName, parent)
         {
             this.SPTrustName = spTrustName;
@@ -374,6 +386,7 @@ namespace ldapcp
             this.EnableAugmentation = configToApply.EnableAugmentation;
             this.MainGroupClaimType = configToApply.MainGroupClaimType;
             this.EntityDisplayTextPrefix = configToApply.EntityDisplayTextPrefix;
+            this.CustomData = configToApply.CustomData;
         }
 
         public LDAPCPConfig CopyPersistedProperties()
@@ -402,6 +415,7 @@ namespace ldapcp
             copy.EnableAugmentation = this.EnableAugmentation;
             copy.MainGroupClaimType = this.MainGroupClaimType;
             copy.EntityDisplayTextPrefix = this.EntityDisplayTextPrefix;
+            copy.CustomData = this.CustomData;
             return copy;
         }
 
