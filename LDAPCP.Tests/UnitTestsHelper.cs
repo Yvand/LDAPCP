@@ -19,7 +19,7 @@ public class UnitTestsHelper
     public const string ClaimsProviderConfigName = "LDAPCPConfig";
     public static Uri Context = new Uri("http://spsites/sites/LDAPCP.UnitTests");
     public const int MaxTime = 500000;
-    public const int TestRepeatCount = 100;
+    public const int TestRepeatCount = 25;
     public const string FarmAdmin = @"i:0#.w|contoso\yvand";
 
     public const string RandomClaimType = "http://schemas.yvand.com/ws/claims/random";
@@ -40,9 +40,11 @@ public class UnitTestsHelper
     }
 
     [OneTimeSetUp]
-    public static void InitSiteCollection()
+    public static void InitializeSiteCollection()
     {
-        //return; // Uncommented when debugging LDAPCP code from unit tests
+#if DEBUG
+        return; // Uncommented when debugging AzureCP code from unit tests
+#endif
 
         LDAPCPConfig config = LDAPCPConfig.GetConfiguration(UnitTestsHelper.ClaimsProviderConfigName, UnitTestsHelper.SPTrust.Name);
         if (config == null)
@@ -81,6 +83,17 @@ public class UnitTestsHelper
         {
             Console.WriteLine($"Web app {Context} was NOT found.");
         }
+    }
+
+    public static void InitializeConfiguration(LDAPCPConfig config)
+    {
+        config.ResetCurrentConfiguration();
+
+#if DEBUG
+        config.LDAPQueryTimeout = 99999;
+#endif
+
+        config.Update();
     }
 
     public static void TestSearchOperation(string inputValue, int expectedCount, string expectedClaimValue)
