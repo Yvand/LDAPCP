@@ -547,14 +547,14 @@ namespace ldapcp
                         currentContext.Input.StartsWith(x.PrefixToBypassLookup, StringComparison.InvariantCultureIgnoreCase));
                     if (ctConfigWithInputPrefixMatch != null)
                     {
-                        currentContext.Input = currentContext.Input.Substring(ctConfigWithInputPrefixMatch.PrefixToBypassLookup.Length);
-                        if (String.IsNullOrEmpty(currentContext.Input))
+                        string inputWithoutPrefix = currentContext.Input.Substring(ctConfigWithInputPrefixMatch.PrefixToBypassLookup.Length);
+                        if (String.IsNullOrEmpty(inputWithoutPrefix))
                         {
                             // No value in the input after the prefix, return
-                            return null;
+                            return entities;
                         }
                         PickerEntity entity = CreatePickerEntityForSpecificClaimType(
-                            currentContext.Input,
+                            inputWithoutPrefix,
                             ctConfigWithInputPrefixMatch,
                             true);
                         if (entity != null)
@@ -577,7 +577,7 @@ namespace ldapcp
                         // At this stage, it is impossible to know if entity was originally created with the keyword that bypass query to Azure AD
                         // But it should be always validated since property PrefixToBypassLookup is set for current ClaimTypeConfig, so create entity manually
                         PickerEntity entity = CreatePickerEntityForSpecificClaimType(
-                            currentContext.Input,
+                            currentContext.IncomingEntity.Value,
                             currentContext.IncomingEntityClaimTypeConfig,
                             currentContext.InputHasKeyword);
                         if (entity != null)
@@ -731,21 +731,19 @@ namespace ldapcp
                     string directoryObjectPropertyValue = LDAPResultProperties[LDAPResultPropertyNames.First(x => String.Equals(x, ctConfig.LDAPAttribute, StringComparison.InvariantCultureIgnoreCase))][0].ToString();
 
                     // Check if current LDAP attribute value matches the input
-                    // Fix bug https://github.com/Yvand/LDAPCP/issues/53 by escaping special characters with their hex representation as documented in https://ldap.com/ldap-filters/
-                    string inputValueToCompare = OperationContext.UnescapeSpecialCharacters(currentContext.Input);
                     if (currentContext.ExactSearch)
                     {
-                        if (!String.Equals(directoryObjectPropertyValue, inputValueToCompare, StringComparison.InvariantCultureIgnoreCase)) continue;
+                        if (!String.Equals(directoryObjectPropertyValue, currentContext.Input, StringComparison.InvariantCultureIgnoreCase)) continue;
                     }
                     else
                     {
                         if (this.CurrentConfiguration.AddWildcardAsPrefixOfInput)
                         {
-                            if (directoryObjectPropertyValue.IndexOf(inputValueToCompare, StringComparison.InvariantCultureIgnoreCase) != -1) continue;
+                            if (directoryObjectPropertyValue.IndexOf(currentContext.Input, StringComparison.InvariantCultureIgnoreCase) != -1) continue;
                         }
                         else
                         {
-                            if (!directoryObjectPropertyValue.StartsWith(inputValueToCompare, StringComparison.InvariantCultureIgnoreCase)) continue;
+                            if (!directoryObjectPropertyValue.StartsWith(currentContext.Input, StringComparison.InvariantCultureIgnoreCase)) continue;
                         }
                     }
 
@@ -809,7 +807,8 @@ namespace ldapcp
             filter.Append("(| ");   // START OR
 
             string preferredFilterPattern;
-            string input = currentContext.Input;
+            // Fix bug https://github.com/Yvand/LDAPCP/issues/53 by escaping special characters with their hex representation as documented in https://ldap.com/ldap-filters/
+            string input = OperationContext.EscapeSpecialCharacters(currentContext.Input);
             if (currentContext.ExactSearch) preferredFilterPattern = input;
             else preferredFilterPattern = this.CurrentConfiguration.AddWildcardAsPrefixOfInput ? "*" + input + "*" : input + "*";
 

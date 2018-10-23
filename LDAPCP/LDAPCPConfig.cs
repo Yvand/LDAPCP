@@ -791,9 +791,10 @@ namespace ldapcp
         public int MaxCount;
 
         /// <summary>
-        /// If request is a validation: contains the value of the SPClaim. If request is a search: contains the input
+        /// If search: it contains the raw input. If validation: it contains the incoming SPClaim value processed to be searchable against LDAP servers (domain tokens removed). LDAP special characters are NOT escaped
         /// </summary>
         public string Input;
+
         public bool InputHasKeyword;
 
         /// <summary>
@@ -815,11 +816,6 @@ namespace ldapcp
         {
             this.OperationType = currentRequestType;
             this.Input = input;
-            if (input != null)
-            {
-                // Fix bug https://github.com/Yvand/LDAPCP/issues/53 by escaping special characters with their hex representation as documented in https://ldap.com/ldap-filters/
-                this.Input = OperationContext.EscapeSpecialCharacters(input);
-            }
             this.IncomingEntity = incomingEntity;
             this.UriContext = context;
             this.HierarchyNodeID = hierarchyNodeID;
@@ -897,11 +893,8 @@ namespace ldapcp
                     IncomingEntityClaimTypeConfig.ClaimValuePrefix.Contains(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINFQDN)
                 ))
             {
-                Input = GetAccountFromFullAccountName(Input);
+                this.Input = GetAccountFromFullAccountName(this.Input);
             }
-
-            // Fix bug https://github.com/Yvand/LDAPCP/issues/53 by escaping special characters with their hex representation as documented in https://ldap.com/ldap-filters/
-            Input = OperationContext.EscapeSpecialCharacters(Input);
 
             this.InputHasKeyword = (!String.IsNullOrEmpty(IncomingEntityClaimTypeConfig.ClaimValuePrefix) && !IncomingEntity.Value.StartsWith(IncomingEntityClaimTypeConfig.ClaimValuePrefix, StringComparison.InvariantCultureIgnoreCase) && IncomingEntityClaimTypeConfig.DoNotAddClaimValuePrefixIfBypassLookup) ? true : false;
         }
@@ -1048,15 +1041,15 @@ namespace ldapcp
             return result;
         }
 
-        public static string UnescapeSpecialCharacters(string stringWithEscapedChars)
-        {
-            string result = stringWithEscapedChars;
-            foreach (KeyValuePair<string, string> kvp in ClaimsProviderConstants.SpecialCharacters)
-            {
-                result = result.Replace(kvp.Value, kvp.Key);
-            }
-            return result;
-        }
+        //public static string UnescapeSpecialCharacters(string stringWithEscapedChars)
+        //{
+        //    string result = stringWithEscapedChars;
+        //    foreach (KeyValuePair<string, string> kvp in ClaimsProviderConstants.SpecialCharacters)
+        //    {
+        //        result = result.Replace(kvp.Value, kvp.Key);
+        //    }
+        //    return result;
+        //}
     }
 
     public enum DirectoryObjectType
