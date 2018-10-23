@@ -1,5 +1,4 @@
 ﻿using Microsoft.SharePoint.Administration.Claims;
-using Microsoft.SharePoint.WebControls;
 using NUnit.Framework;
 using System;
 using System.Security.Claims;
@@ -45,6 +44,7 @@ namespace LDAPCP.Tests
         //[TestCase("http://schemas.microsoft.com/ws/2008/06/identity/claims/role", @"contoso.local\group\chartest", true)]
         //[TestCase("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress", @"test)char@contoso.local", true)]
         //[TestCase("http://yvand.com/customType1", @"group\chartest", true)]
+        [TestCase("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress", @"yvan", false)]
         public void DEBUG_ValidateClaim(string claimType, string claimValue, bool shouldValidate)
         {
             SPClaim inputClaim = new SPClaim(claimType, claimValue, ClaimValueTypes.String, SPOriginalIssuers.Format(SPOriginalIssuerType.TrustedProvider, UnitTestsHelper.SPTrust.Name));

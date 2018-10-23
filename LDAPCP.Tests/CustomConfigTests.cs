@@ -1,6 +1,5 @@
 ﻿using ldapcp;
 using Microsoft.SharePoint.Administration.Claims;
-using Microsoft.SharePoint.WebControls;
 using NUnit.Framework;
 using System;
 using System.Linq;
@@ -9,27 +8,21 @@ using System.Security.Claims;
 namespace LDAPCP.Tests
 {
     [TestFixture]
-    public class CustomConfigTests
+    public class CustomConfigTests : ModifyConfigBase
     {
         public static string GroupsClaimType = ClaimsProviderConstants.DefaultMainGroupClaimType;
-        private LDAPCPConfig Config;
-        private LDAPCPConfig BackupConfig;
 
-        [OneTimeSetUp]
-        public void Init()
+        public override void InitializeConfiguration()
         {
-            Console.WriteLine($"Starting custom config test {TestContext.CurrentContext.Test.Name}...");
-            Config = LDAPCPConfig.GetConfiguration(UnitTestsHelper.ClaimsProviderConfigName, UnitTestsHelper.SPTrust.Name);
-            BackupConfig = Config.CopyPersistedProperties();
-            Config.ResetClaimTypesList();
-        }
+            base.InitializeConfiguration();
 
-        [OneTimeTearDown]
-        public void Cleanup()
-        {
-            Config.ApplyConfiguration(BackupConfig);
+            // Extra initialization for current test class
+            Config.EnableAugmentation = true;
+            Config.LDAPConnectionsProp.ForEach(x => x.AugmentationEnabled = true);
+            Config.ClaimTypes.GetByClaimType(UnitTestsHelper.SPTrust.IdentityClaimTypeInformation.MappedClaimType).PrefixToBypassLookup = "bypass-user:";
+            Config.ClaimTypes.GetByClaimType(UnitTestsHelper.TrustedGroupToAdd_ClaimType).PrefixToBypassLookup = "bypass-group:";
+            Config.ClaimTypes.GetByClaimType(UnitTestsHelper.TrustedGroupToAdd_ClaimType).ClaimValuePrefix = @"{fqdn}\";
             Config.Update();
-            Console.WriteLine($"Restored actual configuration.");
         }
 
         [TestCase("bypass-user:externalUser@contoso.com", 1, "externalUser@contoso.com")]
@@ -37,16 +30,23 @@ namespace LDAPCP.Tests
         [TestCase("bypass-user:", 0, "")]
         public void BypassLookupOnIdentityClaimTest(string inputValue, int expectedCount, string expectedClaimValue)
         {
-            ClaimTypeConfig ctConfig = Config.ClaimTypes.FirstOrDefault(x => String.Equals(UnitTestsHelper.SPTrust.IdentityClaimTypeInformation.MappedClaimType, x.ClaimType, StringComparison.InvariantCultureIgnoreCase));
-            ctConfig.PrefixToBypassLookup = "ext:";
-            Config.Update();
+            //Config.ClaimTypes.GetByClaimType(UnitTestsHelper.SPTrust.IdentityClaimTypeInformation.MappedClaimType).PrefixToBypassLookup = "bypass-user:";
+            //Config.Update();
 
-            UnitTestsHelper.TestSearchOperation(inputValue, expectedCount, expectedClaimValue);
-
-            if (expectedCount > 0)
+            try
             {
-                SPClaim inputClaim = new SPClaim(UnitTestsHelper.SPTrust.IdentityClaimTypeInformation.MappedClaimType, expectedClaimValue, ClaimValueTypes.String, SPOriginalIssuers.Format(SPOriginalIssuerType.TrustedProvider, UnitTestsHelper.SPTrust.Name));
-                UnitTestsHelper.TestValidationOperation(inputClaim, true, expectedClaimValue);
+                UnitTestsHelper.TestSearchOperation(inputValue, expectedCount, expectedClaimValue);
+
+                if (expectedCount > 0)
+                {
+                    SPClaim inputClaim = new SPClaim(UnitTestsHelper.SPTrust.IdentityClaimTypeInformation.MappedClaimType, expectedClaimValue, ClaimValueTypes.String, SPOriginalIssuers.Format(SPOriginalIssuerType.TrustedProvider, UnitTestsHelper.SPTrust.Name));
+                    UnitTestsHelper.TestValidationOperation(inputClaim, true, expectedClaimValue);
+                }
+            }
+            finally
+            {
+                //Config.ClaimTypes.GetByClaimType(UnitTestsHelper.SPTrust.IdentityClaimTypeInformation.MappedClaimType).PrefixToBypassLookup = String.Empty;
+                //Config.Update();
             }
         }
 
@@ -55,8 +55,8 @@ namespace LDAPCP.Tests
         [TestCase("bypass-group:", 0, "")]
         public void BypassLookupOnGroupClaimTest(string inputValue, int expectedCount, string expectedClaimValue)
         {
-            ClaimTypeConfig ctConfig = Config.ClaimTypes.FirstOrDefault(x => String.Equals(UnitTestsHelper.TrustedGroupToAdd_ClaimType, x.ClaimType, StringComparison.InvariantCultureIgnoreCase));
-            ctConfig.PrefixToBypassLookup = "bypass-group:";
+            //ClaimTypeConfig ctConfig = Config.ClaimTypes.FirstOrDefault(x => String.Equals(UnitTestsHelper.TrustedGroupToAdd_ClaimType, x.ClaimType, StringComparison.InvariantCultureIgnoreCase));
+            //ctConfig.PrefixToBypassLookup = "bypass-group:";
             Config.Update();
 
             try
@@ -71,8 +71,8 @@ namespace LDAPCP.Tests
             }
             finally
             {
-                ctConfig.PrefixToBypassLookup = String.Empty;
-                Config.Update();
+                //ctConfig.PrefixToBypassLookup = String.Empty;
+                //Config.Update();
             }
         }
 
@@ -114,7 +114,7 @@ namespace LDAPCP.Tests
 
             try
             {
-                UnitTestsHelper.TestSearchOperation(UnitTestsHelper.RandomClaimValue, 4, UnitTestsHelper.RandomClaimValue);
+                UnitTestsHelper.TestSearchOperation(UnitTestsHelper.RandomClaimValue, 3, UnitTestsHelper.RandomClaimValue);
 
                 SPClaim inputClaim = new SPClaim(UnitTestsHelper.SPTrust.IdentityClaimTypeInformation.MappedClaimType, UnitTestsHelper.RandomClaimValue, ClaimValueTypes.String, SPOriginalIssuers.Format(SPOriginalIssuerType.TrustedProvider, UnitTestsHelper.SPTrust.Name));
                 UnitTestsHelper.TestValidationOperation(inputClaim, true, UnitTestsHelper.RandomClaimValue);
