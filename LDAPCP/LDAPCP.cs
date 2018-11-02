@@ -846,6 +846,7 @@ namespace ldapcp
 
             Parallel.ForEach(ldapServers.Where(x => !String.IsNullOrEmpty(x.Filter)), ldapConnection =>
             {
+                Debug.WriteLine($"ldapConnection: Path: {ldapConnection.Path}, UserServerDirectoryEntry: {ldapConnection.UserServerDirectoryEntry}");
                 SetLDAPConnection(currentContext, ldapConnection);
                 DirectoryEntry directory = ldapConnection.Directory;
                 using (DirectorySearcher ds = new DirectorySearcher(ldapConnection.Filter))
@@ -866,11 +867,14 @@ namespace ldapcp
                         if (!ds.PropertiesToLoad.Contains(metadataAttribute.LDAPAttribute)) ds.PropertiesToLoad.Add(metadataAttribute.LDAPAttribute);
                     }
 
-                    using (new SPMonitoredScope($"[{ProviderInternalName}] Connecting to '{directory.Path}' with AuthenticationType '{directory.AuthenticationType.ToString()}' and filter '{ds.Filter}'", 3000)) // threshold of 3 seconds before it's considered too much. If exceeded it is recorded in a higher logging level
+                    string loggMessage = $"[{ProviderInternalName}] Connecting to \"{ldapConnection.Directory.Path}\" with AuthenticationType \"{ldapConnection.Directory.AuthenticationType}\", authenticating ";
+                    loggMessage += String.IsNullOrWhiteSpace(ldapConnection.Directory.Username) ? "as process identity" : $"with credentials \"{ldapConnection.Directory.Username}\"";
+                    loggMessage += $" and sending a query with filter \"{ds.Filter}\"...";
+                    using (new SPMonitoredScope(loggMessage, 3000)) // threshold of 3 seconds before it's considered too much. If exceeded it is recorded in a higher logging level
                     {
                         try
                         {
-                            ClaimsProviderLogging.Log($"[{ProviderInternalName}] Connecting to '{directory.Path}' with AuthenticationType '{directory.AuthenticationType.ToString()}' and filter '{ds.Filter}'", TraceSeverity.Verbose, EventSeverity.Information, TraceCategory.LDAP_Lookup);
+                            ClaimsProviderLogging.Log(loggMessage, TraceSeverity.Verbose, EventSeverity.Information, TraceCategory.LDAP_Lookup);
                             Stopwatch stopWatch = new Stopwatch();
                             stopWatch.Start();
                             using (SearchResultCollection directoryResults = ds.FindAll())
@@ -922,24 +926,14 @@ namespace ldapcp
         /// <returns>Array of LDAP servers to query</returns>
         protected virtual void SetLDAPConnection(OperationContext currentContext, LDAPConnection ldapConnection)
         {
-            //if (this.CurrentConfiguration.LDAPConnectionsProp == null) return;
-            //IEnumerable<LDAPConnection> ldapConnections = this.CurrentConfiguration.LDAPConnectionsProp;
-            //if (currentContext.OperationType == OperationType.Augmentation) ldapConnections = this.CurrentConfiguration.LDAPConnectionsProp.Where(x => x.AugmentationEnabled);
-
-            //foreach (var ldapConnection in ldapConnections)
-            //{
             if (!ldapConnection.UserServerDirectoryEntry)
             {
                 ldapConnection.Directory = new DirectoryEntry(ldapConnection.Path, ldapConnection.Username, ldapConnection.Password, ldapConnection.AuthenticationTypes);
-                string serverType = ldapConnection.GetGroupMembershipAsADDomain ? "AD" : "LDAP";
-                ClaimsProviderLogging.Log(String.Format("[{0}] Add {1} server \"{2}\" with AuthenticationType \"{3}\" and credentials \"{4}\".", ProviderInternalName, serverType, ldapConnection.Path, ldapConnection.AuthenticationTypes.ToString(), ldapConnection.Username), TraceSeverity.Verbose, EventSeverity.Information, TraceCategory.LDAP_Lookup);
             }
             else
             {
                 ldapConnection.Directory = Domain.GetComputerDomain().GetDirectoryEntry();
-                ClaimsProviderLogging.Log(String.Format("[{0}] Add AD server \"{1}\" with AuthenticationType \"{2}\" and credentials of application pool account.", ProviderInternalName, ldapConnection.Directory.Path, ldapConnection.Directory.AuthenticationType.ToString()), TraceSeverity.Verbose, EventSeverity.Information, TraceCategory.LDAP_Lookup);
             }
-            //}
         }
 
         protected override void FillClaimTypes(List<string> claimTypes)
@@ -1131,14 +1125,17 @@ namespace ldapcp
                 path = de.Path;
                 de.Dispose();
             }
-            using (new SPMonitoredScope($"[{ProviderInternalName}] Getting AD groups of user {currentContext.IncomingEntity.Value} in {path}", 2000))
+            string loggingMessage = $"[{ProviderInternalName}] Getting AD groups of user {currentContext.IncomingEntity.Value} in \"{path}\" with AuthenticationType \"{ldapConnection.AuthenticationTypes}\" and authenticating ";
+            loggingMessage += ldapConnection.UserServerDirectoryEntry ? "as process identity" : $"with credentials \"{ldapConnection.Username}\"";
+            ClaimsProviderLogging.Log(loggingMessage, TraceSeverity.Verbose, EventSeverity.Information, TraceCategory.Augmentation);
+            using (new SPMonitoredScope(loggingMessage, 2000))
             {
                 string directoryDomainName, directoryDomainFqdn;
                 OperationContext.GetDomainInformation(path, out directoryDomainName, out directoryDomainFqdn);
                 Stopwatch stopWatch = new Stopwatch();
                 stopWatch.Start();
                 UserPrincipal adUser = null;
-                PrincipalContext principalContext;
+                PrincipalContext principalContext = null;
 
                 // Build ContextOptions as documented in https://stackoverflow.com/questions/17451277/what-equivalent-of-authenticationtypes-secure-in-principalcontexts-contextoptio
                 // To use ContextOptions in constructor of PrincipalContext, "container" must also be set, but it can be null as per tests in https://stackoverflow.com/questions/2538064/active-directory-services-principalcontext-what-is-the-dn-of-a-container-o
@@ -1149,16 +1146,18 @@ namespace ldapcp
                 if ((ldapConnection.AuthenticationTypes & AuthenticationTypes.Signing) == AuthenticationTypes.Signing) contextOptions |= ContextOptions.Signing;
                 if ((ldapConnection.AuthenticationTypes & AuthenticationTypes.None) == AuthenticationTypes.None) contextOptions |= ContextOptions.SimpleBind;
 
-                if (ldapConnection.UserServerDirectoryEntry)
-                {
-                    principalContext = new PrincipalContext(ContextType.Domain, directoryDomainFqdn, null, contextOptions);
-                }
-                else
-                {
-                    principalContext = new PrincipalContext(ContextType.Domain, directoryDomainFqdn, null, contextOptions, ldapConnection.Username, ldapConnection.Password);
-                }
                 try
                 {
+                    // Constructor of PrincipalContext does connect to LDAP server and may throw an exception if it fails, so it should be in try/catch
+                    if (ldapConnection.UserServerDirectoryEntry)
+                    {
+                        principalContext = new PrincipalContext(ContextType.Domain, directoryDomainFqdn, null, contextOptions);
+                    }
+                    else
+                    {
+                        principalContext = new PrincipalContext(ContextType.Domain, directoryDomainFqdn, null, contextOptions, ldapConnection.Username, ldapConnection.Password);
+                    }
+
                     // https://github.com/Yvand/LDAPCP/issues/22: UserPrincipal.FindByIdentity() doesn't support emails, so if IncomingEntity is an email, user needs to be retrieved in a different way
                     if (String.Equals(currentContext.IncomingEntity.ClaimType, WIF4_5.ClaimTypes.Email, StringComparison.InvariantCultureIgnoreCase))
                     {
@@ -1231,7 +1230,10 @@ namespace ldapcp
             List<SPClaim> groups = new List<SPClaim>();
             if (groupsCTConfig == null || groupsCTConfig.Count() == 0) return groups;
             SetLDAPConnection(currentContext, ldapConnection);
-            using (new SPMonitoredScope($"[{ProviderInternalName}] Getting LDAP groups of user {currentContext.IncomingEntity.Value} in {ldapConnection.Directory.Path}", 2000))
+            string loggMessage = $"[{ProviderInternalName}] Getting LDAP groups of user {currentContext.IncomingEntity.Value} in \"{ldapConnection.Directory.Path}\" with AuthenticationType \"{ldapConnection.Directory.AuthenticationType}\" and authenticating ";
+            loggMessage += String.IsNullOrWhiteSpace(ldapConnection.Directory.Username) ? "as process identity" : $"with credentials \"{ldapConnection.Directory.Username}\"";
+            ClaimsProviderLogging.Log(loggMessage, TraceSeverity.Verbose, EventSeverity.Information, TraceCategory.Augmentation);
+            using (new SPMonitoredScope(loggMessage, 2000))
             {
                 try
                 {

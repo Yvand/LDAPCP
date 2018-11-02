@@ -42,10 +42,18 @@ namespace LDAPCP.Tests
             UnitTestsHelper.TestAugmentationOperation(UnitTestsHelper.SPTrust.IdentityClaimTypeInformation.MappedClaimType, registrationData.ClaimValue, registrationData.IsMemberOfTrustedGroup);
         }
 
-        [TestCase("i:05.t|contoso.local|yvand@contoso.local", true)]
-        [TestCase("i:05.t|contoso.local|zzzyvand@contoso.local", false)]
+        [TestCase("yvand@contoso.local", true)]
+        [TestCase("zzzyvand@contoso.local", false)]
         public void DEBUG_AugmentEntity(string claimValue, bool isMemberOfTrustedGroup)
         {
+            LDAPConnection coco = new LDAPConnection();
+            coco.AugmentationEnabled = true;
+            coco.GetGroupMembershipAsADDomainProp = false;
+            coco.UserServerDirectoryEntry = false;
+            coco.Path = "LDAP://test";
+            coco.Username = "userTest";
+            Config.LDAPConnectionsProp.Add(coco);
+            Config.Update();
             UnitTestsHelper.TestAugmentationOperation(UnitTestsHelper.SPTrust.IdentityClaimTypeInformation.MappedClaimType, claimValue, isMemberOfTrustedGroup);
         }
     }

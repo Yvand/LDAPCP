@@ -1,4 +1,5 @@
-﻿using Microsoft.SharePoint.Administration.Claims;
+﻿using ldapcp;
+using Microsoft.SharePoint.Administration.Claims;
 using NUnit.Framework;
 using System;
 using System.Security.Claims;
@@ -7,7 +8,7 @@ namespace LDAPCP.Tests
 {
     [TestFixture]
     [Parallelizable(ParallelScope.Children)]
-    public class PeoplePickerTests
+    public class PeoplePickerTests : ModifyConfigBase
     {
         [Test, TestCaseSource(typeof(SearchEntityDataSource), "GetTestData")]
         [MaxTime(UnitTestsHelper.MaxTime)]
@@ -38,6 +39,15 @@ namespace LDAPCP.Tests
         [TestCase(@"user1", 2, @"user1@yvand.net")]
         public void DEBUG_SearchEntities(string inputValue, int expectedResultCount, string expectedEntityClaimValue)
         {
+            LDAPConnection coco = new LDAPConnection();
+            coco.AugmentationEnabled = true;
+            coco.GetGroupMembershipAsADDomainProp = false;
+            coco.UserServerDirectoryEntry = false;
+            coco.Path = "LDAP://test";
+            coco.Username = "userTest";
+            Config.LDAPConnectionsProp.Add(coco);
+            Config.Update();
+
             UnitTestsHelper.TestSearchOperation(inputValue, expectedResultCount, expectedEntityClaimValue);
         }
 
