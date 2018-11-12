@@ -1,5 +1,7 @@
 # LDAPCP for SharePoint 2013 and 2016
 
+[![Build Status](https://dev.azure.com/YvanDev/LDAPCP/_apis/build/status/Build%20dev)](https://dev.azure.com/YvanDev/LDAPCP/_build/latest?definitionId=1)
+
 ## Please visit [ldapcp.com](http://ldapcp.com) to download LDAPCP and find documentation.
 
 ![People picker with LDAPCP](https://cloud.githubusercontent.com/assets/8788631/25440961/3b8db40a-2aa1-11e7-9070-aee808950f38.PNG)
