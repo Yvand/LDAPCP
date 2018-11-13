@@ -176,7 +176,9 @@ namespace ldapcp
                     // This copy is unique to current object instance to avoid thread safety issues
                     this.CurrentConfiguration = ((LDAPCPConfig)globalConfiguration).CopyPersistedProperties();
 
+#pragma warning disable CS0618 // Type or member is obsolete
                     SetCustomConfiguration(context, entityTypes);
+#pragma warning restore CS0618 // Type or member is obsolete
                     if (this.CurrentConfiguration.ClaimTypes == null)
                     {
                         ClaimsProviderLogging.Log($"[{ProviderInternalName}] List if claim types was set to null in method SetCustomConfiguration for configuration '{PersistedObjectName}'.", TraceSeverity.Unexpected, EventSeverity.Error, TraceCategory.Core);

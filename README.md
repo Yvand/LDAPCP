@@ -1,6 +1,6 @@
 # LDAPCP for SharePoint 2013 and 2016
 
-[![Build Status](https://dev.azure.com/YvanDev/LDAPCP/_apis/build/status/Build%20dev)](https://dev.azure.com/YvanDev/LDAPCP/_build/latest?definitionId=1)
+[![Build status](https://dev.azure.com/YvanDev/LDAPCP/_apis/build/status/Build%20dev%20branch)](https://dev.azure.com/YvanDev/LDAPCP/_build/latest?definitionId=1)
 
 ## Please visit [ldapcp.com](http://ldapcp.com) to download LDAPCP and find documentation.
 
