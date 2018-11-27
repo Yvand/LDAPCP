@@ -1,0 +1,99 @@
+resources:
+- repo: self
+queue:
+  name: Hosted VS2017
+  demands: 
+  - msbuild
+  - visualstudio
+#Your build pipeline references an undefined variable named ‘Parameters.solution’. Create or edit the build pipeline for this YAML file, define the variable on the Variables tab. See https://go.microsoft.com/fwlink/?linkid=865972
+#Your build pipeline references an undefined variable named ‘date:yyyy’. Create or edit the build pipeline for this YAML file, define the variable on the Variables tab. See https://go.microsoft.com/fwlink/?linkid=865972
+#Your build pipeline references an undefined variable named ‘Parameters.solution’. Create or edit the build pipeline for this YAML file, define the variable on the Variables tab. See https://go.microsoft.com/fwlink/?linkid=865972
+#Your build pipeline references the ‘BuildPlatform’ variable, which you’ve selected to be settable at queue time. Create or edit the build pipeline for this YAML file, define the variable on the Variables tab, and then select the option to make it settable at queue time. See https://go.microsoft.com/fwlink/?linkid=865971
+#Your build pipeline references the ‘BuildConfiguration’ variable, which you’ve selected to be settable at queue time. Create or edit the build pipeline for this YAML file, define the variable on the Variables tab, and then select the option to make it settable at queue time. See https://go.microsoft.com/fwlink/?linkid=865971
+#Your build pipeline references an undefined variable named ‘Parameters.downloadPath’. Create or edit the build pipeline for this YAML file, define the variable on the Variables tab. See https://go.microsoft.com/fwlink/?linkid=865972
+#Your build pipeline references the ‘BuildConfiguration’ variable, which you’ve selected to be settable at queue time. Create or edit the build pipeline for this YAML file, define the variable on the Variables tab, and then select the option to make it settable at queue time. See https://go.microsoft.com/fwlink/?linkid=865971
+steps:
+- powershell: |
+   # Create the local directory if it doesn't exist
+   $localPath = "$(System.DefaultWorkingDirectory)\LDAPCP"
+   if ((Test-Path -Path $localPath -PathType Container) -eq $false) {
+       New-Item -ItemType Directory -Path $localPath
+   }
+   Write-Output ("Copy files from Azure storage account")
+   $azureContext = New-AzureStorageContext $env:AzureStorageAccountName $env:AzureStorageAccountKey
+   $azureShare = Get-AzureStorageShare $env:AzureStorageShareName –Context $azureContext
+   Get-AzureStorageFileContent –Share $azureShare –Path "Resources\LDAPCP.snk" "$localPath\LDAPCP.snk"
+   Get-AzureStorageFileContent –Share $azureShare –Path "Resources\SharePoint 2013\Microsoft.SharePoint.dll" "$localPath\Microsoft.SharePoint.dll"
+   <#
+   Write-Output ("Import assembly signing certificate into certificate store")
+   $azureShareecureSigningKey = ConvertTo-SecureString -String "ea090ba098206e7b499fa66028d7cbce6c3c0449a48448922c939fe60def36d8" -AsPlainText -Force
+   Import-PfxCertificate -FilePath "$localPath\LDAPCP.pfx" -Password $azureShareecureSigningKey -CertStoreLocation cert:\localMachine\My
+   #>
+   <#Add-Type -AssemblyName System.Security
+   $cert = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2
+   $cert.Import("$localPath\LDAPCP.pfx", "ea090ba098206e7b499fa66028d7cbce6c3c0449a48448922c939fe60def36d8", [System.Security.Cryptography.X509Certificates.X509KeyStorageFlags]"PersistKeySet")
+   $store = new-object system.security.cryptography.X509Certificates.X509Store -argumentlist "MY", CurrentUser
+   $store.Open([System.Security.Cryptography.X509Certificates.OpenFlags]"ReadWrite")
+   $store.Add($cert)
+   $store.Close()#>
+   Write-Output ("Add assembly Microsoft.SharePoint.dll to the GAC")
+   [System.Reflection.Assembly]::Load("System.EnterpriseServices, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a")
+   $publish = New-Object System.EnterpriseServices.Internal.Publish
+   $publish.GacInstall("$localPath\Microsoft.SharePoint.dll")
+   <#
+   Write-Output ("Install key pair into key container VS_KEY_A8A72EE3BBD6E187")
+   #sn -i "$localPath\LDAPCP.pfx" VS_KEY_A8A72EE3BBD6E187
+   #cmd /r ECHO "ea090ba098206e7b499fa66028d7cbce6c3c0449a48448922c939fe60def36d8" | "C:\Program Files (x86)\Microsoft SDKs\Windows\v10.0A\bin\NETFX 4.6.1 Tools\x64\sn.exe" -i "$localPath\LDAPCP.pfx" VS_KEY_A8A72EE3BBD6E187
+   [void] [System.Reflection.Assembly]::LoadWithPartialName("'System.Windows.Forms")
+   Start-Process "C:\Program Files (x86)\Microsoft SDKs\Windows\v7.0A\Bin\sn.exe " -ArgumentList "-i `"$localPath\LDAPCP.pfx`" VS_KEY_A8A72EE3BBD6E187" -NoNewWindow -Wait
+   [System.Windows.Forms.SendKeys]::SendWait("ea090ba098206e7b499fa66028d7cbce6c3c0449a48448922c939fe60def36d8~")
+   #>
+  displayName: 'Import resources'
+  env:
+    AzureStorageAccountKey: sxcPpnMRblpDHNnDUKtiGW9ZeavhBq3KmhrQWUTzHoJg/ssbUDJ2sgZoCuU0V8sTjrPc+MwQkEHHGz9EhG29Pg==
+    AzureStorageAccountName: csb3c497a877ec4x4e9cxb22
+    AzureStorageShareName: cs-yvand-microsoft-com-10030000801baa0a
+- task: NuGetToolInstaller@0
+  displayName: 'Use NuGet 4.4.1'
+  inputs:
+    versionSpec: 4.4.1
+- task: NuGetCommand@2
+  displayName: 'NuGet restore'
+  inputs:
+    restoreSolution: '$(Parameters.solution)'
+- task: bleddynrichards.Assembly-Info-Task.Assembly-Info-Task.Assembly-Info-Task@1
+  displayName: 'Set Assembly Manifest Data'
+  inputs:
+    FileNames: |
+     AssemblyInfo.cs
+    Title: LDAPCP
+    Product: LDAPCP
+    Description: 'This claims provider connects SharePoint with Active Directory and LDAP servers to provide a great search experience in the people picker with federated authentication'
+    Company: GitHub.com/Yvand
+    Copyright: 'Copyright © $(date:yyyy), Yvan Duhamel, All rights reserved'
+    Trademark: LDAPCP
+    VersionNumber: 1.0.0.0
+    FileVersionNumber: '12.0.*.*'
+    InformationalVersion: 1.0.0.0
+- task: VSBuild@1
+  displayName: 'Build solution **\*.sln'
+  inputs:
+    solution: '$(Parameters.solution)'
+    msbuildArgs: '/p:IsPackaging=true'
+    platform: '$(BuildPlatform)'
+    configuration: '$(BuildConfiguration)'
+    msbuildArchitecture: x64
+- task: DownloadBuildArtifacts@0
+  displayName: 'Download Build Artifacts'
+  inputs:
+    downloadType: specific
+    downloadPath: '$(Parameters.downloadPath)'
+  enabled: false
+- task: CopyFiles@2
+  displayName: 'Copy artifacts'
+  inputs:
+    SourceFolder: '$(Build.SourcesDirectory)'
+    Contents: '**/$(BuildConfiguration)/**/?(*.wsp|*.dll|*.pdb)'
+    TargetFolder: '$(Build.ArtifactStagingDirectory)'
+- task: PublishBuildArtifacts@1
+  displayName: 'Publish Artifact: drop'
