@@ -5,13 +5,6 @@ queue:
   demands: 
   - msbuild
   - visualstudio
-#Your build pipeline references an undefined variable named ‘Parameters.solution’. Create or edit the build pipeline for this YAML file, define the variable on the Variables tab. See https://go.microsoft.com/fwlink/?linkid=865972
-#Your build pipeline references an undefined variable named ‘date:yyyy’. Create or edit the build pipeline for this YAML file, define the variable on the Variables tab. See https://go.microsoft.com/fwlink/?linkid=865972
-#Your build pipeline references an undefined variable named ‘Parameters.solution’. Create or edit the build pipeline for this YAML file, define the variable on the Variables tab. See https://go.microsoft.com/fwlink/?linkid=865972
-#Your build pipeline references the ‘BuildPlatform’ variable, which you’ve selected to be settable at queue time. Create or edit the build pipeline for this YAML file, define the variable on the Variables tab, and then select the option to make it settable at queue time. See https://go.microsoft.com/fwlink/?linkid=865971
-#Your build pipeline references the ‘BuildConfiguration’ variable, which you’ve selected to be settable at queue time. Create or edit the build pipeline for this YAML file, define the variable on the Variables tab, and then select the option to make it settable at queue time. See https://go.microsoft.com/fwlink/?linkid=865971
-#Your build pipeline references an undefined variable named ‘Parameters.downloadPath’. Create or edit the build pipeline for this YAML file, define the variable on the Variables tab. See https://go.microsoft.com/fwlink/?linkid=865972
-#Your build pipeline references the ‘BuildConfiguration’ variable, which you’ve selected to be settable at queue time. Create or edit the build pipeline for this YAML file, define the variable on the Variables tab, and then select the option to make it settable at queue time. See https://go.microsoft.com/fwlink/?linkid=865971
 steps:
 - powershell: |
    # Create the local directory if it doesn't exist
@@ -19,11 +12,13 @@ steps:
    if ((Test-Path -Path $localPath -PathType Container) -eq $false) {
        New-Item -ItemType Directory -Path $localPath
    }
+   
    Write-Output ("Copy files from Azure storage account")
    $azureContext = New-AzureStorageContext $(AzureStorageAccountName) $(AzureStorageAccountKey)
    $azureShare = Get-AzureStorageShare $(AzureStorageShareName) –Context $azureContext
    Get-AzureStorageFileContent –Share $azureShare –Path "Resources\LDAPCP.snk" "$localPath\LDAPCP.snk"
    Get-AzureStorageFileContent –Share $azureShare –Path "Resources\SharePoint 2013\Microsoft.SharePoint.dll" "$localPath\Microsoft.SharePoint.dll"
+   
    Write-Output ("Add assembly Microsoft.SharePoint.dll to the GAC")
    [System.Reflection.Assembly]::Load("System.EnterpriseServices, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a")
    $publish = New-Object System.EnterpriseServices.Internal.Publish
@@ -49,10 +44,10 @@ steps:
     Copyright: 'Copyright © $(date:yyyy), Yvan Duhamel, All rights reserved'
     Trademark: LDAPCP
     VersionNumber: 1.0.0.0
-    FileVersionNumber: '12.0.*.*'
+    FileVersionNumber: '$(MajorMinorVersion).*.*'
     InformationalVersion: 1.0.0.0
 - task: VSBuild@1
-  displayName: 'Build solution **\*.sln'
+  displayName: 'Build LDAPCP solution'
   inputs:
     solution: '$(Parameters.solution)'
     msbuildArgs: '/p:IsPackaging=true'
