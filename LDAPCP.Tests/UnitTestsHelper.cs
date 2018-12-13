@@ -8,6 +8,7 @@ using NUnit.Framework;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Configuration;
 using System.Linq;
 using System.Security.Claims;
 
@@ -16,23 +17,27 @@ public class UnitTestsHelper
 {
     public static ldapcp.LDAPCP ClaimsProvider = new ldapcp.LDAPCP(UnitTestsHelper.ClaimsProviderName);
     public const string ClaimsProviderName = "LDAPCP";
-    public const string ClaimsProviderConfigName = "LDAPCPConfig";
-    public static Uri Context = new Uri("http://spsites/sites/LDAPCP.UnitTests");
+    public static string ClaimsProviderConfigName = ConfigurationManager.AppSettings["ClaimsProviderConfigName"];
+    public static Uri Context = new Uri(ConfigurationManager.AppSettings["TestSiteCollectionUri"]);
     public const int MaxTime = 500000;
-    public const int TestRepeatCount = 25;
-    public const string FarmAdmin = @"i:0#.w|contoso\yvand";
+    public static string FarmAdmin = ConfigurationManager.AppSettings["FarmAdmin"];
+#if DEBUG
+    public const int TestRepeatCount = 5;
+#else
+    public const int TestRepeatCount = 50;
+#endif
 
     public const string RandomClaimType = "http://schemas.yvand.com/ws/claims/random";
     public const string RandomClaimValue = "IDoNotExist";
     public const string RandomLDAPAttribute = "randomAttribute";
     public const string RandomLDAPClass = "randomClass";
 
-    public const string TrustedGroupToAdd_ClaimValue = @"contoso.local\group1";
-    public const string TrustedGroupToAdd_ClaimType = ClaimsProviderConstants.DefaultMainGroupClaimType;
+    public static string TrustedGroupToAdd_ClaimType = ClaimsProviderConstants.DefaultMainGroupClaimType;
+    public static string TrustedGroupToAdd_ClaimValue = ConfigurationManager.AppSettings["TrustedGroupToAdd_ClaimValue"];
     public static SPClaim TrustedGroup = new SPClaim(TrustedGroupToAdd_ClaimType, TrustedGroupToAdd_ClaimValue, ClaimValueTypes.String, SPOriginalIssuers.Format(SPOriginalIssuerType.TrustedProvider, SPTrust.Name));
 
-    public const string DataFile_SearchTests = @"F:\Data\Dev\LDAPCP_SearchTests_Data.csv";
-    public const string DataFile_ValidationTests = @"F:\Data\Dev\LDAPCP_ValidationTests_Data.csv";
+    public static string DataFile_AllAccounts_Search = ConfigurationManager.AppSettings["DataFile_AllAccounts_Search"];
+    public static string DataFile_AllAccounts_Validate = ConfigurationManager.AppSettings["DataFile_AllAccounts_Validate"];
 
     public static SPTrustedLoginProvider SPTrust
     {
@@ -176,7 +181,7 @@ public class SearchEntityDataSource
 {
     public static IEnumerable<TestCaseData> GetTestData()
     {
-        DataTable dt = DataTable.New.ReadCsv(UnitTestsHelper.DataFile_SearchTests);
+        DataTable dt = DataTable.New.ReadCsv(UnitTestsHelper.DataFile_AllAccounts_Search);
         foreach (Row row in dt.Rows)
         {
             var registrationData = new SearchEntityData();
@@ -214,7 +219,7 @@ public class ValidateEntityDataSource
 {
     public static IEnumerable<TestCaseData> GetTestData()
     {
-        DataTable dt = DataTable.New.ReadCsv(UnitTestsHelper.DataFile_ValidationTests);
+        DataTable dt = DataTable.New.ReadCsv(UnitTestsHelper.DataFile_AllAccounts_Validate);
         foreach (Row row in dt.Rows)
         {
             var registrationData = new ValidateEntityData();

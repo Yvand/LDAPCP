@@ -42,6 +42,7 @@
       <HintPath>C:\Program Files\Common Files\microsoft shared\Web Server Extensions\15\ISAPI\Microsoft.SharePoint.dll</HintPath>
     </Reference>
     <Reference Include="System" />
+    <Reference Include="System.Configuration" />
     <Reference Include="System.Core" />
   </ItemGroup>
   <ItemGroup>
@@ -50,7 +51,7 @@
     <Compile Include="ModifyConfigBase.cs" />
     <Compile Include="ModifyConfigTests.cs" />
     <Compile Include="UnitTestsHelper.cs" />
-    <Compile Include="PeoplePickerTests.cs" />
+    <Compile Include="EntityTestsBase.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -69,6 +70,9 @@
       <Project>{66f4b88d-7d7e-4435-92de-94810e2b8f9f}</Project>
       <Name>LDAPCP</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="App.config" />
   </ItemGroup>
   <Import Project="$(VSToolsPath)\TeamTest\Microsoft.TestTools.targets" Condition="Exists('$(VSToolsPath)\TeamTest\Microsoft.TestTools.targets')" />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

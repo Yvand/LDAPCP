@@ -8,23 +8,58 @@ namespace LDAPCP.Tests
 {
     [TestFixture]
     [Parallelizable(ParallelScope.Children)]
-    public class PeoplePickerTests : ModifyConfigBase
+    public class EntityTestsBase : ModifyConfigBase
     {
+        /// <summary>
+        /// Configure whether to run entity search tests.
+        /// </summary>
+        public virtual bool TestSearch => true;
+
+        /// <summary>
+        /// Configure whether to run entity validation tests.
+        /// </summary>
+        public virtual bool TestValidation => true;
+
+        /// <summary>
+        /// Configure whether to run entity augmentation tests. By default, augmentation is disabled on LDAPCP.
+        /// </summary>
+        public virtual bool TestAugmentation => false;
+
+        public override void InitializeConfiguration()
+        {
+            base.InitializeConfiguration();
+            Config.EnableAugmentation = true;
+        }
+
         [Test, TestCaseSource(typeof(SearchEntityDataSource), "GetTestData")]
         [MaxTime(UnitTestsHelper.MaxTime)]
         [Repeat(UnitTestsHelper.TestRepeatCount)]
-        public void SearchEntities(SearchEntityData registrationData)
+        public virtual void SearchEntities(SearchEntityData registrationData)
         {
+            if (!TestSearch) return;
+
             UnitTestsHelper.TestSearchOperation(registrationData.Input, registrationData.ExpectedResultCount, registrationData.ExpectedEntityClaimValue);
         }
 
         [Test, TestCaseSource(typeof(ValidateEntityDataSource), "GetTestData")]
         [MaxTime(UnitTestsHelper.MaxTime)]
         [Repeat(UnitTestsHelper.TestRepeatCount)]
-        public void ValidateClaim(ValidateEntityData registrationData)
+        public virtual void ValidateClaim(ValidateEntityData registrationData)
         {
+            if (!TestValidation) return;
+
             SPClaim inputClaim = new SPClaim(UnitTestsHelper.SPTrust.IdentityClaimTypeInformation.MappedClaimType, registrationData.ClaimValue, ClaimValueTypes.String, SPOriginalIssuers.Format(SPOriginalIssuerType.TrustedProvider, UnitTestsHelper.SPTrust.Name));
             UnitTestsHelper.TestValidationOperation(inputClaim, registrationData.ShouldValidate, registrationData.ClaimValue);
+        }
+
+        [Test, TestCaseSource(typeof(ValidateEntityDataSource), "GetTestData")]
+        [MaxTime(UnitTestsHelper.MaxTime)]
+        [Repeat(UnitTestsHelper.TestRepeatCount)]
+        public virtual void AugmentEntity(ValidateEntityData registrationData)
+        {
+            if (!TestAugmentation) return;
+
+            UnitTestsHelper.TestAugmentationOperation(UnitTestsHelper.SPTrust.IdentityClaimTypeInformation.MappedClaimType, registrationData.ClaimValue, registrationData.IsMemberOfTrustedGroup);
         }
 
         //[TestCaseSource(typeof(SearchEntityDataSourceCollection))]
@@ -39,6 +74,8 @@ namespace LDAPCP.Tests
         [TestCase(@"user1", 2, @"user1@yvand.net")]
         public void DEBUG_SearchEntities(string inputValue, int expectedResultCount, string expectedEntityClaimValue)
         {
+            if (!TestSearch) return;
+
             LDAPConnection coco = new LDAPConnection();
             coco.AugmentationEnabled = true;
             coco.GetGroupMembershipAsADDomainProp = false;
@@ -57,8 +94,19 @@ namespace LDAPCP.Tests
         [TestCase("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress", @"yvan", false)]
         public void DEBUG_ValidateClaim(string claimType, string claimValue, bool shouldValidate)
         {
+            if (!TestValidation) return;
+
             SPClaim inputClaim = new SPClaim(claimType, claimValue, ClaimValueTypes.String, SPOriginalIssuers.Format(SPOriginalIssuerType.TrustedProvider, UnitTestsHelper.SPTrust.Name));
             UnitTestsHelper.TestValidationOperation(inputClaim, shouldValidate, claimValue);
+        }
+
+        [TestCase("FakeAccount", false)]
+        [TestCase("yvand@contoso.local", true)]
+        public void DEBUG_AugmentEntity(string claimValue, bool shouldHavePermissions)
+        {
+            if (!TestAugmentation) return;
+
+            UnitTestsHelper.TestAugmentationOperation(UnitTestsHelper.SPTrust.IdentityClaimTypeInformation.MappedClaimType, claimValue, shouldHavePermissions);
         }
     }
 }
