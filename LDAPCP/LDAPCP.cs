@@ -78,6 +78,10 @@ namespace ldapcp
         protected virtual string EntityOnMouseOver => "{0}={1}";
         protected virtual string LDAPFilterEnabledUsersOnly => "(&(!(userAccountControl:1.2.840.113556.1.4.803:=2))";
         protected virtual string LDAPFilterADSecurityGroupsOnly => "(groupType:1.2.840.113556.1.4.803:=2147483648)";
+
+        /// <summary>
+        /// Returned issuer formatted like the property SPClaim.OriginalIssuer: "TrustedProvider:TrustedProviderName"
+        /// </summary>
         protected string IssuerName => SPOriginalIssuers.Format(SPOriginalIssuerType.TrustedProvider, SPTrust.Name);
 
         public LDAPCP(string displayName) : base(displayName) { }
@@ -1032,7 +1036,11 @@ namespace ldapcp
                 this.Lock_Config.EnterReadLock();
                 try
                 {
+                    // There can be multiple TrustedProvider on the farm, but LDAPCP should only do augmentation if current entity is from TrustedProvider it is associated with
+                    if (!String.Equals(decodedEntity.OriginalIssuer, IssuerName, StringComparison.InvariantCultureIgnoreCase)) return;
+
                     if (!this.CurrentConfiguration.EnableAugmentation) return;
+
                     if (String.IsNullOrEmpty(this.CurrentConfiguration.MainGroupClaimType))
                     {
                         ClaimsProviderLogging.Log($"[{ProviderInternalName}] Augmentation is enabled but property MainGroupClaimType is not set.", TraceSeverity.High, EventSeverity.Error, TraceCategory.Augmentation);
