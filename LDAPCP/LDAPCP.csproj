@@ -51,6 +51,7 @@
     <Reference Include="System.Data" />
     <Reference Include="System.DirectoryServices" />
     <Reference Include="System.DirectoryServices.AccountManagement" />
+    <Reference Include="System.Drawing" />
     <Reference Include="System.Web" />
     <Reference Include="System.Xml" />
     <Reference Include="System.Xml.Linq" />
@@ -76,7 +77,15 @@
     <Compile Include="ADMIN\LDAPCP\GlobalSettings.ascx.designer.cs">
       <DependentUpon>GlobalSettings.ascx.cs</DependentUpon>
     </Compile>
+    <Compile Include="ClaimEntity.cs" />
     <Compile Include="ClaimTypeConfig.cs" />
+    <Compile Include="Layouts\ldapcp\ClaimsViewer.aspx.cs">
+      <DependentUpon>claimsviewer.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Layouts\ldapcp\ClaimsViewer.aspx.designer.cs">
+      <DependentUpon>ClaimsViewer.aspx.cs</DependentUpon>
+    </Compile>
     <Compile Include="LdapcpLoggingService.cs" />
     <Compile Include="Features\LDAPCP\LDAPCP.EventReceiver.cs">
       <DependentUpon>LDAPCP.feature</DependentUpon>
@@ -124,6 +133,7 @@
     <Content Include="Features\LDAPCP\LDAPCP.Template.xml">
       <DependentUpon>LDAPCP.feature</DependentUpon>
     </Content>
+    <Content Include="Layouts\ldapcp\claimsviewer.aspx" />
     <Content Include="Layouts\ldapcp\jquery-1.9.1.min.js" />
     <Content Include="Layouts\ldapcp\LDAPCP_logo_small.png" />
     <Content Include="LDAPCP.AdminLinks\Elements.xml">

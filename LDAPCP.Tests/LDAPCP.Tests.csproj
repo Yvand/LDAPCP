@@ -63,12 +63,6 @@
       <Version>3.10.0</Version>
     </PackageReference>
   </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\LDAPCP\LDAPCP.csproj">
-      <Project>{66f4b88d-7d7e-4435-92de-94810e2b8f9f}</Project>
-      <Name>LDAPCP</Name>
-    </ProjectReference>
-  </ItemGroup>
   <Import Project="$(VSToolsPath)\TeamTest\Microsoft.TestTools.targets" Condition="Exists('$(VSToolsPath)\TeamTest\Microsoft.TestTools.targets')" />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
