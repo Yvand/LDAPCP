@@ -46,6 +46,9 @@
     <AssemblyOriginatorKeyFile>LDAPCP.snk</AssemblyOriginatorKeyFile>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Microsoft.IdentityModel, Version=3.5.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.IdentityModel.6.1.7600.16394\lib\net35\Microsoft.IdentityModel.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Data" />
@@ -101,6 +104,7 @@
     <None Include="LDAPCP.AdminLinks\SharePointProjectItem.spdata">
       <SharePointProjectItemId>{48070593-e687-4f19-8920-d28f17368f37}</SharePointProjectItemId>
     </None>
+    <None Include="packages.config" />
     <None Include="LDAPCP.snk" />
     <None Include="Package\Package.package">
       <PackageId>{6ff99767-b95a-4143-8cd8-3978aa01fb80}</PackageId>
