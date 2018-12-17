@@ -124,11 +124,11 @@
     <None Include="Layouts\SharePointProjectItem.spdata">
       <SharePointProjectItemId>{6a2152a5-0941-4e3a-abee-d771c813bdce}</SharePointProjectItemId>
     </None>
-    <None Include="LDAPCP.pfx" />
     <None Include="LDAPCP.AdminLinks\SharePointProjectItem.spdata">
       <SharePointProjectItemId>{48070593-e687-4f19-8920-d28f17368f37}</SharePointProjectItemId>
     </None>
     <None Include="packages.config" />
+    <None Include="LDAPCP.pfx" />
     <None Include="Package\Package.package">
       <PackageId>{6ff99767-b95a-4143-8cd8-3978aa01fb80}</PackageId>
     </None>
