@@ -2,7 +2,18 @@
 
 ## Unreleased
 
-* Added more strict checks on the claim type passed during augmentation and validation, to record a more meaningful error if needed
+* Add more strict checks on the claim type passed during augmentation and validation, to record a more meaningful error if needed
+* Add test to ensure that LDAPCP augments only entities issued from the TrustedProvider it is associated with
+* Fix sign-in of users failing if LDAPCP configuration does not exist
+* Handle potential exception during augmentation if connection to LDAP server fails
+* Improve managemend of special LDAP characters
+* Add property CustomData to ILDAPCPConfiguration
+* Fix msbuild warnings
+* Improve tests
+* Use Azure DevOps to build LDAPCP
+* Update NuGet package NUnit to v3.11
+* Update NuGet package NUnit3TestAdapter to v3.11.2
+* Update NuGet package CsvTools to v1.0.12
 
 ## LDAPCP v11 enhancements & bug-fixes - Published in August 30, 2018
 
