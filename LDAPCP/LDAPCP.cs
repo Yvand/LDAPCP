@@ -1276,16 +1276,14 @@ namespace ldapcp
                             if (groupCTConfig.ClaimType == MainGroupClaimTypeConfig.ClaimType)
                             {
                                 valueIsDistinguishedNameFormat = true;
-                                if (result.Properties.Contains("memberOf"))
+                                foreach (string groupMembershipAttributes in ldapConnection.GroupMembershipAttributes)
                                 {
-                                    propertyCount = result.Properties["memberOf"].Count;
-                                    groupValues = result.Properties["memberOf"];
-                                }
-
-                                if (propertyCount == 0 && result.Properties.Contains("uniquememberof"))
-                                {
-                                    propertyCount = result.Properties["uniquememberof"].Count;
-                                    groupValues = result.Properties["uniquememberof"];
+                                    if (result.Properties.Contains(groupMembershipAttributes))
+                                    {
+                                        propertyCount = result.Properties[groupMembershipAttributes].Count;
+                                        groupValues = result.Properties[groupMembershipAttributes];
+                                        break;
+                                    }
                                 }
                             }
                             else

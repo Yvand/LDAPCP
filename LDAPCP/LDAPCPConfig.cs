@@ -726,6 +726,9 @@ namespace ldapcp
             set => GetGroupMembershipAsADDomain = value;
         }
 
+        [Persisted]
+        public string[] GroupMembershipAttributes = new string[] { "memberOf", "uniquememberof" };
+
         /// <summary>
         /// DirectoryEntry used to make LDAP queries
         /// </summary>
@@ -750,6 +753,7 @@ namespace ldapcp
                 UserServerDirectoryEntry = this.UserServerDirectoryEntry,
                 AugmentationEnabled = this.AugmentationEnabled,
                 GetGroupMembershipAsADDomain = this.GetGroupMembershipAsADDomain,
+                GroupMembershipAttributes = this.GroupMembershipAttributes,
             };
         }
     }

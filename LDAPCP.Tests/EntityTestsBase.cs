@@ -63,7 +63,7 @@ namespace LDAPCP.Tests
         }
 
         //[TestCaseSource(typeof(SearchEntityDataSourceCollection))]
-        public void DEBUG_SearchEntitiesFromCollection(string inputValue, string expectedCount, string expectedClaimValue)
+        public virtual void DEBUG_SearchEntitiesFromCollection(string inputValue, string expectedCount, string expectedClaimValue)
         {
             UnitTestsHelper.TestSearchOperation(inputValue, Convert.ToInt32(expectedCount), expectedClaimValue);
         }
@@ -72,7 +72,7 @@ namespace LDAPCP.Tests
         //[TestCase(@"test)", 2, @"test)char@contoso.local")]
         //[TestCase(@"group\ch", 1, @"group\chartest")]
         [TestCase(@"user1", 2, @"user1@yvand.net")]
-        public void DEBUG_SearchEntities(string inputValue, int expectedResultCount, string expectedEntityClaimValue)
+        public virtual void DEBUG_SearchEntities(string inputValue, int expectedResultCount, string expectedEntityClaimValue)
         {
             if (!TestSearch) return;
 
@@ -92,7 +92,7 @@ namespace LDAPCP.Tests
         //[TestCase("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress", @"test)char@contoso.local", true)]
         //[TestCase("http://yvand.com/customType1", @"group\chartest", true)]
         [TestCase("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress", @"yvan", false)]
-        public void DEBUG_ValidateClaim(string claimType, string claimValue, bool shouldValidate)
+        public virtual void DEBUG_ValidateClaim(string claimType, string claimValue, bool shouldValidate)
         {
             if (!TestValidation) return;
 
@@ -102,7 +102,7 @@ namespace LDAPCP.Tests
 
         [TestCase("FakeAccount", false)]
         [TestCase("yvand@contoso.local", true)]
-        public void DEBUG_AugmentEntity(string claimValue, bool shouldHavePermissions)
+        public virtual void DEBUG_AugmentEntity(string claimValue, bool shouldHavePermissions)
         {
             if (!TestAugmentation) return;
 

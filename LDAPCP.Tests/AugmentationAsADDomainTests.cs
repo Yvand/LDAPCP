@@ -5,7 +5,7 @@ namespace LDAPCP.Tests
 {
     [TestFixture]
     [Parallelizable(ParallelScope.Children)]
-    public class AugmentationTests : EntityTestsBase
+    public class AugmentationAsADDomainTests : EntityTestsBase
     {
         public override bool TestSearch => false;
         public override bool TestValidation => false;
