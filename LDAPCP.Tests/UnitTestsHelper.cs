@@ -8,7 +8,6 @@ using NUnit.Framework;
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Configuration;
 using System.Linq;
 using System.Security.Claims;
 
@@ -39,10 +38,7 @@ public class UnitTestsHelper
     public static string DataFile_AllAccounts_Search = TestContext.Parameters["DataFile_AllAccounts_Search"];
     public static string DataFile_AllAccounts_Validate = TestContext.Parameters["DataFile_AllAccounts_Validate"];
 
-    public static SPTrustedLoginProvider SPTrust
-    {
-        get => SPSecurityTokenServiceManager.Local.TrustedLoginProviders.FirstOrDefault(x => String.Equals(x.ClaimProviderName, UnitTestsHelper.ClaimsProviderName, StringComparison.InvariantCultureIgnoreCase));
-    }
+    public static SPTrustedLoginProvider SPTrust => SPSecurityTokenServiceManager.Local.TrustedLoginProviders.FirstOrDefault(x => String.Equals(x.ClaimProviderName, UnitTestsHelper.ClaimsProviderName, StringComparison.InvariantCultureIgnoreCase));
 
     [OneTimeSetUp]
     public static void InitializeSiteCollection()
@@ -101,6 +97,12 @@ public class UnitTestsHelper
         config.Update();
     }
 
+    /// <summary>
+    /// Start search operation on a specific claims provider
+    /// </summary>
+    /// <param name="inputValue"></param>
+    /// <param name="expectedCount">How many entities are expected to be returned. Set to Int32.MaxValue if exact number is unknown but greater than 0</param>
+    /// <param name="expectedClaimValue"></param>
     public static void TestSearchOperation(string inputValue, int expectedCount, string expectedClaimValue)
     {
         string[] entityTypes = new string[] { "User", "SecGroup", "SharePointGroup", "System", "FormsRole" };
@@ -132,6 +134,10 @@ public class UnitTestsHelper
         {
             Assert.Fail($"Input \"{input}\" returned no entity with claim value \"{expectedClaimValue}\".");
         }
+
+        if (expectedCount == Int32.MaxValue)
+            expectedCount = entities.Count;
+
         Assert.AreEqual(expectedCount, entities.Count, $"Input \"{input}\" should have returned {expectedCount} entities, but it returned {entities.Count} instead.");
     }
 

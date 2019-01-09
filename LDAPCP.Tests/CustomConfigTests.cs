@@ -114,7 +114,7 @@ namespace LDAPCP.Tests
 
             try
             {
-                UnitTestsHelper.TestSearchOperation(UnitTestsHelper.RandomClaimValue, 3, UnitTestsHelper.RandomClaimValue);
+                UnitTestsHelper.TestSearchOperation(UnitTestsHelper.RandomClaimValue, Int32.MaxValue, UnitTestsHelper.RandomClaimValue);
 
                 SPClaim inputClaim = new SPClaim(UnitTestsHelper.SPTrust.IdentityClaimTypeInformation.MappedClaimType, UnitTestsHelper.RandomClaimValue, ClaimValueTypes.String, SPOriginalIssuers.Format(SPOriginalIssuerType.TrustedProvider, UnitTestsHelper.SPTrust.Name));
                 UnitTestsHelper.TestValidationOperation(inputClaim, true, UnitTestsHelper.RandomClaimValue);
