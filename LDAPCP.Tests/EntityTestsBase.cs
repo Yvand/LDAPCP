@@ -62,6 +62,7 @@ namespace LDAPCP.Tests
             UnitTestsHelper.TestAugmentationOperation(UnitTestsHelper.SPTrust.IdentityClaimTypeInformation.MappedClaimType, registrationData.ClaimValue, registrationData.IsMemberOfTrustedGroup);
         }
 
+#if DEBUG
         //[TestCaseSource(typeof(SearchEntityDataSourceCollection))]
         public virtual void DEBUG_SearchEntitiesFromCollection(string inputValue, string expectedCount, string expectedClaimValue)
         {
@@ -108,5 +109,6 @@ namespace LDAPCP.Tests
 
             UnitTestsHelper.TestAugmentationOperation(UnitTestsHelper.SPTrust.IdentityClaimTypeInformation.MappedClaimType, claimValue, shouldHavePermissions);
         }
+#endif
     }
 }

@@ -25,6 +25,7 @@ namespace LDAPCP.Tests
             Config.Update();
         }
 
+#if DEBUG
         [TestCase("yvand@contoso.local", true)]
         [TestCase("zzzyvand@contoso.local", false)]
         public override void DEBUG_AugmentEntity(string claimValue, bool isMemberOfTrustedGroup)
@@ -39,5 +40,6 @@ namespace LDAPCP.Tests
             //Config.Update();
             UnitTestsHelper.TestAugmentationOperation(UnitTestsHelper.SPTrust.IdentityClaimTypeInformation.MappedClaimType, claimValue, isMemberOfTrustedGroup);
         }
+#endif
     }
 }
