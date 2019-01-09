@@ -1,5 +1,8 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <RunSettings>
+  <RunConfiguration>
+    <TargetPlatform>x64</TargetPlatform>
+  </RunConfiguration>
   <TestRunParameters>
     <Parameter name="DataFile_AllAccounts_Search" value="C:\Data\Dev\LDAPCP_Tests_AllAccounts_Search.csv" />
     <Parameter name="DataFile_AllAccounts_Validate" value="C:\Data\Dev\LDAPCP_Tests_AllAccounts_Validate.csv" />
