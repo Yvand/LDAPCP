@@ -17,14 +17,14 @@ public class UnitTestsHelper
 {
     public static ldapcp.LDAPCP ClaimsProvider = new ldapcp.LDAPCP(UnitTestsHelper.ClaimsProviderName);
     public const string ClaimsProviderName = "LDAPCP";
-    public static string ClaimsProviderConfigName = ConfigurationManager.AppSettings["ClaimsProviderConfigName"];
-    public static Uri Context = new Uri(ConfigurationManager.AppSettings["TestSiteCollectionUri"]);
+    public static string ClaimsProviderConfigName = TestContext.Parameters["ClaimsProviderConfigName"];
+    public static Uri Context = new Uri(TestContext.Parameters["TestSiteCollectionUri"]);
     public const int MaxTime = 500000;
-    public static string FarmAdmin = ConfigurationManager.AppSettings["FarmAdmin"];
+    public static string FarmAdmin = TestContext.Parameters["FarmAdmin"];
 #if DEBUG
     public const int TestRepeatCount = 5;
 #else
-    public const int TestRepeatCount = 50;
+    public const int TestRepeatCount = 10;
 #endif
 
     public const string RandomClaimType = "http://schemas.yvand.com/ws/claims/random";
@@ -33,11 +33,11 @@ public class UnitTestsHelper
     public const string RandomLDAPClass = "randomClass";
 
     public static string TrustedGroupToAdd_ClaimType = ClaimsProviderConstants.DefaultMainGroupClaimType;
-    public static string TrustedGroupToAdd_ClaimValue = ConfigurationManager.AppSettings["TrustedGroupToAdd_ClaimValue"];
+    public static string TrustedGroupToAdd_ClaimValue = TestContext.Parameters["TrustedGroupToAdd_ClaimValue"];
     public static SPClaim TrustedGroup = new SPClaim(TrustedGroupToAdd_ClaimType, TrustedGroupToAdd_ClaimValue, ClaimValueTypes.String, SPOriginalIssuers.Format(SPOriginalIssuerType.TrustedProvider, SPTrust.Name));
 
-    public static string DataFile_AllAccounts_Search = ConfigurationManager.AppSettings["DataFile_AllAccounts_Search"];
-    public static string DataFile_AllAccounts_Validate = ConfigurationManager.AppSettings["DataFile_AllAccounts_Validate"];
+    public static string DataFile_AllAccounts_Search = TestContext.Parameters["DataFile_AllAccounts_Search"];
+    public static string DataFile_AllAccounts_Validate = TestContext.Parameters["DataFile_AllAccounts_Validate"];
 
     public static SPTrustedLoginProvider SPTrust
     {
