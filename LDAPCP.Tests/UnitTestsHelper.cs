@@ -23,7 +23,7 @@ public class UnitTestsHelper
 #if DEBUG
     public const int TestRepeatCount = 5;
 #else
-    public const int TestRepeatCount = 10;
+    public const int TestRepeatCount = 20;
 #endif
 
     public const string RandomClaimType = "http://schemas.yvand.com/ws/claims/random";
