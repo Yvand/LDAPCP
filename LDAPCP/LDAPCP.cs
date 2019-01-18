@@ -434,7 +434,7 @@ namespace ldapcp
         /// <param name="resolved"></param>
         protected override void FillResolve(Uri context, string[] entityTypes, string resolveInput, List<Microsoft.SharePoint.WebControls.PickerEntity> resolved)
         {
-            ClaimsProviderLogging.LogDebug(String.Format("[{0}] FillResolve(string) called, incoming input \"{1}\"", ProviderInternalName, resolveInput));
+            //ClaimsProviderLogging.LogDebug(String.Format("[{0}] FillResolve(string) called, incoming input \"{1}\"", ProviderInternalName, resolveInput));
 
             SPSecurity.RunWithElevatedPrivileges(delegate ()
             {
@@ -471,7 +471,7 @@ namespace ldapcp
 
         protected override void FillSearch(Uri context, string[] entityTypes, string searchPattern, string hierarchyNodeID, int maxCount, Microsoft.SharePoint.WebControls.SPProviderHierarchyTree searchTree)
         {
-            ClaimsProviderLogging.LogDebug(String.Format("[{0}] FillSearch called, incoming input: \"{1}\"", ProviderInternalName, searchPattern));
+            //ClaimsProviderLogging.LogDebug(String.Format("[{0}] FillSearch called, incoming input: \"{1}\"", ProviderInternalName, searchPattern));
             SPSecurity.RunWithElevatedPrivileges(delegate ()
             {
                 if (!Initialize(context, entityTypes))
@@ -852,7 +852,7 @@ namespace ldapcp
 
             Parallel.ForEach(ldapServers.Where(x => !String.IsNullOrEmpty(x.Filter)), ldapConnection =>
             {
-                Debug.WriteLine($"ldapConnection: Path: {ldapConnection.Path}, UserServerDirectoryEntry: {ldapConnection.UserServerDirectoryEntry}");
+                //Debug.WriteLine($"ldapConnection: Path: {ldapConnection.Path}, UserServerDirectoryEntry: {ldapConnection.UserServerDirectoryEntry}");
                 SetLDAPConnection(currentContext, ldapConnection);
                 DirectoryEntry directory = ldapConnection.Directory;
                 using (DirectorySearcher ds = new DirectorySearcher(ldapConnection.Filter))

@@ -8,6 +8,7 @@ using NUnit.Framework;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Security.Claims;
 
@@ -44,8 +45,21 @@ public class UnitTestsHelper
     public static void InitializeSiteCollection()
     {
 #if DEBUG
-        return; // Uncommented when debugging AzureCP code from unit tests
+        //return; // Uncommented when debugging AzureCP code from unit tests
 #endif
+
+        Trace.Listeners.Add(new TextWriterTraceListener(Console.Out));
+        Trace.Listeners.Add(new TextWriterTraceListener("LDAPCPIntegrationTests.log", "myListener"));
+        Trace.AutoFlush = true;
+        Trace.TraceInformation($"{DateTime.Now.ToString("s")} Starting integration tests of claims provider {ClaimsProviderName}...");
+        Trace.WriteLine($"{DateTime.Now.ToString("s")} DataFile_AllAccounts_Search: {DataFile_AllAccounts_Search}");
+        Trace.WriteLine($"{DateTime.Now.ToString("s")} DataFile_AllAccounts_Validate: {DataFile_AllAccounts_Validate}");
+        Trace.WriteLine($"{DateTime.Now.ToString("s")} TestSiteCollectionUri: {TestContext.Parameters["TestSiteCollectionUri"]}");
+        if (SPTrust == null)
+            Trace.TraceError($"{DateTime.Now.ToString("s")} SPTrust: is null");
+        else
+            Trace.WriteLine($"{DateTime.Now.ToString("s")} SPTrust: {SPTrust.Name}");
+
 
         LDAPCPConfig config = LDAPCPConfig.GetConfiguration(UnitTestsHelper.ClaimsProviderConfigName, UnitTestsHelper.SPTrust.Name);
         if (config == null)
@@ -56,15 +70,15 @@ public class UnitTestsHelper
         SPWebApplication wa = SPWebApplication.Lookup(Context);
         if (wa != null)
         {
-            Console.WriteLine($"Web app {wa.Name} found.");
+            Trace.WriteLine($"{DateTime.Now.ToString("s")} Web application {wa.Name} found, checking if site collection {Context.AbsoluteUri} exists...");
             SPClaimProviderManager claimMgr = SPClaimProviderManager.Local;
             string encodedClaim = claimMgr.EncodeClaim(TrustedGroup);
             SPUserInfo userInfo = new SPUserInfo { LoginName = encodedClaim, Name = TrustedGroupToAdd_ClaimValue };
 
             if (!SPSite.Exists(Context))
             {
-                Console.WriteLine($"Creating site collection {Context.AbsoluteUri}...");
-                SPSite spSite = wa.Sites.Add(Context.AbsoluteUri, ClaimsProviderName, ClaimsProviderName, 1033, "STS#0", FarmAdmin, String.Empty, String.Empty);
+                Trace.WriteLine($"{DateTime.Now.ToString("s")} Creating site collection {Context.AbsoluteUri}...");
+                SPSite spSite = wa.Sites.Add(Context.AbsoluteUri, ClaimsProviderName, $"DataFile_AllAccounts_Search: {DataFile_AllAccounts_Search}; DataFile_AllAccounts_Validate: {DataFile_AllAccounts_Validate}", 1033, "STS#0", FarmAdmin, String.Empty, String.Empty);
                 spSite.RootWeb.CreateDefaultAssociatedGroups(FarmAdmin, FarmAdmin, spSite.RootWeb.Title);
 
                 SPGroup membersGroup = spSite.RootWeb.AssociatedMemberGroup;
@@ -82,8 +96,16 @@ public class UnitTestsHelper
         }
         else
         {
-            Console.WriteLine($"Web app {Context} was NOT found.");
+            Trace.TraceError($"{DateTime.Now.ToString("s")} Web application {Context} was NOT found.");
         }
+
+    }
+
+    [OneTimeTearDown]
+    public void Cleanup()
+    {
+        Trace.WriteLine($"{DateTime.Now.ToString("s")} Integration tests of claims provider {ClaimsProviderName} finished.");
+        Trace.Flush();
     }
 
     public static void InitializeConfiguration(LDAPCPConfig config)
