@@ -10,6 +10,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Reflection;
 using System.Security.Claims;
 
 [SetUpFixture]
@@ -41,17 +42,19 @@ public class UnitTestsHelper
 
     public static SPTrustedLoginProvider SPTrust => SPSecurityTokenServiceManager.Local.TrustedLoginProviders.FirstOrDefault(x => String.Equals(x.ClaimProviderName, UnitTestsHelper.ClaimsProviderName, StringComparison.InvariantCultureIgnoreCase));
 
+    static TextWriterTraceListener logFileListener;
+
     [OneTimeSetUp]
     public static void InitializeSiteCollection()
     {
 #if DEBUG
-        //return; // Uncommented when debugging AzureCP code from unit tests
+        //return; // Uncommented when debugging LDAPCP code from unit tests
 #endif
 
-        Trace.Listeners.Add(new TextWriterTraceListener(Console.Out));
-        Trace.Listeners.Add(new TextWriterTraceListener("LDAPCPIntegrationTests.log"));
+        logFileListener = new TextWriterTraceListener(TestContext.Parameters["TestLogFileName"]);
+        Trace.Listeners.Add(logFileListener);
         Trace.AutoFlush = true;
-        Trace.TraceInformation($"{DateTime.Now.ToString("s")} Starting integration tests of claims provider {ClaimsProviderName}...");
+        Trace.TraceInformation($"{DateTime.Now.ToString("s")} Start integration tests {ClaimsProviderName} {FileVersionInfo.GetVersionInfo(Assembly.GetAssembly(typeof(ldapcp.LDAPCP)).Location).FileVersion}.");
         Trace.WriteLine($"{DateTime.Now.ToString("s")} DataFile_AllAccounts_Search: {DataFile_AllAccounts_Search}");
         Trace.WriteLine($"{DateTime.Now.ToString("s")} DataFile_AllAccounts_Validate: {DataFile_AllAccounts_Validate}");
         Trace.WriteLine($"{DateTime.Now.ToString("s")} TestSiteCollectionUri: {TestContext.Parameters["TestSiteCollectionUri"]}");
@@ -104,8 +107,10 @@ public class UnitTestsHelper
     [OneTimeTearDown]
     public void Cleanup()
     {
-        Trace.WriteLine($"{DateTime.Now.ToString("s")} Integration tests of claims provider {ClaimsProviderName} finished.");
+        Trace.WriteLine($"{DateTime.Now.ToString("s")} Integration tests of {ClaimsProviderName} {FileVersionInfo.GetVersionInfo(Assembly.GetAssembly(typeof(ldapcp.LDAPCP)).Location).FileVersion} finished.");
         Trace.Flush();
+        if (logFileListener != null)
+            logFileListener.Dispose();
     }
 
     public static void InitializeConfiguration(LDAPCPConfig config)
