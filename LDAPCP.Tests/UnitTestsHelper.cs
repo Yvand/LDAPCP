@@ -49,7 +49,7 @@ public class UnitTestsHelper
 #endif
 
         Trace.Listeners.Add(new TextWriterTraceListener(Console.Out));
-        Trace.Listeners.Add(new TextWriterTraceListener("LDAPCPIntegrationTests.log", "myListener"));
+        Trace.Listeners.Add(new TextWriterTraceListener("LDAPCPIntegrationTests.log"));
         Trace.AutoFlush = true;
         Trace.TraceInformation($"{DateTime.Now.ToString("s")} Starting integration tests of claims provider {ClaimsProviderName}...");
         Trace.WriteLine($"{DateTime.Now.ToString("s")} DataFile_AllAccounts_Search: {DataFile_AllAccounts_Search}");

@@ -1,5 +1,7 @@
 ﻿using ldapcp;
 using NUnit.Framework;
+using System;
+using System.Diagnostics;
 
 namespace LDAPCP.Tests
 {
@@ -15,6 +17,11 @@ namespace LDAPCP.Tests
         public void Init()
         {
             Config = LDAPCPConfig.GetConfiguration(UnitTestsHelper.ClaimsProviderConfigName, UnitTestsHelper.SPTrust.Name);
+            if (Config == null)
+            {
+                Trace.TraceWarning($"{DateTime.Now.ToString("s")} Configuration {UnitTestsHelper.ClaimsProviderConfigName} does not exist, create it with default settings...");
+                Config = LDAPCPConfig.CreateConfiguration(ClaimsProviderConstants.CONFIG_ID, ClaimsProviderConstants.CONFIG_NAME, UnitTestsHelper.SPTrust.Name);
+            }
             BackupConfig = Config.CopyPersistedProperties();
             InitializeConfiguration();
         }
