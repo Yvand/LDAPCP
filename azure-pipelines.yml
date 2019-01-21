@@ -1,70 +1,398 @@
 resources:
+
 - repo: self
+
 queue:
+
   name: Hosted VS2017
+
   demands: 
+
   - msbuild
+
   - visualstudio
+
+  - azureps
+
+
+
+#Your build pipeline references a secret variable named ‘AzureStorageAccountName’. Create or edit the build pipeline for this YAML file, define the variable on the Variables tab, and then select the option to make it secret. See https://go.microsoft.com/fwlink/?linkid=865972
+
+#Your build pipeline references a secret variable named ‘AzureStorageAccountName’. Create or edit the build pipeline for this YAML file, define the variable on the Variables tab, and then select the option to make it secret. See https://go.microsoft.com/fwlink/?linkid=865972
+
+#Your build pipeline references a secret variable named ‘AzureStorageAccountName’. Create or edit the build pipeline for this YAML file, define the variable on the Variables tab, and then select the option to make it secret. See https://go.microsoft.com/fwlink/?linkid=865972
+
+#Your build pipeline references a secret variable named ‘AzureStorageAccountName’. Create or edit the build pipeline for this YAML file, define the variable on the Variables tab, and then select the option to make it secret. See https://go.microsoft.com/fwlink/?linkid=865972
+
+#Your build pipeline references a secret variable named ‘AzureStorageAccountName’. Create or edit the build pipeline for this YAML file, define the variable on the Variables tab, and then select the option to make it secret. See https://go.microsoft.com/fwlink/?linkid=865972
+
+#Your build pipeline references a secret variable named ‘AzureStorageAccountName’. Create or edit the build pipeline for this YAML file, define the variable on the Variables tab, and then select the option to make it secret. See https://go.microsoft.com/fwlink/?linkid=865972
+
+#Your build pipeline references a secret variable named ‘AzureStorageAccountKey’. Create or edit the build pipeline for this YAML file, define the variable on the Variables tab, and then select the option to make it secret. See https://go.microsoft.com/fwlink/?linkid=865972
+
+#Your build pipeline references a secret variable named ‘AzureStorageShareName’. Create or edit the build pipeline for this YAML file, define the variable on the Variables tab, and then select the option to make it secret. See https://go.microsoft.com/fwlink/?linkid=865972
+
+#Your build pipeline references a secret variable named ‘AzureStorageShareName’. Create or edit the build pipeline for this YAML file, define the variable on the Variables tab, and then select the option to make it secret. See https://go.microsoft.com/fwlink/?linkid=865972
+
+#Your build pipeline references a secret variable named ‘AzureStorageShareName’. Create or edit the build pipeline for this YAML file, define the variable on the Variables tab, and then select the option to make it secret. See https://go.microsoft.com/fwlink/?linkid=865972
+
+#Your build pipeline references a secret variable named ‘AzureStorageShareName’. Create or edit the build pipeline for this YAML file, define the variable on the Variables tab, and then select the option to make it secret. See https://go.microsoft.com/fwlink/?linkid=865972
+
+#Your build pipeline references a secret variable named ‘AzureStorageShareName’. Create or edit the build pipeline for this YAML file, define the variable on the Variables tab, and then select the option to make it secret. See https://go.microsoft.com/fwlink/?linkid=865972
+
+#Your build pipeline references a secret variable named ‘AzureStorageShareName’. Create or edit the build pipeline for this YAML file, define the variable on the Variables tab, and then select the option to make it secret. See https://go.microsoft.com/fwlink/?linkid=865972
+
+#Your build pipeline references an undefined variable named ‘Parameters.solution’. Create or edit the build pipeline for this YAML file, define the variable on the Variables tab. See https://go.microsoft.com/fwlink/?linkid=865972
+
+#Your build pipeline references an undefined variable named ‘date:yyyy’. Create or edit the build pipeline for this YAML file, define the variable on the Variables tab. See https://go.microsoft.com/fwlink/?linkid=865972
+
+#Your build pipeline references the ‘BuildVersion’ variable, which you’ve selected to be settable at queue time. Create or edit the build pipeline for this YAML file, define the variable on the Variables tab, and then select the option to make it settable at queue time. See https://go.microsoft.com/fwlink/?linkid=865971
+
+#Your build pipeline references an undefined variable named ‘Parameters.solution’. Create or edit the build pipeline for this YAML file, define the variable on the Variables tab. See https://go.microsoft.com/fwlink/?linkid=865972
+
+#Your build pipeline references the ‘BuildConfiguration’ variable, which you’ve selected to be settable at queue time. Create or edit the build pipeline for this YAML file, define the variable on the Variables tab, and then select the option to make it settable at queue time. See https://go.microsoft.com/fwlink/?linkid=865971
+
+#Your build pipeline references the ‘BuildConfiguration’ variable, which you’ve selected to be settable at queue time. Create or edit the build pipeline for this YAML file, define the variable on the Variables tab, and then select the option to make it settable at queue time. See https://go.microsoft.com/fwlink/?linkid=865971
+
+#Your build pipeline references the ‘DevTestLabSharePointVersion’ variable, which you’ve selected to be settable at queue time. Create or edit the build pipeline for this YAML file, define the variable on the Variables tab, and then select the option to make it settable at queue time. See https://go.microsoft.com/fwlink/?linkid=865971
+
+#Your build pipeline references the ‘DevTestLabSharePointVersion’ variable, which you’ve selected to be settable at queue time. Create or edit the build pipeline for this YAML file, define the variable on the Variables tab, and then select the option to make it settable at queue time. See https://go.microsoft.com/fwlink/?linkid=865971
+
+#Your build pipeline references the ‘DevTestLabAdminUserName’ variable, which you’ve selected to be settable at queue time. Create or edit the build pipeline for this YAML file, define the variable on the Variables tab, and then select the option to make it settable at queue time. See https://go.microsoft.com/fwlink/?linkid=865971
+
+#Your build pipeline references a secret variable named ‘DevTestLabAdminPassword’. Create or edit the build pipeline for this YAML file, define the variable on the Variables tab, and then select the option to make it secret. See https://go.microsoft.com/fwlink/?linkid=865972
+
+#Your build pipeline references a secret variable named ‘DevTestLabServiceAccountsPassword’. Create or edit the build pipeline for this YAML file, define the variable on the Variables tab, and then select the option to make it secret. See https://go.microsoft.com/fwlink/?linkid=865972
+
+#Your build pipeline references a secret variable named ‘AccessTokenDevOpsYvand’. Create or edit the build pipeline for this YAML file, define the variable on the Variables tab, and then select the option to make it secret. See https://go.microsoft.com/fwlink/?linkid=865972
+
+#Your build pipeline references the ‘DevTestLabAdminUserName’ variable, which you’ve selected to be settable at queue time. Create or edit the build pipeline for this YAML file, define the variable on the Variables tab, and then select the option to make it settable at queue time. See https://go.microsoft.com/fwlink/?linkid=865971
+
+#Your build pipeline references a secret variable named ‘DevTestLabAdminPassword’. Create or edit the build pipeline for this YAML file, define the variable on the Variables tab, and then select the option to make it secret. See https://go.microsoft.com/fwlink/?linkid=865972
+
+#Your build pipeline references the ‘DevTestLabSharePointVersion’ variable, which you’ve selected to be settable at queue time. Create or edit the build pipeline for this YAML file, define the variable on the Variables tab, and then select the option to make it settable at queue time. See https://go.microsoft.com/fwlink/?linkid=865971
+
+#Your build pipeline references a secret variable named ‘AccessTokenDevOpsYvand’. Create or edit the build pipeline for this YAML file, define the variable on the Variables tab, and then select the option to make it secret. See https://go.microsoft.com/fwlink/?linkid=865972
+
+#Your build pipeline references a secret variable named ‘DevTestLabAdminPassword’. Create or edit the build pipeline for this YAML file, define the variable on the Variables tab, and then select the option to make it secret. See https://go.microsoft.com/fwlink/?linkid=865972
+
+#Your build pipeline references an undefined variable named ‘BaseEnv.environmentResourceId’. Create or edit the build pipeline for this YAML file, define the variable on the Variables tab. See https://go.microsoft.com/fwlink/?linkid=865972
+
+variables:
+
+  BuildPlatform: 'Any CPU'
+
 steps:
+
 - powershell: |
-   # Create the local directory if it doesn't exist
-   $localPath = "$(System.DefaultWorkingDirectory)\LDAPCP"
-   if ((Test-Path -Path $localPath -PathType Container) -eq $false) {
-       New-Item -ItemType Directory -Path $localPath
+   # Set variables
+   $azureStorageBaseDirectory = "Resources\LDAPCP"
+   $ldapcpProjectLocalPath = "$(System.DefaultWorkingDirectory)\LDAPCP"
+   $devTestLabsLocalPath = "$(Build.ArtifactStagingDirectory)\DevTestLabs"
+   $buildResourcesLocalPath = "$(Build.ArtifactStagingDirectory)\BuildPipeline"
+   
+   # Create the DevTestLabs directory if it doesn't exist
+   if ((Test-Path -Path $devTestLabsLocalPath -PathType Container) -eq $false) {
+       New-Item -ItemType Directory -Path $devTestLabsLocalPath
    }
    
-   Write-Output ("Copy files from Azure storage account")
+   # Create the Build pipeline directory if it doesn't exist
+   if ((Test-Path -Path $buildResourcesLocalPath -PathType Container) -eq $false) {
+       New-Item -ItemType Directory -Path $buildResourcesLocalPath
+   }
+   
+   Write-Output ("Copy files to build LDAPCP from Azure storage account")
    $azureContext = New-AzureStorageContext $(AzureStorageAccountName) $(AzureStorageAccountKey)
    $azureShare = Get-AzureStorageShare $(AzureStorageShareName) –Context $azureContext
-   Get-AzureStorageFileContent –Share $azureShare –Path "Resources\LDAPCP.snk" "$localPath\LDAPCP.snk"
-   Get-AzureStorageFileContent –Share $azureShare –Path "Resources\SharePoint 2013\Microsoft.SharePoint.dll" "$localPath\Microsoft.SharePoint.dll"
+   Get-AzureStorageFileContent –Share $azureShare –Path "$azureStorageBaseDirectory\LDAPCP.snk" "$ldapcpProjectLocalPath\LDAPCP.snk"
+   Get-AzureStorageFileContent –Share $azureShare –Path "$azureStorageBaseDirectory\SharePoint 2013\Microsoft.SharePoint.dll" "$ldapcpProjectLocalPath\Microsoft.SharePoint.dll"
+   
+   Write-Output ("Copy DevTestLabs content from Azure storage account")
+   $localPath = Join-Path -Path $azureStorageBaseDirectory -ChildPath "DevTestLabs"
+   Get-AzureStorageFile -ShareName $(AzureStorageShareName) -Context $azureContext -Path $localPath | Get-AzureStorageFile | ?{$_.GetType().Name -eq "CloudFile"} | Get-AzureStorageFileContent -Destination $devTestLabsLocalPath
+   
+   Write-Output ("Copy BuildResources content from Azure storage account")
+   $localPath = Join-Path -Path $azureStorageBaseDirectory -ChildPath "BuildPipeline"
+   Get-AzureStorageFile -ShareName $(AzureStorageShareName) -Context $azureContext -Path $localPath | Get-AzureStorageFile | ? {$_.GetType().Name -eq "CloudFile"} | Get-AzureStorageFileContent -Destination $buildResourcesLocalPath
    
    Write-Output ("Add assembly Microsoft.SharePoint.dll to the GAC")
    [System.Reflection.Assembly]::Load("System.EnterpriseServices, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a")
    $publish = New-Object System.EnterpriseServices.Internal.Publish
-   $publish.GacInstall("$localPath\Microsoft.SharePoint.dll")
-  displayName: 'Import resources'
+   $publish.GacInstall("$ldapcpProjectLocalPath\Microsoft.SharePoint.dll")
+   
+
+  displayName: 'Import resources from Azure storage account'
+
+
+
 - task: NuGetToolInstaller@0
+
   displayName: 'Use NuGet 4.4.1'
+
   inputs:
+
     versionSpec: 4.4.1
+
+
+
+
+
 - task: NuGetCommand@2
+
   displayName: 'NuGet restore'
+
   inputs:
+
     restoreSolution: '$(Parameters.solution)'
+
+
+
+
+
 - task: bleddynrichards.Assembly-Info-Task.Assembly-Info-Task.Assembly-Info-Task@1
-  displayName: 'Set Assembly Manifest Data'
+
+  displayName: 'Set LDAPCP.dll version'
+
   inputs:
+
     FileNames: |
      AssemblyInfo.cs
+     
+
+
+
     Title: LDAPCP
+
+
+
     Product: LDAPCP
+
+
+
     Description: 'This claims provider connects SharePoint with Active Directory and LDAP servers to provide a great search experience in the people picker with federated authentication'
+
+
+
     Company: GitHub.com/Yvand
+
+
+
     Copyright: 'Copyright © $(date:yyyy), Yvan Duhamel, All rights reserved'
+
+
+
     Trademark: LDAPCP
+
+
+
     VersionNumber: 1.0.0.0
-    FileVersionNumber: '$(MajorMinorVersion).*.*'
+
+
+
+    FileVersionNumber: '$(BuildVersion).*.*'
+
+
+
     InformationalVersion: 1.0.0.0
+
+
+
+
+
 - task: VSBuild@1
+
   displayName: 'Build LDAPCP solution'
+
   inputs:
+
     solution: '$(Parameters.solution)'
+
+
+
     msbuildArgs: '/p:IsPackaging=true'
+
+
+
     platform: '$(BuildPlatform)'
+
+
+
     configuration: '$(BuildConfiguration)'
+
+
+
     msbuildArchitecture: x64
-- task: DownloadBuildArtifacts@0
-  displayName: 'Download Build Artifacts'
-  inputs:
-    downloadType: specific
-    downloadPath: '$(Parameters.downloadPath)'
-  enabled: false
+
+
+
+
+
 - task: CopyFiles@2
-  displayName: 'Copy artifacts'
+
+  displayName: 'Copy binaries to artifacts'
+
   inputs:
+
     SourceFolder: '$(Build.SourcesDirectory)'
+
+
+
     Contents: '**/$(BuildConfiguration)/**/?(*.wsp|*.dll|*.pdb)'
+
+
+
     TargetFolder: '$(Build.ArtifactStagingDirectory)'
+
+
+
+
+
 - task: PublishBuildArtifacts@1
+
   displayName: 'Publish Artifact: drop'
+
+
+
+  timeoutInMinutes: 90
+
+
+
+- task: ms-azuredevtestlabs.tasks.azure-dtl-task-createEnvironment.AzureDevTestLabsCreateEnvironment@1
+
+  displayName: 'Create Azure DevTest Labs Environment'
+
+  inputs:
+
+    ConnectedServiceName: 'Microsoft Azure Internal Consumption (3c497a87-7ec4-4e9c-b227-a733be37d602)'
+
+
+
+    LabId: '/subscriptions/3c497a87-7ec4-4e9c-b227-a733be37d602/resourceGroups/LDAPCPTests/providers/Microsoft.DevTestLab/labs/LDAPCPTests'
+
+
+
+    RepositoryId: '/subscriptions/3c497a87-7ec4-4e9c-b227-a733be37d602/resourcegroups/ldapcptests/providers/microsoft.devtestlab/labs/ldapcptests/artifactsources/privaterepo897'
+
+
+
+    TemplateId: '/subscriptions/3c497a87-7ec4-4e9c-b227-a733be37d602/resourceGroups/ldapcptests/providers/Microsoft.DevTestLab/labs/ldapcptests/artifactSources/privaterepo897/armTemplates/SharePoint-ADFS-DevTestLabs'
+
+
+
+    EnvironmentName: 'IntegrationTests-SP$(DevTestLabSharePointVersion)'
+
+
+
+    ParameterOverrides: '-location ''west europe' -sharePointVersion '$(DevTestLabSharePointVersion)' -enableHybridBenefitServerLicenses 'Yes' -adminUserName '$(DevTestLabAdminUserName)' -adminPassword '$(DevTestLabAdminPassword)' -serviceAccountsPassword '$(DevTestLabServiceAccountsPassword)''
+
+
+
+    TemplateOutputVariables: true
+
+
+
+    ExportEnvironmentTemplate: true
+
+
+
+  timeoutInMinutes: 90
+
+
+
+- task: AzurePowerShell@3
+
+  displayName: 'Apply artifact 7-zip'
+
+  inputs:
+
+    azureSubscription: 'Microsoft Azure Internal Consumption (3c497a87-7ec4-4e9c-b227-a733be37d602)'
+
+
+
+    ScriptPath: '$(Build.ArtifactStagingDirectory)\BuildPipeline\DevTestLab_ApplyArtifact.ps1'
+
+
+
+    ScriptArguments: '-DevTestLabName "LDAPCPTests" -VirtualMachineName "SP" -RepositoryName "Public Repo" -ArtifactName "windows-7zip"'
+
+
+
+    preferredAzurePowerShellVersion: 5.1.1
+
+
+
+  enabled: false
+
+
+
+- task: AzurePowerShell@3
+
+  displayName: 'Apply artifact "Azure Pipelines Agent"'
+
+  inputs:
+
+    azureSubscription: 'Microsoft Azure Internal Consumption (3c497a87-7ec4-4e9c-b227-a733be37d602)'
+
+
+
+    ScriptPath: '$(Build.ArtifactStagingDirectory)\BuildPipeline\DevTestLab_ApplyArtifact.ps1'
+
+
+
+    ScriptArguments: '-DevTestLabName "LDAPCPTests" -VirtualMachineName "SP" -RepositoryName "Yvand/AzureRM-Templates" -ArtifactName "windows-vsts-build-agent" -param_vstsAccount "YvanDev" -param_vstsPassword "$(AccessTokenDevOpsYvand)" -param_poolName "LDAPCP-DevTestLabs" -param_windowsLogonAccount "contoso\$(DevTestLabAdminUserName)" -param_windowsLogonPassword "$(DevTestLabAdminPassword)" -param_agentName "SP$(DevTestLabSharePointVersion)" -param_agentNameSuffix "-$(Build.BuildNumber)" -param_RunAsAutoLogon false -param_driveLetter C -param_workDirectory ""'
+
+
+
+    preferredAzurePowerShellVersion: 5.1.1
+
+
+
+
+
+- task: AzurePowerShell@3
+
+  displayName: 'Apply artifact "Download Azure Pipelines Artifact and Run Script"'
+
+  inputs:
+
+    azureSubscription: 'Microsoft Azure Internal Consumption (3c497a87-7ec4-4e9c-b227-a733be37d602)'
+
+
+
+    ScriptPath: '$(Build.ArtifactStagingDirectory)\BuildPipeline\DevTestLab_ApplyArtifact.ps1'
+
+
+
+    ScriptArguments: '-DevTestLabName "LDAPCPTests" -VirtualMachineName "SP" -RepositoryName "Yvand/AzureRM-Templates" -ArtifactName "windows-vsts-download-and-run-script" -param_vstsProjectUri "https://dev.azure.com/YvanDev/LDAPCP" -param_buildDefinitionName "manual-dev" -param_personalAccessToken $(AccessTokenDevOpsYvand) -param_pathToScript "drop\DevTestLabs\ConfigureLab.ps1" -param_scriptArguments "-pathToPackage ''..\LDAPCP\bin\Release\LDAPCP.wsp' -claimsProviderName 'LDAPCP' -spTrustName 'contoso.local' -adminUserName 'contoso\yvand' -adminPassword '$(DevTestLabAdminPassword)'"'
+
+
+
+    preferredAzurePowerShellVersion: 5.1.1
+
+
+
+
+
+- task: ms-azuredevtestlabs.tasks.azure-dtl-task-deleteEnvironment.AzureDevTestLabsDeleteEnvironment@1
+
+  displayName: 'Delete Azure DevTest Labs deployed in previous task'
+
+  inputs:
+
+    ConnectedServiceName: 'Microsoft Azure Internal Consumption (3c497a87-7ec4-4e9c-b227-a733be37d602)'
+
+
+
+    LabId: '/subscriptions/3c497a87-7ec4-4e9c-b227-a733be37d602/resourceGroups/YvanDevTests/providers/Microsoft.DevTestLab/labs/YvanDevTests'
+
+
+
+    EnvironmentId: '$(BaseEnv.environmentResourceId)'
+
+
+
+  enabled: false
+
+
+
+
