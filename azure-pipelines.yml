@@ -283,7 +283,7 @@ steps:
 
 
 
-    ParameterOverrides: '-location ''west europe' -sharePointVersion '$(DevTestLabSharePointVersion)' -enableHybridBenefitServerLicenses 'Yes' -adminUserName '$(DevTestLabAdminUserName)' -adminPassword '$(DevTestLabAdminPassword)' -serviceAccountsPassword '$(DevTestLabServiceAccountsPassword)''
+    ParameterOverrides: '-location 'west europe' -sharePointVersion '$(DevTestLabSharePointVersion)' -enableHybridBenefitServerLicenses 'Yes' -adminUserName '$(DevTestLabAdminUserName)' -adminPassword '$(DevTestLabAdminPassword)' -serviceAccountsPassword '$(DevTestLabServiceAccountsPassword)''
 
 
 
