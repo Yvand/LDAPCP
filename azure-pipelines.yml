@@ -363,7 +363,7 @@ steps:
 
 
 
-    ScriptArguments: '-DevTestLabName "LDAPCPTests" -VirtualMachineName "SP" -RepositoryName "Yvand/AzureRM-Templates" -ArtifactName "windows-vsts-download-and-run-script" -param_vstsProjectUri "https://dev.azure.com/YvanDev/LDAPCP" -param_buildDefinitionName "manual-dev" -param_personalAccessToken $(AccessTokenDevOpsYvand) -param_pathToScript "drop\DevTestLabs\ConfigureLab.ps1" -param_scriptArguments "-pathToPackage ''..\LDAPCP\bin\Release\LDAPCP.wsp' -claimsProviderName 'LDAPCP' -spTrustName 'contoso.local' -adminUserName 'contoso\yvand' -adminPassword '$(DevTestLabAdminPassword)'"'
+    ScriptArguments: -DevTestLabName 'LDAPCPTests' -VirtualMachineName 'SP' -RepositoryName 'Yvand/AzureRM-Templates' -ArtifactName 'windows-vsts-download-and-run-script' -param_vstsProjectUri 'https://dev.azure.com/YvanDev/LDAPCP' -param_buildDefinitionName 'manual-dev' -param_personalAccessToken $(AccessTokenDevOpsYvand) -param_pathToScript 'drop\DevTestLabs\ConfigureLab.ps1' -param_scriptArguments "-pathToPackage ''..\LDAPCP\bin\Release\LDAPCP.wsp' -claimsProviderName 'LDAPCP' -spTrustName 'contoso.local' -adminUserName 'contoso\yvand' -adminPassword '$(DevTestLabAdminPassword)'"
 
 
 
