@@ -54,7 +54,7 @@ public class UnitTestsHelper
         logFileListener = new TextWriterTraceListener(TestContext.Parameters["TestLogFileName"]);
         Trace.Listeners.Add(logFileListener);
         Trace.AutoFlush = true;
-        Trace.TraceInformation($"{DateTime.Now.ToString("s")} Start integration tests {ClaimsProviderName} {FileVersionInfo.GetVersionInfo(Assembly.GetAssembly(typeof(ldapcp.LDAPCP)).Location).FileVersion}.");
+        Trace.TraceInformation($"{DateTime.Now.ToString("s")} Start integration tests of {ClaimsProviderName} {FileVersionInfo.GetVersionInfo(Assembly.GetAssembly(typeof(ldapcp.LDAPCP)).Location).FileVersion}.");
         Trace.WriteLine($"{DateTime.Now.ToString("s")} DataFile_AllAccounts_Search: {DataFile_AllAccounts_Search}");
         Trace.WriteLine($"{DateTime.Now.ToString("s")} DataFile_AllAccounts_Validate: {DataFile_AllAccounts_Validate}");
         Trace.WriteLine($"{DateTime.Now.ToString("s")} TestSiteCollectionUri: {TestContext.Parameters["TestSiteCollectionUri"]}");
@@ -62,7 +62,6 @@ public class UnitTestsHelper
             Trace.TraceError($"{DateTime.Now.ToString("s")} SPTrust: is null");
         else
             Trace.WriteLine($"{DateTime.Now.ToString("s")} SPTrust: {SPTrust.Name}");
-
 
         LDAPCPConfig config = LDAPCPConfig.GetConfiguration(UnitTestsHelper.ClaimsProviderConfigName, UnitTestsHelper.SPTrust.Name);
         if (config == null)
