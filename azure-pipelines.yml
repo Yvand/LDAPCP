@@ -4,7 +4,7 @@ variables:
   BuildPlatform: 'Any CPU'
 jobs:
 - job: Compile
-  displayName: Compile $(system.teamProject)
+  displayName: Compile
   pool:
     name: Hosted VS2017
     demands: 
@@ -48,287 +48,100 @@ jobs:
      $publish = New-Object System.EnterpriseServices.Internal.Publish
      $publish.GacInstall("$projectLocalPath\Microsoft.SharePoint.dll")
      
-  
     displayName: 'Import resources from Azure storage account'
-  
-  
-  
   - task: NuGetToolInstaller@0
-  
     displayName: 'Use NuGet 4.4.1'
-  
     inputs:
-  
       versionSpec: 4.4.1
   
-  
-  
-  
-  
   - task: NuGetCommand@2
-  
     displayName: 'NuGet restore'
-  
     inputs:
-  
       restoreSolution: '$(Parameters.solution)'
-  
-  
-  
-  
-  
+
   - task: bleddynrichards.Assembly-Info-Task.Assembly-Info-Task.Assembly-Info-Task@1
-  
     displayName: 'Set $(system.teamProject).dll version'
-  
     inputs:
-  
       FileNames: |
        AssemblyInfo.cs
-       
-  
-  
-  
       Title: $(system.teamProject)
-  
-  
-  
       Product: $(system.teamProject)
-  
-  
-  
       Description: 'This claims provider connects SharePoint with Active Directory and LDAP servers to provide a great search experience in the people picker with federated authentication'
-  
-  
-  
       Company: GitHub.com/Yvand
-  
-  
-  
       Copyright: 'Copyright © $(date:yyyy), Yvan Duhamel, All rights reserved'
-  
-  
-  
       Trademark: $(system.teamProject)
-  
-  
-  
       VersionNumber: 1.0.0.0
-  
-  
-  
       FileVersionNumber: '$(BuildVersion).*.*'
-  
-  
-  
       InformationalVersion: 1.0.0.0
-  
-  
-  
-  
-  
+
   - task: VSBuild@1
-  
     displayName: 'Build $(system.teamProject) solution'
-  
     inputs:
-  
       solution: '$(Parameters.solution)'
-  
-  
-  
       msbuildArgs: '/p:IsPackaging=true'
-  
-  
-  
       platform: '$(BuildPlatform)'
-  
-  
-  
       configuration: '$(BuildConfiguration)'
-  
-  
-  
       msbuildArchitecture: x64
   
-  
-  
-  
-  
   - task: CopyFiles@2
-  
     displayName: 'Copy binaries to artifacts'
-  
     inputs:
-  
       SourceFolder: '$(Build.SourcesDirectory)'
-  
-  
-  
       Contents: '**/$(BuildConfiguration)/**/?(*.wsp|*.dll|*.pdb)'
-  
-  
-  
       TargetFolder: '$(Build.ArtifactStagingDirectory)'
-  
-  
-  
-  
-  
+
   - task: PublishBuildArtifacts@1
-  
     displayName: 'Publish Artifact: drop'
-  
-  
-  
     timeoutInMinutes: 90
-  
   
 - job: CreateTestEnvironment
-  displayName: Create Test Environment
+  displayName: Create test environment
+  timeoutInMinutes: 90
   pool:
     name: Hosted VS2017
-    demands: 
-    - msbuild
-    - visualstudio
-    - azureps
   steps:
   - task: ms-azuredevtestlabs.tasks.azure-dtl-task-createEnvironment.AzureDevTestLabsCreateEnvironment@1
-  
     displayName: 'Create Azure DevTest Labs Environment'
-  
     inputs:
-  
       ConnectedServiceName: 'Microsoft Azure Internal Consumption (3c497a87-7ec4-4e9c-b227-a733be37d602)'
-  
-  
-  
       LabId: '/subscriptions/3c497a87-7ec4-4e9c-b227-a733be37d602/resourceGroups/$(DevTestLabName)/providers/Microsoft.DevTestLab/labs/$(DevTestLabName)'
-  
-  
-  
       RepositoryId: '/subscriptions/3c497a87-7ec4-4e9c-b227-a733be37d602/resourcegroups/$(DevTestLabName)/providers/microsoft.devtestlab/labs/$(DevTestLabName)/artifactsources/privaterepo897'
-  
-  
-  
       TemplateId: '/subscriptions/3c497a87-7ec4-4e9c-b227-a733be37d602/resourceGroups/$(DevTestLabName)/providers/Microsoft.DevTestLab/labs/$(DevTestLabName)/artifactSources/privaterepo897/armTemplates/SharePoint-ADFS-DevTestLabs'
-  
-  
-  
       EnvironmentName: 'IntegrationTests-SP$(DevTestLabSharePointVersion)'
-  
-  
-  
       ParameterOverrides: "-location 'west europe' -sharePointVersion '$(DevTestLabSharePointVersion)' -enableHybridBenefitServerLicenses 'Yes' -adminUserName '$(DevTestLabAdminUserName)' -adminPassword '$(DevTestLabAdminPassword)' -serviceAccountsPassword '$(DevTestLabServiceAccountsPassword)'"
-  
-  
-  
       TemplateOutputVariables: true
-  
-  
-  
       ExportEnvironmentTemplate: true
-  
-  
-  
     timeoutInMinutes: 90
   
-  
-  
   - task: AzurePowerShell@3
-  
     displayName: 'Apply artifact 7-zip'
-  
     inputs:
-  
       azureSubscription: 'Microsoft Azure Internal Consumption (3c497a87-7ec4-4e9c-b227-a733be37d602)'
-  
-  
-  
       ScriptPath: '$(Build.ArtifactStagingDirectory)\BuildPipeline\DevTestLab_ApplyArtifact.ps1'
-  
-  
-  
       ScriptArguments: '-DevTestLabName "$(DevTestLabName)" -VirtualMachineName "SP" -RepositoryName "Public Repo" -ArtifactName "windows-7zip"'
-  
-  
-  
       preferredAzurePowerShellVersion: 5.1.1
-  
-  
-  
     enabled: false
-  
-  
-  
+
   - task: AzurePowerShell@3
-  
     displayName: 'Apply artifact "Azure Pipelines Agent"'
-  
     inputs:
-  
       azureSubscription: 'Microsoft Azure Internal Consumption (3c497a87-7ec4-4e9c-b227-a733be37d602)'
-  
-  
-  
       ScriptPath: '$(Build.ArtifactStagingDirectory)\BuildPipeline\DevTestLab_ApplyArtifact.ps1'
-  
-  
-  
       ScriptArguments: '-DevTestLabName "$(DevTestLabName)" -VirtualMachineName "SP" -RepositoryName "Yvand/AzureRM-Templates" -ArtifactName "windows-vsts-build-agent" -param_vstsAccount "YvanDev" -param_vstsPassword "$(AccessTokenDevOpsYvand)" -param_poolName "$(system.teamProject)-DevTestLabs" -param_windowsLogonAccount "contoso\$(DevTestLabAdminUserName)" -param_windowsLogonPassword "$(DevTestLabAdminPassword)" -param_agentName "SP$(DevTestLabSharePointVersion)" -param_agentNameSuffix "-$(Build.BuildNumber)" -param_RunAsAutoLogon false -param_driveLetter C -param_workDirectory ""'
-  
-  
-  
       preferredAzurePowerShellVersion: 5.1.1
-  
-  
-  
-  
-  
+
   - task: AzurePowerShell@3
-  
     displayName: 'Apply artifact "Download Azure Pipelines Artifact and Run Script"'
-  
     inputs:
-  
       azureSubscription: 'Microsoft Azure Internal Consumption (3c497a87-7ec4-4e9c-b227-a733be37d602)'
-  
-  
-  
       ScriptPath: '$(Build.ArtifactStagingDirectory)\BuildPipeline\DevTestLab_ApplyArtifact.ps1'
-  
-  
-  
       ScriptArguments: -DevTestLabName '$(DevTestLabName)' -VirtualMachineName 'SP' -RepositoryName 'Yvand/AzureRM-Templates' -ArtifactName 'windows-vsts-download-and-run-script' -param_vstsProjectUri 'https://dev.azure.com/YvanDev/$(system.teamProject)' -param_buildDefinitionName 'manual-dev' -param_personalAccessToken $(AccessTokenDevOpsYvand) -param_pathToScript 'drop\DevTestLabs\ConfigureLab.ps1' -param_scriptArguments "-pathToPackage ''..\$(system.teamProject)\bin\Release\$(system.teamProject).wsp' -claimsProviderName '$(system.teamProject)' -spTrustName 'contoso.local' -adminUserName 'contoso\yvand' -adminPassword '$(DevTestLabAdminPassword)'"
-  
-  
-  
       preferredAzurePowerShellVersion: 5.1.1
-  
-  
-  
-  
-  
+
   - task: ms-azuredevtestlabs.tasks.azure-dtl-task-deleteEnvironment.AzureDevTestLabsDeleteEnvironment@1
-  
     displayName: 'Delete Azure DevTest Labs deployed in previous task'
-  
     inputs:
-  
       ConnectedServiceName: 'Microsoft Azure Internal Consumption (3c497a87-7ec4-4e9c-b227-a733be37d602)'
-  
-  
-  
       LabId: '/subscriptions/3c497a87-7ec4-4e9c-b227-a733be37d602/resourceGroups/YvanDevTests/providers/Microsoft.DevTestLab/labs/YvanDevTests'
-  
-  
-  
       EnvironmentId: '$(BaseEnv.environmentResourceId)'
-  
-  
-  
     enabled: false
-  
-  
-  
-  
