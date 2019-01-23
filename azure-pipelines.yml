@@ -11,6 +11,13 @@ variables:
   BuildPlatform: 'Any CPU'
 jobs:
 - job: Compile
+  displayName: Compile $(system.teamProject)
+  pool:
+    name: Hosted VS2017
+    demands: 
+    - msbuild
+    - visualstudio
+    - azureps
   steps:
   - powershell: |
      # Set variables
@@ -184,7 +191,14 @@ jobs:
     timeoutInMinutes: 90
   
   
-- job: Create test environment
+- job: CreateTestEnvironment
+  displayName: Create Test Environment
+  pool:
+    name: Hosted VS2017
+    demands: 
+    - msbuild
+    - visualstudio
+    - azureps
   steps:
   - task: ms-azuredevtestlabs.tasks.azure-dtl-task-createEnvironment.AzureDevTestLabsCreateEnvironment@1
   
