@@ -77,10 +77,23 @@ public class UnitTestsHelper
             string encodedClaim = claimMgr.EncodeClaim(TrustedGroup);
             SPUserInfo userInfo = new SPUserInfo { LoginName = encodedClaim, Name = TrustedGroupToAdd_ClaimValue };
 
+            // The root site may not exist, but it must be present for tests to run
+            Uri rootWebAppUri = wa.GetResponseUri(0);
+            if (!SPSite.Exists(rootWebAppUri))
+            {
+                Trace.WriteLine($"{DateTime.Now.ToString("s")} Creating root site collection {rootWebAppUri.AbsoluteUri}...");
+                SPSite spSite = wa.Sites.Add(rootWebAppUri.AbsoluteUri, "root", "root", 1033, "STS#0", FarmAdmin, String.Empty, String.Empty);
+                spSite.RootWeb.CreateDefaultAssociatedGroups(FarmAdmin, FarmAdmin, spSite.RootWeb.Title);
+
+                SPGroup membersGroup = spSite.RootWeb.AssociatedMemberGroup;
+                membersGroup.AddUser(userInfo.LoginName, userInfo.Email, userInfo.Name, userInfo.Notes);
+                spSite.Dispose();
+            }
+
             if (!SPSite.Exists(Context))
             {
                 Trace.WriteLine($"{DateTime.Now.ToString("s")} Creating site collection {Context.AbsoluteUri}...");
-                SPSite spSite = wa.Sites.Add(Context.AbsoluteUri, ClaimsProviderName, $"DataFile_AllAccounts_Search: {DataFile_AllAccounts_Search}; DataFile_AllAccounts_Validate: {DataFile_AllAccounts_Validate}", 1033, "STS#0", FarmAdmin, String.Empty, String.Empty);
+                SPSite spSite = wa.Sites.Add(Context.AbsoluteUri, ClaimsProviderName, ClaimsProviderName, 1033, "STS#0", FarmAdmin, String.Empty, String.Empty);
                 spSite.RootWeb.CreateDefaultAssociatedGroups(FarmAdmin, FarmAdmin, spSite.RootWeb.Title);
 
                 SPGroup membersGroup = spSite.RootWeb.AssociatedMemberGroup;
