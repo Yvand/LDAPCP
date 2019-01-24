@@ -108,7 +108,7 @@ jobs:
       RepositoryId: '/subscriptions/3c497a87-7ec4-4e9c-b227-a733be37d602/resourcegroups/$(DevTestLabName)/providers/microsoft.devtestlab/labs/$(DevTestLabName)/artifactsources/privaterepo897'
       TemplateId: '/subscriptions/3c497a87-7ec4-4e9c-b227-a733be37d602/resourceGroups/$(DevTestLabName)/providers/Microsoft.DevTestLab/labs/$(DevTestLabName)/artifactSources/privaterepo897/armTemplates/SharePoint-ADFS-DevTestLabs'
       EnvironmentName: 'IntegrationTests'
-      ParameterOverrides: "-location 'west europe' -provisionSharePoint2013 '$(DevTestLabTestSharePoint2013)' -provisionSharePoint2016 '$(DevTestLabTestSharePoint2016)' -provisionSharePoint2019 '$(DevTestLabTestSharePoint2019)' -enableHybridBenefitServerLicenses 'Yes' -adminUserName '$(DevTestLabAdminUserName)' -adminPassword '$(DevTestLabAdminPassword)' -serviceAccountsPassword '$(DevTestLabServiceAccountsPassword)'"
+      ParameterOverrides: "-location 'west europe' -provisionSharePoint2013 '$(DevTestLabProvisionSharePoint2013)' -provisionSharePoint2016 '$(DevTestLabProvisionSharePoint2016)' -provisionSharePoint2019 '$(DevTestLabProvisionSharePoint2019)' -enableHybridBenefitServerLicenses 'Yes' -adminUserName '$(DevTestLabAdminUserName)' -adminPassword '$(DevTestLabAdminPassword)' -serviceAccountsPassword '$(DevTestLabServiceAccountsPassword)'"
       TemplateOutputVariables: true
       ExportEnvironmentTemplate: true
     timeoutInMinutes: 90

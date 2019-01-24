@@ -58,7 +58,7 @@ public class UnitTestsHelper
         Trace.TraceInformation($"{DateTime.Now.ToString("s")} Start integration tests of {ClaimsProviderName} {FileVersionInfo.GetVersionInfo(Assembly.GetAssembly(typeof(ldapcp.LDAPCP)).Location).FileVersion}.");
         Trace.WriteLine($"{DateTime.Now.ToString("s")} DataFile_AllAccounts_Search: {DataFile_AllAccounts_Search}");
         Trace.WriteLine($"{DateTime.Now.ToString("s")} DataFile_AllAccounts_Validate: {DataFile_AllAccounts_Validate}");
-        Trace.WriteLine($"{DateTime.Now.ToString("s")} TestSiteCollectionUri: {TestContext.Parameters["TestSiteCollectionUri"]}");
+        Trace.WriteLine($"{DateTime.Now.ToString("s")} TestSiteCollectionName: {TestContext.Parameters["TestSiteCollectionName"]}");
         if (SPTrust == null)
             Trace.TraceError($"{DateTime.Now.ToString("s")} SPTrust: is null");
         else
