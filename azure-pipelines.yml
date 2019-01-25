@@ -121,7 +121,7 @@ jobs:
   dependsOn: 
   - Compile
   - CreateTestEnvironment
-  displayName: Apply artifacts on SharePoint 2013 server
+  displayName: Apply artifacts on SP2013
   timeoutInMinutes: 30
   variables:
     jobSharePointVersion: 2013
@@ -157,7 +157,7 @@ jobs:
     inputs:
       azureSubscription: 'Microsoft Azure Internal Consumption (3c497a87-7ec4-4e9c-b227-a733be37d602)'
       ScriptPath: '$(Build.ArtifactStagingDirectory)\drop\BuildPipeline\DevTestLab_ApplyArtifact.ps1'
-      ScriptArguments: -DevTestLabName '$(DevTestLabName)' -VirtualMachineName 'SP$(jobSharePointVersion)' -RepositoryName 'Yvand/AzureRM-Templates' -ArtifactName 'windows-vsts-download-and-run-script' -param_vstsProjectUri 'https://dev.azure.com/YvanDev/$(system.teamProject)' -param_buildDefinitionName 'manual-dev' -param_personalAccessToken $(AccessTokenDevOpsYvand) -param_pathToScript 'drop\DevTestLabs\ConfigureLab.ps1' -param_scriptArguments "-pathToPackage ''..\$(system.teamProject)\bin\Release\$(system.teamProject).wsp' -claimsProviderName '$(system.teamProject)' -spTrustName 'contoso.local' -adminUserName 'contoso\yvand' -adminPassword '$(DevTestLabAdminPassword)'"
+      ScriptArguments: -DevTestLabName '$(DevTestLabName)' -VirtualMachineName 'SP$(jobSharePointVersion)' -RepositoryName 'Yvand/AzureRM-Templates' -ArtifactName 'windows-vsts-download-and-run-script' -param_vstsProjectUri 'https://dev.azure.com/YvanDev/$(system.teamProject)' -param_buildDefinitionName '$(Build.DefinitionName)' -param_personalAccessToken $(AccessTokenDevOpsYvand) -param_pathToScript 'drop\DevTestLabs\ConfigureLab.ps1' -param_scriptArguments "-pathToPackage ''..\$(system.teamProject)\bin\Release\$(system.teamProject).wsp' -claimsProviderName '$(system.teamProject)' -spTrustName 'contoso.local' -adminUserName 'contoso\yvand' -adminPassword '$(DevTestLabAdminPassword)'"
       preferredAzurePowerShellVersion: 5.1.1
 
   - task: ms-azuredevtestlabs.tasks.azure-dtl-task-deleteEnvironment.AzureDevTestLabsDeleteEnvironment@1
@@ -173,7 +173,7 @@ jobs:
   dependsOn: 
   - Compile
   - CreateTestEnvironment
-  displayName: Apply artifacts on SharePoint 2016 server
+  displayName: Apply artifacts on SP2016
   timeoutInMinutes: 30
   variables:
     jobSharePointVersion: 2016
@@ -209,7 +209,7 @@ jobs:
     inputs:
       azureSubscription: 'Microsoft Azure Internal Consumption (3c497a87-7ec4-4e9c-b227-a733be37d602)'
       ScriptPath: '$(Build.ArtifactStagingDirectory)\drop\BuildPipeline\DevTestLab_ApplyArtifact.ps1'
-      ScriptArguments: -DevTestLabName '$(DevTestLabName)' -VirtualMachineName 'SP$(jobSharePointVersion)' -RepositoryName 'Yvand/AzureRM-Templates' -ArtifactName 'windows-vsts-download-and-run-script' -param_vstsProjectUri 'https://dev.azure.com/YvanDev/$(system.teamProject)' -param_buildDefinitionName 'manual-dev' -param_personalAccessToken $(AccessTokenDevOpsYvand) -param_pathToScript 'drop\DevTestLabs\ConfigureLab.ps1' -param_scriptArguments "-pathToPackage ''..\$(system.teamProject)\bin\Release\$(system.teamProject).wsp' -claimsProviderName '$(system.teamProject)' -spTrustName 'contoso.local' -adminUserName 'contoso\yvand' -adminPassword '$(DevTestLabAdminPassword)'"
+      ScriptArguments: -DevTestLabName '$(DevTestLabName)' -VirtualMachineName 'SP$(jobSharePointVersion)' -RepositoryName 'Yvand/AzureRM-Templates' -ArtifactName 'windows-vsts-download-and-run-script' -param_vstsProjectUri 'https://dev.azure.com/YvanDev/$(system.teamProject)' -param_buildDefinitionName '$(Build.DefinitionName)' -param_personalAccessToken $(AccessTokenDevOpsYvand) -param_pathToScript 'drop\DevTestLabs\ConfigureLab.ps1' -param_scriptArguments "-pathToPackage ''..\$(system.teamProject)\bin\Release\$(system.teamProject).wsp' -claimsProviderName '$(system.teamProject)' -spTrustName 'contoso.local' -adminUserName 'contoso\yvand' -adminPassword '$(DevTestLabAdminPassword)'"
       preferredAzurePowerShellVersion: 5.1.1
 
   - task: ms-azuredevtestlabs.tasks.azure-dtl-task-deleteEnvironment.AzureDevTestLabsDeleteEnvironment@1
@@ -225,7 +225,7 @@ jobs:
   dependsOn: 
   - Compile
   - CreateTestEnvironment
-  displayName: Apply artifacts on SharePoint 2019 server
+  displayName: Apply artifacts on SP2019
   timeoutInMinutes: 30
   variables:
     jobSharePointVersion: 2019
@@ -261,7 +261,7 @@ jobs:
     inputs:
       azureSubscription: 'Microsoft Azure Internal Consumption (3c497a87-7ec4-4e9c-b227-a733be37d602)'
       ScriptPath: '$(Build.ArtifactStagingDirectory)\drop\BuildPipeline\DevTestLab_ApplyArtifact.ps1'
-      ScriptArguments: -DevTestLabName '$(DevTestLabName)' -VirtualMachineName 'SP$(jobSharePointVersion)' -RepositoryName 'Yvand/AzureRM-Templates' -ArtifactName 'windows-vsts-download-and-run-script' -param_vstsProjectUri 'https://dev.azure.com/YvanDev/$(system.teamProject)' -param_buildDefinitionName 'manual-dev' -param_personalAccessToken $(AccessTokenDevOpsYvand) -param_pathToScript 'drop\DevTestLabs\ConfigureLab.ps1' -param_scriptArguments "-pathToPackage ''..\$(system.teamProject)\bin\Release\$(system.teamProject).wsp' -claimsProviderName '$(system.teamProject)' -spTrustName 'contoso.local' -adminUserName 'contoso\yvand' -adminPassword '$(DevTestLabAdminPassword)'"
+      ScriptArguments: -DevTestLabName '$(DevTestLabName)' -VirtualMachineName 'SP$(jobSharePointVersion)' -RepositoryName 'Yvand/AzureRM-Templates' -ArtifactName 'windows-vsts-download-and-run-script' -param_vstsProjectUri 'https://dev.azure.com/YvanDev/$(system.teamProject)' -param_buildDefinitionName '$(Build.DefinitionName)' -param_personalAccessToken $(AccessTokenDevOpsYvand) -param_pathToScript 'drop\DevTestLabs\ConfigureLab.ps1' -param_scriptArguments "-pathToPackage ''..\$(system.teamProject)\bin\Release\$(system.teamProject).wsp' -claimsProviderName '$(system.teamProject)' -spTrustName 'contoso.local' -adminUserName 'contoso\yvand' -adminPassword '$(DevTestLabAdminPassword)'"
       preferredAzurePowerShellVersion: 5.1.1
 
   - task: ms-azuredevtestlabs.tasks.azure-dtl-task-deleteEnvironment.AzureDevTestLabsDeleteEnvironment@1
