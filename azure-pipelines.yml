@@ -273,7 +273,7 @@ jobs:
     enabled: false
 
 - job: RunTestSP2013
-  dependsOn: ApplyArtifactsSP2013
+  #dependsOn: ApplyArtifactsSP2013
   displayName: Run tests on SP2013
   timeoutInMinutes: 15
   variables:
@@ -281,7 +281,6 @@ jobs:
   pool:
     name: LDAPCP-Tests-2013
   steps:
-  - checkout: none #skip checking out the default repository resource
   - task: DownloadBuildArtifacts@0
     displayName: 'Download Build Artifacts'
     inputs:
