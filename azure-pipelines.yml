@@ -274,6 +274,7 @@ jobs:
 
 - job: RunTestSP2013
   #dependsOn: ApplyArtifactsSP2013
+  dependsOn: Compile
   displayName: Run tests on SP2013
   timeoutInMinutes: 15
   variables:
