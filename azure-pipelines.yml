@@ -271,3 +271,38 @@ jobs:
       LabId: '/subscriptions/3c497a87-7ec4-4e9c-b227-a733be37d602/resourceGroups/YvanDevTests/providers/Microsoft.DevTestLab/labs/YvanDevTests'
       EnvironmentId: '$(BaseEnv.environmentResourceId)'
     enabled: false
+
+- job: RunTestSP2013
+  dependsOn: ApplyArtifactsSP2013
+  displayName: Run tests on SP2013
+  timeoutInMinutes: 15
+  variables:
+    jobSharePointVersion: 2013
+  pool:
+    name: LDAPCP-Tests-2013
+  steps:
+  - checkout: none #skip checking out the default repository resource
+  - task: DownloadBuildArtifacts@0
+    displayName: 'Download Build Artifacts'
+    inputs:
+      artifactName: drop
+      downloadPath: $(Build.ArtifactStagingDirectory)
+      itemPattern: |
+       drop/LDAPCP.Tests/**
+       drop/DevTestLabs/*.csv
+
+  - task: VisualStudioTestPlatformInstaller@1
+    displayName: 'Visual Studio Test Platform Installer'
+
+  - task: VSTest@2
+    displayName: 'Run Visual Studio tests'
+    inputs:
+      searchFolder: '$(System.ArtifactsDirectory)\drop'
+      vsTestVersion: toolsInstaller
+      runSettingsFile: LDAPCP.Tests/local.runsettings
+      overrideTestrunParameters: '-DataFile_AllAccounts_Search "$(System.ArtifactsDirectory)\drop\DevTestLabs\LDAPCP_Tests_AllAccounts_Search.csv" -DataFile_AllAccounts_Validate "$(System.ArtifactsDirectory)\drop\DevTestLabs\LDAPCP_Tests_AllAccounts_Validate.csv" -TestSiteCollectionName "LDAPCP.$(Build.BuildNumber)"'
+      codeCoverageEnabled: false
+      otherConsoleOptions: '/Platform:x64'
+      testRunTitle: 'LDAPCP-Tests-SP$(jobSharePointVersion)'
+      platform: '$(BuildPlatform)'
+      configuration: Release
