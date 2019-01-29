@@ -106,7 +106,7 @@ jobs:
   - task: ms-azuredevtestlabs.tasks.azure-dtl-task-createEnvironment.AzureDevTestLabsCreateEnvironment@1
     displayName: 'Create Azure DevTest Labs Environment'
     inputs:
-      ConnectedServiceName: 'Microsoft Azure Internal Consumption (3c497a87-7ec4-4e9c-b227-a733be37d602)'
+      ConnectedServiceName: '$(DevTestLabAzureConnectionName)'
       LabId: '/subscriptions/3c497a87-7ec4-4e9c-b227-a733be37d602/resourceGroups/$(DevTestLabName)/providers/Microsoft.DevTestLab/labs/$(DevTestLabName)'
       RepositoryId: '/subscriptions/3c497a87-7ec4-4e9c-b227-a733be37d602/resourcegroups/$(DevTestLabName)/providers/microsoft.devtestlab/labs/$(DevTestLabName)/artifactsources/privaterepo897'
       TemplateId: '/subscriptions/3c497a87-7ec4-4e9c-b227-a733be37d602/resourceGroups/$(DevTestLabName)/providers/Microsoft.DevTestLab/labs/$(DevTestLabName)/artifactSources/privaterepo897/armTemplates/SharePoint-ADFS-DevTestLabs'
