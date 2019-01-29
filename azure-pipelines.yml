@@ -138,7 +138,7 @@ jobs:
   - task: AzurePowerShell@3
     displayName: 'Apply artifact 7-zip'
     inputs:
-      azureSubscription: 'Microsoft Azure Internal Consumption (3c497a87-7ec4-4e9c-b227-a733be37d602)'
+      azureSubscription: '$(DevTestLabAzureConnectionName)'
       ScriptPath: '$(Build.ArtifactStagingDirectory)\drop\BuildPipeline\DevTestLab_ApplyArtifact.ps1'
       ScriptArguments: '-DevTestLabName "$(DevTestLabName)" -VirtualMachineName "SP$(jobSharePointVersion)" -RepositoryName "Public Repo" -ArtifactName "windows-7zip"'
       preferredAzurePowerShellVersion: 5.1.1
@@ -147,7 +147,7 @@ jobs:
   - task: AzurePowerShell@3
     displayName: 'Apply artifact "Azure Pipelines Agent"'
     inputs:
-      azureSubscription: 'Microsoft Azure Internal Consumption (3c497a87-7ec4-4e9c-b227-a733be37d602)'
+      azureSubscription: '$(DevTestLabAzureConnectionName)'
       ScriptPath: '$(Build.ArtifactStagingDirectory)\drop\BuildPipeline\DevTestLab_ApplyArtifact.ps1'
       ScriptArguments: '-DevTestLabName "$(DevTestLabName)" -VirtualMachineName "SP$(jobSharePointVersion)" -RepositoryName "Yvand/AzureRM-Templates" -ArtifactName "windows-vsts-build-agent" -param_vstsAccount "YvanDev" -param_vstsPassword "$(AccessTokenDevOpsYvand)" -param_poolName "$(system.teamProject)-Tests-$(jobSharePointVersion)" -param_windowsLogonAccount "contoso\$(DevTestLabAdminUserName)" -param_windowsLogonPassword "$(DevTestLabAdminPassword)" -param_agentName "SP$(jobSharePointVersion)" -param_agentNameSuffix "-$(Build.BuildNumber)" -param_RunAsAutoLogon false -param_driveLetter C -param_workDirectory ""'
       preferredAzurePowerShellVersion: 5.1.1
@@ -155,7 +155,7 @@ jobs:
   - task: AzurePowerShell@3
     displayName: 'Apply artifact "Download Azure Pipelines Artifact and Run Script"'
     inputs:
-      azureSubscription: 'Microsoft Azure Internal Consumption (3c497a87-7ec4-4e9c-b227-a733be37d602)'
+      azureSubscription: '$(DevTestLabAzureConnectionName)'
       ScriptPath: '$(Build.ArtifactStagingDirectory)\drop\BuildPipeline\DevTestLab_ApplyArtifact.ps1'
       ScriptArguments: -DevTestLabName '$(DevTestLabName)' -VirtualMachineName 'SP$(jobSharePointVersion)' -RepositoryName 'Yvand/AzureRM-Templates' -ArtifactName 'windows-vsts-download-and-run-script' -param_vstsProjectUri 'https://dev.azure.com/YvanDev/$(system.teamProject)' -param_buildDefinitionName '$(Build.DefinitionName)' -param_personalAccessToken $(AccessTokenDevOpsYvand) -param_pathToScript 'drop\DevTestLabs\ConfigureLab.ps1' -param_scriptArguments "-pathToPackage ''..\$(system.teamProject)\bin\Release\$(system.teamProject).wsp' -claimsProviderName '$(system.teamProject)' -spTrustName 'contoso.local' -adminUserName 'contoso\yvand' -adminPassword '$(DevTestLabAdminPassword)'"
       preferredAzurePowerShellVersion: 5.1.1
@@ -163,7 +163,7 @@ jobs:
   - task: ms-azuredevtestlabs.tasks.azure-dtl-task-deleteEnvironment.AzureDevTestLabsDeleteEnvironment@1
     displayName: 'Delete Azure DevTest Labs deployed in previous task'
     inputs:
-      ConnectedServiceName: 'Microsoft Azure Internal Consumption (3c497a87-7ec4-4e9c-b227-a733be37d602)'
+      ConnectedServiceName: '$(DevTestLabAzureConnectionName)'
       LabId: '/subscriptions/3c497a87-7ec4-4e9c-b227-a733be37d602/resourceGroups/YvanDevTests/providers/Microsoft.DevTestLab/labs/YvanDevTests'
       EnvironmentId: '$(BaseEnv.environmentResourceId)'
     enabled: false
@@ -190,7 +190,7 @@ jobs:
   - task: AzurePowerShell@3
     displayName: 'Apply artifact 7-zip'
     inputs:
-      azureSubscription: 'Microsoft Azure Internal Consumption (3c497a87-7ec4-4e9c-b227-a733be37d602)'
+      azureSubscription: '$(DevTestLabAzureConnectionName)'
       ScriptPath: '$(Build.ArtifactStagingDirectory)\drop\BuildPipeline\DevTestLab_ApplyArtifact.ps1'
       ScriptArguments: '-DevTestLabName "$(DevTestLabName)" -VirtualMachineName "SP$(jobSharePointVersion)" -RepositoryName "Public Repo" -ArtifactName "windows-7zip"'
       preferredAzurePowerShellVersion: 5.1.1
@@ -199,7 +199,7 @@ jobs:
   - task: AzurePowerShell@3
     displayName: 'Apply artifact "Azure Pipelines Agent"'
     inputs:
-      azureSubscription: 'Microsoft Azure Internal Consumption (3c497a87-7ec4-4e9c-b227-a733be37d602)'
+      azureSubscription: '$(DevTestLabAzureConnectionName)'
       ScriptPath: '$(Build.ArtifactStagingDirectory)\drop\BuildPipeline\DevTestLab_ApplyArtifact.ps1'
       ScriptArguments: '-DevTestLabName "$(DevTestLabName)" -VirtualMachineName "SP$(jobSharePointVersion)" -RepositoryName "Yvand/AzureRM-Templates" -ArtifactName "windows-vsts-build-agent" -param_vstsAccount "YvanDev" -param_vstsPassword "$(AccessTokenDevOpsYvand)" -param_poolName "$(system.teamProject)-DevTestLabs" -param_windowsLogonAccount "contoso\$(DevTestLabAdminUserName)" -param_windowsLogonPassword "$(DevTestLabAdminPassword)" -param_agentName "SP$(jobSharePointVersion)" -param_agentNameSuffix "-$(Build.BuildNumber)" -param_RunAsAutoLogon false -param_driveLetter C -param_workDirectory ""'
       preferredAzurePowerShellVersion: 5.1.1
@@ -207,7 +207,7 @@ jobs:
   - task: AzurePowerShell@3
     displayName: 'Apply artifact "Download Azure Pipelines Artifact and Run Script"'
     inputs:
-      azureSubscription: 'Microsoft Azure Internal Consumption (3c497a87-7ec4-4e9c-b227-a733be37d602)'
+      azureSubscription: '$(DevTestLabAzureConnectionName)'
       ScriptPath: '$(Build.ArtifactStagingDirectory)\drop\BuildPipeline\DevTestLab_ApplyArtifact.ps1'
       ScriptArguments: -DevTestLabName '$(DevTestLabName)' -VirtualMachineName 'SP$(jobSharePointVersion)' -RepositoryName 'Yvand/AzureRM-Templates' -ArtifactName 'windows-vsts-download-and-run-script' -param_vstsProjectUri 'https://dev.azure.com/YvanDev/$(system.teamProject)' -param_buildDefinitionName '$(Build.DefinitionName)' -param_personalAccessToken $(AccessTokenDevOpsYvand) -param_pathToScript 'drop\DevTestLabs\ConfigureLab.ps1' -param_scriptArguments "-pathToPackage ''..\$(system.teamProject)\bin\Release\$(system.teamProject).wsp' -claimsProviderName '$(system.teamProject)' -spTrustName 'contoso.local' -adminUserName 'contoso\yvand' -adminPassword '$(DevTestLabAdminPassword)'"
       preferredAzurePowerShellVersion: 5.1.1
@@ -215,7 +215,7 @@ jobs:
   - task: ms-azuredevtestlabs.tasks.azure-dtl-task-deleteEnvironment.AzureDevTestLabsDeleteEnvironment@1
     displayName: 'Delete Azure DevTest Labs deployed in previous task'
     inputs:
-      ConnectedServiceName: 'Microsoft Azure Internal Consumption (3c497a87-7ec4-4e9c-b227-a733be37d602)'
+      ConnectedServiceName: '$(DevTestLabAzureConnectionName)'
       LabId: '/subscriptions/3c497a87-7ec4-4e9c-b227-a733be37d602/resourceGroups/YvanDevTests/providers/Microsoft.DevTestLab/labs/YvanDevTests'
       EnvironmentId: '$(BaseEnv.environmentResourceId)'
     enabled: false
@@ -242,7 +242,7 @@ jobs:
   - task: AzurePowerShell@3
     displayName: 'Apply artifact 7-zip'
     inputs:
-      azureSubscription: 'Microsoft Azure Internal Consumption (3c497a87-7ec4-4e9c-b227-a733be37d602)'
+      azureSubscription: '$(DevTestLabAzureConnectionName)'
       ScriptPath: '$(Build.ArtifactStagingDirectory)\drop\BuildPipeline\DevTestLab_ApplyArtifact.ps1'
       ScriptArguments: '-DevTestLabName "$(DevTestLabName)" -VirtualMachineName "SP$(jobSharePointVersion)" -RepositoryName "Public Repo" -ArtifactName "windows-7zip"'
       preferredAzurePowerShellVersion: 5.1.1
@@ -251,7 +251,7 @@ jobs:
   - task: AzurePowerShell@3
     displayName: 'Apply artifact "Azure Pipelines Agent"'
     inputs:
-      azureSubscription: 'Microsoft Azure Internal Consumption (3c497a87-7ec4-4e9c-b227-a733be37d602)'
+      azureSubscription: '$(DevTestLabAzureConnectionName)'
       ScriptPath: '$(Build.ArtifactStagingDirectory)\drop\BuildPipeline\DevTestLab_ApplyArtifact.ps1'
       ScriptArguments: '-DevTestLabName "$(DevTestLabName)" -VirtualMachineName "SP$(jobSharePointVersion)" -RepositoryName "Yvand/AzureRM-Templates" -ArtifactName "windows-vsts-build-agent" -param_vstsAccount "YvanDev" -param_vstsPassword "$(AccessTokenDevOpsYvand)" -param_poolName "$(system.teamProject)-DevTestLabs" -param_windowsLogonAccount "contoso\$(DevTestLabAdminUserName)" -param_windowsLogonPassword "$(DevTestLabAdminPassword)" -param_agentName "SP$(jobSharePointVersion)" -param_agentNameSuffix "-$(Build.BuildNumber)" -param_RunAsAutoLogon false -param_driveLetter C -param_workDirectory ""'
       preferredAzurePowerShellVersion: 5.1.1
@@ -259,7 +259,7 @@ jobs:
   - task: AzurePowerShell@3
     displayName: 'Apply artifact "Download Azure Pipelines Artifact and Run Script"'
     inputs:
-      azureSubscription: 'Microsoft Azure Internal Consumption (3c497a87-7ec4-4e9c-b227-a733be37d602)'
+      azureSubscription: '$(DevTestLabAzureConnectionName)'
       ScriptPath: '$(Build.ArtifactStagingDirectory)\drop\BuildPipeline\DevTestLab_ApplyArtifact.ps1'
       ScriptArguments: -DevTestLabName '$(DevTestLabName)' -VirtualMachineName 'SP$(jobSharePointVersion)' -RepositoryName 'Yvand/AzureRM-Templates' -ArtifactName 'windows-vsts-download-and-run-script' -param_vstsProjectUri 'https://dev.azure.com/YvanDev/$(system.teamProject)' -param_buildDefinitionName '$(Build.DefinitionName)' -param_personalAccessToken $(AccessTokenDevOpsYvand) -param_pathToScript 'drop\DevTestLabs\ConfigureLab.ps1' -param_scriptArguments "-pathToPackage ''..\$(system.teamProject)\bin\Release\$(system.teamProject).wsp' -claimsProviderName '$(system.teamProject)' -spTrustName 'contoso.local' -adminUserName 'contoso\yvand' -adminPassword '$(DevTestLabAdminPassword)'"
       preferredAzurePowerShellVersion: 5.1.1
@@ -267,7 +267,7 @@ jobs:
   - task: ms-azuredevtestlabs.tasks.azure-dtl-task-deleteEnvironment.AzureDevTestLabsDeleteEnvironment@1
     displayName: 'Delete Azure DevTest Labs deployed in previous task'
     inputs:
-      ConnectedServiceName: 'Microsoft Azure Internal Consumption (3c497a87-7ec4-4e9c-b227-a733be37d602)'
+      ConnectedServiceName: '$(DevTestLabAzureConnectionName)'
       LabId: '/subscriptions/3c497a87-7ec4-4e9c-b227-a733be37d602/resourceGroups/YvanDevTests/providers/Microsoft.DevTestLab/labs/YvanDevTests'
       EnvironmentId: '$(BaseEnv.environmentResourceId)'
     enabled: false
