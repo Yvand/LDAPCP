@@ -306,3 +306,73 @@ jobs:
       testRunTitle: 'LDAPCP-Tests-SP$(jobSharePointVersion)'
       platform: '$(BuildPlatform)'
       configuration: Release
+
+- job: RunTestSP2016
+  dependsOn: ApplyArtifactsSP2016
+  #dependsOn: Compile
+  displayName: Run tests on SP2016
+  timeoutInMinutes: 15
+  variables:
+    jobSharePointVersion: 2016
+  pool:
+    name: LDAPCP-Tests-2016
+  steps:
+  - task: DownloadBuildArtifacts@0
+    displayName: 'Download Build Artifacts'
+    inputs:
+      artifactName: drop
+      downloadPath: $(Build.ArtifactStagingDirectory)
+      itemPattern: |
+       drop/LDAPCP.Tests/**
+       drop/DevTestLabs/*.csv
+
+  - task: VisualStudioTestPlatformInstaller@1
+    displayName: 'Visual Studio Test Platform Installer'
+
+  - task: VSTest@2
+    displayName: 'Run Visual Studio tests'
+    inputs:
+      searchFolder: '$(System.ArtifactsDirectory)\drop'
+      vsTestVersion: toolsInstaller
+      runSettingsFile: LDAPCP.Tests/local.runsettings
+      overrideTestrunParameters: '-DataFile_AllAccounts_Search "$(System.ArtifactsDirectory)\drop\DevTestLabs\LDAPCP_Tests_AllAccounts_Search.csv" -DataFile_AllAccounts_Validate "$(System.ArtifactsDirectory)\drop\DevTestLabs\LDAPCP_Tests_AllAccounts_Validate.csv" -TestSiteCollectionName "LDAPCP.$(Build.BuildNumber)"'
+      codeCoverageEnabled: false
+      otherConsoleOptions: '/Platform:x64'
+      testRunTitle: 'LDAPCP-Tests-SP$(jobSharePointVersion)'
+      platform: '$(BuildPlatform)'
+      configuration: Release
+
+- job: RunTestSP2019
+  dependsOn: ApplyArtifactsSP2019
+  #dependsOn: Compile
+  displayName: Run tests on SP2019
+  timeoutInMinutes: 15
+  variables:
+    jobSharePointVersion: 2019
+  pool:
+    name: LDAPCP-Tests-2019
+  steps:
+  - task: DownloadBuildArtifacts@0
+    displayName: 'Download Build Artifacts'
+    inputs:
+      artifactName: drop
+      downloadPath: $(Build.ArtifactStagingDirectory)
+      itemPattern: |
+       drop/LDAPCP.Tests/**
+       drop/DevTestLabs/*.csv
+
+  - task: VisualStudioTestPlatformInstaller@1
+    displayName: 'Visual Studio Test Platform Installer'
+
+  - task: VSTest@2
+    displayName: 'Run Visual Studio tests'
+    inputs:
+      searchFolder: '$(System.ArtifactsDirectory)\drop'
+      vsTestVersion: toolsInstaller
+      runSettingsFile: LDAPCP.Tests/local.runsettings
+      overrideTestrunParameters: '-DataFile_AllAccounts_Search "$(System.ArtifactsDirectory)\drop\DevTestLabs\LDAPCP_Tests_AllAccounts_Search.csv" -DataFile_AllAccounts_Validate "$(System.ArtifactsDirectory)\drop\DevTestLabs\LDAPCP_Tests_AllAccounts_Validate.csv" -TestSiteCollectionName "LDAPCP.$(Build.BuildNumber)"'
+      codeCoverageEnabled: false
+      otherConsoleOptions: '/Platform:x64'
+      testRunTitle: 'LDAPCP-Tests-SP$(jobSharePointVersion)'
+      platform: '$(BuildPlatform)'
+      configuration: Release
