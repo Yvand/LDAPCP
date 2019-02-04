@@ -117,7 +117,7 @@ jobs:
     timeoutInMinutes: 90
   
 - job: ApplyArtifactsSP2013
-  condition: and(succeeded(), eq(variables['DevTestLabProvisionSharePoint2013'], 'yes'))
+  condition: and(succeeded(), eq(variables['Test.ProvisionSharePoint2013'], 'yes'))
   dependsOn: 
   - Compile
   - CreateTestEnvironment
@@ -169,7 +169,7 @@ jobs:
     enabled: false
 
 - job: ApplyArtifactsSP2016
-  condition: and(succeeded(), eq(variables['DevTestLabProvisionSharePoint2016'], 'yes'))
+  condition: and(succeeded(), eq(variables['Test.ProvisionSharePoint2016'], 'yes'))
   dependsOn: 
   - Compile
   - CreateTestEnvironment
@@ -221,7 +221,7 @@ jobs:
     enabled: false
 
 - job: ApplyArtifactsSP2019
-  condition: and(succeeded(), eq(variables['DevTestLabProvisionSharePoint2019'], 'yes'))
+  condition: and(succeeded(), eq(variables['Test.ProvisionSharePoint2019'], 'yes'))
   dependsOn: 
   - Compile
   - CreateTestEnvironment
