@@ -8,9 +8,10 @@ using System.Security.Claims;
 namespace LDAPCP.Tests
 {
     [TestFixture]
-    public class CustomConfigTests : ModifyConfigBase
+    public class CustomConfigTests : BackupCurrentConfig
     {
         public static string GroupsClaimType = ClaimsProviderConstants.DefaultMainGroupClaimType;
+        private readonly object LockUpdateDynamicTokensConfig = new object();
 
         public override void InitializeConfiguration()
         {
@@ -30,23 +31,12 @@ namespace LDAPCP.Tests
         [TestCase("bypass-user:", 0, "")]
         public void BypassLookupOnIdentityClaimTest(string inputValue, int expectedCount, string expectedClaimValue)
         {
-            //Config.ClaimTypes.GetByClaimType(UnitTestsHelper.SPTrust.IdentityClaimTypeInformation.MappedClaimType).PrefixToBypassLookup = "bypass-user:";
-            //Config.Update();
+            UnitTestsHelper.TestSearchOperation(inputValue, expectedCount, expectedClaimValue);
 
-            try
+            if (expectedCount > 0)
             {
-                UnitTestsHelper.TestSearchOperation(inputValue, expectedCount, expectedClaimValue);
-
-                if (expectedCount > 0)
-                {
-                    SPClaim inputClaim = new SPClaim(UnitTestsHelper.SPTrust.IdentityClaimTypeInformation.MappedClaimType, expectedClaimValue, ClaimValueTypes.String, SPOriginalIssuers.Format(SPOriginalIssuerType.TrustedProvider, UnitTestsHelper.SPTrust.Name));
-                    UnitTestsHelper.TestValidationOperation(inputClaim, true, expectedClaimValue);
-                }
-            }
-            finally
-            {
-                //Config.ClaimTypes.GetByClaimType(UnitTestsHelper.SPTrust.IdentityClaimTypeInformation.MappedClaimType).PrefixToBypassLookup = String.Empty;
-                //Config.Update();
+                SPClaim inputClaim = new SPClaim(UnitTestsHelper.SPTrust.IdentityClaimTypeInformation.MappedClaimType, expectedClaimValue, ClaimValueTypes.String, SPOriginalIssuers.Format(SPOriginalIssuerType.TrustedProvider, UnitTestsHelper.SPTrust.Name));
+                UnitTestsHelper.TestValidationOperation(inputClaim, true, expectedClaimValue);
             }
         }
 
@@ -55,24 +45,12 @@ namespace LDAPCP.Tests
         [TestCase("bypass-group:", 0, "")]
         public void BypassLookupOnGroupClaimTest(string inputValue, int expectedCount, string expectedClaimValue)
         {
-            //ClaimTypeConfig ctConfig = Config.ClaimTypes.FirstOrDefault(x => String.Equals(UnitTestsHelper.TrustedGroupToAdd_ClaimType, x.ClaimType, StringComparison.InvariantCultureIgnoreCase));
-            //ctConfig.PrefixToBypassLookup = "bypass-group:";
-            Config.Update();
+            UnitTestsHelper.TestSearchOperation(inputValue, expectedCount, expectedClaimValue);
 
-            try
+            if (expectedCount > 0)
             {
-                UnitTestsHelper.TestSearchOperation(inputValue, expectedCount, expectedClaimValue);
-
-                if (expectedCount > 0)
-                {
-                    SPClaim inputClaim = new SPClaim(UnitTestsHelper.TrustedGroupToAdd_ClaimType, expectedClaimValue, ClaimValueTypes.String, SPOriginalIssuers.Format(SPOriginalIssuerType.TrustedProvider, UnitTestsHelper.SPTrust.Name));
-                    UnitTestsHelper.TestValidationOperation(inputClaim, true, expectedClaimValue);
-                }
-            }
-            finally
-            {
-                //ctConfig.PrefixToBypassLookup = String.Empty;
-                //Config.Update();
+                SPClaim inputClaim = new SPClaim(UnitTestsHelper.TrustedGroupToAdd_ClaimType, expectedClaimValue, ClaimValueTypes.String, SPOriginalIssuers.Format(SPOriginalIssuerType.TrustedProvider, UnitTestsHelper.SPTrust.Name));
+                UnitTestsHelper.TestValidationOperation(inputClaim, true, expectedClaimValue);
             }
         }
 
@@ -80,30 +58,33 @@ namespace LDAPCP.Tests
         [TestCase("Domain Admins")]
         public void TestDynamicTokens(string inputValue)
         {
-            string domainNetbios = "contoso";
-            string domainFQDN = "contoso.local";
-            ClaimTypeConfig ctConfig = Config.ClaimTypes.FirstOrDefault(x => String.Equals(GroupsClaimType, x.ClaimType, StringComparison.InvariantCultureIgnoreCase));
+            lock (LockUpdateDynamicTokensConfig)
+            {
+                string domainNetbios = "contoso";
+                string domainFQDN = "contoso.local";
+                ClaimTypeConfig ctConfig = Config.ClaimTypes.FirstOrDefault(x => String.Equals(GroupsClaimType, x.ClaimType, StringComparison.InvariantCultureIgnoreCase));
 
-            string expectedValue = inputValue;
-            ctConfig.ClaimValuePrefix = String.Empty;
-            Config.Update();
-            UnitTestsHelper.TestSearchOperation(inputValue, 1, inputValue);
-            SPClaim inputClaim = new SPClaim(GroupsClaimType, expectedValue, ClaimValueTypes.String, SPOriginalIssuers.Format(SPOriginalIssuerType.TrustedProvider, UnitTestsHelper.SPTrust.Name));
-            UnitTestsHelper.TestValidationOperation(inputClaim, true, expectedValue);
+                string expectedValue = inputValue;
+                ctConfig.ClaimValuePrefix = String.Empty;
+                Config.Update();
+                UnitTestsHelper.TestSearchOperation(inputValue, 1, inputValue);
+                SPClaim inputClaim = new SPClaim(GroupsClaimType, expectedValue, ClaimValueTypes.String, SPOriginalIssuers.Format(SPOriginalIssuerType.TrustedProvider, UnitTestsHelper.SPTrust.Name));
+                UnitTestsHelper.TestValidationOperation(inputClaim, true, expectedValue);
 
-            expectedValue = $@"{domainNetbios}\{inputValue}";
-            ctConfig.ClaimValuePrefix = @"{domain}\";
-            Config.Update();
-            UnitTestsHelper.TestSearchOperation(inputValue, 1, expectedValue);
-            inputClaim = new SPClaim(GroupsClaimType, expectedValue, ClaimValueTypes.String, SPOriginalIssuers.Format(SPOriginalIssuerType.TrustedProvider, UnitTestsHelper.SPTrust.Name));
-            UnitTestsHelper.TestValidationOperation(inputClaim, true, expectedValue);
+                expectedValue = $@"{domainNetbios}\{inputValue}";
+                ctConfig.ClaimValuePrefix = @"{domain}\";
+                Config.Update();
+                UnitTestsHelper.TestSearchOperation(inputValue, 1, expectedValue);
+                inputClaim = new SPClaim(GroupsClaimType, expectedValue, ClaimValueTypes.String, SPOriginalIssuers.Format(SPOriginalIssuerType.TrustedProvider, UnitTestsHelper.SPTrust.Name));
+                UnitTestsHelper.TestValidationOperation(inputClaim, true, expectedValue);
 
-            expectedValue = $@"{domainFQDN}\{inputValue}";
-            ctConfig.ClaimValuePrefix = @"{fqdn}\";
-            Config.Update();
-            UnitTestsHelper.TestSearchOperation(inputValue, 1, expectedValue);
-            inputClaim = new SPClaim(GroupsClaimType, expectedValue, ClaimValueTypes.String, SPOriginalIssuers.Format(SPOriginalIssuerType.TrustedProvider, UnitTestsHelper.SPTrust.Name));
-            UnitTestsHelper.TestValidationOperation(inputClaim, true, expectedValue);
+                expectedValue = $@"{domainFQDN}\{inputValue}";
+                ctConfig.ClaimValuePrefix = @"{fqdn}\"; // This is the default value, set at last step to restore it before releasing lock
+                Config.Update();
+                UnitTestsHelper.TestSearchOperation(inputValue, 1, expectedValue);
+                inputClaim = new SPClaim(GroupsClaimType, expectedValue, ClaimValueTypes.String, SPOriginalIssuers.Format(SPOriginalIssuerType.TrustedProvider, UnitTestsHelper.SPTrust.Name));
+                UnitTestsHelper.TestValidationOperation(inputClaim, true, expectedValue);
+            }
         }
 
         [Test]
@@ -123,38 +104,6 @@ namespace LDAPCP.Tests
             finally
             {
                 Config.BypassLDAPLookup = false;
-                Config.Update();
-            }
-        }
-
-        [Test, TestCaseSource(typeof(ValidateEntityDataSource), "GetTestData")]
-        [Repeat(UnitTestsHelper.TestRepeatCount)]
-        public void TestAlternativeAugmentation(ValidateEntityData registrationData)
-        {
-            foreach (LDAPConnection ldapConn in Config.LDAPConnectionsProp)
-            {
-                ldapConn.GetGroupMembershipAsADDomainProp = !ldapConn.GetGroupMembershipAsADDomainProp;
-            }
-            Config.Update();
-            UnitTestsHelper.TestAugmentationOperation(UnitTestsHelper.SPTrust.IdentityClaimTypeInformation.MappedClaimType, registrationData.ClaimValue, registrationData.IsMemberOfTrustedGroup);
-        }
-
-        [Test, TestCaseSource(typeof(ValidateEntityDataSource), "GetTestData")]
-        [Repeat(UnitTestsHelper.TestRepeatCount)]
-        public void RequireExactMatchDuringSearch(ValidateEntityData registrationData)
-        {
-            Config.FilterExactMatchOnlyProp = true;
-            Config.Update();
-
-            try
-            {
-                int expectedCount = registrationData.ShouldValidate ? 1 : 0;
-                UnitTestsHelper.TestSearchOperation(registrationData.ClaimValue, expectedCount, registrationData.ClaimValue);
-            }
-            catch { }
-            finally
-            {
-                Config.FilterExactMatchOnlyProp = false;
                 Config.Update();
             }
         }

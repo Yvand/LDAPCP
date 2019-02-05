@@ -45,8 +45,8 @@
     <Reference Include="System.Core" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="AugmentationAsLDAPServersTests.cs" />
-    <Compile Include="AugmentationAsADDomainTests.cs" />
+    <Compile Include="AugmentationTests.cs" />
+    <Compile Include="RequireExactMatchTests.cs" />
     <Compile Include="CustomConfigTests.cs" />
     <Compile Include="ModifyConfigBase.cs" />
     <Compile Include="ModifyConfigTests.cs" />

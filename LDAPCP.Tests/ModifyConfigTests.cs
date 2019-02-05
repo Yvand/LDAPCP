@@ -6,7 +6,7 @@ using System.Linq;
 namespace LDAPCP.Tests
 {
     [TestFixture]
-    public class ModifyConfigTests : ModifyConfigBase
+    public class ModifyConfigTests : BackupCurrentConfig
     {
         const string ConfigUpdateErrorMessage = "Some changes made to list ClaimTypes are invalid and cannot be committed to configuration database. Inspect inner exception for more details about the error.";
 

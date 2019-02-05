@@ -8,7 +8,7 @@ namespace LDAPCP.Tests
 {
     [TestFixture]
     [Parallelizable(ParallelScope.Children)]
-    public class EntityTestsBase : ModifyConfigBase
+    public class EntityTestsBase : BackupCurrentConfig
     {
         /// <summary>
         /// Configure whether to run entity search tests.
