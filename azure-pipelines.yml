@@ -157,7 +157,7 @@ jobs:
     inputs:
       azureSubscription: '$(Test.AzureConnectionName)'
       ScriptPath: '$(Build.ArtifactStagingDirectory)\drop\BuildPipeline\DevTestLab_ApplyArtifact.ps1'
-      ScriptArguments: -DevTestLabName '$(Test.DevTestLabName)' -VirtualMachineName 'SP$(jobSharePointVersion)' -RepositoryName 'Yvand/AzureRM-Templates' -ArtifactName 'windows-vsts-download-and-run-script' -param_vstsProjectUri 'https://dev.azure.com/YvanDev/$(system.teamProject)' -param_buildDefinitionName '$(Build.DefinitionName)' -param_personalAccessToken $(AccessTokenDevOpsYvand) -param_pathToScript 'drop\DevTestLabs\ConfigureLab.ps1' -param_scriptArguments "-pathToPackage ''..\$(system.teamProject)\bin\Release\$(system.teamProject).wsp' -claimsProviderName '$(system.teamProject)' -spTrustName 'contoso.local' -adminUserName 'contoso\yvand' -adminPassword '$(Test.AdminPassword)'"
+      ScriptArguments: -DevTestLabName '$(Test.DevTestLabName)' -VirtualMachineName 'SP$(jobSharePointVersion)' -RepositoryName 'Yvand/AzureRM-Templates' -ArtifactName 'windows-vsts-download-and-run-script' -param_vstsProjectUri 'https://dev.azure.com/YvanDev/$(system.teamProject)' -param_buildDefinitionName '$(Build.DefinitionName)' -param_personalAccessToken $(AccessTokenDevOpsYvand) -param_pathToScript 'drop\DevTestLabs\ConfigureLab.ps1' -param_scriptArguments "-pathToPackage ''..\$(system.teamProject)\bin\$(BuildConfiguration)\$(system.teamProject).wsp' -claimsProviderName '$(system.teamProject)' -spTrustName 'contoso.local' -adminUserName 'contoso\yvand' -adminPassword '$(Test.AdminPassword)'"
       preferredAzurePowerShellVersion: 5.1.1
 
   - task: ms-azuredevtestlabs.tasks.azure-dtl-task-deleteEnvironment.AzureDevTestLabsDeleteEnvironment@1
@@ -209,7 +209,7 @@ jobs:
     inputs:
       azureSubscription: '$(Test.AzureConnectionName)'
       ScriptPath: '$(Build.ArtifactStagingDirectory)\drop\BuildPipeline\DevTestLab_ApplyArtifact.ps1'
-      ScriptArguments: -DevTestLabName '$(Test.DevTestLabName)' -VirtualMachineName 'SP$(jobSharePointVersion)' -RepositoryName 'Yvand/AzureRM-Templates' -ArtifactName 'windows-vsts-download-and-run-script' -param_vstsProjectUri 'https://dev.azure.com/YvanDev/$(system.teamProject)' -param_buildDefinitionName '$(Build.DefinitionName)' -param_personalAccessToken $(AccessTokenDevOpsYvand) -param_pathToScript 'drop\DevTestLabs\ConfigureLab.ps1' -param_scriptArguments "-pathToPackage ''..\$(system.teamProject)\bin\Release\$(system.teamProject).wsp' -claimsProviderName '$(system.teamProject)' -spTrustName 'contoso.local' -adminUserName 'contoso\yvand' -adminPassword '$(Test.AdminPassword)'"
+      ScriptArguments: -DevTestLabName '$(Test.DevTestLabName)' -VirtualMachineName 'SP$(jobSharePointVersion)' -RepositoryName 'Yvand/AzureRM-Templates' -ArtifactName 'windows-vsts-download-and-run-script' -param_vstsProjectUri 'https://dev.azure.com/YvanDev/$(system.teamProject)' -param_buildDefinitionName '$(Build.DefinitionName)' -param_personalAccessToken $(AccessTokenDevOpsYvand) -param_pathToScript 'drop\DevTestLabs\ConfigureLab.ps1' -param_scriptArguments "-pathToPackage ''..\$(system.teamProject)\bin\$(BuildConfiguration)\$(system.teamProject).wsp' -claimsProviderName '$(system.teamProject)' -spTrustName 'contoso.local' -adminUserName 'contoso\yvand' -adminPassword '$(Test.AdminPassword)'"
       preferredAzurePowerShellVersion: 5.1.1
 
   - task: ms-azuredevtestlabs.tasks.azure-dtl-task-deleteEnvironment.AzureDevTestLabsDeleteEnvironment@1
@@ -261,7 +261,7 @@ jobs:
     inputs:
       azureSubscription: '$(Test.AzureConnectionName)'
       ScriptPath: '$(Build.ArtifactStagingDirectory)\drop\BuildPipeline\DevTestLab_ApplyArtifact.ps1'
-      ScriptArguments: -DevTestLabName '$(Test.DevTestLabName)' -VirtualMachineName 'SP$(jobSharePointVersion)' -RepositoryName 'Yvand/AzureRM-Templates' -ArtifactName 'windows-vsts-download-and-run-script' -param_vstsProjectUri 'https://dev.azure.com/YvanDev/$(system.teamProject)' -param_buildDefinitionName '$(Build.DefinitionName)' -param_personalAccessToken $(AccessTokenDevOpsYvand) -param_pathToScript 'drop\DevTestLabs\ConfigureLab.ps1' -param_scriptArguments "-pathToPackage ''..\$(system.teamProject)\bin\Release\$(system.teamProject).wsp' -claimsProviderName '$(system.teamProject)' -spTrustName 'contoso.local' -adminUserName 'contoso\yvand' -adminPassword '$(Test.AdminPassword)'"
+      ScriptArguments: -DevTestLabName '$(Test.DevTestLabName)' -VirtualMachineName 'SP$(jobSharePointVersion)' -RepositoryName 'Yvand/AzureRM-Templates' -ArtifactName 'windows-vsts-download-and-run-script' -param_vstsProjectUri 'https://dev.azure.com/YvanDev/$(system.teamProject)' -param_buildDefinitionName '$(Build.DefinitionName)' -param_personalAccessToken $(AccessTokenDevOpsYvand) -param_pathToScript 'drop\DevTestLabs\ConfigureLab.ps1' -param_scriptArguments "-pathToPackage ''..\$(system.teamProject)\bin\$(BuildConfiguration)\$(system.teamProject).wsp' -claimsProviderName '$(system.teamProject)' -spTrustName 'contoso.local' -adminUserName 'contoso\yvand' -adminPassword '$(Test.AdminPassword)'"
       preferredAzurePowerShellVersion: 5.1.1
 
   - task: ms-azuredevtestlabs.tasks.azure-dtl-task-deleteEnvironment.AzureDevTestLabsDeleteEnvironment@1
@@ -305,7 +305,7 @@ jobs:
       otherConsoleOptions: '/Platform:x64'
       testRunTitle: 'LDAPCP-Tests-SP$(jobSharePointVersion)'
       platform: '$(BuildPlatform)'
-      configuration: Release
+      configuration: $(BuildConfiguration)
 
 - job: RunTestSP2016
   dependsOn: ApplyArtifactsSP2016
@@ -340,7 +340,7 @@ jobs:
       otherConsoleOptions: '/Platform:x64'
       testRunTitle: 'LDAPCP-Tests-SP$(jobSharePointVersion)'
       platform: '$(BuildPlatform)'
-      configuration: Release
+      configuration: $(BuildConfiguration)
 
 - job: RunTestSP2019
   dependsOn: ApplyArtifactsSP2019
@@ -375,4 +375,4 @@ jobs:
       otherConsoleOptions: '/Platform:x64'
       testRunTitle: 'LDAPCP-Tests-SP$(jobSharePointVersion)'
       platform: '$(BuildPlatform)'
-      configuration: Release
+      configuration: $(BuildConfiguration)
