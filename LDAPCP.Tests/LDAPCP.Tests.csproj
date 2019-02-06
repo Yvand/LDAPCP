@@ -48,7 +48,7 @@
     <Compile Include="AugmentationTests.cs" />
     <Compile Include="RequireExactMatchTests.cs" />
     <Compile Include="CustomConfigTests.cs" />
-    <Compile Include="ModifyConfigBase.cs" />
+    <Compile Include="BackupCurrentConfig.cs" />
     <Compile Include="ModifyConfigTests.cs" />
     <Compile Include="UnitTestsHelper.cs" />
     <Compile Include="EntityTestsBase.cs" />
