@@ -1,9 +1,4 @@
-﻿using ldapcp;
-using Microsoft.SharePoint.Administration.Claims;
-using NUnit.Framework;
-using System;
-using System.Linq;
-using System.Security.Claims;
+﻿using NUnit.Framework;
 
 namespace LDAPCP.Tests
 {
