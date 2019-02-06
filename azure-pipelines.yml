@@ -2,6 +2,8 @@ resources:
 - repo: self
 variables:
   BuildPlatform: 'Any CPU'
+  SolutionFileName: 'LDAPCP.sln'
+  ProductDescription: 'This claims provider connects SharePoint with Active Directory and LDAP servers to provide a great search experience in the people picker with federated authentication'
 jobs:
 - job: Compile
   displayName: Compile
@@ -57,7 +59,7 @@ jobs:
   - task: NuGetCommand@2
     displayName: 'NuGet restore'
     inputs:
-      restoreSolution: '$(Parameters.solution)'
+      restoreSolution: '$(SolutionFileName)'
 
   - task: bleddynrichards.Assembly-Info-Task.Assembly-Info-Task.Assembly-Info-Task@1
     displayName: 'Set $(system.teamProject).dll version'
@@ -66,7 +68,7 @@ jobs:
        AssemblyInfo.cs
       Title: $(system.teamProject)
       Product: $(system.teamProject)
-      Description: 'This claims provider connects SharePoint with Active Directory and LDAP servers to provide a great search experience in the people picker with federated authentication'
+      Description: '$(ProductDescription)'
       Company: GitHub.com/Yvand
       Copyright: 'Copyright © $(date:yyyy), Yvan Duhamel, All rights reserved'
       Trademark: $(system.teamProject)
@@ -77,7 +79,7 @@ jobs:
   - task: VSBuild@1
     displayName: 'Build $(system.teamProject) solution'
     inputs:
-      solution: '$(Parameters.solution)'
+      solution: '$(SolutionFileName)'
       msbuildArgs: '/p:IsPackaging=true'
       platform: '$(BuildPlatform)'
       configuration: '$(BuildConfiguration)'
@@ -95,7 +97,7 @@ jobs:
     inputs:
       pathtoPublish: '$(Build.ArtifactStagingDirectory)'
       artifactName: drop
-  
+
 - job: CreateTestEnvironment
   displayName: Create test environment
   timeoutInMinutes: 90
