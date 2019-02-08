@@ -4,7 +4,6 @@ using NUnit.Framework;
 namespace LDAPCP.Tests
 {
     [TestFixture]
-    [Parallelizable(ParallelScope.Children)]
     public class AugmentatAsADDomainOnBaseConfigTests : EntityTestsBase
     {
         public override bool TestSearch => false;
@@ -91,7 +90,6 @@ namespace LDAPCP.Tests
     }
 
     [TestFixture]
-    [Parallelizable(ParallelScope.Children)]
     public class AugmentAsLDAPServersOnCustomConfigTests : CustomConfigTests
     {
         public override void InitializeConfiguration()
