@@ -537,7 +537,7 @@ namespace ldapcp
                         currentContext.Input,
                         currentContext.CurrentClaimTypeConfigList.Where(x => !x.UseMainClaimTypeOfDirectoryObject),
                         false);
-                    ClaimsProviderLogging.Log($"[{ProviderInternalName}] Created {entities.Count} entity(ies) without contacting LDAP server(s) because LDAPCP property BypassLDAPLookup is set to true.",
+                    ClaimsProviderLogging.Log($"[{ProviderInternalName}] Created {entities.Count} entity(ies) from input \"{currentContext.Input}\" without contacting LDAP server(s) because LDAPCP property BypassLDAPLookup is set to true.",
                         TraceSeverity.Medium, EventSeverity.Information, TraceCategory.Claims_Picking);
                     return entities;
                 }
@@ -567,7 +567,7 @@ namespace ldapcp
                         {
                             if (entities == null) entities = new List<PickerEntity>();
                             entities.Add(entity);
-                            ClaimsProviderLogging.Log($"[{ProviderInternalName}] Created entity without contacting LDAP server(s) because input started with prefix '{ctConfigWithInputPrefixMatch.PrefixToBypassLookup}', which is configured for claim type '{ctConfigWithInputPrefixMatch.ClaimType}'. Claim value: '{entity.Claim.Value}', claim type: '{entity.Claim.ClaimType}'",
+                            ClaimsProviderLogging.Log($"[{ProviderInternalName}] Created entity from input \"{currentContext.Input}\" without contacting LDAP server(s) because input started with prefix '{ctConfigWithInputPrefixMatch.PrefixToBypassLookup}', which is configured for claim type '{ctConfigWithInputPrefixMatch.ClaimType}'. Claim value: '{entity.Claim.Value}', claim type: '{entity.Claim.ClaimType}'",
                                 TraceSeverity.VerboseEx, EventSeverity.Information, TraceCategory.Claims_Picking);
                             //return entities;
                         }
