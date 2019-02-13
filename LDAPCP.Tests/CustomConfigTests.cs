@@ -27,7 +27,7 @@ namespace LDAPCP.Tests
         }
 
         [TestCase("bypass-user:externalUser@contoso.com", 1, "externalUser@contoso.com")]
-        [TestCase("externalUser@contoso.com", 0, "")]
+        [TestCase("nonExistingUser@contoso.com", 0, "")]
         [TestCase("bypass-user:", 0, "")]
         public void BypassLookupOnIdentityClaimTest(string inputValue, int expectedCount, string expectedClaimValue)
         {
