@@ -1,3 +1,4 @@
+name: $(BuildVersion).$(date:yyyyMMdd).$(Build.BuildId)
 resources:
 - repo: self
 variables:
@@ -6,6 +7,15 @@ variables:
   ProductDescription: 'This claims provider connects SharePoint with Active Directory and LDAP servers to provide a great search experience in the people picker with federated authentication'
 jobs:
 - job: Compile
+  strategy:
+    maxParallel: 2
+    matrix:
+      debugJob:
+        configuration: debug
+        platform: $(BuildPlatform)
+      releaseJob:
+        configuration: release
+        platform: $(BuildPlatform)
   displayName: Compile
   pool:
     name: Hosted VS2017
@@ -38,12 +48,12 @@ jobs:
      Get-AzureStorageFileContent –Share $azureShare –Path "$azureStorageBaseDirectory\SharePoint 2013\Microsoft.SharePoint.dll" "$projectLocalPath\Microsoft.SharePoint.dll"
      
      Write-Output ("Copy DevTestLabs content from Azure storage account")
-     $localPath = Join-Path -Path $azureStorageBaseDirectory -ChildPath "DevTestLabs"
-     Get-AzureStorageFile -ShareName $(AzureStorageShareName) -Context $azureContext -Path $localPath | Get-AzureStorageFile | ?{$_.GetType().Name -eq "CloudFile"} | Get-AzureStorageFileContent -Destination $devTestLabsLocalPath
+     $azurePath = Join-Path -Path $azureStorageBaseDirectory -ChildPath "DevTestLabs"
+     Get-AzureStorageFile -ShareName $(AzureStorageShareName) -Context $azureContext -Path $azurePath | Get-AzureStorageFile | ?{$_.GetType().Name -eq "CloudFile"} | Get-AzureStorageFileContent -Destination $devTestLabsLocalPath
      
      Write-Output ("Copy BuildResources content from Azure storage account")
-     $localPath = Join-Path -Path $azureStorageBaseDirectory -ChildPath "BuildPipeline"
-     Get-AzureStorageFile -ShareName $(AzureStorageShareName) -Context $azureContext -Path $localPath | Get-AzureStorageFile | ? {$_.GetType().Name -eq "CloudFile"} | Get-AzureStorageFileContent -Destination $buildResourcesLocalPath
+     $azurePath = Join-Path -Path $azureStorageBaseDirectory -ChildPath "BuildPipeline"
+     Get-AzureStorageFile -ShareName $(AzureStorageShareName) -Context $azureContext -Path $azurePath | Get-AzureStorageFile | ? {$_.GetType().Name -eq "CloudFile"} | Get-AzureStorageFileContent -Destination $buildResourcesLocalPath
      
      Write-Output ("Add assembly Microsoft.SharePoint.dll to the GAC")
      [System.Reflection.Assembly]::Load("System.EnterpriseServices, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a")
@@ -61,20 +71,19 @@ jobs:
     inputs:
       restoreSolution: '$(SolutionFileName)'
 
-  - task: bleddynrichards.Assembly-Info-Task.Assembly-Info-Task.Assembly-Info-Task@1
-    displayName: 'Set $(system.teamProject).dll version'
+  - task: bleddynrichards.Assembly-Info-Task.Assembly-Info-Task.Assembly-Info-NetFramework@2
+    displayName: 'Set $(system.teamProject) assemblies manifest'
     inputs:
-      FileNames: |
-       AssemblyInfo.cs
+      FileNames: '**\AssemblyInfo.cs'
       Title: $(system.teamProject)
       Product: $(system.teamProject)
       Description: '$(ProductDescription)'
       Company: GitHub.com/Yvand
-      Copyright: 'Copyright © $(date:yyyy), Yvan Duhamel, All rights reserved'
-      Trademark: $(system.teamProject)
+      Copyright: 'Copyright © $(date:YYYY) Yvan Duhamel, All rights reserved'
+      Trademark: '$(system.teamProject)'
       VersionNumber: 1.0.0.0
-      FileVersionNumber: '$(BuildVersion).*.*'
-      InformationalVersion: 1.0.0.0
+      FileVersionNumber: '$(Build.BuildNumber)'
+      InformationalVersion: '$(Build.BuildNumber)'
 
   - task: VSBuild@1
     displayName: 'Build $(system.teamProject) solution'
@@ -82,14 +91,14 @@ jobs:
       solution: '$(SolutionFileName)'
       msbuildArgs: '/p:IsPackaging=true'
       platform: '$(BuildPlatform)'
-      configuration: '$(BuildConfiguration)'
+      configuration: '$(configuration)'
       msbuildArchitecture: x64
   
   - task: CopyFiles@2
     displayName: 'Copy binaries to artifacts'
     inputs:
       SourceFolder: '$(Build.SourcesDirectory)'
-      Contents: '**/$(BuildConfiguration)/**/?(*.wsp|*.dll|*.pdb)'
+      Contents: '$(system.teamProject)/bin/$(configuration)/?($(system.teamProject).*)'
       TargetFolder: '$(Build.ArtifactStagingDirectory)'
 
   - task: PublishBuildArtifacts@1
