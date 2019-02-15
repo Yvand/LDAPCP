@@ -301,7 +301,7 @@ jobs:
       artifactName: drop
       downloadPath: $(Build.ArtifactStagingDirectory)
       itemPattern: |
-       drop/LDAPCP.Tests/bin/release/*.dll
+       drop/LDAPCP.Tests/bin/Release/*.dll
        drop/DevTestLabs/*.csv
 
   - task: VisualStudioTestPlatformInstaller@1
@@ -336,7 +336,7 @@ jobs:
       artifactName: drop
       downloadPath: $(Build.ArtifactStagingDirectory)
       itemPattern: |
-       drop/LDAPCP.Tests/bin/release/*.dll
+       drop/LDAPCP.Tests/bin/Release/*.dll
        drop/DevTestLabs/*.csv
 
   - task: VisualStudioTestPlatformInstaller@1
@@ -371,7 +371,7 @@ jobs:
       artifactName: drop
       downloadPath: $(Build.ArtifactStagingDirectory)
       itemPattern: |
-       drop/LDAPCP.Tests/bin/release/*.dll
+       drop/LDAPCP.Tests/bin/Release/*.dll
        drop/DevTestLabs/*.csv
 
   - task: VisualStudioTestPlatformInstaller@1
