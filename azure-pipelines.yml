@@ -98,7 +98,9 @@ jobs:
     displayName: 'Copy binaries to artifacts'
     inputs:
       SourceFolder: '$(Build.SourcesDirectory)'
-      Contents: '$(system.teamProject)/bin/$(configuration)/?($(system.teamProject).*)'
+      Contents: |
+       $(system.teamProject)/bin/$(configuration)/?($(system.teamProject).*)
+       $(system.teamProject).Tests/bin/$(configuration)/?(*.dll)
       TargetFolder: '$(Build.ArtifactStagingDirectory)'
 
   - task: PublishBuildArtifacts@1
@@ -299,7 +301,7 @@ jobs:
       artifactName: drop
       downloadPath: $(Build.ArtifactStagingDirectory)
       itemPattern: |
-       drop/LDAPCP.Tests/**
+       drop/LDAPCP.Tests/bin/release/*.dll
        drop/DevTestLabs/*.csv
 
   - task: VisualStudioTestPlatformInstaller@1
@@ -334,7 +336,7 @@ jobs:
       artifactName: drop
       downloadPath: $(Build.ArtifactStagingDirectory)
       itemPattern: |
-       drop/LDAPCP.Tests/**
+       drop/LDAPCP.Tests/bin/release/*.dll
        drop/DevTestLabs/*.csv
 
   - task: VisualStudioTestPlatformInstaller@1
@@ -369,7 +371,7 @@ jobs:
       artifactName: drop
       downloadPath: $(Build.ArtifactStagingDirectory)
       itemPattern: |
-       drop/LDAPCP.Tests/**
+       drop/LDAPCP.Tests/bin/release/*.dll
        drop/DevTestLabs/*.csv
 
   - task: VisualStudioTestPlatformInstaller@1
