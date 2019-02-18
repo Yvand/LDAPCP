@@ -11,6 +11,7 @@ namespace LDAPCP.Tests
     public class CustomConfigTests : BackupCurrentConfig
     {
         public static string GroupsClaimType = ClaimsProviderConstants.DefaultMainGroupClaimType;
+        private readonly object LockUpdateDynamicTokensConfig = new object();
 
         public override void InitializeConfiguration()
         {
@@ -58,30 +59,34 @@ namespace LDAPCP.Tests
         [NonParallelizable]
         public void TestDynamicTokens(string inputValue)
         {
-            string domainNetbios = "contoso";
-            string domainFQDN = "contoso.local";
-            ClaimTypeConfig ctConfig = Config.ClaimTypes.FirstOrDefault(x => String.Equals(GroupsClaimType, x.ClaimType, StringComparison.InvariantCultureIgnoreCase));
+            // Even with NonParallelizable set, it seems that the method can run multiple times simultaneously, so lock is required
+            lock (LockUpdateDynamicTokensConfig)
+            {
+                string domainNetbios = "contoso";
+                string domainFQDN = "contoso.local";
+                ClaimTypeConfig ctConfig = Config.ClaimTypes.FirstOrDefault(x => String.Equals(GroupsClaimType, x.ClaimType, StringComparison.InvariantCultureIgnoreCase));
 
-            string expectedValue = inputValue;
-            ctConfig.ClaimValuePrefix = String.Empty;
-            Config.Update();
-            UnitTestsHelper.TestSearchOperation(inputValue, 1, inputValue);
-            SPClaim inputClaim = new SPClaim(GroupsClaimType, expectedValue, ClaimValueTypes.String, SPOriginalIssuers.Format(SPOriginalIssuerType.TrustedProvider, UnitTestsHelper.SPTrust.Name));
-            UnitTestsHelper.TestValidationOperation(inputClaim, true, expectedValue);
+                string expectedValue = inputValue;
+                ctConfig.ClaimValuePrefix = String.Empty;
+                Config.Update();
+                UnitTestsHelper.TestSearchOperation(inputValue, 1, inputValue);
+                SPClaim inputClaim = new SPClaim(GroupsClaimType, expectedValue, ClaimValueTypes.String, SPOriginalIssuers.Format(SPOriginalIssuerType.TrustedProvider, UnitTestsHelper.SPTrust.Name));
+                UnitTestsHelper.TestValidationOperation(inputClaim, true, expectedValue);
 
-            expectedValue = $@"{domainNetbios}\{inputValue}";
-            ctConfig.ClaimValuePrefix = @"{domain}\";
-            Config.Update();
-            UnitTestsHelper.TestSearchOperation(inputValue, 1, expectedValue);
-            inputClaim = new SPClaim(GroupsClaimType, expectedValue, ClaimValueTypes.String, SPOriginalIssuers.Format(SPOriginalIssuerType.TrustedProvider, UnitTestsHelper.SPTrust.Name));
-            UnitTestsHelper.TestValidationOperation(inputClaim, true, expectedValue);
+                expectedValue = $@"{domainNetbios}\{inputValue}";
+                ctConfig.ClaimValuePrefix = @"{domain}\";
+                Config.Update();
+                UnitTestsHelper.TestSearchOperation(inputValue, 1, expectedValue);
+                inputClaim = new SPClaim(GroupsClaimType, expectedValue, ClaimValueTypes.String, SPOriginalIssuers.Format(SPOriginalIssuerType.TrustedProvider, UnitTestsHelper.SPTrust.Name));
+                UnitTestsHelper.TestValidationOperation(inputClaim, true, expectedValue);
 
-            expectedValue = $@"{domainFQDN}\{inputValue}";
-            ctConfig.ClaimValuePrefix = @"{fqdn}\"; // This is the default value, set at last step to restore it before releasing lock
-            Config.Update();
-            UnitTestsHelper.TestSearchOperation(inputValue, 1, expectedValue);
-            inputClaim = new SPClaim(GroupsClaimType, expectedValue, ClaimValueTypes.String, SPOriginalIssuers.Format(SPOriginalIssuerType.TrustedProvider, UnitTestsHelper.SPTrust.Name));
-            UnitTestsHelper.TestValidationOperation(inputClaim, true, expectedValue);
+                expectedValue = $@"{domainFQDN}\{inputValue}";
+                ctConfig.ClaimValuePrefix = @"{fqdn}\"; // This is the default value, set at last step to restore it before releasing lock
+                Config.Update();
+                UnitTestsHelper.TestSearchOperation(inputValue, 1, expectedValue);
+                inputClaim = new SPClaim(GroupsClaimType, expectedValue, ClaimValueTypes.String, SPOriginalIssuers.Format(SPOriginalIssuerType.TrustedProvider, UnitTestsHelper.SPTrust.Name));
+                UnitTestsHelper.TestValidationOperation(inputClaim, true, expectedValue);
+            }
         }
 
         [Test]
