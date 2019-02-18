@@ -59,7 +59,7 @@ namespace LDAPCP.Tests
         [NonParallelizable]
         public void TestDynamicTokens(string inputValue)
         {
-            // Even with NonParallelizable set, it seems that the method can run multiple times simultaneously, so lock is required
+            // With NonParallelizable set, this method is not called in parallel with other methods, but it seems it can still be called multiple times simultaneously, so lock is required due to the multiple config changes
             lock (LockUpdateDynamicTokensConfig)
             {
                 string domainNetbios = "contoso";
