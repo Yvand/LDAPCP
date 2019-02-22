@@ -4,7 +4,6 @@ using Microsoft.SharePoint.Administration.Claims;
 using Microsoft.SharePoint.Utilities;
 using Microsoft.SharePoint.WebControls;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
@@ -620,7 +619,7 @@ namespace ldapcp
             foreach (LDAPConnection ldapServer in this.CurrentConfiguration.LDAPConnectionsProp)
             {
                 ldapServers.Add(ldapServer.CopyPersistedProperties());
-            }            
+            }
 
             BuildLDAPFilter(currentContext, ldapServers);
             bool resultsfound = false;
@@ -1239,8 +1238,10 @@ namespace ldapcp
             List<SPClaim> groups = new List<SPClaim>();
             if (groupsCTConfig == null || groupsCTConfig.Count() == 0) return groups;
             SetLDAPConnection(currentContext, ldapConnection);
+            string ldapFilter = string.Format("(&(ObjectClass={0}) ({1}={2}){3})", IdentityClaimTypeConfig.LDAPClass, IdentityClaimTypeConfig.LDAPAttribute, currentContext.IncomingEntity.Value, IdentityClaimTypeConfig.AdditionalLDAPFilter);
             string loggMessage = $"[{ProviderInternalName}] Getting LDAP groups of user {currentContext.IncomingEntity.Value} in \"{ldapConnection.Directory.Path}\" with AuthenticationType \"{ldapConnection.Directory.AuthenticationType}\" and authenticating ";
-            loggMessage += String.IsNullOrWhiteSpace(ldapConnection.Directory.Username) ? "as process identity" : $"with credentials \"{ldapConnection.Directory.Username}\"";
+            loggMessage += String.IsNullOrWhiteSpace(ldapConnection.Directory.Username) ? "as process identity. " : $"with credentials \"{ldapConnection.Directory.Username}\". ";
+            loggMessage += $"LDAP filter used: \"{ldapFilter}\"";
             ClaimsProviderLogging.Log(loggMessage, TraceSeverity.Verbose, EventSeverity.Information, TraceCategory.Augmentation);
             using (new SPMonitoredScope(loggMessage, 2000))
             {
@@ -1253,7 +1254,7 @@ namespace ldapcp
                     using (DirectorySearcher searcher = new DirectorySearcher(ldapConnection.Directory))
                     {
                         searcher.ClientTimeout = new TimeSpan(0, 0, this.CurrentConfiguration.LDAPQueryTimeout); // Set the timeout of the query
-                        searcher.Filter = string.Format("(&(ObjectClass={0})({1}={2}){3})", IdentityClaimTypeConfig.LDAPClass, IdentityClaimTypeConfig.LDAPAttribute, currentContext.IncomingEntity.Value, IdentityClaimTypeConfig.AdditionalLDAPFilter);
+                        searcher.Filter = ldapFilter;
                         searcher.PropertiesToLoad.Add("memberOf");
                         searcher.PropertiesToLoad.Add("uniquememberof");
                         foreach (ClaimTypeConfig groupCTConfig in groupsCTConfig)
@@ -1323,12 +1324,12 @@ namespace ldapcp
                             }
                         }
                     }
-                    ClaimsProviderLogging.Log($"[{ProviderInternalName}] Got {groups.Count} group(s) for {currentContext.IncomingEntity.Value} in {stopWatch.ElapsedMilliseconds.ToString()} ms from LDAP server \"{ldapConnection.Directory.Path}\"",
+                    ClaimsProviderLogging.Log($"[{ProviderInternalName}] Got {groups.Count} group(s) for {currentContext.IncomingEntity.Value} in {stopWatch.ElapsedMilliseconds.ToString()} ms from LDAP server \"{ldapConnection.Directory.Path}\" with LDAP filter \"{ldapFilter}\".",
                         TraceSeverity.Medium, EventSeverity.Information, TraceCategory.Augmentation);
                 }
                 catch (Exception ex)
                 {
-                    ClaimsProviderLogging.LogException(ProviderInternalName, $"while getting LDAP groups of {currentContext.IncomingEntity.Value} in {ldapConnection.Path}.", TraceCategory.Augmentation, ex);
+                    ClaimsProviderLogging.LogException(ProviderInternalName, $"while getting LDAP groups of {currentContext.IncomingEntity.Value} in {ldapConnection.Path} with LDAP filter \"{ldapFilter}\".", TraceCategory.Augmentation, ex);
                 }
                 finally
                 {
@@ -1687,12 +1688,12 @@ namespace ldapcp
         {
         }
 
-        public override string Name { get { return ProviderInternalName; } }
-        public override bool SupportsEntityInformation { get { return true; } }
-        public override bool SupportsHierarchy { get { return true; } }
-        public override bool SupportsResolve { get { return true; } }
-        public override bool SupportsSearch { get { return true; } }
-        public override bool SupportsUserKey { get { return true; } }
+        public override string Name => ProviderInternalName;
+        public override bool SupportsEntityInformation => true;
+        public override bool SupportsHierarchy => true;
+        public override bool SupportsResolve => true;
+        public override bool SupportsSearch => true;
+        public override bool SupportsUserKey => true;
 
         /// <summary>
         /// Return the identity claim type
