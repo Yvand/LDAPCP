@@ -12,6 +12,7 @@
 * Improve tests
 * Use Azure DevOps to build LDAPCP
 * Cache result returned by FileVersionInfo.GetVersionInfo() to avoid potential hangs
+* Add property AzureCPConfig.MaxSearchResultsCount to set max number of results returned to SharePoint during a search
 * Update NuGet package NUnit to v3.11
 * Update NuGet package NUnit3TestAdapter to v3.13
 * Update NuGet package CsvTools to v1.0.12
