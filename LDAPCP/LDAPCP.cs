@@ -444,8 +444,7 @@ namespace ldapcp
                 this.Lock_Config.EnterReadLock();
                 try
                 {
-                    int maxCount = 30;  // SharePoint sets maxCount to 30 in method FillSearch
-                    OperationContext currentContext = new OperationContext(CurrentConfiguration, OperationType.Search, ProcessedClaimTypesList, resolveInput, null, context, entityTypes, null, maxCount);
+                    OperationContext currentContext = new OperationContext(CurrentConfiguration, OperationType.Search, ProcessedClaimTypesList, resolveInput, null, context, entityTypes, null, CurrentConfiguration.MaxSearchResultsCount);
                     List<PickerEntity> entities = SearchOrValidate(currentContext);
                     FillEntities(context, entityTypes, resolveInput, ref entities);
                     if (entities == null || entities.Count == 0) return;

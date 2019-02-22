@@ -33,6 +33,7 @@ namespace ldapcp
         string MainGroupClaimType { get; set; }
         string EntityDisplayTextPrefix { get; set; }
         string CustomData { get; set; }
+        int MaxSearchResultsCount { get; set; }
     }
 
     public class ClaimsProviderConstants
@@ -276,6 +277,17 @@ namespace ldapcp
         [Persisted]
         private string _CustomData;
 
+        /// <summary>
+        /// Limit number of results returned to SharePoint during a search
+        /// </summary>
+        public int MaxSearchResultsCount
+        {
+            get => _MaxSearchResultsCount;
+            set => _MaxSearchResultsCount = value;
+        }
+        [Persisted]
+        private int _MaxSearchResultsCount = 30; // SharePoint sets maxCount to 30 in method FillSearch
+
         public LDAPCPConfig(string persistedObjectName, SPPersistedObject parent, string spTrustName) : base(persistedObjectName, parent)
         {
             this.SPTrustName = spTrustName;
@@ -401,6 +413,7 @@ namespace ldapcp
             this.MainGroupClaimType = configToApply.MainGroupClaimType;
             this.EntityDisplayTextPrefix = configToApply.EntityDisplayTextPrefix;
             this.CustomData = configToApply.CustomData;
+            this.MaxSearchResultsCount = configToApply.MaxSearchResultsCount;
         }
 
         public LDAPCPConfig CopyPersistedProperties()
@@ -430,6 +443,7 @@ namespace ldapcp
             copy.MainGroupClaimType = this.MainGroupClaimType;
             copy.EntityDisplayTextPrefix = this.EntityDisplayTextPrefix;
             copy.CustomData = this.CustomData;
+            copy.MaxSearchResultsCount = this.MaxSearchResultsCount;
             return copy;
         }
 
