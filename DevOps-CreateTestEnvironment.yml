@@ -1,0 +1,23 @@
+resources:
+- repo: self
+
+jobs:
+- job: CreateTestEnvironment
+  displayName: Create test environment
+  timeoutInMinutes: 90
+  pool:
+    name: Hosted VS2017
+  steps:
+  - checkout: none #skip checking out the default repository resource
+  - task: ms-azuredevtestlabs.tasks.azure-dtl-task-createEnvironment.AzureDevTestLabsCreateEnvironment@1
+    displayName: 'Create Azure DevTest Labs Environment'
+    inputs:
+      ConnectedServiceName: '$(Test.AzureConnectionName)'
+      LabId: '/subscriptions/$(Test.AzureSubscriptionId)/resourceGroups/$(Test.DevTestLabsName)/providers/Microsoft.DevTestLab/labs/$(Test.DevTestLabsName)'
+      RepositoryId: '/subscriptions/$(Test.AzureSubscriptionId)/resourcegroups/$(Test.DevTestLabsName)/providers/microsoft.devtestlab/labs/$(Test.DevTestLabsName)/artifactsources/$(Test.DevTestLabsRepoID)'
+      TemplateId: '/subscriptions/$(Test.AzureSubscriptionId)/resourceGroups/$(Test.DevTestLabsName)/providers/Microsoft.DevTestLab/labs/$(Test.DevTestLabsName)/artifactSources/$(Test.DevTestLabsRepoID)/armTemplates/SharePoint-ADFS-DevTestLabs'
+      EnvironmentName: 'IntegrationTests'
+      ParameterOverrides: "-location 'west europe' -provisionSharePoint2013 '$(Test.ProvisionSharePoint2013)' -provisionSharePoint2016 '$(Test.ProvisionSharePoint2016)' -provisionSharePoint2019 '$(Test.ProvisionSharePoint2019)' -enableHybridBenefitServerLicenses 'Yes' -adminUserName '$(Test.AdminUserName)' -adminPassword '$(Test.AdminPassword)' -serviceAccountsPassword '$(Test.ServiceAccountsPassword)'"
+      TemplateOutputVariables: true
+      ExportEnvironmentTemplate: true
+    timeoutInMinutes: 90
