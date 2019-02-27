@@ -423,7 +423,7 @@ namespace ldapcp
             copy.LDAPConnectionsProp = new List<LDAPConnection>();
             foreach (LDAPConnection currentCoco in this.LDAPConnectionsProp)
             {
-                copy.LDAPConnectionsProp.Add(currentCoco.CopyPersistedProperties());
+                copy.LDAPConnectionsProp.Add(currentCoco.CopyPublicProperties());
             }
             copy.ClaimTypes = new ClaimTypeConfigCollection();
             foreach (ClaimTypeConfig currentObject in this.ClaimTypes)
@@ -763,12 +763,14 @@ namespace ldapcp
         public DirectoryEntry Directory;
 
         public string Filter;
+        public string DomainName;
+        public string DomainFQDN;
 
         public LDAPConnection()
         {
         }
 
-        internal LDAPConnection CopyPersistedProperties()
+        internal LDAPConnection CopyPublicProperties()
         {
             return new LDAPConnection()
             {
@@ -782,6 +784,10 @@ namespace ldapcp
                 AugmentationEnabled = this.AugmentationEnabled,
                 GetGroupMembershipAsADDomain = this.GetGroupMembershipAsADDomain,
                 GroupMembershipAttributes = this.GroupMembershipAttributes,
+                Directory = this.Directory,
+                Filter = this.Filter,
+                DomainName = this.DomainName,
+                DomainFQDN = this.DomainFQDN,
             };
         }
     }
@@ -1008,6 +1014,12 @@ namespace ldapcp
             return (stop > -1) ? value.Substring(0, stop) : string.Empty;
         }
 
+        /// <summary>
+        /// Extract domain name information from the distinguishedName supplied
+        /// </summary>
+        /// <param name="distinguishedName">distinguishedName to use to extract domain name information</param>
+        /// <param name="domainName">Domain name</param>
+        /// <param name="domainFQDN">Fully qualified domain name</param>
         public static void GetDomainInformation(string distinguishedName, out string domainName, out string domainFQDN)
         {
             // Retrieve FQDN and domain name of current DirectoryEntry
@@ -1029,10 +1041,17 @@ namespace ldapcp
             }
         }
 
+        /// <summary>
+        /// Query LDAP server to retrieve domain name information
+        /// </summary>
+        /// <param name="directory">LDAP Server to query</param>
+        /// <param name="domainName">Domain name</param>
+        /// <param name="domainFQDN">Fully qualified domain name</param>
         public static void GetDomainInformation(DirectoryEntry directory, out string domainName, out string domainFQDN)
         {
             string distinguishedName = String.Empty;
             domainName = domainFQDN = String.Empty;
+            // Method PropertyCollection.Contains("distinguishedName") does a LDAP bind behind the scene
             if (directory.Properties.Contains("distinguishedName"))
             {
                 distinguishedName = directory.Properties["distinguishedName"].Value.ToString();

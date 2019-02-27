@@ -13,6 +13,8 @@
 * Use Azure DevOps to build LDAPCP
 * Cache result returned by FileVersionInfo.GetVersionInfo() to avoid potential hangs
 * Add property AzureCPConfig.MaxSearchResultsCount to set max number of results returned to SharePoint during a search
+* Cache domain name and domain FQDN of each LDAP Connection, to avoid repetitive and potentially slow queries to LDAP servers
+* Deprecate method LDAPCP.SetLDAPConnection called each time a LDAP operation is about to occur. Instead, added a separate method LDAPCP.SetLDAPConnection, called only during initialization of the configuration. Domain name and domain FQDN are retrieved at this time.
 * Update NuGet package NUnit to v3.11
 * Update NuGet package NUnit3TestAdapter to v3.13
 * Update NuGet package CsvTools to v1.0.12

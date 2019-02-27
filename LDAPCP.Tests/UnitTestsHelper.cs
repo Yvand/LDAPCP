@@ -49,7 +49,8 @@ public class UnitTestsHelper
     public static void InitializeSiteCollection()
     {
 #if DEBUG
-        //return; // Uncommented when debugging LDAPCP code from unit tests
+        TestSiteCollUri = new Uri("http://spsites/sites/" + TestContext.Parameters["TestSiteCollectionName"]);
+        return; // Uncommented when debugging LDAPCP code from unit tests
 #endif
 
         logFileListener = new TextWriterTraceListener(TestContext.Parameters["TestLogFileName"]);

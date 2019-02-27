@@ -187,6 +187,12 @@ namespace ldapcp
                         ClaimsProviderLogging.Log($"[{ProviderInternalName}] List if claim types was set to null in method SetCustomConfiguration for configuration '{PersistedObjectName}'.", TraceSeverity.Unexpected, EventSeverity.Error, TraceCategory.Core);
                         return false;
                     }
+
+                    foreach (LDAPConnection connection in this.CurrentConfiguration.LDAPConnectionsProp)
+                    {
+                        SetLDAPConnection(context, connection);
+                    }
+
                     success = InitializeClaimTypeConfigList(this.CurrentConfiguration.ClaimTypes);
                 }
                 catch (Exception ex)
@@ -618,7 +624,7 @@ namespace ldapcp
             List<LDAPConnection> ldapServers = new List<LDAPConnection>(this.CurrentConfiguration.LDAPConnectionsProp.Count);
             foreach (LDAPConnection ldapServer in this.CurrentConfiguration.LDAPConnectionsProp)
             {
-                ldapServers.Add(ldapServer.CopyPersistedProperties());
+                ldapServers.Add(ldapServer.CopyPublicProperties());
             }
 
             BuildLDAPFilter(currentContext, ldapServers);
@@ -850,8 +856,11 @@ namespace ldapcp
 
             Parallel.ForEach(ldapServers.Where(x => !String.IsNullOrEmpty(x.Filter)), ldapConnection =>
             {
-                //Debug.WriteLine($"ldapConnection: Path: {ldapConnection.Path}, UserServerDirectoryEntry: {ldapConnection.UserServerDirectoryEntry}");
+                Debug.WriteLine($"ldapConnection: Path: {ldapConnection.Path}, UserServerDirectoryEntry: {ldapConnection.UserServerDirectoryEntry}");
+                ClaimsProviderLogging.LogDebug($"ldapConnection: Path: {ldapConnection.Path}, UserServerDirectoryEntry: {ldapConnection.UserServerDirectoryEntry}");
+#pragma warning disable CS0618 // Type or member is obsolete
                 SetLDAPConnection(currentContext, ldapConnection);
+#pragma warning restore CS0618 // Type or member is obsolete
                 DirectoryEntry directory = ldapConnection.Directory;
                 using (DirectorySearcher ds = new DirectorySearcher(ldapConnection.Filter))
                 {
@@ -889,16 +898,13 @@ namespace ldapcp
                                     ClaimsProviderLogging.Log($"[{ProviderInternalName}] Got {directoryResults.Count.ToString()} result(s) in {stopWatch.ElapsedMilliseconds.ToString()}ms from '{directory.Path}' with filter '{ds.Filter}'", TraceSeverity.Medium, EventSeverity.Information, TraceCategory.LDAP_Lookup);
                                     lock (lockResults)
                                     {
-                                        // Retrieve FQDN and domain name of current DirectoryEntry
-                                        string domainName, domainFQDN = String.Empty;
-                                        OperationContext.GetDomainInformation(directory, out domainName, out domainFQDN);
                                         foreach (SearchResult item in directoryResults)
                                         {
                                             results.Add(new LDAPSearchResult()
                                             {
                                                 SearchResult = item,
-                                                DomainName = domainName,
-                                                DomainFQDN = domainFQDN,
+                                                DomainName = ldapConnection.DomainName,
+                                                DomainFQDN = ldapConnection.DomainFQDN,
                                             });
                                         }
                                     }
@@ -907,7 +913,7 @@ namespace ldapcp
                         }
                         catch (Exception ex)
                         {
-                            ClaimsProviderLogging.LogException(ProviderInternalName, "during connection to LDAP server " + directory.Path, TraceCategory.LDAP_Lookup, ex);
+                            ClaimsProviderLogging.LogException(ProviderInternalName, "while connecting to LDAP server " + directory.Path, TraceCategory.LDAP_Lookup, ex);
                         }
                         finally
                         {
@@ -924,11 +930,11 @@ namespace ldapcp
         }
 
         /// <summary>
-        /// Override this method to set LDAP connections
+        /// Override this method to configure LDAPConnection passed in parameter
         /// </summary>
-        /// <param name="currentContext">Information about current context and operation</param>
-        /// <returns>Array of LDAP servers to query</returns>
-        protected virtual void SetLDAPConnection(OperationContext currentContext, LDAPConnection ldapConnection)
+        /// <param name="currentContext">Uri for which current operation applies</param>
+        /// <param name="ldapConnection">LDAPConnection to configure</param>
+        protected virtual void SetLDAPConnection(Uri currentContext, LDAPConnection ldapConnection)
         {
             if (!ldapConnection.UserServerDirectoryEntry)
             {
@@ -938,6 +944,36 @@ namespace ldapcp
             {
                 ldapConnection.Directory = Domain.GetComputerDomain().GetDirectoryEntry();
             }
+
+            // Getting domain names information queries LDAP and may be slow, so they are retrieved once and cached
+            if (String.IsNullOrEmpty(ldapConnection.DomainName))
+            {
+                ClaimsProviderLogging.LogDebug($"Getting domain names information for LDAP connection {ldapConnection.Directory.Path}.");
+                // Retrieve FQDN and domain name of current DirectoryEntry
+                string domainName = String.Empty;
+                string domainFQDN = String.Empty;
+                try
+                {
+                    // It may fail if for some reason LDAP server cannot be reached                    
+                    OperationContext.GetDomainInformation(ldapConnection.Directory, out domainName, out domainFQDN);
+                }
+                catch (Exception ex)
+                {
+                    ClaimsProviderLogging.LogException(ProviderInternalName, $"while getting domain names information for LDAP connection {ldapConnection.Directory.Path}", TraceCategory.Configuration, ex);
+                }
+                ldapConnection.DomainName = domainName;
+                ldapConnection.DomainFQDN = domainFQDN;
+            }
+        }
+
+        /// <summary>
+        /// Override this method to configure LDAPConnection passed in parameter
+        /// </summary>
+        /// <param name="currentContext">Information about current context and operation</param>
+        /// <param name="ldapConnection">LDAPConnection to configure</param>
+        [Obsolete("SetLDAPConnection is deprecated, please override the other definition of SetLDAPConnection instead.")]
+        protected virtual void SetLDAPConnection(OperationContext currentContext, LDAPConnection ldapConnection)
+        {
         }
 
         protected override void FillClaimTypes(List<string> claimTypes)
@@ -1066,7 +1102,7 @@ namespace ldapcp
                     List<LDAPConnection> ldapServers = new List<LDAPConnection>(this.CurrentConfiguration.LDAPConnectionsProp.Count);
                     foreach (LDAPConnection ldapServer in this.CurrentConfiguration.LDAPConnectionsProp.Where(x => x.AugmentationEnabled))
                     {
-                        ldapServers.Add(ldapServer.CopyPersistedProperties());
+                        ldapServers.Add(ldapServer.CopyPublicProperties());
                     }
 
                     Parallel.ForEach(ldapServers, ldapConnection =>
@@ -1237,7 +1273,9 @@ namespace ldapcp
         {
             List<SPClaim> groups = new List<SPClaim>();
             if (groupsCTConfig == null || groupsCTConfig.Count() == 0) return groups;
+#pragma warning disable CS0618 // Type or member is obsolete
             SetLDAPConnection(currentContext, ldapConnection);
+#pragma warning restore CS0618 // Type or member is obsolete
             string ldapFilter = string.Format("(&(ObjectClass={0}) ({1}={2}){3})", IdentityClaimTypeConfig.LDAPClass, IdentityClaimTypeConfig.LDAPAttribute, currentContext.IncomingEntity.Value, IdentityClaimTypeConfig.AdditionalLDAPFilter);
             string loggMessage = $"[{ProviderInternalName}] Getting LDAP groups of user {currentContext.IncomingEntity.Value} in \"{ldapConnection.Directory.Path}\" with AuthenticationType \"{ldapConnection.Directory.AuthenticationType}\" and authenticating ";
             loggMessage += String.IsNullOrWhiteSpace(ldapConnection.Directory.Username) ? "as process identity. " : $"with credentials \"{ldapConnection.Directory.Username}\". ";
@@ -1247,10 +1285,7 @@ namespace ldapcp
             {
                 try
                 {
-                    string directoryDomainName, directoryDomainFqdn;
-                    OperationContext.GetDomainInformation(ldapConnection.Directory, out directoryDomainName, out directoryDomainFqdn);
                     Stopwatch stopWatch = new Stopwatch();
-
                     using (DirectorySearcher searcher = new DirectorySearcher(ldapConnection.Directory))
                     {
                         searcher.ClientTimeout = new TimeSpan(0, 0, this.CurrentConfiguration.LDAPQueryTimeout); // Set the timeout of the query
