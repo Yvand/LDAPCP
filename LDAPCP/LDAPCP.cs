@@ -484,7 +484,7 @@ namespace ldapcp
                 this.Lock_Config.EnterReadLock();
                 try
                 {
-                    OperationContext currentContext = new OperationContext(CurrentConfiguration, OperationType.Search, ProcessedClaimTypesList, searchPattern, null, context, entityTypes, hierarchyNodeID, maxCount);
+                    OperationContext currentContext = new OperationContext(CurrentConfiguration, OperationType.Search, ProcessedClaimTypesList, searchPattern, null, context, entityTypes, hierarchyNodeID, CurrentConfiguration.MaxSearchResultsCount);
                     List<PickerEntity> entities = SearchOrValidate(currentContext);
                     FillEntities(context, entityTypes, searchPattern, ref entities);
                     if (entities == null || entities.Count == 0) return;
