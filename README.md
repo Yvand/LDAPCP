@@ -1,6 +1,6 @@
 # LDAPCP for SharePoint 2019 / 2016 / 2013
 
-## Dev branch
+## Branch "dev"
 
 [![Build Status](https://dev.azure.com/YvanDev/LDAPCP/_apis/build/status/CI-Compile-Tag?branchName=dev)](https://dev.azure.com/YvanDev/LDAPCP/_build/latest?definitionId=2&branchName=dev)
 
@@ -12,7 +12,7 @@
 ## Latest pre-release
 ![GitHub (Pre-)Release Date](https://img.shields.io/github/release-date-pre/Yvand/LDAPCP.svg)
 
-## Other information
+## Miscellaneous
 ![GitHub issues](https://img.shields.io/github/issues/Yvand/LDAPCP.svg)
 ![GitHub](https://img.shields.io/github/license/Yvand/LDAPCP.svg) 
 ![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/Yvand/LDAPCP.svg)
