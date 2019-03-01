@@ -18,5 +18,3 @@
 ![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/Yvand/LDAPCP.svg)
 
 ## Please visit [ldapcp.com](http://ldapcp.com) to download LDAPCP and find documentation.
-
-![People picker with LDAPCP](https://cloud.githubusercontent.com/assets/8788631/25440961/3b8db40a-2aa1-11e7-9070-aee808950f38.PNG)
