@@ -9,10 +9,12 @@
 ## Latest stable release
 
 ![GitHub Release Date](https://img.shields.io/github/release-date/Yvand/LDAPCP.svg)
+![GitHub release](https://img.shields.io/github/release/Yvand/LDAPCP.svg)
 ![Latest release downloads](https://img.shields.io/github/downloads/Yvand/LDAPCP/latest/total.svg)
 
 ## Latest pre-release
 ![GitHub (Pre-)Release Date](https://img.shields.io/github/release-date-pre/Yvand/LDAPCP.svg)
+![GitHub release](https://img.shields.io/github/release-pre/Yvand/LDAPCP.svg)
 
 ## Miscellaneous
 ![GitHub issues](https://img.shields.io/github/issues/Yvand/LDAPCP.svg)
