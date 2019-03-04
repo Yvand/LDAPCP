@@ -16,7 +16,7 @@ jobs:
       LabId: '/subscriptions/$(Test.AzureSubscriptionId)/resourceGroups/$(Test.DevTestLabsName)/providers/Microsoft.DevTestLab/labs/$(Test.DevTestLabsName)'
       RepositoryId: '/subscriptions/$(Test.AzureSubscriptionId)/resourcegroups/$(Test.DevTestLabsName)/providers/microsoft.devtestlab/labs/$(Test.DevTestLabsName)/artifactsources/$(Test.DevTestLabsRepoID)'
       TemplateId: '/subscriptions/$(Test.AzureSubscriptionId)/resourceGroups/$(Test.DevTestLabsName)/providers/Microsoft.DevTestLab/labs/$(Test.DevTestLabsName)/artifactSources/$(Test.DevTestLabsRepoID)/armTemplates/SharePoint-ADFS-DevTestLabs'
-      EnvironmentName: 'Tests-$(system.teamProject)-$(Build.BuildNumber)'
+      EnvironmentName: 'Tests-$(system.teamProject)'
       ParameterOverrides: "-location 'west europe' -provisionSharePoint2013 '$(Test.ProvisionSharePoint2013)' -provisionSharePoint2016 '$(Test.ProvisionSharePoint2016)' -provisionSharePoint2019 '$(Test.ProvisionSharePoint2019)' -enableHybridBenefitServerLicenses 'Yes' -adminUserName '$(Test.AdminUserName)' -adminPassword '$(Test.AdminPassword)' -serviceAccountsPassword '$(Test.ServiceAccountsPassword)'"
       TemplateOutputVariables: true
       ExportEnvironmentTemplate: true

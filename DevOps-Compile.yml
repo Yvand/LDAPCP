@@ -2,9 +2,7 @@ name: $(BuildVersion).$(date:yyyyMMdd).$(Build.BuildId)
 resources:
 - repo: self
 variables:
-  BuildPlatform: '$(BuildPlatform)'
   SolutionFileName: '$(system.teamProject).sln'
-  ProductDescription: '$(ProductDescription)'
 jobs:
 - job: Compile
   strategy:
