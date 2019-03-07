@@ -1174,8 +1174,6 @@ namespace ldapcp
             ClaimsProviderLogging.Log(loggingMessage, TraceSeverity.Verbose, EventSeverity.Information, TraceCategory.Augmentation);
             using (new SPMonitoredScope(loggingMessage, 2000))
             {
-                string directoryDomainName, directoryDomainFqdn;
-                OperationContext.GetDomainInformation(path, out directoryDomainName, out directoryDomainFqdn);
                 Stopwatch stopWatch = new Stopwatch();
                 stopWatch.Start();
                 UserPrincipal adUser = null;
@@ -1192,51 +1190,69 @@ namespace ldapcp
 
                 try
                 {
-                    // Constructor of PrincipalContext does connect to LDAP server and may throw an exception if it fails, so it should be in try/catch
-                    if (ldapConnection.UserServerDirectoryEntry)
+                    using (new SPMonitoredScope($"[{ProviderInternalName}] Getting AD Principal for user {currentContext.IncomingEntity.Value} from Active Directory server \"{path}\"", 2000))
                     {
-                        principalContext = new PrincipalContext(ContextType.Domain, directoryDomainFqdn, null, contextOptions);
-                    }
-                    else
-                    {
-                        principalContext = new PrincipalContext(ContextType.Domain, directoryDomainFqdn, null, contextOptions, ldapConnection.Username, ldapConnection.Password);
-                    }
-
-                    // https://github.com/Yvand/LDAPCP/issues/22: UserPrincipal.FindByIdentity() doesn't support emails, so if IncomingEntity is an email, user needs to be retrieved in a different way
-                    if (String.Equals(currentContext.IncomingEntity.ClaimType, WIF4_5.ClaimTypes.Email, StringComparison.InvariantCultureIgnoreCase))
-                    {
-                        using (UserPrincipal userEmailPrincipal = new UserPrincipal(principalContext) { Enabled = true, EmailAddress = currentContext.IncomingEntity.Value })
+                        // Constructor of PrincipalContext does connect to LDAP server and may throw an exception if it fails, so it should be in try/catch
+                        if (ldapConnection.UserServerDirectoryEntry)
                         {
-                            using (PrincipalSearcher userEmailSearcher = new PrincipalSearcher(userEmailPrincipal))
+                            principalContext = new PrincipalContext(ContextType.Domain, ldapConnection.DomainFQDN, null, contextOptions);
+                        }
+                        else
+                        {
+                            principalContext = new PrincipalContext(ContextType.Domain, ldapConnection.DomainFQDN, null, contextOptions, ldapConnection.Username, ldapConnection.Password);
+                        }
+
+                        // https://github.com/Yvand/LDAPCP/issues/22: UserPrincipal.FindByIdentity() doesn't support emails, so if IncomingEntity is an email, user needs to be retrieved in a different way
+                        if (String.Equals(currentContext.IncomingEntity.ClaimType, WIF4_5.ClaimTypes.Email, StringComparison.InvariantCultureIgnoreCase))
+                        {
+                            using (UserPrincipal userEmailPrincipal = new UserPrincipal(principalContext) { Enabled = true, EmailAddress = currentContext.IncomingEntity.Value })
                             {
-                                adUser = userEmailSearcher.FindOne() as UserPrincipal;
+                                using (PrincipalSearcher userEmailSearcher = new PrincipalSearcher(userEmailPrincipal))
+                                {
+                                    adUser = userEmailSearcher.FindOne() as UserPrincipal;
+                                }
                             }
                         }
+                        else
+                        {
+                            adUser = UserPrincipal.FindByIdentity(principalContext, currentContext.IncomingEntity.Value);
+                        }
                     }
-                    else adUser = UserPrincipal.FindByIdentity(principalContext, currentContext.IncomingEntity.Value);
 
-                    if (adUser == null) return groups;
-
-                    // https://docs.microsoft.com/en-us/dotnet/api/system.directoryservices.accountmanagement.userprincipal.getauthorizationgroups?view=netframework-4.7.1#System_DirectoryServices_AccountManagement_UserPrincipal_GetAuthorizationGroups
-                    // UserPrincipal.GetAuthorizationGroups() only returns groups that are security groups; distribution groups are not returned.
-                    // UserPrincipal.GetAuthorizationGroups() searches all groups recursively and returns the groups in which the user is a member. The returned set may also include additional groups that system would consider the user a member of for authorization purposes.
-                    IEnumerable<Principal> ADGroups = adUser.GetAuthorizationGroups().Where(x => !String.IsNullOrEmpty(x.DistinguishedName));
-                    stopWatch.Stop();
-
-                    foreach (Principal group in ADGroups)
+                    if (adUser == null)
                     {
-                        string groupDomainName, groupDomainFqdn;
-                        OperationContext.GetDomainInformation(group.DistinguishedName, out groupDomainName, out groupDomainFqdn);
-                        string claimValue = group.Name;
-                        if (!String.IsNullOrEmpty(groupCTConfig.ClaimValuePrefix) && groupCTConfig.ClaimValuePrefix.Contains(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINNAME))
-                            claimValue = groupCTConfig.ClaimValuePrefix.Replace(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINNAME, groupDomainName) + group.Name;
-                        else if (!String.IsNullOrEmpty(groupCTConfig.ClaimValuePrefix) && groupCTConfig.ClaimValuePrefix.Contains(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINFQDN))
-                            claimValue = groupCTConfig.ClaimValuePrefix.Replace(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINFQDN, groupDomainFqdn) + group.Name;
-                        SPClaim claim = CreateClaim(groupCTConfig.ClaimType, claimValue, groupCTConfig.ClaimValueType, false);
-                        groups.Add(claim);
+                        stopWatch.Stop();
+                        return groups;
                     }
 
-                    ClaimsProviderLogging.Log($"[{ProviderInternalName}] Got {groups.Count} group(s) for {currentContext.IncomingEntity.Value} in {stopWatch.ElapsedMilliseconds.ToString()} ms from Active Directory server \"{path}\"",
+                    IEnumerable<Principal> adGroups;
+                    using (new SPMonitoredScope($"[{ProviderInternalName}] Getting AD groups for {currentContext.IncomingEntity.Value} from Active Directory server \"{path}\"", 2000))
+                    {
+                        adGroups = adUser.GetAuthorizationGroups().Where(x => !String.IsNullOrEmpty(x.DistinguishedName));
+                    }
+
+                    using (new SPMonitoredScope($"[{ProviderInternalName}] Processing AD groups for {currentContext.IncomingEntity.Value} from Active Directory server \"{path}\"", 2000))
+                    {
+                        // https://docs.microsoft.com/en-us/dotnet/api/system.directoryservices.accountmanagement.userprincipal.getauthorizationgroups?view=netframework-4.7.1#System_DirectoryServices_AccountManagement_UserPrincipal_GetAuthorizationGroups
+                        // UserPrincipal.GetAuthorizationGroups() only returns groups that are security groups; distribution groups are not returned.
+                        // UserPrincipal.GetAuthorizationGroups() searches all groups recursively and returns the groups in which the user is a member. The returned set may also include additional groups that system would consider the user a member of for authorization purposes.
+                        foreach (Principal adGroup in adGroups)
+                        {
+                            string groupDomainName, groupDomainFqdn;
+                            // Call to getter of property Principal.DistinguishedName triggers a LDAP bind and may slow down the whole augmentation process
+                            OperationContext.GetDomainInformation(adGroup.DistinguishedName, out groupDomainName, out groupDomainFqdn);
+                            string claimValue = adGroup.Name;
+                            if (!String.IsNullOrEmpty(groupCTConfig.ClaimValuePrefix) && groupCTConfig.ClaimValuePrefix.Contains(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINNAME))
+                                claimValue = groupCTConfig.ClaimValuePrefix.Replace(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINNAME, groupDomainName) + adGroup.Name;
+                            else if (!String.IsNullOrEmpty(groupCTConfig.ClaimValuePrefix) && groupCTConfig.ClaimValuePrefix.Contains(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINFQDN))
+                                claimValue = groupCTConfig.ClaimValuePrefix.Replace(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINFQDN, groupDomainFqdn) + adGroup.Name;
+                            SPClaim claim = CreateClaim(groupCTConfig.ClaimType, claimValue, groupCTConfig.ClaimValueType, false);
+                            groups.Add(claim);
+                        }
+                    }
+
+                    stopWatch.Stop();
+                    ClaimsProviderLogging.Log($"[{ProviderInternalName}] Got {groups.Count} group(s) for {currentContext.IncomingEntity.Value} in {stopWatch.ElapsedMilliseconds.ToString()} ms from Active Directory server \"{path}\".",
                         TraceSeverity.Medium, EventSeverity.Information, TraceCategory.Augmentation);
                 }
                 catch (PrincipalOperationException ex)
@@ -1286,78 +1302,87 @@ namespace ldapcp
                 try
                 {
                     Stopwatch stopWatch = new Stopwatch();
+                    stopWatch.Start();
                     using (DirectorySearcher searcher = new DirectorySearcher(ldapConnection.Directory))
                     {
                         searcher.ClientTimeout = new TimeSpan(0, 0, this.CurrentConfiguration.LDAPQueryTimeout); // Set the timeout of the query
                         searcher.Filter = ldapFilter;
-                        searcher.PropertiesToLoad.Add("memberOf");
-                        searcher.PropertiesToLoad.Add("uniquememberof");
+                        foreach (string memberOfPropertyName in ldapConnection.GroupMembershipAttributes)
+                        {
+                            searcher.PropertiesToLoad.Add(memberOfPropertyName);
+                        }
                         foreach (ClaimTypeConfig groupCTConfig in groupsCTConfig)
                         {
                             searcher.PropertiesToLoad.Add(groupCTConfig.LDAPAttribute);
                         }
 
-                        stopWatch.Start();
-                        SearchResult result = searcher.FindOne();
-                        stopWatch.Stop();
+                        SearchResult result;
+                        using (new SPMonitoredScope($"[{ProviderInternalName}] Doing LDAP query to get group(s) for {currentContext.IncomingEntity.Value} from LDAP server \"{ldapConnection.Directory.Path}\" with LDAP filter \"{ldapFilter}\"", 2000))
+                        {
+                            result = searcher.FindOne();
+                        }
 
                         if (result == null) return groups;  // user was not found in this directory
 
-                        foreach (ClaimTypeConfig groupCTConfig in groupsCTConfig)
+                        using (new SPMonitoredScope($"[{ProviderInternalName}] Processing LDAP groups for {currentContext.IncomingEntity.Value}, returned from LDAP server \"{ldapConnection.Directory.Path}\" with LDAP filter \"{ldapFilter}\".", 2000))
                         {
-                            int propertyCount = 0;
-                            ResultPropertyValueCollection groupValues = null;
-                            bool valueIsDistinguishedNameFormat;
-                            if (groupCTConfig.ClaimType == MainGroupClaimTypeConfig.ClaimType)
+                            foreach (ClaimTypeConfig groupCTConfig in groupsCTConfig)
                             {
-                                valueIsDistinguishedNameFormat = true;
-                                foreach (string groupMembershipAttributes in ldapConnection.GroupMembershipAttributes)
+                                int propertyCount = 0;
+                                ResultPropertyValueCollection groupValues = null;
+                                bool valueIsDistinguishedNameFormat;
+                                if (groupCTConfig.ClaimType == MainGroupClaimTypeConfig.ClaimType)
                                 {
-                                    if (result.Properties.Contains(groupMembershipAttributes))
+                                    valueIsDistinguishedNameFormat = true;
+                                    foreach (string groupMembershipAttributes in ldapConnection.GroupMembershipAttributes)
                                     {
-                                        propertyCount = result.Properties[groupMembershipAttributes].Count;
-                                        groupValues = result.Properties[groupMembershipAttributes];
-                                        break;
+                                        if (result.Properties.Contains(groupMembershipAttributes))
+                                        {
+                                            propertyCount = result.Properties[groupMembershipAttributes].Count;
+                                            groupValues = result.Properties[groupMembershipAttributes];
+                                            break;
+                                        }
                                     }
-                                }
-                            }
-                            else
-                            {
-                                valueIsDistinguishedNameFormat = false;
-                                if (result.Properties.Contains(groupCTConfig.LDAPAttribute))
-                                {
-                                    propertyCount = result.Properties[groupCTConfig.LDAPAttribute].Count;
-                                    groupValues = result.Properties[groupCTConfig.LDAPAttribute];
-                                }
-                            }
-
-                            if (groupValues == null) continue;
-                            string value;
-                            for (int propertyCounter = 0; propertyCounter < propertyCount; propertyCounter++)
-                            {
-                                value = groupValues[propertyCounter].ToString();
-                                string claimValue;
-                                if (valueIsDistinguishedNameFormat)
-                                {
-                                    claimValue = OperationContext.GetValueFromDistinguishedName(value);
-                                    if (String.IsNullOrEmpty(claimValue)) continue;
-
-                                    string groupDomainName, groupDomainFqdn;
-                                    OperationContext.GetDomainInformation(value, out groupDomainName, out groupDomainFqdn);
-                                    if (!String.IsNullOrEmpty(groupCTConfig.ClaimValuePrefix) && groupCTConfig.ClaimValuePrefix.Contains(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINNAME))
-                                        claimValue = groupCTConfig.ClaimValuePrefix.Replace(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINNAME, groupDomainName) + claimValue;
-                                    else if (!String.IsNullOrEmpty(groupCTConfig.ClaimValuePrefix) && groupCTConfig.ClaimValuePrefix.Contains(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINFQDN))
-                                        claimValue = groupCTConfig.ClaimValuePrefix.Replace(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINFQDN, groupDomainFqdn) + claimValue;
                                 }
                                 else
                                 {
-                                    claimValue = value;
+                                    valueIsDistinguishedNameFormat = false;
+                                    if (result.Properties.Contains(groupCTConfig.LDAPAttribute))
+                                    {
+                                        propertyCount = result.Properties[groupCTConfig.LDAPAttribute].Count;
+                                        groupValues = result.Properties[groupCTConfig.LDAPAttribute];
+                                    }
                                 }
 
-                                SPClaim claim = CreateClaim(groupCTConfig.ClaimType, claimValue, groupCTConfig.ClaimValueType, false);
-                                groups.Add(claim);
+                                if (groupValues == null) continue;
+                                string value;
+                                for (int propertyCounter = 0; propertyCounter < propertyCount; propertyCounter++)
+                                {
+                                    value = groupValues[propertyCounter].ToString();
+                                    string claimValue;
+                                    if (valueIsDistinguishedNameFormat)
+                                    {
+                                        claimValue = OperationContext.GetValueFromDistinguishedName(value);
+                                        if (String.IsNullOrEmpty(claimValue)) continue;
+
+                                        string groupDomainName, groupDomainFqdn;
+                                        OperationContext.GetDomainInformation(value, out groupDomainName, out groupDomainFqdn);
+                                        if (!String.IsNullOrEmpty(groupCTConfig.ClaimValuePrefix) && groupCTConfig.ClaimValuePrefix.Contains(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINNAME))
+                                            claimValue = groupCTConfig.ClaimValuePrefix.Replace(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINNAME, groupDomainName) + claimValue;
+                                        else if (!String.IsNullOrEmpty(groupCTConfig.ClaimValuePrefix) && groupCTConfig.ClaimValuePrefix.Contains(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINFQDN))
+                                            claimValue = groupCTConfig.ClaimValuePrefix.Replace(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINFQDN, groupDomainFqdn) + claimValue;
+                                    }
+                                    else
+                                    {
+                                        claimValue = value;
+                                    }
+
+                                    SPClaim claim = CreateClaim(groupCTConfig.ClaimType, claimValue, groupCTConfig.ClaimValueType, false);
+                                    groups.Add(claim);
+                                }
                             }
                         }
+                        stopWatch.Stop();
                     }
                     ClaimsProviderLogging.Log($"[{ProviderInternalName}] Got {groups.Count} group(s) for {currentContext.IncomingEntity.Value} in {stopWatch.ElapsedMilliseconds.ToString()} ms from LDAP server \"{ldapConnection.Directory.Path}\" with LDAP filter \"{ldapFilter}\".",
                         TraceSeverity.Medium, EventSeverity.Information, TraceCategory.Augmentation);
