@@ -1169,7 +1169,7 @@ namespace ldapcp
                 path = de.Path;
                 de.Dispose();
             }
-            string loggingMessage = $"[{ProviderInternalName}] Getting AD groups of user {currentContext.IncomingEntity.Value} in \"{path}\" with AuthenticationType \"{ldapConnection.AuthenticationTypes}\" and authenticating ";
+            string loggingMessage = $"[{ProviderInternalName}] Augmentation of user {currentContext.IncomingEntity.Value} in AD server \"{path}\" with AuthenticationType \"{ldapConnection.AuthenticationTypes}\" and authenticating ";
             loggingMessage += ldapConnection.UserServerDirectoryEntry ? "as process identity" : $"with credentials \"{ldapConnection.Username}\"";
             ClaimsProviderLogging.Log(loggingMessage, TraceSeverity.Verbose, EventSeverity.Information, TraceCategory.Augmentation);
             using (new SPMonitoredScope(loggingMessage, 2000))
@@ -1190,7 +1190,7 @@ namespace ldapcp
 
                 try
                 {
-                    using (new SPMonitoredScope($"[{ProviderInternalName}] Getting AD Principal for user {currentContext.IncomingEntity.Value} from Active Directory server \"{path}\"", 2000))
+                    using (new SPMonitoredScope($"[{ProviderInternalName}] Get AD Principal of user {currentContext.IncomingEntity.Value} from AD server \"{path}\"", 2000))
                     {
                         // Constructor of PrincipalContext does connect to LDAP server and may throw an exception if it fails, so it should be in try/catch
                         if (ldapConnection.UserServerDirectoryEntry)
@@ -1226,12 +1226,12 @@ namespace ldapcp
                     }
 
                     IEnumerable<Principal> adGroups;
-                    using (new SPMonitoredScope($"[{ProviderInternalName}] Getting AD groups for {currentContext.IncomingEntity.Value} from Active Directory server \"{path}\"", 2000))
+                    using (new SPMonitoredScope($"[{ProviderInternalName}] Get group membership of \"{currentContext.IncomingEntity.Value}\" from AD server \"{path}\"", 2000))
                     {
                         adGroups = adUser.GetAuthorizationGroups().Where(x => !String.IsNullOrEmpty(x.DistinguishedName));
                     }
 
-                    using (new SPMonitoredScope($"[{ProviderInternalName}] Processing AD groups for {currentContext.IncomingEntity.Value} from Active Directory server \"{path}\"", 2000))
+                    using (new SPMonitoredScope($"[{ProviderInternalName}] Process {adGroups.Count()} AD groups returned for \"{currentContext.IncomingEntity.Value}\" by AD server \"{path}\". Each group will trigger a LDAP query to get its DistinguishedName", 2000))
                     {
                         // https://docs.microsoft.com/en-us/dotnet/api/system.directoryservices.accountmanagement.userprincipal.getauthorizationgroups?view=netframework-4.7.1#System_DirectoryServices_AccountManagement_UserPrincipal_GetAuthorizationGroups
                         // UserPrincipal.GetAuthorizationGroups() only returns groups that are security groups; distribution groups are not returned.
@@ -1239,7 +1239,7 @@ namespace ldapcp
                         foreach (Principal adGroup in adGroups)
                         {
                             string groupDomainName, groupDomainFqdn;
-                            // Call to getter of property Principal.DistinguishedName triggers a LDAP bind and may slow down the whole augmentation process
+                            // Calling property Principal.DistinguishedName triggers a LDAP bind behind the scene, which may impact performance if there are many groups
                             OperationContext.GetDomainInformation(adGroup.DistinguishedName, out groupDomainName, out groupDomainFqdn);
                             string claimValue = adGroup.Name;
                             if (!String.IsNullOrEmpty(groupCTConfig.ClaimValuePrefix) && groupCTConfig.ClaimValuePrefix.Contains(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINNAME))
@@ -1250,10 +1250,6 @@ namespace ldapcp
                             groups.Add(claim);
                         }
                     }
-
-                    stopWatch.Stop();
-                    ClaimsProviderLogging.Log($"[{ProviderInternalName}] Got {groups.Count} group(s) for {currentContext.IncomingEntity.Value} in {stopWatch.ElapsedMilliseconds.ToString()} ms from Active Directory server \"{path}\".",
-                        TraceSeverity.Medium, EventSeverity.Information, TraceCategory.Augmentation);
                 }
                 catch (PrincipalOperationException ex)
                 {
@@ -1273,6 +1269,10 @@ namespace ldapcp
                 {
                     if (principalContext != null) principalContext.Dispose();
                     if (adUser != null) adUser.Dispose();
+
+                    stopWatch.Stop();
+                    ClaimsProviderLogging.Log($"[{ProviderInternalName}] Got and processed {groups.Count} group(s) for {currentContext.IncomingEntity.Value} in {stopWatch.ElapsedMilliseconds.ToString()} ms from Active Directory server \"{path}\".",
+                        TraceSeverity.Medium, EventSeverity.Information, TraceCategory.Augmentation);
                 }
             }
             return groups;
@@ -1293,16 +1293,16 @@ namespace ldapcp
             SetLDAPConnection(currentContext, ldapConnection);
 #pragma warning restore CS0618 // Type or member is obsolete
             string ldapFilter = string.Format("(&(ObjectClass={0}) ({1}={2}){3})", IdentityClaimTypeConfig.LDAPClass, IdentityClaimTypeConfig.LDAPAttribute, currentContext.IncomingEntity.Value, IdentityClaimTypeConfig.AdditionalLDAPFilter);
-            string loggMessage = $"[{ProviderInternalName}] Getting LDAP groups of user {currentContext.IncomingEntity.Value} in \"{ldapConnection.Directory.Path}\" with AuthenticationType \"{ldapConnection.Directory.AuthenticationType}\" and authenticating ";
+            string loggMessage = $"[{ProviderInternalName}] Augmentation of user {currentContext.IncomingEntity.Value} in LDAP server \"{ldapConnection.Directory.Path}\" with AuthenticationType \"{ldapConnection.Directory.AuthenticationType}\" and authenticating ";
             loggMessage += String.IsNullOrWhiteSpace(ldapConnection.Directory.Username) ? "as process identity. " : $"with credentials \"{ldapConnection.Directory.Username}\". ";
             loggMessage += $"LDAP filter used: \"{ldapFilter}\"";
             ClaimsProviderLogging.Log(loggMessage, TraceSeverity.Verbose, EventSeverity.Information, TraceCategory.Augmentation);
             using (new SPMonitoredScope(loggMessage, 2000))
             {
+                Stopwatch stopWatch = new Stopwatch();
+                stopWatch.Start();
                 try
                 {
-                    Stopwatch stopWatch = new Stopwatch();
-                    stopWatch.Start();
                     using (DirectorySearcher searcher = new DirectorySearcher(ldapConnection.Directory))
                     {
                         searcher.ClientTimeout = new TimeSpan(0, 0, this.CurrentConfiguration.LDAPQueryTimeout); // Set the timeout of the query
@@ -1317,14 +1317,18 @@ namespace ldapcp
                         }
 
                         SearchResult result;
-                        using (new SPMonitoredScope($"[{ProviderInternalName}] Doing LDAP query to get group(s) for {currentContext.IncomingEntity.Value} from LDAP server \"{ldapConnection.Directory.Path}\" with LDAP filter \"{ldapFilter}\"", 2000))
+                        using (new SPMonitoredScope($"[{ProviderInternalName}] Get group membership of \"{currentContext.IncomingEntity.Value}\" from LDAP server \"{ldapConnection.Directory.Path}\" with LDAP filter \"{ldapFilter}\"", 2000))
                         {
                             result = searcher.FindOne();
                         }
 
-                        if (result == null) return groups;  // user was not found in this directory
+                        if (result == null)
+                        {
+                            stopWatch.Stop();
+                            return groups;  // User was not found in this LDAP server
+                        }
 
-                        using (new SPMonitoredScope($"[{ProviderInternalName}] Processing LDAP groups for {currentContext.IncomingEntity.Value}, returned from LDAP server \"{ldapConnection.Directory.Path}\" with LDAP filter \"{ldapFilter}\".", 2000))
+                        using (new SPMonitoredScope($"[{ProviderInternalName}] Process LDAP groups of \"{currentContext.IncomingEntity.Value}\" returned by LDAP server \"{ldapConnection.Directory.Path}\" with LDAP filter \"{ldapFilter}\".", 2000))
                         {
                             foreach (ClaimTypeConfig groupCTConfig in groupsCTConfig)
                             {
@@ -1382,10 +1386,7 @@ namespace ldapcp
                                 }
                             }
                         }
-                        stopWatch.Stop();
                     }
-                    ClaimsProviderLogging.Log($"[{ProviderInternalName}] Got {groups.Count} group(s) for {currentContext.IncomingEntity.Value} in {stopWatch.ElapsedMilliseconds.ToString()} ms from LDAP server \"{ldapConnection.Directory.Path}\" with LDAP filter \"{ldapFilter}\".",
-                        TraceSeverity.Medium, EventSeverity.Information, TraceCategory.Augmentation);
                 }
                 catch (Exception ex)
                 {
@@ -1393,7 +1394,14 @@ namespace ldapcp
                 }
                 finally
                 {
-                    if (ldapConnection.Directory != null) ldapConnection.Directory.Dispose();
+                    if (ldapConnection.Directory != null)
+                    {
+                        ldapConnection.Directory.Dispose();
+                    }
+                    stopWatch.Stop();
+                    ClaimsProviderLogging.Log($"[{ProviderInternalName}] Got {groups.Count} group(s) for {currentContext.IncomingEntity.Value} in {stopWatch.ElapsedMilliseconds.ToString()} ms from LDAP server \"{ldapConnection.Directory.Path}\" with LDAP filter \"{ldapFilter}\".",
+                        TraceSeverity.Medium, EventSeverity.Information, TraceCategory.Augmentation);
+
                 }
             }
             return groups;
