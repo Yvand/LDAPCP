@@ -763,8 +763,20 @@ namespace ldapcp
         public DirectoryEntry Directory;
 
         public string Filter;
+        /// <summary>
+        /// The domain name, for example "contoso"
+        /// </summary>
         public string DomainName;
+
+        /// <summary>
+        /// The fully qualified domain name, for example "contoso.local"
+        /// </summary>
         public string DomainFQDN;
+
+        /// <summary>
+        /// The container on the store to use as the root of the context, for example "DC=contoso,DC=local"
+        /// </summary>
+        public string RootContainer;
 
         public LDAPConnection()
         {
@@ -788,6 +800,7 @@ namespace ldapcp
                 Filter = this.Filter,
                 DomainName = this.DomainName,
                 DomainFQDN = this.DomainFQDN,
+                RootContainer = this.RootContainer,
             };
         }
     }

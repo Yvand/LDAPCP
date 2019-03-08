@@ -945,24 +945,28 @@ namespace ldapcp
                 ldapConnection.Directory = Domain.GetComputerDomain().GetDirectoryEntry();
             }
 
-            // Getting domain names information queries LDAP and may be slow, so they are retrieved once and cached
-            if (String.IsNullOrEmpty(ldapConnection.DomainName))
+            // Operations in this block do LDAP queries, so let's monitor their execution time
+            using (new SPMonitoredScope($"[{ProviderInternalName}] Get domain names / root container information about LDAP server \"{ldapConnection.Directory.Path}\"", 2000))
             {
-                ClaimsProviderLogging.LogDebug($"Getting domain names information for LDAP connection {ldapConnection.Directory.Path}.");
                 // Retrieve FQDN and domain name of current DirectoryEntry
                 string domainName = String.Empty;
                 string domainFQDN = String.Empty;
                 try
                 {
-                    // It may fail if for some reason LDAP server cannot be reached                    
+                    // Operations below may fail if LDAP server cannot be reached                    
+                    // Cache those values for the whole lifetime of the process, because getting them triggers LDAP queries in the background
                     OperationContext.GetDomainInformation(ldapConnection.Directory, out domainName, out domainFQDN);
+                    ldapConnection.DomainName = domainName;
+                    ldapConnection.DomainFQDN = domainFQDN;
+                    if (ldapConnection.Directory.Properties.Contains("distinguishedName"))
+                    {
+                        ldapConnection.RootContainer = ldapConnection.Directory.Properties["distinguishedName"].Value.ToString();
+                    }
                 }
                 catch (Exception ex)
                 {
                     ClaimsProviderLogging.LogException(ProviderInternalName, $"while getting domain names information for LDAP connection {ldapConnection.Directory.Path}", TraceCategory.Configuration, ex);
                 }
-                ldapConnection.DomainName = domainName;
-                ldapConnection.DomainFQDN = domainFQDN;
             }
         }
 
@@ -1180,7 +1184,6 @@ namespace ldapcp
                 PrincipalContext principalContext = null;
 
                 // Build ContextOptions as documented in https://stackoverflow.com/questions/17451277/what-equivalent-of-authenticationtypes-secure-in-principalcontexts-contextoptio
-                // To use ContextOptions in constructor of PrincipalContext, "container" must also be set, but it can be null as per tests in https://stackoverflow.com/questions/2538064/active-directory-services-principalcontext-what-is-the-dn-of-a-container-o
                 ContextOptions contextOptions = new ContextOptions();
                 if ((ldapConnection.AuthenticationTypes & AuthenticationTypes.Sealing) == AuthenticationTypes.Sealing) contextOptions |= ContextOptions.Sealing;
                 if ((ldapConnection.AuthenticationTypes & AuthenticationTypes.Encryption) == AuthenticationTypes.Encryption) contextOptions |= ContextOptions.SecureSocketLayer;
@@ -1193,13 +1196,15 @@ namespace ldapcp
                     using (new SPMonitoredScope($"[{ProviderInternalName}] Get AD Principal of user {currentContext.IncomingEntity.Value} from AD server \"{path}\"", 2000))
                     {
                         // Constructor of PrincipalContext does connect to LDAP server and may throw an exception if it fails, so it should be in try/catch
+                        // To use ContextOptions in constructor of PrincipalContext, "container" must also be set, but it can be null as per tests in https://stackoverflow.com/questions/2538064/active-directory-services-principalcontext-what-is-the-dn-of-a-container-o
+                        // Tests: if "container" is null, it always fails in PowerShell (tested only with AD) but somehow it works fine here
                         if (ldapConnection.UserServerDirectoryEntry)
                         {
-                            principalContext = new PrincipalContext(ContextType.Domain, ldapConnection.DomainFQDN, null, contextOptions);
+                            principalContext = new PrincipalContext(ContextType.Domain, ldapConnection.DomainFQDN, ldapConnection.RootContainer, contextOptions);
                         }
                         else
                         {
-                            principalContext = new PrincipalContext(ContextType.Domain, ldapConnection.DomainFQDN, null, contextOptions, ldapConnection.Username, ldapConnection.Password);
+                            principalContext = new PrincipalContext(ContextType.Domain, ldapConnection.DomainFQDN, ldapConnection.RootContainer, contextOptions, ldapConnection.Username, ldapConnection.Password);
                         }
 
                         // https://github.com/Yvand/LDAPCP/issues/22: UserPrincipal.FindByIdentity() doesn't support emails, so if IncomingEntity is an email, user needs to be retrieved in a different way

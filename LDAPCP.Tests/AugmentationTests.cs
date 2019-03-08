@@ -21,6 +21,17 @@ namespace LDAPCP.Tests
                 ldapConn.GetGroupMembershipAsADDomainProp = true;
             }
             Config.Update();
+
+            //LDAPConnection coco = new LDAPConnection();
+            //coco.Path = "LDAP://contoso.local/DC=contoso,DC=local";
+            //coco.Username = @"contoso\spfarm";
+            //coco.Password = @"";
+            //coco.UserServerDirectoryEntry = false;
+            //coco.AugmentationEnabled = true;
+            //coco.GetGroupMembershipAsADDomainProp = true;
+            //Config.LDAPConnectionsProp.Clear();
+            //Config.LDAPConnectionsProp.Add(coco);
+            //Config.Update();
         }
     }
 
