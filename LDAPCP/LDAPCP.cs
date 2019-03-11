@@ -1239,8 +1239,7 @@ namespace ldapcp
                     using (new SPMonitoredScope($"[{ProviderInternalName}] Process {adGroups.Count()} AD groups returned for \"{currentContext.IncomingEntity.Value}\" by AD server \"{path}\". Each group will trigger a LDAP query to get its DistinguishedName", 2000))
                     {
                         // https://docs.microsoft.com/en-us/dotnet/api/system.directoryservices.accountmanagement.userprincipal.getauthorizationgroups?view=netframework-4.7.1#System_DirectoryServices_AccountManagement_UserPrincipal_GetAuthorizationGroups
-                        // UserPrincipal.GetAuthorizationGroups() only returns groups that are security groups; distribution groups are not returned.
-                        // UserPrincipal.GetAuthorizationGroups() searches all groups recursively and returns the groups in which the user is a member. The returned set may also include additional groups that system would consider the user a member of for authorization purposes.
+                        // UserPrincipal.GetAuthorizationGroups() only returns groups that are security groups; distribution groups are not returned, and get all group membership including nested groups. It also special groups like "Domain Users".
                         foreach (Principal adGroup in adGroups)
                         {
                             string groupDomainName, groupDomainFqdn;
