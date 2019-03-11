@@ -1233,7 +1233,7 @@ namespace ldapcp
                     IEnumerable<Principal> adGroups;
                     using (new SPMonitoredScope($"[{ProviderInternalName}] Get group membership of \"{currentContext.IncomingEntity.Value}\" from AD server \"{path}\"", 2000))
                     {
-                        adGroups = adUser.GetAuthorizationGroups().Where(x => !String.IsNullOrEmpty(x.DistinguishedName));
+                        adGroups = adUser.GetAuthorizationGroups();
                     }
 
                     using (new SPMonitoredScope($"[{ProviderInternalName}] Process {adGroups.Count()} AD groups returned for \"{currentContext.IncomingEntity.Value}\" by AD server \"{path}\". Each group will trigger a LDAP query to get its DistinguishedName", 2000))
@@ -1245,7 +1245,12 @@ namespace ldapcp
                         {
                             string groupDomainName, groupDomainFqdn;
                             // Calling property Principal.DistinguishedName triggers a LDAP bind behind the scene, which may impact performance if there are many groups
-                            OperationContext.GetDomainInformation(adGroup.DistinguishedName, out groupDomainName, out groupDomainFqdn);
+                            // But it is needed to build the domain name / FQDN of the current group
+                            string groupDN = adGroup.DistinguishedName;
+                            if (String.IsNullOrEmpty(groupDN))
+                                continue;
+
+                            OperationContext.GetDomainInformation(groupDN, out groupDomainName, out groupDomainFqdn);
                             string claimValue = adGroup.Name;
                             if (!String.IsNullOrEmpty(groupCTConfig.ClaimValuePrefix) && groupCTConfig.ClaimValuePrefix.Contains(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINNAME))
                                 claimValue = groupCTConfig.ClaimValuePrefix.Replace(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINNAME, groupDomainName) + adGroup.Name;
