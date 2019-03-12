@@ -708,33 +708,33 @@ namespace ldapcp
                 IEnumerable<string> LDAPResultPropertyNames = LDAPResultProperties.PropertyNames.Cast<string>();
 
                 // Issue https://github.com/Yvand/LDAPCP/issues/16: If current result is a user, ensure LDAP attribute of identity ClaimTypeConfig exists in current LDAP result
+                bool isUserWithNoIdentityAttribute = false;
                 if (LDAPResultProperties[LDAPObjectClassName].Cast<string>().Contains(IdentityClaimTypeConfig.LDAPClass, StringComparer.InvariantCultureIgnoreCase))
                 {
                     // This is a user: check if his identity LDAP attribute (e.g. mail or sAMAccountName) is present
                     if (!LDAPResultPropertyNames.Contains(IdentityClaimTypeConfig.LDAPAttribute, StringComparer.InvariantCultureIgnoreCase))
                     {
-                        ClaimsProviderLogging.Log($"[{ProviderInternalName}] Ignoring a user because he doesn't have the LDAP attribute '{IdentityClaimTypeConfig.LDAPAttribute}'", TraceSeverity.VerboseEx, EventSeverity.Information, TraceCategory.LDAP_Lookup);
-                        continue;
+                        // This may match a result like PrimaryGroupID, which has EntityType "Group", but LDAPClass "User"
+                        // So it cannot be ruled out immediately, but needs be tested against each ClaimTypeConfig
+                        //ClaimsProviderLogging.Log($"[{ProviderInternalName}] Ignoring a user because he doesn't have the LDAP attribute '{IdentityClaimTypeConfig.LDAPAttribute}'", TraceSeverity.VerboseEx, EventSeverity.Information, TraceCategory.LDAP_Lookup);
+                        //continue;
+                        isUserWithNoIdentityAttribute = true;
                     }
-                }
-                else
-                {
-                    // This is a group: check if the LDAP attribute used to create groups entities is present
-                    // EDIT: since groups can have multiple claim types, this check does not make sense
-                    //if (MainGroupClaimTypeConfig != null && !LDAPResultPropertyNames.Contains(MainGroupClaimTypeConfig.LDAPAttribute, StringComparer.InvariantCultureIgnoreCase))
-                    //{
-                    //    ClaimsProviderLogging.Log($"[{ProviderInternalName}] Ignoring a group because it doesn't have the LDAP attribute '{MainGroupClaimTypeConfig.LDAPAttribute}'", TraceSeverity.VerboseEx, EventSeverity.Information, TraceCategory.LDAP_Lookup);
-                    //    continue;
-                    //}
                 }
 
                 foreach (ClaimTypeConfig ctConfig in ctConfigs)
                 {
-                    // Check if LDAPClass of current ClaimTypeConfig matches the current LDAP result
-                    if (!LDAPResultProperties[LDAPObjectClassName].Cast<string>().Contains(ctConfig.LDAPClass, StringComparer.InvariantCultureIgnoreCase)) continue;
+                    // Skip if: current config is for users AND LDAP result is a user AND LDAP result doesn't have identity attribute set
+                    if (ctConfig.EntityType == DirectoryObjectType.User && isUserWithNoIdentityAttribute)
+                        continue;
 
-                    // Check if current LDAP result contains LDAP attribute of current attribute
-                    if (!LDAPResultPropertyNames.Contains(ctConfig.LDAPAttribute, StringComparer.InvariantCultureIgnoreCase)) continue;
+                    // Skip if: LDAPClass of current config does not match objectclass of LDAP result
+                    if (!LDAPResultProperties[LDAPObjectClassName].Cast<string>().Contains(ctConfig.LDAPClass, StringComparer.InvariantCultureIgnoreCase))
+                        continue;
+
+                    // Skip if: LDAPAttribute of current config is not found in LDAP result
+                    if (!LDAPResultPropertyNames.Contains(ctConfig.LDAPAttribute, StringComparer.InvariantCultureIgnoreCase))
+                        continue;
 
                     // Get value with of current LDAP attribute
                     // TODO: investigate https://github.com/Yvand/LDAPCP/issues/43

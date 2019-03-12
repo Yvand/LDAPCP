@@ -14,7 +14,11 @@
 * Cache result returned by FileVersionInfo.GetVersionInfo() to avoid potential hangs
 * Add property AzureCPConfig.MaxSearchResultsCount to set max number of results returned to SharePoint during a search
 * Cache domain name and domain FQDN of each LDAP Connection, to avoid repetitive and potentially slow queries to LDAP servers
-* Deprecate method LDAPCP.SetLDAPConnection called each time a LDAP operation is about to occur. Instead, added a separate method LDAPCP.SetLDAPConnection, called only during initialization of the configuration. Domain name and domain FQDN are retrieved at this time.
+* Deprecate method LDAPCP.SetLDAPConnection called each time a LDAP operation is about to occur. Instead, added a separate method LDAPCP.SetLDAPConnection, called only during initialization of the configuration. Domain name, domain FQDN and distinguishedName are retrieved and cached here.
+* Improve global performance by caching domain name and domain FQDN of each LDAP Connection, to avoid repetitive and potentially slow queries to LDAP servers
+* Update logging during augmentation, and split various LDAP operations into different SPMonitoredScope
+* Update augmentatikon by getting, using and caching RootContainer for each DirectoryEntry object
+* Do more fine-grained test when excluding a LDAP user missing the identity attribute
 * Update NuGet package NUnit to v3.11
 * Update NuGet package NUnit3TestAdapter to v3.13
 * Update NuGet package CsvTools to v1.0.12
