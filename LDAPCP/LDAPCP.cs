@@ -1167,12 +1167,6 @@ namespace ldapcp
         {
             List<SPClaim> groups = new List<SPClaim>();
             string path = ldapConnection.Path;
-            if (ldapConnection.UserServerDirectoryEntry)
-            {
-                DirectoryEntry de = Domain.GetComputerDomain().GetDirectoryEntry();
-                path = de.Path;
-                de.Dispose();
-            }
             string loggingMessage = $"[{ProviderInternalName}] Augmentation of user {currentContext.IncomingEntity.Value} in AD server \"{path}\" with AuthenticationType \"{ldapConnection.AuthenticationTypes}\" and authenticating ";
             loggingMessage += ldapConnection.UserServerDirectoryEntry ? "as process identity" : $"with credentials \"{ldapConnection.Username}\"";
             ClaimsProviderLogging.Log(loggingMessage, TraceSeverity.Verbose, EventSeverity.Information, TraceCategory.Augmentation);
