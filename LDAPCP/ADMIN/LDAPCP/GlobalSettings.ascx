@@ -258,7 +258,7 @@
                 <asp:ListItem Selected="True" Value="None"></asp:ListItem>
             </asp:DropDownList>
 			<tr><td>
-			<wssawc:EncodedLiteral runat="server" text="<p>For Active Directory servers, the preferred way to get groups is using <a href='https://msdn.microsoft.com/en-us/library/system.directoryservices.accountmanagement.userprincipal.getauthorizationgroups.aspx' target='_blank'>UserPrincipal.GetAuthorizationGroups()</a>.<br />Otherwise LDAPCP reads LDAP attribute memberOf/uniquememberof of the user.</p>" EncodeMethod='NoEncode'/>
+			<wssawc:EncodedLiteral runat="server" text="<p>Augmentation can be activated/deactivated per connection.<br />If connecting to Active Directory, you may check option &quot;Use <a href='https://docs.microsoft.com/en-us/dotnet/api/system.directoryservices.accountmanagement.userprincipal.getauthorizationgroups' target='_blank'>.NET helper</a>&quot;.<br />Otherwise, LDAPCP gets groups by reading the LDAP attribute memberOf/uniquememberof of the user.</p>" EncodeMethod='NoEncode'/>
 			<div id="AugmentationControlsGrid">
             <wssawc:SPGridView ID="GridLdapConnections" runat="server" AutoGenerateColumns="False" ShowHeader="false">
                 <Columns>
@@ -268,7 +268,7 @@
                             <asp:TextBox ID="IdPropHidden" runat="server" Text='<%# Bind("IdProp") %>' Visible="false" />
 							<legend><span>LDAP Server "<asp:Label ID="TextPath" runat="server" Text='<%# Bind("PathProp") %>' />":</span></legend>
                             <asp:CheckBox ID="ChkAugmentationEnableOnCoco" runat="server" Checked='<%# Bind("AugmentationEnabledProp") %>' Text="Query this server" />
-                            <asp:CheckBox ID="ChkGetGroupMembershipAsADDomain" runat="server" Checked='<%# Bind("GetGroupMembershipAsADDomainProp") %>' Text="This is an Active Directory server, use <a href='https://msdn.microsoft.com/en-us/library/system.directoryservices.accountmanagement.userprincipal.getauthorizationgroups.aspx' target='_blank'>UserPrincipal.GetAuthorizationGroups</a>" />
+                            <asp:CheckBox ID="ChkGetGroupMembershipAsADDomain" runat="server" Checked='<%# Bind("GetGroupMembershipAsADDomainProp") %>' Text="Use <a href='https://docs.microsoft.com/en-us/dotnet/api/system.directoryservices.accountmanagement.userprincipal.getauthorizationgroups' target='_blank'>.NET helper</a> (for Active Directory only)"/>
 							</fieldset>
                         </ItemTemplate>
                     </asp:TemplateField>
