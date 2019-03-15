@@ -2,7 +2,7 @@
 
 **Please visit [ldapcp.com](https://ldapcp.com) to download LDAPCP and find documentation.**
 
-## Branch "dev"
+## Build status of version in development
 
 [![Build Status](https://dev.azure.com/YvanDev/LDAPCP/_apis/build/status/CI-Compile-Tag?branchName=dev)](https://dev.azure.com/YvanDev/LDAPCP/_build/latest?definitionId=2&branchName=dev)
 
