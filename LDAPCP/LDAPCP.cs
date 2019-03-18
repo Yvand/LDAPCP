@@ -1237,18 +1237,22 @@ namespace ldapcp
                         foreach (Principal adGroup in adGroups)
                         {
                             string groupDomainName, groupDomainFqdn;
-                            // Calling property Principal.DistinguishedName triggers a LDAP bind behind the scene, which may impact performance if there are many groups
-                            // But it is needed to build the domain name / FQDN of the current group
-                            string groupDN = adGroup.DistinguishedName;
-                            if (String.IsNullOrEmpty(groupDN))
-                                continue;
-
-                            OperationContext.GetDomainInformation(groupDN, out groupDomainName, out groupDomainFqdn);
                             string claimValue = adGroup.Name;
-                            if (!String.IsNullOrEmpty(groupCTConfig.ClaimValuePrefix) && groupCTConfig.ClaimValuePrefix.Contains(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINNAME))
-                                claimValue = groupCTConfig.ClaimValuePrefix.Replace(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINNAME, groupDomainName) + adGroup.Name;
-                            else if (!String.IsNullOrEmpty(groupCTConfig.ClaimValuePrefix) && groupCTConfig.ClaimValuePrefix.Contains(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINFQDN))
-                                claimValue = groupCTConfig.ClaimValuePrefix.Replace(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINFQDN, groupDomainFqdn) + adGroup.Name;
+                            if (!String.IsNullOrEmpty(groupCTConfig.ClaimValuePrefix))
+                            {
+                                // Calling property Principal.DistinguishedName triggers a LDAP bind behind the scene, which may impact performance if there are many groups
+                                // But it is needed to build the domain name / FQDN of the current group
+                                string groupDN = adGroup.DistinguishedName;
+                                if (String.IsNullOrEmpty(groupDN))
+                                    continue;
+
+                                OperationContext.GetDomainInformation(groupDN, out groupDomainName, out groupDomainFqdn);
+                                if (groupCTConfig.ClaimValuePrefix.Contains(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINNAME))
+                                    claimValue = groupCTConfig.ClaimValuePrefix.Replace(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINNAME, groupDomainName) + adGroup.Name;
+                                else if (groupCTConfig.ClaimValuePrefix.Contains(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINFQDN))
+                                    claimValue = groupCTConfig.ClaimValuePrefix.Replace(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINFQDN, groupDomainFqdn) + adGroup.Name;
+                            }
+
                             SPClaim claim = CreateClaim(groupCTConfig.ClaimType, claimValue, groupCTConfig.ClaimValueType, false);
                             groups.Add(claim);
                         }
