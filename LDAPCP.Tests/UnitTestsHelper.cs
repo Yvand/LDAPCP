@@ -39,6 +39,7 @@ public class UnitTestsHelper
     public static string TrustedGroupToAdd_ClaimValue = TestContext.Parameters["TrustedGroupToAdd_ClaimValue"];
     public static SPClaim TrustedGroup = new SPClaim(TrustedGroupToAdd_ClaimType, TrustedGroupToAdd_ClaimValue, ClaimValueTypes.String, SPOriginalIssuers.Format(SPOriginalIssuerType.TrustedProvider, SPTrust.Name));
 
+    public static string CustomLDAPConnections = TestContext.Parameters["CustomLDAPConnections"];
     public static string DataFile_AllAccounts_Search = TestContext.Parameters["DataFile_AllAccounts_Search"];
     public static string DataFile_AllAccounts_Validate = TestContext.Parameters["DataFile_AllAccounts_Validate"];
 
@@ -50,8 +51,8 @@ public class UnitTestsHelper
     public static void InitializeSiteCollection()
     {
 #if DEBUG
-        //TestSiteCollUri = new Uri("http://spsites/sites/" + TestContext.Parameters["TestSiteCollectionName"]);
-        //return; // Uncommented when debugging LDAPCP code from unit tests
+        TestSiteCollUri = new Uri("http://spsites/sites/" + TestContext.Parameters["TestSiteCollectionName"]);
+        return; // Uncommented when debugging LDAPCP code from unit tests
 #endif
 
         logFileListener = new TextWriterTraceListener(TestContext.Parameters["TestLogFileName"]);

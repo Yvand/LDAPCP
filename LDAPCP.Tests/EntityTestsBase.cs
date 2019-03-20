@@ -79,7 +79,7 @@ namespace LDAPCP.Tests
 
             LDAPConnection coco = new LDAPConnection();
             coco.AugmentationEnabled = true;
-            coco.GetGroupMembershipAsADDomainProp = false;
+            coco.GetGroupMembershipAsADDomain = false;
             coco.UserServerDirectoryEntry = false;
             coco.Path = "LDAP://test";
             coco.Username = "userTest";

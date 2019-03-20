@@ -1,8 +1,62 @@
 ﻿using ldapcp;
+using Newtonsoft.Json;
 using NUnit.Framework;
+using System.Collections.Generic;
+using System.IO;
 
 namespace LDAPCP.Tests
 {
+    [TestFixture]
+    public class AugmentWithCustomLDAPConnectionsAsADDomainTests : EntityTestsBase
+    {
+        public override bool TestSearch => false;
+        public override bool TestValidation => false;
+        public override bool TestAugmentation => true;
+
+        public override void InitializeConfiguration()
+        {
+            base.InitializeConfiguration();
+            Config.EnableAugmentation = true;
+            Config.MainGroupClaimType = ClaimsProviderConstants.DefaultMainGroupClaimType;
+
+            string json = File.ReadAllText(UnitTestsHelper.CustomLDAPConnections);
+            List<LDAPConnection> ldapConnections = JsonConvert.DeserializeObject<List<LDAPConnection>>(json);
+            Config.LDAPConnectionsProp = ldapConnections;
+            foreach (LDAPConnection coco in Config.LDAPConnectionsProp)
+            {
+                coco.UserServerDirectoryEntry = false;
+                coco.AugmentationEnabled = true;
+                coco.GetGroupMembershipAsADDomain = true;
+            }
+            Config.Update();
+        }
+    }
+
+    public class AugmentWithCustomLDAPConnectionsAsLDAPServerTests : EntityTestsBase
+    {
+        public override bool TestSearch => false;
+        public override bool TestValidation => false;
+        public override bool TestAugmentation => true;
+
+        public override void InitializeConfiguration()
+        {
+            base.InitializeConfiguration();
+            Config.EnableAugmentation = true;
+            Config.MainGroupClaimType = ClaimsProviderConstants.DefaultMainGroupClaimType;
+
+            string json = File.ReadAllText(UnitTestsHelper.CustomLDAPConnections);
+            List<LDAPConnection> ldapConnections = JsonConvert.DeserializeObject<List<LDAPConnection>>(json);
+            Config.LDAPConnectionsProp = ldapConnections;
+            foreach (LDAPConnection coco in Config.LDAPConnectionsProp)
+            {
+                coco.UserServerDirectoryEntry = false;
+                coco.AugmentationEnabled = true;
+                coco.GetGroupMembershipAsADDomain = false;
+            }
+            Config.Update();
+        }
+    }
+
     [TestFixture]
     public class AugmentatAsADDomainOnBaseConfigTests : EntityTestsBase
     {
@@ -18,20 +72,9 @@ namespace LDAPCP.Tests
             foreach (LDAPConnection ldapConn in Config.LDAPConnectionsProp)
             {
                 ldapConn.AugmentationEnabled = true;
-                ldapConn.GetGroupMembershipAsADDomainProp = true;
+                ldapConn.GetGroupMembershipAsADDomain = true;
             }
             Config.Update();
-
-            //LDAPConnection coco = new LDAPConnection();
-            //coco.Path = "LDAP://contoso.local/DC=contoso,DC=local";
-            //coco.Username = @"contoso\spfarm";
-            //coco.Password = @"";
-            //coco.UserServerDirectoryEntry = false;
-            //coco.AugmentationEnabled = true;
-            //coco.GetGroupMembershipAsADDomainProp = true;
-            //Config.LDAPConnectionsProp.Clear();
-            //Config.LDAPConnectionsProp.Add(coco);
-            //Config.Update();
         }
     }
 
@@ -47,7 +90,7 @@ namespace LDAPCP.Tests
             foreach (LDAPConnection ldapConn in Config.LDAPConnectionsProp)
             {
                 ldapConn.AugmentationEnabled = true;
-                ldapConn.GetGroupMembershipAsADDomainProp = true;
+                ldapConn.GetGroupMembershipAsADDomain = true;
             }
             Config.Update();
         }
@@ -76,8 +119,7 @@ namespace LDAPCP.Tests
             foreach (LDAPConnection ldapConn in Config.LDAPConnectionsProp)
             {
                 ldapConn.AugmentationEnabled = true;
-                ldapConn.GetGroupMembershipAsADDomainProp = false;
-                ldapConn.GroupMembershipAttributes = new string[] { "memberOf", "uniquememberof" };
+                ldapConn.GetGroupMembershipAsADDomain = false;
             }
             Config.Update();
         }
@@ -89,7 +131,7 @@ namespace LDAPCP.Tests
         {
             //LDAPConnection coco = new LDAPConnection();
             //coco.AugmentationEnabled = true;
-            //coco.GetGroupMembershipAsADDomainProp = false;
+            //coco.GetGroupMembershipAsADDomain = false;
             //coco.UserServerDirectoryEntry = false;
             //coco.Path = "LDAP://test";
             //coco.Username = "userTest";
@@ -111,7 +153,7 @@ namespace LDAPCP.Tests
             foreach (LDAPConnection ldapConn in Config.LDAPConnectionsProp)
             {
                 ldapConn.AugmentationEnabled = true;
-                ldapConn.GetGroupMembershipAsADDomainProp = false;
+                ldapConn.GetGroupMembershipAsADDomain = false;
                 ldapConn.GroupMembershipAttributes = new string[] { "memberOf", "uniquememberof" };
             }
             Config.Update();

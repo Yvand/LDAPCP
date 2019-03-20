@@ -7,6 +7,12 @@ using System.Security.Claims;
 
 namespace LDAPCP.Tests
 {
+    /// <summary>
+    /// Apply following configuration:
+    /// - Enable augmentation on all LDAPConnectionsProp
+    /// - Set property ClaimTypeConfig.PrefixToBypassLookup to "bypass-user:" on identity claim type
+    /// - Set property ClaimTypeConfig.PrefixToBypassLookup to "bypass-group:" and ClaimTypeConfig.ClaimValuePrefix to "{fqdn}\" on group claim type
+    /// </summary>
     [TestFixture]
     public class CustomConfigTests : BackupCurrentConfig
     {

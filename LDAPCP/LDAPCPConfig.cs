@@ -708,8 +708,14 @@ namespace ldapcp
             set => Id = value;
         }
 
+        /// <summary>
+        /// LDAP Path of the connection LDAP://contoso.local:port/DC=contoso,DC=local
+        /// </summary>
         [Persisted]
         public string Path;
+        /// <summary>
+        /// Internal only: shadow property of Path required for ASP.NET server side controls in admin pages.
+        /// </summary>
         public string PathProp
         {
             get => Path;
@@ -736,6 +742,9 @@ namespace ldapcp
         /// </summary>
         [Persisted]
         public bool AugmentationEnabled;
+        /// <summary>
+        /// Internal only: shadow property of AugmentationEnabled required for ASP.NET server side controls in admin pages.
+        /// </summary>
         public bool AugmentationEnabledProp
         {
             get => AugmentationEnabled;
@@ -748,6 +757,9 @@ namespace ldapcp
         /// </summary>
         [Persisted]
         public bool GetGroupMembershipAsADDomain = true;
+        /// <summary>
+        /// Internal only: shadow property of GetGroupMembershipAsADDomain required for ASP.NET server side controls in admin pages.
+        /// </summary>
         public bool GetGroupMembershipAsADDomainProp
         {
             get => GetGroupMembershipAsADDomain;
