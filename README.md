@@ -2,18 +2,15 @@
 
 **Please visit [ldapcp.com](https://ldapcp.com) to download LDAPCP and find documentation.**
 
-## Build status of version in development
-
-[![Build Status](https://dev.azure.com/YvanDev/LDAPCP/_apis/build/status/CI-Compile-Tag?branchName=dev)](https://dev.azure.com/YvanDev/LDAPCP/_build/latest?definitionId=2&branchName=dev)
-
 ## Latest stable release
 
 ![GitHub Release Date](https://img.shields.io/github/release-date/Yvand/LDAPCP.svg)
 ![GitHub release](https://img.shields.io/github/release/Yvand/LDAPCP.svg)
 ![Latest release downloads](https://img.shields.io/github/downloads/Yvand/LDAPCP/latest/total.svg)
 
-## Latest pre-release
+## Version in development
 
+[![Build Status](https://dev.azure.com/YvanDev/LDAPCP/_apis/build/status/CI-Compile-Tag?branchName=dev)](https://dev.azure.com/YvanDev/LDAPCP/_build/latest?definitionId=2&branchName=dev)
 ![GitHub (Pre-)Release Date](https://img.shields.io/github/release-date-pre/Yvand/LDAPCP.svg)
 ![GitHub release](https://img.shields.io/github/release-pre/Yvand/LDAPCP.svg)
 
