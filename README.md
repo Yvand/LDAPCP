@@ -10,9 +10,9 @@
 
 ## Version in development
 
-[![Build Status](https://dev.azure.com/YvanDev/LDAPCP/_apis/build/status/CI-Compile-Tag?branchName=dev)](https://dev.azure.com/YvanDev/LDAPCP/_build/latest?definitionId=2&branchName=dev)
 ![GitHub (Pre-)Release Date](https://img.shields.io/github/release-date-pre/Yvand/LDAPCP.svg)
 ![GitHub release](https://img.shields.io/github/release-pre/Yvand/LDAPCP.svg)
+[![Build Status](https://dev.azure.com/YvanDev/LDAPCP/_apis/build/status/CI-Compile-Tag?branchName=dev)](https://dev.azure.com/YvanDev/LDAPCP/_build/latest?definitionId=2&branchName=dev)
 
 ## Miscellaneous
 
