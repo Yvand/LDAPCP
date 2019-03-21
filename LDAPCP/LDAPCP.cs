@@ -1187,7 +1187,7 @@ namespace ldapcp
 
                 try
                 {
-                    using (new SPMonitoredScope($"[{ProviderInternalName}] Get AD Principal of user {currentContext.IncomingEntity.Value} from AD server \"{path}\"", 2000))
+                    using (new SPMonitoredScope($"[{ProviderInternalName}] Get AD Principal of user {currentContext.IncomingEntity.Value} from AD server \"{path}\"", 1000))
                     {
                         // Constructor of PrincipalContext does connect to LDAP server and may throw an exception if it fails, so it should be in try/catch
                         // To use ContextOptions in constructor of PrincipalContext, "container" must also be set, but it can be null as per tests in https://stackoverflow.com/questions/2538064/active-directory-services-principalcontext-what-is-the-dn-of-a-container-o
@@ -1225,23 +1225,24 @@ namespace ldapcp
                     }
 
                     IEnumerable<Principal> adGroups;
-                    using (new SPMonitoredScope($"[{ProviderInternalName}] Get group membership of \"{currentContext.IncomingEntity.Value}\" from AD server \"{path}\"", 2000))
+                    using (new SPMonitoredScope($"[{ProviderInternalName}] Get group membership of \"{currentContext.IncomingEntity.Value}\" from AD server \"{path}\"", 1000))
                     {
                         adGroups = adUser.GetAuthorizationGroups();
                     }
 
-                    using (new SPMonitoredScope($"[{ProviderInternalName}] Process {adGroups.Count()} AD groups returned for \"{currentContext.IncomingEntity.Value}\" by AD server \"{path}\". Each group will trigger a LDAP query to get its DistinguishedName", 2000))
+                    using (new SPMonitoredScope($"[{ProviderInternalName}] Process {adGroups.Count()} AD groups returned for \"{currentContext.IncomingEntity.Value}\" by AD server \"{path}\". Eeach AD group triggers a LDAP operation.", 1000))
                     {
                         // https://docs.microsoft.com/en-us/dotnet/api/system.directoryservices.accountmanagement.userprincipal.getauthorizationgroups?view=netframework-4.7.1#System_DirectoryServices_AccountManagement_UserPrincipal_GetAuthorizationGroups
-                        // UserPrincipal.GetAuthorizationGroups() only returns groups that are security groups; distribution groups are not returned, and get all group membership including nested groups. It also special groups like "Domain Users".
+                        // UserPrincipal.GetAuthorizationGroups() only returns security groups, and includes nested groups and special groups like "Domain Users".
+                        // The foreach calls AccountManagement.FindResultEnumerator`1.get_Current() that does LDAP binds (call to DirectoryEntry.Bind()) for each group
+                        // It may impact performance if there are many groups and/or if DC is slow
                         foreach (Principal adGroup in adGroups)
                         {
                             string groupDomainName, groupDomainFqdn;
                             string claimValue = adGroup.Name;
                             if (!String.IsNullOrEmpty(groupCTConfig.ClaimValuePrefix))
                             {
-                                // Calling property Principal.DistinguishedName triggers a LDAP bind behind the scene, which may impact performance if there are many groups
-                                // But it is needed to build the domain name / FQDN of the current group
+                                // Principal.DistinguishedName is used to build the domain name / FQDN of the current group. Example of value: CN=group1,CN=Users,DC=contoso,DC=local
                                 string groupDN = adGroup.DistinguishedName;
                                 if (String.IsNullOrEmpty(groupDN))
                                     continue;
@@ -1304,7 +1305,7 @@ namespace ldapcp
             loggMessage += String.IsNullOrWhiteSpace(ldapConnection.Directory.Username) ? "as process identity. " : $"with credentials \"{ldapConnection.Directory.Username}\". ";
             loggMessage += $"LDAP filter used: \"{ldapFilter}\"";
             ClaimsProviderLogging.Log(loggMessage, TraceSeverity.Verbose, EventSeverity.Information, TraceCategory.Augmentation);
-            using (new SPMonitoredScope(loggMessage, 2000))
+            using (new SPMonitoredScope(loggMessage, 1000))
             {
                 Stopwatch stopWatch = new Stopwatch();
                 stopWatch.Start();
@@ -1324,7 +1325,7 @@ namespace ldapcp
                         }
 
                         SearchResult result;
-                        using (new SPMonitoredScope($"[{ProviderInternalName}] Get group membership of \"{currentContext.IncomingEntity.Value}\" from LDAP server \"{ldapConnection.Directory.Path}\" with LDAP filter \"{ldapFilter}\"", 2000))
+                        using (new SPMonitoredScope($"[{ProviderInternalName}] Get group membership of \"{currentContext.IncomingEntity.Value}\" from LDAP server \"{ldapConnection.Directory.Path}\" with LDAP filter \"{ldapFilter}\"", 1000))
                         {
                             result = searcher.FindOne();
                         }
@@ -1335,7 +1336,7 @@ namespace ldapcp
                             return groups;  // User was not found in this LDAP server
                         }
 
-                        using (new SPMonitoredScope($"[{ProviderInternalName}] Process LDAP groups of \"{currentContext.IncomingEntity.Value}\" returned by LDAP server \"{ldapConnection.Directory.Path}\" with LDAP filter \"{ldapFilter}\".", 2000))
+                        using (new SPMonitoredScope($"[{ProviderInternalName}] Process LDAP groups of \"{currentContext.IncomingEntity.Value}\" returned by LDAP server \"{ldapConnection.Directory.Path}\" with LDAP filter \"{ldapFilter}\".", 1000))
                         {
                             foreach (ClaimTypeConfig groupCTConfig in groupsCTConfig)
                             {
