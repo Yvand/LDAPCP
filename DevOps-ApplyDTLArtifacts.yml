@@ -1,0 +1,102 @@
+resources:
+- repo: self
+
+variables:
+  BuildConfiguration: Release
+
+jobs:
+- job: ApplyArtifactsSP2013
+  condition: eq(variables['Deployment.ProvisionSharePoint2013'], 'yes')
+  displayName: Apply artifacts on SP2013
+  timeoutInMinutes: 30
+  variables:
+    jobSharePointVersion: 2013
+  pool:
+    name: Hosted VS2017
+  steps:
+  - checkout: none #skip checking out the default repository resource
+  - task: automagically.DownloadFile.DownloadFile.DownloadFile@1
+    displayName: 'Download apply-dtl-artifact.ps1'
+    inputs:
+      FileUrl: 'https://raw.githubusercontent.com/Yvand/AzureRM-Templates/dev/DevTestLabs-Artifacts/manage-artifacts/apply-dtl-artifact.ps1'
+      DestinationFolder: '$(System.DefaultWorkingDirectory)\drop\BuildPipeline'
+
+  - task: AzurePowerShell@3
+    displayName: 'Apply artifact "Azure Pipelines Agent"'
+    inputs:
+      azureSubscription: '$(DevTestLabs.AzureConnectionName)'
+      ScriptPath: '$(System.DefaultWorkingDirectory)\drop\BuildPipeline\apply-dtl-artifact.ps1'
+      ScriptArguments: '-DevTestLabName "$(DevTestLabs.LabName)" -VirtualMachineName "SP$(jobSharePointVersion)" -RepositoryName "Yvand/AzureRM-Templates" -ArtifactName "windows-vsts-build-agent" -param_vstsAccount "$(DevOps.OrganizationName)" -param_vstsPassword "$(DevOps.AccessToken)" -param_poolName "$(system.teamProject)-Tests-$(jobSharePointVersion)" -param_windowsLogonAccount "$(Deployment.DomainName)\$(Deployment.AdminUserName)" -param_windowsLogonPassword "$(Deployment.AdminPassword)" -param_agentName "SP$(jobSharePointVersion)" -param_agentNameSuffix "-$(Build.BuildNumber)" -param_RunAsAutoLogon false -param_driveLetter C -param_workDirectory ""'
+      preferredAzurePowerShellVersion: 5.1.1
+
+  - task: AzurePowerShell@3
+    displayName: 'Apply artifact "Download Azure Pipelines Artifact and Run Script"'
+    inputs:
+      azureSubscription: '$(DevTestLabs.AzureConnectionName)'
+      ScriptPath: '$(System.DefaultWorkingDirectory)\drop\BuildPipeline\apply-dtl-artifact.ps1'
+      ScriptArguments: -DevTestLabName '$(DevTestLabs.LabName)' -VirtualMachineName 'SP$(jobSharePointVersion)' -RepositoryName 'Yvand/AzureRM-Templates' -ArtifactName 'windows-vsts-download-and-run-script' -param_vstsProjectUri 'https://dev.azure.com/$(DevOps.OrganizationName)/$(system.teamProject)' -param_buildDefinitionName '$(DevOps.BuildArtifactsPipelineName)' -param_personalAccessToken $(DevOps.AccessToken) -param_pathToScript 'drop\SPTestServer artifacts\ConfigureLab.ps1' -param_scriptArguments "-pathToPackage ''..\$(system.teamProject)\bin\$(BuildConfiguration)\$(system.teamProject).wsp' -claimsProviderName '$(system.teamProject)' -spTrustName '$(Deployment.DomainFQDN)' -adminUserName '$(Deployment.DomainName)\$(Deployment.AdminUserName)' -adminPassword '$(Deployment.AdminPassword)'"
+      preferredAzurePowerShellVersion: 5.1.1
+
+- job: ApplyArtifactsSP2016
+  condition: eq(variables['Deployment.ProvisionSharePoint2016'], 'yes')
+  displayName: Apply artifacts on SP2016
+  timeoutInMinutes: 30
+  variables:
+    jobSharePointVersion: 2016
+  pool:
+    name: Hosted VS2017
+  steps:
+  - checkout: none #skip checking out the default repository resource
+  - task: automagically.DownloadFile.DownloadFile.DownloadFile@1
+    displayName: 'Download apply-dtl-artifact.ps1'
+    inputs:
+      FileUrl: 'https://raw.githubusercontent.com/Yvand/AzureRM-Templates/dev/DevTestLabs-Artifacts/manage-artifacts/apply-dtl-artifact.ps1'
+      DestinationFolder: '$(System.DefaultWorkingDirectory)\drop\BuildPipeline'
+
+  - task: AzurePowerShell@3
+    displayName: 'Apply artifact "Azure Pipelines Agent"'
+    inputs:
+      azureSubscription: '$(DevTestLabs.AzureConnectionName)'
+      ScriptPath: '$(System.DefaultWorkingDirectory)\drop\BuildPipeline\apply-dtl-artifact.ps1'
+      ScriptArguments: '-DevTestLabName "$(DevTestLabs.LabName)" -VirtualMachineName "SP$(jobSharePointVersion)" -RepositoryName "Yvand/AzureRM-Templates" -ArtifactName "windows-vsts-build-agent" -param_vstsAccount "$(DevOps.OrganizationName)" -param_vstsPassword "$(DevOps.AccessToken)" -param_poolName "$(system.teamProject)-Tests-$(jobSharePointVersion)" -param_windowsLogonAccount "$(Deployment.DomainName)\$(Deployment.AdminUserName)" -param_windowsLogonPassword "$(Deployment.AdminPassword)" -param_agentName "SP$(jobSharePointVersion)" -param_agentNameSuffix "-$(Build.BuildNumber)" -param_RunAsAutoLogon false -param_driveLetter C -param_workDirectory ""'
+      preferredAzurePowerShellVersion: 5.1.1
+
+  - task: AzurePowerShell@3
+    displayName: 'Apply artifact "Download Azure Pipelines Artifact and Run Script"'
+    inputs:
+      azureSubscription: '$(DevTestLabs.AzureConnectionName)'
+      ScriptPath: '$(System.DefaultWorkingDirectory)\drop\BuildPipeline\apply-dtl-artifact.ps1'
+      ScriptArguments: -DevTestLabName '$(DevTestLabs.LabName)' -VirtualMachineName 'SP$(jobSharePointVersion)' -RepositoryName 'Yvand/AzureRM-Templates' -ArtifactName 'windows-vsts-download-and-run-script' -param_vstsProjectUri 'https://dev.azure.com/$(DevOps.OrganizationName)/$(system.teamProject)' -param_buildDefinitionName '$(DevOps.BuildArtifactsPipelineName)' -param_personalAccessToken $(DevOps.AccessToken) -param_pathToScript 'drop\SPTestServer artifacts\ConfigureLab.ps1' -param_scriptArguments "-pathToPackage ''..\$(system.teamProject)\bin\$(BuildConfiguration)\$(system.teamProject).wsp' -claimsProviderName '$(system.teamProject)' -spTrustName '$(Deployment.DomainFQDN)' -adminUserName '$(Deployment.DomainName)\$(Deployment.AdminUserName)' -adminPassword '$(Deployment.AdminPassword)'"
+      preferredAzurePowerShellVersion: 5.1.1
+
+- job: ApplyArtifactsSP2019
+  condition: eq(variables['Deployment.ProvisionSharePoint2019'], 'yes')
+  displayName: Apply artifacts on SP2019
+  timeoutInMinutes: 30
+  variables:
+    jobSharePointVersion: 2019
+  pool:
+    name: Hosted VS2017
+  steps:
+  - checkout: none #skip checking out the default repository resource      
+  - task: automagically.DownloadFile.DownloadFile.DownloadFile@1
+    displayName: 'Download apply-dtl-artifact.ps1'
+    inputs:
+      FileUrl: 'https://raw.githubusercontent.com/Yvand/AzureRM-Templates/dev/DevTestLabs-Artifacts/manage-artifacts/apply-dtl-artifact.ps1'
+      DestinationFolder: '$(System.DefaultWorkingDirectory)\drop\BuildPipeline'
+
+  - task: AzurePowerShell@3
+    displayName: 'Apply artifact "Azure Pipelines Agent"'
+    inputs:
+      azureSubscription: '$(DevTestLabs.AzureConnectionName)'
+      ScriptPath: '$(System.DefaultWorkingDirectory)\drop\BuildPipeline\apply-dtl-artifact.ps1'
+      ScriptArguments: '-DevTestLabName "$(DevTestLabs.LabName)" -VirtualMachineName "SP$(jobSharePointVersion)" -RepositoryName "Yvand/AzureRM-Templates" -ArtifactName "windows-vsts-build-agent" -param_vstsAccount "$(DevOps.OrganizationName)" -param_vstsPassword "$(DevOps.AccessToken)" -param_poolName "$(system.teamProject)-Tests-$(jobSharePointVersion)" -param_windowsLogonAccount "$(Deployment.DomainName)\$(Deployment.AdminUserName)" -param_windowsLogonPassword "$(Deployment.AdminPassword)" -param_agentName "SP$(jobSharePointVersion)" -param_agentNameSuffix "-$(Build.BuildNumber)" -param_RunAsAutoLogon false -param_driveLetter C -param_workDirectory ""'
+      preferredAzurePowerShellVersion: 5.1.1
+
+  - task: AzurePowerShell@3
+    displayName: 'Apply artifact "Download Azure Pipelines Artifact and Run Script"'
+    inputs:
+      azureSubscription: '$(DevTestLabs.AzureConnectionName)'
+      ScriptPath: '$(System.DefaultWorkingDirectory)\drop\BuildPipeline\apply-dtl-artifact.ps1'
+      ScriptArguments: -DevTestLabName '$(DevTestLabs.LabName)' -VirtualMachineName 'SP$(jobSharePointVersion)' -RepositoryName 'Yvand/AzureRM-Templates' -ArtifactName 'windows-vsts-download-and-run-script' -param_vstsProjectUri 'https://dev.azure.com/$(DevOps.OrganizationName)/$(system.teamProject)' -param_buildDefinitionName '$(DevOps.BuildArtifactsPipelineName)' -param_personalAccessToken $(DevOps.AccessToken) -param_pathToScript 'drop\SPTestServer artifacts\ConfigureLab.ps1' -param_scriptArguments "-pathToPackage ''..\$(system.teamProject)\bin\$(BuildConfiguration)\$(system.teamProject).wsp' -claimsProviderName '$(system.teamProject)' -spTrustName '$(Deployment.DomainFQDN)' -adminUserName '$(Deployment.DomainName)\$(Deployment.AdminUserName)' -adminPassword '$(Deployment.AdminPassword)'"
+      preferredAzurePowerShellVersion: 5.1.1

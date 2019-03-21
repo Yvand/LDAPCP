@@ -1,0 +1,115 @@
+name: $(BuildVersion).$(date:yyyyMMdd).$(Build.BuildId)
+resources:
+- repo: self
+variables:
+  SolutionFileName: '$(system.teamProject).sln'
+jobs:
+- job: Compile
+  strategy:
+    maxParallel: 2
+    matrix:
+      debugJob:
+        configuration: debug
+        platform: $(BuildPlatform)
+      releaseJob:
+        configuration: release
+        platform: $(BuildPlatform)
+  displayName: Compile
+  pool:
+    name: Hosted VS2017
+    demands: 
+    - msbuild
+    - visualstudio
+    - azureps
+  steps:
+  - task: DownloadSecureFile@1
+    displayName: 'Download signing key'
+    inputs:
+      secureFile: '$(SigningKeySecureFileID)'
+
+  - powershell: |
+     # Set variables
+     $azureStorageBaseDirectory = "Resources\$(system.teamProject)"
+     $projectLocalPath = "$(System.DefaultWorkingDirectory)\$(system.teamProject)"
+     $devTestLabsLocalPath = "$(Build.ArtifactStagingDirectory)\SPTestServer artifacts"
+     $buildResourcesLocalPath = "$(Build.ArtifactStagingDirectory)\BuildPipeline"
+     
+     # Create the SPTestServer artifacts directory if it doesn't exist
+     if ((Test-Path -Path $devTestLabsLocalPath -PathType Container) -eq $false) {
+         New-Item -ItemType Directory -Path $devTestLabsLocalPath
+     }
+     
+     # Create the Build pipeline directory if it doesn't exist
+     if ((Test-Path -Path $buildResourcesLocalPath -PathType Container) -eq $false) {
+         New-Item -ItemType Directory -Path $buildResourcesLocalPath
+     }
+     
+     Write-Output ("Copy files to build $(system.teamProject) from Azure storage account")
+     $azureContext = New-AzureStorageContext $(AzureStorageAccountName) $(AzureStorageAccountKey)
+     $azureShare = Get-AzureStorageShare $(AzureStorageShareName) –Context $azureContext
+     #Get-AzureStorageFileContent –Share $azureShare –Path "$azureStorageBaseDirectory\$(system.teamProject).snk" "$projectLocalPath\$(system.teamProject).snk"
+     Write-Output ("Copy signing key from $(DownloadSecureFile.secureFilePath) to $projectLocalPath")
+     Copy-Item "$(DownloadSecureFile.secureFilePath)" -Destination "$projectLocalPath"
+     Get-AzureStorageFileContent –Share $azureShare –Path "$azureStorageBaseDirectory\SharePoint 2013\Microsoft.SharePoint.dll" "$projectLocalPath\Microsoft.SharePoint.dll"
+     
+     Write-Output ("Copy SPTestServer artifacts content from Azure storage account")
+     $azurePath = Join-Path -Path $azureStorageBaseDirectory -ChildPath "SPTestServer artifacts"
+     Get-AzureStorageFile -ShareName $(AzureStorageShareName) -Context $azureContext -Path $azurePath | Get-AzureStorageFile | ?{$_.GetType().Name -eq "CloudFile"} | Get-AzureStorageFileContent -Destination $devTestLabsLocalPath
+     
+     Write-Output ("Copy BuildResources content from Azure storage account")
+     $azurePath = Join-Path -Path $azureStorageBaseDirectory -ChildPath "BuildPipeline"
+     Get-AzureStorageFile -ShareName $(AzureStorageShareName) -Context $azureContext -Path $azurePath | Get-AzureStorageFile | ? {$_.GetType().Name -eq "CloudFile"} | Get-AzureStorageFileContent -Destination $buildResourcesLocalPath
+     
+     Write-Output ("Add assembly Microsoft.SharePoint.dll to the GAC")
+     [System.Reflection.Assembly]::Load("System.EnterpriseServices, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a")
+     $publish = New-Object System.EnterpriseServices.Internal.Publish
+     $publish.GacInstall("$projectLocalPath\Microsoft.SharePoint.dll")
+     
+    displayName: 'Import resources from Azure storage account'
+  - task: NuGetToolInstaller@0
+    displayName: 'Use NuGet 4.4.1'
+    inputs:
+      versionSpec: 4.4.1
+  
+  - task: NuGetCommand@2
+    displayName: 'NuGet restore'
+    inputs:
+      restoreSolution: '$(SolutionFileName)'
+
+  - task: bleddynrichards.Assembly-Info-Task.Assembly-Info-Task.Assembly-Info-NetFramework@2
+    displayName: 'Set $(system.teamProject) assemblies manifest'
+    inputs:
+      FileNames: '**\AssemblyInfo.cs'
+      Title: $(system.teamProject)
+      Product: $(system.teamProject)
+      Description: '$(ProductDescription)'
+      Company: GitHub.com/Yvand
+      Copyright: 'Copyright © $(date:YYYY) Yvan Duhamel, All rights reserved'
+      Trademark: '$(system.teamProject)'
+      VersionNumber: 1.0.0.0
+      FileVersionNumber: '$(Build.BuildNumber)'
+      InformationalVersion: '$(Build.BuildNumber)'
+
+  - task: VSBuild@1
+    displayName: 'Build $(system.teamProject) solution'
+    inputs:
+      solution: '$(SolutionFileName)'
+      msbuildArgs: '/p:IsPackaging=true'
+      platform: '$(BuildPlatform)'
+      configuration: '$(configuration)'
+      msbuildArchitecture: x64
+  
+  - task: CopyFiles@2
+    displayName: 'Copy binaries to artifacts'
+    inputs:
+      SourceFolder: '$(Build.SourcesDirectory)'
+      Contents: |
+       $(system.teamProject)/bin/$(configuration)/?($(system.teamProject).*)
+       $(system.teamProject).Tests/bin/$(configuration)/?(*.dll)
+      TargetFolder: '$(Build.ArtifactStagingDirectory)'
+
+  - task: PublishBuildArtifacts@1
+    displayName: 'Publish Artifact: drop'
+    inputs:
+      pathtoPublish: '$(Build.ArtifactStagingDirectory)'
+      artifactName: drop

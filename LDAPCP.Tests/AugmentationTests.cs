@@ -1,52 +1,169 @@
 ﻿using ldapcp;
+using Newtonsoft.Json;
 using NUnit.Framework;
-using System;
+using System.Collections.Generic;
+using System.IO;
 
 namespace LDAPCP.Tests
 {
     [TestFixture]
-    [Parallelizable(ParallelScope.Children)]
-    public class AugmentationTests
+    public class AugmentWithCustomLDAPConnectionsAsADDomainTests : EntityTestsBase
     {
-        private LDAPCPConfig Config;
-        private LDAPCPConfig BackupConfig;
+        public override bool TestSearch => false;
+        public override bool TestValidation => false;
+        public override bool TestAugmentation => true;
 
-        [OneTimeSetUp]
-        public void Init()
+        public override void InitializeConfiguration()
         {
-            Console.WriteLine($"Starting augmentation test {TestContext.CurrentContext.Test.Name}...");
-            Config = LDAPCPConfig.GetConfiguration(UnitTestsHelper.ClaimsProviderConfigName, UnitTestsHelper.SPTrust.Name);
-            BackupConfig = Config.CopyPersistedProperties();
+            base.InitializeConfiguration();
+            Config.EnableAugmentation = true;
+            Config.MainGroupClaimType = ClaimsProviderConstants.DefaultMainGroupClaimType;
+
+            string json = File.ReadAllText(UnitTestsHelper.CustomLDAPConnections);
+            List<LDAPConnection> ldapConnections = JsonConvert.DeserializeObject<List<LDAPConnection>>(json);
+            Config.LDAPConnectionsProp = ldapConnections;
+            foreach (LDAPConnection coco in Config.LDAPConnectionsProp)
+            {
+                coco.UserServerDirectoryEntry = false;
+                coco.AugmentationEnabled = true;
+                coco.GetGroupMembershipAsADDomain = true;
+            }
+            Config.Update();
+        }
+    }
+
+    public class AugmentWithCustomLDAPConnectionsAsLDAPServerTests : EntityTestsBase
+    {
+        public override bool TestSearch => false;
+        public override bool TestValidation => false;
+        public override bool TestAugmentation => true;
+
+        public override void InitializeConfiguration()
+        {
+            base.InitializeConfiguration();
+            Config.EnableAugmentation = true;
+            Config.MainGroupClaimType = ClaimsProviderConstants.DefaultMainGroupClaimType;
+
+            string json = File.ReadAllText(UnitTestsHelper.CustomLDAPConnections);
+            List<LDAPConnection> ldapConnections = JsonConvert.DeserializeObject<List<LDAPConnection>>(json);
+            Config.LDAPConnectionsProp = ldapConnections;
+            foreach (LDAPConnection coco in Config.LDAPConnectionsProp)
+            {
+                coco.UserServerDirectoryEntry = false;
+                coco.AugmentationEnabled = true;
+                coco.GetGroupMembershipAsADDomain = false;
+            }
+            Config.Update();
+        }
+    }
+
+    [TestFixture]
+    public class AugmentatAsADDomainOnBaseConfigTests : EntityTestsBase
+    {
+        public override bool TestSearch => false;
+        public override bool TestValidation => false;
+        public override bool TestAugmentation => true;
+
+        public override void InitializeConfiguration()
+        {
+            base.InitializeConfiguration();
             Config.EnableAugmentation = true;
             Config.MainGroupClaimType = ClaimsProviderConstants.DefaultMainGroupClaimType;
             foreach (LDAPConnection ldapConn in Config.LDAPConnectionsProp)
             {
                 ldapConn.AugmentationEnabled = true;
-                ldapConn.GetGroupMembershipAsADDomainProp = true;
+                ldapConn.GetGroupMembershipAsADDomain = true;
+            }
+            Config.Update();
+        }
+    }
+
+    [TestFixture]
+    [Parallelizable(ParallelScope.Children)]
+    public class AugmentAsADDomaOnCustomConfigTests : CustomConfigTests
+    {
+        public override void InitializeConfiguration()
+        {
+            base.InitializeConfiguration();
+            Config.EnableAugmentation = true;
+            Config.MainGroupClaimType = ClaimsProviderConstants.DefaultMainGroupClaimType;
+            foreach (LDAPConnection ldapConn in Config.LDAPConnectionsProp)
+            {
+                ldapConn.AugmentationEnabled = true;
+                ldapConn.GetGroupMembershipAsADDomain = true;
             }
             Config.Update();
         }
 
-        [OneTimeTearDown]
-        public void Cleanup()
+        [Test, TestCaseSource(typeof(ValidateEntityDataSource), "GetTestData")]
+        [Repeat(UnitTestsHelper.TestRepeatCount)]
+        public void TestAugmentation(ValidateEntityData registrationData)
         {
-            Config.ApplyConfiguration(BackupConfig);
+            UnitTestsHelper.TestAugmentationOperation(UnitTestsHelper.SPTrust.IdentityClaimTypeInformation.MappedClaimType, registrationData.ClaimValue, registrationData.IsMemberOfTrustedGroup);
+        }
+    }
+
+    [TestFixture]
+    [Parallelizable(ParallelScope.Children)]
+    public class AugmentAsLDAPServersOnBaseConfigTests : EntityTestsBase
+    {
+        public override bool TestSearch => false;
+        public override bool TestValidation => false;
+        public override bool TestAugmentation => true;
+
+        public override void InitializeConfiguration()
+        {
+            base.InitializeConfiguration();
+            Config.EnableAugmentation = true;
+            Config.MainGroupClaimType = ClaimsProviderConstants.DefaultMainGroupClaimType;
+            foreach (LDAPConnection ldapConn in Config.LDAPConnectionsProp)
+            {
+                ldapConn.AugmentationEnabled = true;
+                ldapConn.GetGroupMembershipAsADDomain = false;
+            }
             Config.Update();
-            Console.WriteLine($"Restored actual configuration.");
+        }
+
+#if DEBUG
+        [TestCase("yvand@contoso.local", true)]
+        [TestCase("zzzyvand@contoso.local", false)]
+        public override void DEBUG_AugmentEntity(string claimValue, bool isMemberOfTrustedGroup)
+        {
+            //LDAPConnection coco = new LDAPConnection();
+            //coco.AugmentationEnabled = true;
+            //coco.GetGroupMembershipAsADDomain = false;
+            //coco.UserServerDirectoryEntry = false;
+            //coco.Path = "LDAP://test";
+            //coco.Username = "userTest";
+            //Config.LDAPConnectionsProp.Add(coco);
+            //Config.Update();
+            UnitTestsHelper.TestAugmentationOperation(UnitTestsHelper.SPTrust.IdentityClaimTypeInformation.MappedClaimType, claimValue, isMemberOfTrustedGroup);
+        }
+#endif
+    }
+
+    [TestFixture]
+    public class AugmentAsLDAPServersOnCustomConfigTests : CustomConfigTests
+    {
+        public override void InitializeConfiguration()
+        {
+            base.InitializeConfiguration();
+            Config.EnableAugmentation = true;
+            Config.MainGroupClaimType = ClaimsProviderConstants.DefaultMainGroupClaimType;
+            foreach (LDAPConnection ldapConn in Config.LDAPConnectionsProp)
+            {
+                ldapConn.AugmentationEnabled = true;
+                ldapConn.GetGroupMembershipAsADDomain = false;
+                ldapConn.GroupMembershipAttributes = new string[] { "memberOf", "uniquememberof" };
+            }
+            Config.Update();
         }
 
         [Test, TestCaseSource(typeof(ValidateEntityDataSource), "GetTestData")]
         [Repeat(UnitTestsHelper.TestRepeatCount)]
-        public void AugmentEntity(ValidateEntityData registrationData)
+        public void TestAugmentation(ValidateEntityData registrationData)
         {
             UnitTestsHelper.TestAugmentationOperation(UnitTestsHelper.SPTrust.IdentityClaimTypeInformation.MappedClaimType, registrationData.ClaimValue, registrationData.IsMemberOfTrustedGroup);
-        }
-
-        [TestCase("i:05.t|contoso.local|yvand@contoso.local", true)]
-        [TestCase("i:05.t|contoso.local|zzzyvand@contoso.local", false)]
-        public void DEBUG_AugmentEntity(string claimValue, bool isMemberOfTrustedGroup)
-        {
-            UnitTestsHelper.TestAugmentationOperation(UnitTestsHelper.SPTrust.IdentityClaimTypeInformation.MappedClaimType, claimValue, isMemberOfTrustedGroup);
         }
     }
 }

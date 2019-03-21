@@ -1,0 +1,16 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<RunSettings>
+  <RunConfiguration>
+    <TargetPlatform>x64</TargetPlatform>
+  </RunConfiguration>
+  <TestRunParameters>
+    <Parameter name="CustomLDAPConnections" value="C:\Data\Dev\LDAPCP_CustomLDAPConnections.json" />
+    <Parameter name="DataFile_AllAccounts_Search" value="C:\Data\Dev\LDAPCP_Tests_AllAccounts_Search.csv" />
+    <Parameter name="DataFile_AllAccounts_Validate" value="C:\Data\Dev\LDAPCP_Tests_AllAccounts_Validate.csv" />
+    <Parameter name="FarmAdmin" value="i:0#.w|contoso\yvand" />
+    <Parameter name="TestSiteCollectionName" value="LDAPCP.UnitTests" />
+    <Parameter name="TrustedGroupToAdd_ClaimValue" value="contoso.local\group1" />
+    <Parameter name="ClaimsProviderConfigName" value="LDAPCPConfig" />
+    <Parameter name="TestLogFileName" value="LDAPCPIntegrationTests.log" />
+  </TestRunParameters>
+</RunSettings>

@@ -32,6 +32,8 @@ namespace ldapcp
         bool EnableAugmentation { get; set; }
         string MainGroupClaimType { get; set; }
         string EntityDisplayTextPrefix { get; set; }
+        string CustomData { get; set; }
+        int MaxSearchResultsCount { get; set; }
     }
 
     public class ClaimsProviderConstants
@@ -45,18 +47,32 @@ namespace ldapcp
         public const bool EnforceOnly1ClaimTypeForGroup = false;    // In LDAPCP, multiple claim types can be used to create group permissions
         public const string DefaultMainGroupClaimType = WIF4_5.ClaimTypes.Role;
         public const string PUBLICSITEURL = "https://ldapcp.com";
+        private static object Sync_SetClaimsProviderVersion = new object();
+        private static string _ClaimsProviderVersion;
         public static string ClaimsProviderVersion
         {
             get
             {
-                try
+                if (!String.IsNullOrEmpty(_ClaimsProviderVersion))
+                    return _ClaimsProviderVersion;
+
+                // Method FileVersionInfo.GetVersionInfo() may hang and block all LDAPCP threads, so it is read only 1 time
+                lock (Sync_SetClaimsProviderVersion)
                 {
-                    return FileVersionInfo.GetVersionInfo(Assembly.GetAssembly(typeof(LDAPCP)).Location).FileVersion;
-                }
-                // If assembly was removed from the GAC, CLR will throw that a FileNotFoundException
-                catch (System.IO.FileNotFoundException)
-                {
-                    return String.Empty;
+                    if (!String.IsNullOrEmpty(_ClaimsProviderVersion))
+                        return _ClaimsProviderVersion;
+
+                    try
+                    {
+                        _ClaimsProviderVersion = FileVersionInfo.GetVersionInfo(Assembly.GetAssembly(typeof(LDAPCP)).Location).FileVersion;
+                    }
+                    // If assembly was removed from the GAC, CLR throws a FileNotFoundException
+                    catch (System.IO.FileNotFoundException)
+                    {
+                        // Current process will never detect if assembly is added to the GAC later, which is fine
+                        _ClaimsProviderVersion = " ";
+                    }
+                    return _ClaimsProviderVersion;
                 }
             }
         }
@@ -250,6 +266,28 @@ namespace ldapcp
         [Persisted]
         private string ClaimsProviderVersion;
 
+        /// <summary>
+        /// This property is not used by AzureCP and is available to developers for their own needs
+        /// </summary>
+        public string CustomData
+        {
+            get => _CustomData;
+            set => _CustomData = value;
+        }
+        [Persisted]
+        private string _CustomData;
+
+        /// <summary>
+        /// Limit number of results returned to SharePoint during a search
+        /// </summary>
+        public int MaxSearchResultsCount
+        {
+            get => _MaxSearchResultsCount;
+            set => _MaxSearchResultsCount = value;
+        }
+        [Persisted]
+        private int _MaxSearchResultsCount = 30; // SharePoint sets maxCount to 30 in method FillSearch
+
         public LDAPCPConfig(string persistedObjectName, SPPersistedObject parent, string spTrustName) : base(persistedObjectName, parent)
         {
             this.SPTrustName = spTrustName;
@@ -374,6 +412,8 @@ namespace ldapcp
             this.EnableAugmentation = configToApply.EnableAugmentation;
             this.MainGroupClaimType = configToApply.MainGroupClaimType;
             this.EntityDisplayTextPrefix = configToApply.EntityDisplayTextPrefix;
+            this.CustomData = configToApply.CustomData;
+            this.MaxSearchResultsCount = configToApply.MaxSearchResultsCount;
         }
 
         public LDAPCPConfig CopyPersistedProperties()
@@ -383,7 +423,7 @@ namespace ldapcp
             copy.LDAPConnectionsProp = new List<LDAPConnection>();
             foreach (LDAPConnection currentCoco in this.LDAPConnectionsProp)
             {
-                copy.LDAPConnectionsProp.Add(currentCoco.CopyPersistedProperties());
+                copy.LDAPConnectionsProp.Add(currentCoco.CopyPublicProperties());
             }
             copy.ClaimTypes = new ClaimTypeConfigCollection();
             foreach (ClaimTypeConfig currentObject in this.ClaimTypes)
@@ -402,13 +442,15 @@ namespace ldapcp
             copy.EnableAugmentation = this.EnableAugmentation;
             copy.MainGroupClaimType = this.MainGroupClaimType;
             copy.EntityDisplayTextPrefix = this.EntityDisplayTextPrefix;
+            copy.CustomData = this.CustomData;
+            copy.MaxSearchResultsCount = this.MaxSearchResultsCount;
             return copy;
         }
 
         public void ResetClaimTypesList()
         {
             ClaimTypes.Clear();
-            ClaimTypes = ReturnDefaultClaimTypesConfig();
+            ClaimTypes = ReturnDefaultClaimTypesConfig(this.SPTrustName);
             MainGroupClaimType = ClaimsProviderConstants.DefaultMainGroupClaimType;
             ClaimsProviderLogging.Log($"Claim types list of configuration '{Name}' was successfully reset to default configuration",
                 TraceSeverity.High, EventSeverity.Information, TraceCategory.Core);
@@ -448,7 +490,7 @@ namespace ldapcp
             LDAPCPConfig defaultConfig = new LDAPCPConfig();
             defaultConfig.SPTrustName = spTrustName;
             defaultConfig.LDAPConnections = ReturnDefaultLDAPConnection();
-            defaultConfig.ClaimTypes = ReturnDefaultClaimTypesConfig();
+            defaultConfig.ClaimTypes = ReturnDefaultClaimTypesConfig(spTrustName);
             defaultConfig.PickerEntityGroupNameProp = "Results";
             defaultConfig.BypassLDAPLookup = false;
             defaultConfig.AddWildcardAsPrefixOfInput = false;
@@ -465,9 +507,18 @@ namespace ldapcp
         /// Generate and return default claim types configuration list
         /// </summary>
         /// <returns></returns>
-        public static ClaimTypeConfigCollection ReturnDefaultClaimTypesConfig()
+        public static ClaimTypeConfigCollection ReturnDefaultClaimTypesConfig(string spTrustName)
         {
-            return new ClaimTypeConfigCollection
+            if (String.IsNullOrWhiteSpace(spTrustName)) throw new ArgumentNullException("spTrustName cannot be null.");
+
+            SPTrustedLoginProvider spTrust = SPSecurityTokenServiceManager.Local.TrustedLoginProviders.GetProviderByName(spTrustName);
+            if (spTrust == null)
+            {
+                ClaimsProviderLogging.Log($"SPTrustedLoginProvider '{spTrustName}' was not found ", TraceSeverity.Unexpected, EventSeverity.Error, TraceCategory.Core);
+                return null;
+            }
+
+            ClaimTypeConfigCollection newCTConfigCollection = new ClaimTypeConfigCollection()
             {
                 // Claim types most liekly to be set as identity claim types
                 new ClaimTypeConfig{EntityType = DirectoryObjectType.User, LDAPClass = "user", LDAPAttribute = "mail", ClaimType = WIF4_5.ClaimTypes.Email, EntityDataKey = PeopleEditorEntityDataKeys.Email},
@@ -491,6 +542,8 @@ namespace ldapcp
                 new ClaimTypeConfig{EntityType = DirectoryObjectType.Group, LDAPClass = "group", LDAPAttribute="displayName", UseMainClaimTypeOfDirectoryObject = true, EntityDataKey = PeopleEditorEntityDataKeys.DisplayName},
                 new ClaimTypeConfig{EntityType = DirectoryObjectType.Group, LDAPClass = "user", LDAPAttribute="primaryGroupID", ClaimType = WIF4_5.ClaimTypes.PrimaryGroupSid, SupportsWildcard = false},
             };
+            newCTConfigCollection.SPTrust = spTrust;
+            return newCTConfigCollection;
         }
 
         /// <summary>
@@ -567,9 +620,9 @@ namespace ldapcp
                     // If LDAPCP is updated from a version < v10, this.ClaimTypes.Count will throw a NullReferenceException
                     int testClaimTypeCollection = this.ClaimTypes.Count;
                 }
-                catch (NullReferenceException ex)
+                catch (NullReferenceException)
                 {
-                    this.ClaimTypes = LDAPCPConfig.ReturnDefaultClaimTypesConfig();
+                    this.ClaimTypes = LDAPCPConfig.ReturnDefaultClaimTypesConfig(this.SPTrustName);
                     configUpdated = true;
                 }
 
@@ -629,7 +682,7 @@ namespace ldapcp
                         ClaimsProviderLogging.Log($"Configuration '{this.Name}' was upgraded in configuration database and some settings were updated or reset to their default configuration",
                             TraceSeverity.High, EventSeverity.Information, TraceCategory.Core);
                     }
-                    catch (Exception ex)
+                    catch (Exception)
                     {
                         // It may fail if current user doesn't have permission to update the object in configuration database
                         ClaimsProviderLogging.Log($"Configuration '{this.Name}' was upgraded locally, but changes could not be applied in configuration database. Please visit admin pages in central administration to upgrade configuration globally.",
@@ -655,8 +708,14 @@ namespace ldapcp
             set => Id = value;
         }
 
+        /// <summary>
+        /// LDAP Path of the connection LDAP://contoso.local:port/DC=contoso,DC=local
+        /// </summary>
         [Persisted]
         public string Path;
+        /// <summary>
+        /// Internal only: shadow property of Path required for ASP.NET server side controls in admin pages.
+        /// </summary>
         public string PathProp
         {
             get => Path;
@@ -683,6 +742,9 @@ namespace ldapcp
         /// </summary>
         [Persisted]
         public bool AugmentationEnabled;
+        /// <summary>
+        /// Internal only: shadow property of AugmentationEnabled required for ASP.NET server side controls in admin pages.
+        /// </summary>
         public bool AugmentationEnabledProp
         {
             get => AugmentationEnabled;
@@ -695,11 +757,17 @@ namespace ldapcp
         /// </summary>
         [Persisted]
         public bool GetGroupMembershipAsADDomain = true;
+        /// <summary>
+        /// Internal only: shadow property of GetGroupMembershipAsADDomain required for ASP.NET server side controls in admin pages.
+        /// </summary>
         public bool GetGroupMembershipAsADDomainProp
         {
             get => GetGroupMembershipAsADDomain;
             set => GetGroupMembershipAsADDomain = value;
         }
+
+        [Persisted]
+        public string[] GroupMembershipAttributes = new string[] { "memberOf", "uniquememberof" };
 
         /// <summary>
         /// DirectoryEntry used to make LDAP queries
@@ -707,12 +775,26 @@ namespace ldapcp
         public DirectoryEntry Directory;
 
         public string Filter;
+        /// <summary>
+        /// The domain name, for example "contoso"
+        /// </summary>
+        public string DomainName;
+
+        /// <summary>
+        /// The fully qualified domain name, for example "contoso.local"
+        /// </summary>
+        public string DomainFQDN;
+
+        /// <summary>
+        /// The container on the store to use as the root of the context, for example "DC=contoso,DC=local"
+        /// </summary>
+        public string RootContainer;
 
         public LDAPConnection()
         {
         }
 
-        internal LDAPConnection CopyPersistedProperties()
+        internal LDAPConnection CopyPublicProperties()
         {
             return new LDAPConnection()
             {
@@ -725,6 +807,12 @@ namespace ldapcp
                 UserServerDirectoryEntry = this.UserServerDirectoryEntry,
                 AugmentationEnabled = this.AugmentationEnabled,
                 GetGroupMembershipAsADDomain = this.GetGroupMembershipAsADDomain,
+                GroupMembershipAttributes = this.GroupMembershipAttributes,
+                Directory = this.Directory,
+                Filter = this.Filter,
+                DomainName = this.DomainName,
+                DomainFQDN = this.DomainFQDN,
+                RootContainer = this.RootContainer,
             };
         }
     }
@@ -766,9 +854,10 @@ namespace ldapcp
         public int MaxCount;
 
         /// <summary>
-        /// If request is a validation: contains the value of the SPClaim. If request is a search: contains the input
+        /// If search: it contains the raw input. If validation: it contains the incoming SPClaim value processed to be searchable against LDAP servers (domain tokens removed). LDAP special characters are NOT escaped
         /// </summary>
         public string Input;
+
         public bool InputHasKeyword;
 
         /// <summary>
@@ -790,11 +879,6 @@ namespace ldapcp
         {
             this.OperationType = currentRequestType;
             this.Input = input;
-            if (input != null)
-            {
-                // Fix bug https://github.com/Yvand/LDAPCP/issues/53 by escaping special characters with their hex representation as documented in https://ldap.com/ldap-filters/
-                this.Input = OperationContext.EscapeSpecialCharacters(input);
-            }
             this.IncomingEntity = incomingEntity;
             this.UriContext = context;
             this.HierarchyNodeID = hierarchyNodeID;
@@ -852,7 +936,12 @@ namespace ldapcp
             this.IncomingEntityClaimTypeConfig = processedClaimTypeConfigList.FirstOrDefault(x =>
                String.Equals(x.ClaimType, this.IncomingEntity.ClaimType, StringComparison.InvariantCultureIgnoreCase) &&
                !x.UseMainClaimTypeOfDirectoryObject);
-            if (this.IncomingEntityClaimTypeConfig == null) return;
+
+            if (this.IncomingEntityClaimTypeConfig == null)
+            {
+                ClaimsProviderLogging.Log($"[{LDAPCP._ProviderInternalName}] Unable to validate entity \"{this.IncomingEntity.Value}\" because its claim type \"{this.IncomingEntity.ClaimType}\" was not found in the ClaimTypes list of current configuration.", TraceSeverity.Unexpected, EventSeverity.Error, TraceCategory.Configuration);
+                throw new InvalidOperationException($"[{LDAPCP._ProviderInternalName}] Unable validate entity \"{this.IncomingEntity.Value}\" because its claim type \"{this.IncomingEntity.ClaimType}\" was not found in the ClaimTypes list of current configuration.");
+            }
 
             // CurrentClaimTypeConfigList must also be set
             this.CurrentClaimTypeConfigList = new List<ClaimTypeConfig>(1);
@@ -867,11 +956,8 @@ namespace ldapcp
                     IncomingEntityClaimTypeConfig.ClaimValuePrefix.Contains(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINFQDN)
                 ))
             {
-                Input = GetAccountFromFullAccountName(Input);
+                this.Input = GetAccountFromFullAccountName(this.Input);
             }
-
-            // Fix bug https://github.com/Yvand/LDAPCP/issues/53 by escaping special characters with their hex representation as documented in https://ldap.com/ldap-filters/
-            Input = OperationContext.EscapeSpecialCharacters(Input);
 
             this.InputHasKeyword = (!String.IsNullOrEmpty(IncomingEntityClaimTypeConfig.ClaimValuePrefix) && !IncomingEntity.Value.StartsWith(IncomingEntityClaimTypeConfig.ClaimValuePrefix, StringComparison.InvariantCultureIgnoreCase) && IncomingEntityClaimTypeConfig.DoNotAddClaimValuePrefixIfBypassLookup) ? true : false;
         }
@@ -903,6 +989,12 @@ namespace ldapcp
             this.IncomingEntityClaimTypeConfig = processedClaimTypeConfigList.FirstOrDefault(x =>
                String.Equals(x.ClaimType, this.IncomingEntity.ClaimType, StringComparison.InvariantCultureIgnoreCase) &&
                !x.UseMainClaimTypeOfDirectoryObject);
+
+            if (this.IncomingEntityClaimTypeConfig == null)
+            {
+                ClaimsProviderLogging.Log($"[{LDAPCP._ProviderInternalName}] Unable to augment entity \"{this.IncomingEntity.Value}\" because its claim type \"{this.IncomingEntity.ClaimType}\" was not found in the ClaimTypes list of current configuration.", TraceSeverity.Unexpected, EventSeverity.Error, TraceCategory.Configuration);
+                throw new InvalidOperationException($"[{LDAPCP._ProviderInternalName}] Unable to augment entity \"{this.IncomingEntity.Value}\" because its claim type \"{this.IncomingEntity.ClaimType}\" was not found in the ClaimTypes list of current configuration.");
+            }
         }
 
         /// <summary>
@@ -947,6 +1039,12 @@ namespace ldapcp
             return (stop > -1) ? value.Substring(0, stop) : string.Empty;
         }
 
+        /// <summary>
+        /// Extract domain name information from the distinguishedName supplied
+        /// </summary>
+        /// <param name="distinguishedName">distinguishedName to use to extract domain name information</param>
+        /// <param name="domainName">Domain name</param>
+        /// <param name="domainFQDN">Fully qualified domain name</param>
         public static void GetDomainInformation(string distinguishedName, out string domainName, out string domainFQDN)
         {
             // Retrieve FQDN and domain name of current DirectoryEntry
@@ -968,10 +1066,17 @@ namespace ldapcp
             }
         }
 
+        /// <summary>
+        /// Query LDAP server to retrieve domain name information
+        /// </summary>
+        /// <param name="directory">LDAP Server to query</param>
+        /// <param name="domainName">Domain name</param>
+        /// <param name="domainFQDN">Fully qualified domain name</param>
         public static void GetDomainInformation(DirectoryEntry directory, out string domainName, out string domainFQDN)
         {
             string distinguishedName = String.Empty;
             domainName = domainFQDN = String.Empty;
+            // Method PropertyCollection.Contains("distinguishedName") does a LDAP bind behind the scene
             if (directory.Properties.Contains("distinguishedName"))
             {
                 distinguishedName = directory.Properties["distinguishedName"].Value.ToString();
@@ -1012,15 +1117,15 @@ namespace ldapcp
             return result;
         }
 
-        public static string UnescapeSpecialCharacters(string stringWithEscapedChars)
-        {
-            string result = stringWithEscapedChars;
-            foreach (KeyValuePair<string, string> kvp in ClaimsProviderConstants.SpecialCharacters)
-            {
-                result = result.Replace(kvp.Value, kvp.Key);
-            }
-            return result;
-        }
+        //public static string UnescapeSpecialCharacters(string stringWithEscapedChars)
+        //{
+        //    string result = stringWithEscapedChars;
+        //    foreach (KeyValuePair<string, string> kvp in ClaimsProviderConstants.SpecialCharacters)
+        //    {
+        //        result = result.Replace(kvp.Value, kvp.Key);
+        //    }
+        //    return result;
+        //}
     }
 
     public enum DirectoryObjectType

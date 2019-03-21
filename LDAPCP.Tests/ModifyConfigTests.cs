@@ -6,20 +6,9 @@ using System.Linq;
 namespace LDAPCP.Tests
 {
     [TestFixture]
-    public class ModifyConfigTests
+    public class ModifyConfigTests : BackupCurrentConfig
     {
-        private LDAPCPConfig Config;
         const string ConfigUpdateErrorMessage = "Some changes made to list ClaimTypes are invalid and cannot be committed to configuration database. Inspect inner exception for more details about the error.";
-
-        [OneTimeSetUp]
-        public void Init()
-        {
-            LDAPCPConfig configFromConfigDB = LDAPCPConfig.GetConfiguration(UnitTestsHelper.ClaimsProviderConfigName, UnitTestsHelper.SPTrust.Name);
-            // Create a local copy, otherwise changes will impact the whole process (even without calling Update method)
-            Config = configFromConfigDB.CopyPersistedProperties();
-            // Reset configuration to test its default for the tests
-            Config.ResetCurrentConfiguration();
-        }
 
         [Test]
         public void AddClaimTypeConfig()

@@ -1,0 +1,123 @@
+resources:
+- repo: self
+
+jobs:
+- job: RunTestSP2013
+  condition: eq(variables['Deployment.ProvisionSharePoint2013'], 'yes')
+  displayName: Run tests on SP2013
+  timeoutInMinutes: 15
+  variables:
+    jobSharePointVersion: 2013
+  pool:
+    name: $(System.TeamProject)-Tests-2013
+  steps:
+  - checkout: none #skip checking out the default repository resource
+  - task: DownloadBuildArtifacts@0
+    displayName: 'Download Build Artifacts'
+    inputs:
+      buildType: specific
+      project: '$(System.TeamProjectId)'
+      pipeline: $(DevOps.BuildArtifactsPipelineID)
+      specificBuildWithTriggering: true
+      artifactName: drop
+      downloadPath: $(Build.ArtifactStagingDirectory)
+      itemPattern: |
+       drop/$(System.TeamProject)/bin/Release/$(System.TeamProject).pdb
+       drop/$(System.TeamProject).Tests/bin/Release/*.dll
+       drop/SPTestServer artifacts/?(*.csv|*.json|*.runsettings)
+
+  - task: VisualStudioTestPlatformInstaller@1
+    displayName: 'Visual Studio Test Platform Installer'
+
+  - task: VSTest@2
+    displayName: 'Run Visual Studio tests'
+    inputs:
+      searchFolder: '$(Build.ArtifactStagingDirectory)/drop/$(System.TeamProject).Tests/bin/Release'
+      vsTestVersion: toolsInstaller
+      runSettingsFile: '$(Build.ArtifactStagingDirectory)/drop/SPTestServer artifacts/DTLServer.runsettings'
+      overrideTestrunParameters: '$(Deployment.OverrideTestrunParameters)'
+      codeCoverageEnabled: true
+      otherConsoleOptions: '/Platform:x64'
+      testRunTitle: '$(System.TeamProject)-Tests-SP$(jobSharePointVersion)'
+      platform: '$(BuildPlatform)'
+      configuration: $(BuildConfiguration)
+
+- job: RunTestSP2016
+  condition: eq(variables['Deployment.ProvisionSharePoint2016'], 'yes')
+  displayName: Run tests on SP2016
+  timeoutInMinutes: 15
+  variables:
+    jobSharePointVersion: 2016
+  pool:
+    name: $(System.TeamProject)-Tests-2016
+  steps:
+  - checkout: none #skip checking out the default repository resource
+  - task: DownloadBuildArtifacts@0
+    displayName: 'Download Build Artifacts'
+    inputs:
+      buildType: specific
+      project: '$(System.TeamProjectId)'
+      pipeline: $(DevOps.BuildArtifactsPipelineID)
+      specificBuildWithTriggering: true
+      artifactName: drop
+      downloadPath: $(Build.ArtifactStagingDirectory)
+      itemPattern: |
+       drop/$(System.TeamProject)/bin/Release/$(System.TeamProject).pdb
+       drop/$(System.TeamProject).Tests/bin/Release/*.dll
+       drop/SPTestServer artifacts/?(*.csv|*.json|*.runsettings)
+
+  - task: VisualStudioTestPlatformInstaller@1
+    displayName: 'Visual Studio Test Platform Installer'
+
+  - task: VSTest@2
+    displayName: 'Run Visual Studio tests'
+    inputs:
+      searchFolder: '$(Build.ArtifactStagingDirectory)/drop/$(System.TeamProject).Tests/bin/Release'
+      vsTestVersion: toolsInstaller
+      runSettingsFile: '$(Build.ArtifactStagingDirectory)/drop/SPTestServer artifacts/DTLServer.runsettings'
+      overrideTestrunParameters: '$(Deployment.OverrideTestrunParameters)'
+      codeCoverageEnabled: true
+      otherConsoleOptions: '/Platform:x64'
+      testRunTitle: '$(System.TeamProject)-Tests-SP$(jobSharePointVersion)'
+      platform: '$(BuildPlatform)'
+      configuration: $(BuildConfiguration)
+
+- job: RunTestSP2019
+  condition: eq(variables['Deployment.ProvisionSharePoint2019'], 'yes')
+  displayName: Run tests on SP2019
+  timeoutInMinutes: 15
+  variables:
+    jobSharePointVersion: 2019
+  pool:
+    name: $(System.TeamProject)-Tests-2019
+  steps:
+  - checkout: none #skip checking out the default repository resource
+  - task: DownloadBuildArtifacts@0
+    displayName: 'Download Build Artifacts'
+    inputs:
+      buildType: specific
+      project: '$(System.TeamProjectId)'
+      pipeline: $(DevOps.BuildArtifactsPipelineID)
+      specificBuildWithTriggering: true
+      artifactName: drop
+      downloadPath: $(Build.ArtifactStagingDirectory)
+      itemPattern: |
+       drop/$(System.TeamProject)/bin/Release/$(System.TeamProject).pdb
+       drop/$(System.TeamProject).Tests/bin/Release/*.dll
+       drop/SPTestServer artifacts/?(*.csv|*.json|*.runsettings)
+
+  - task: VisualStudioTestPlatformInstaller@1
+    displayName: 'Visual Studio Test Platform Installer'
+
+  - task: VSTest@2
+    displayName: 'Run Visual Studio tests'
+    inputs:
+      searchFolder: '$(Build.ArtifactStagingDirectory)/drop/$(System.TeamProject).Tests/bin/Release'
+      vsTestVersion: toolsInstaller
+      runSettingsFile: '$(Build.ArtifactStagingDirectory)/drop/SPTestServer artifacts/DTLServer.runsettings'
+      overrideTestrunParameters: '$(Deployment.OverrideTestrunParameters)'
+      codeCoverageEnabled: true
+      otherConsoleOptions: '/Platform:x64'
+      testRunTitle: '$(System.TeamProject)-Tests-SP$(jobSharePointVersion)'
+      platform: '$(BuildPlatform)'
+      configuration: $(BuildConfiguration)

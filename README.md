@@ -1,28 +1,24 @@
-# LDAPCP for SharePoint 2013 and 2016
+# LDAPCP for SharePoint 2019 / 2016 / 2013
 
-## Please visit [ldapcp.com](http://ldapcp.com) to download LDAPCP and find documentation.
+**Please visit [ldapcp.com](https://ldapcp.com) to download LDAPCP and find documentation.**
 
-![People picker with LDAPCP](https://cloud.githubusercontent.com/assets/8788631/25440961/3b8db40a-2aa1-11e7-9070-aee808950f38.PNG)
+## Build status of version in development
 
-This project was originally hosted on [Codeplex](https://ldapcp.codeplex.com/) but I moved it here since Codeplex is [shutting down](https://blogs.msdn.microsoft.com/bharry/2017/03/31/shutting-down-codeplex/).
+[![Build Status](https://dev.azure.com/YvanDev/LDAPCP/_apis/build/status/CI-Compile-Tag?branchName=dev)](https://dev.azure.com/YvanDev/LDAPCP/_build/latest?definitionId=2&branchName=dev)
 
-## Features
-- Easy to configure with administration pages added in Central administration > Security. 
-- Queries multiple servers in parallel (multi-threaded connections). 
-- Populates properties (e.g. email, SIP, display name) upon permission creation. 
-- Supports rehydration for provider-hosted add-ins. 
-- Supports dynamics tokens "{domain}" and "{fqdn}" to add domain information on permissions to create. 
-- Implements SharePoint logging infrastructure and logs messages in Area/Product "LDAPCP". 
-- Ensures thread safety. 
-- Implements augmentation to add group membership to security tokens.
+## Latest stable release
 
-## Customization capabilities
-- Customize list of claim types, and their mapping with LDAP objects. 
-- Enable/disable augmentation globally or per LDAP connection. 
-- Customize display of permissions. 
-- Customize LDAP filter per claim type, e.g. to only return users member of a specific security group. 
-- Set a keyword to bypass LDAP lookup. e.g. input "extuser:partner@contoso.com" directly creates permission "partner@contoso.com" on claim type set for this. 
-- Set a prefix to add to LDAP results, e.g. add "domain\" to groups returned by LDAP. 
-- Hide disabled users and distribution lists. 
-- Developers can easily do a lot more by inheriting base class.
+![GitHub Release Date](https://img.shields.io/github/release-date/Yvand/LDAPCP.svg)
+![GitHub release](https://img.shields.io/github/release/Yvand/LDAPCP.svg)
+![Latest release downloads](https://img.shields.io/github/downloads/Yvand/LDAPCP/latest/total.svg)
 
+## Latest pre-release
+
+![GitHub (Pre-)Release Date](https://img.shields.io/github/release-date-pre/Yvand/LDAPCP.svg)
+![GitHub release](https://img.shields.io/github/release-pre/Yvand/LDAPCP.svg)
+
+## Miscellaneous
+
+![GitHub issues](https://img.shields.io/github/issues/Yvand/LDAPCP.svg)
+![GitHub](https://img.shields.io/github/license/Yvand/LDAPCP.svg) 
+![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/Yvand/LDAPCP.svg)

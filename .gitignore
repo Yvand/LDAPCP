@@ -188,7 +188,6 @@ ClientBin/
 *~
 *.dbmdl
 *.dbproj.schemaview
-*.pfx
 *.publishsettings
 node_modules/
 orleans.codegen.cs
@@ -250,3 +249,7 @@ paket-files/
 # JetBrains Rider
 .idea/
 *.sln.iml
+
+# Exclude assembly signing files
+*.pfx
+*.snk
