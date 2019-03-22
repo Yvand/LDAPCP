@@ -1,6 +1,9 @@
 resources:
 - repo: self
 
+variables:
+  IntegrationTestsDataFolderName: 'Integration tests data'
+
 jobs:
 - job: RunTestSP2013
   condition: eq(variables['Deployment.ProvisionSharePoint2013'], 'yes')
@@ -24,7 +27,7 @@ jobs:
       itemPattern: |
        drop/$(System.TeamProject)/bin/Release/$(System.TeamProject).pdb
        drop/$(System.TeamProject).Tests/bin/Release/*.dll
-       drop/SPTestServer artifacts/?(*.csv|*.json|*.runsettings)
+       drop/$(IntegrationTestsDataFolderName)/?(*.csv|*.json|*.runsettings)
 
   - task: VisualStudioTestPlatformInstaller@1
     displayName: 'Visual Studio Test Platform Installer'
@@ -34,7 +37,7 @@ jobs:
     inputs:
       searchFolder: '$(Build.ArtifactStagingDirectory)/drop/$(System.TeamProject).Tests/bin/Release'
       vsTestVersion: toolsInstaller
-      runSettingsFile: '$(Build.ArtifactStagingDirectory)/drop/SPTestServer artifacts/DTLServer.runsettings'
+      runSettingsFile: '$(Build.ArtifactStagingDirectory)/drop/$(IntegrationTestsDataFolderName)/DTLServer.runsettings'
       overrideTestrunParameters: '$(Deployment.OverrideTestrunParameters)'
       codeCoverageEnabled: true
       otherConsoleOptions: '/Platform:x64'
@@ -64,7 +67,7 @@ jobs:
       itemPattern: |
        drop/$(System.TeamProject)/bin/Release/$(System.TeamProject).pdb
        drop/$(System.TeamProject).Tests/bin/Release/*.dll
-       drop/SPTestServer artifacts/?(*.csv|*.json|*.runsettings)
+       drop/$(IntegrationTestsDataFolderName)/?(*.csv|*.json|*.runsettings)
 
   - task: VisualStudioTestPlatformInstaller@1
     displayName: 'Visual Studio Test Platform Installer'
@@ -74,7 +77,7 @@ jobs:
     inputs:
       searchFolder: '$(Build.ArtifactStagingDirectory)/drop/$(System.TeamProject).Tests/bin/Release'
       vsTestVersion: toolsInstaller
-      runSettingsFile: '$(Build.ArtifactStagingDirectory)/drop/SPTestServer artifacts/DTLServer.runsettings'
+      runSettingsFile: '$(Build.ArtifactStagingDirectory)/drop/$(IntegrationTestsDataFolderName)/DTLServer.runsettings'
       overrideTestrunParameters: '$(Deployment.OverrideTestrunParameters)'
       codeCoverageEnabled: true
       otherConsoleOptions: '/Platform:x64'
@@ -104,7 +107,7 @@ jobs:
       itemPattern: |
        drop/$(System.TeamProject)/bin/Release/$(System.TeamProject).pdb
        drop/$(System.TeamProject).Tests/bin/Release/*.dll
-       drop/SPTestServer artifacts/?(*.csv|*.json|*.runsettings)
+       drop/$(IntegrationTestsDataFolderName)/?(*.csv|*.json|*.runsettings)
 
   - task: VisualStudioTestPlatformInstaller@1
     displayName: 'Visual Studio Test Platform Installer'
@@ -114,7 +117,7 @@ jobs:
     inputs:
       searchFolder: '$(Build.ArtifactStagingDirectory)/drop/$(System.TeamProject).Tests/bin/Release'
       vsTestVersion: toolsInstaller
-      runSettingsFile: '$(Build.ArtifactStagingDirectory)/drop/SPTestServer artifacts/DTLServer.runsettings'
+      runSettingsFile: '$(Build.ArtifactStagingDirectory)/drop/$(IntegrationTestsDataFolderName)/DTLServer.runsettings'
       overrideTestrunParameters: '$(Deployment.OverrideTestrunParameters)'
       codeCoverageEnabled: true
       otherConsoleOptions: '/Platform:x64'
