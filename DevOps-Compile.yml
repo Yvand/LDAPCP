@@ -5,6 +5,7 @@ resources:
 variables:
   SolutionFileName: '$(system.teamProject).sln'
   IntegrationTestsDataFolderName: 'Integration tests data'
+  ConfigureServerFolderName: Configure server
 
 jobs:
 - job: Compile
@@ -35,6 +36,11 @@ jobs:
      $azureStorageBaseDirectory = "Resources\$(system.teamProject)"
      $projectLocalPath = "$(System.DefaultWorkingDirectory)\$(system.teamProject)"
      $devTestLabsLocalPath = "$(Build.ArtifactStagingDirectory)\$(IntegrationTestsDataFolderName)"
+     
+     # Create now folder that will contain later scripts to configure local test server
+     if ((Test-Path -Path $(ConfigureServerFolderName) -PathType Container) -eq $false) {
+         New-Item -ItemType Directory -Path $(ConfigureServerFolderName)
+     }
      
      Write-Output ("Copy signing key from $(DownloadSecureFile.secureFilePath) to $projectLocalPath")
      Copy-Item "$(DownloadSecureFile.secureFilePath)" -Destination "$projectLocalPath"

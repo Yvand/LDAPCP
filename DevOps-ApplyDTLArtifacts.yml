@@ -65,6 +65,18 @@ jobs:
     inputs:
       FileUrl: 'https://raw.githubusercontent.com/Yvand/AzureRM-Templates/dev/DevTestLabs-Artifacts/manage-artifacts/apply-dtl-artifact.ps1'
       DestinationFolder: '$(System.DefaultWorkingDirectory)\drop\$(ConfigureServerFolderName)'
+  
+  - task: automagically.DownloadFile.DownloadFile.DownloadFile@1
+    displayName: 'Download ConfigureLab.ps1'
+    inputs:
+      FileUrl: 'https://raw.githubusercontent.com/Yvand/AzureRM-Templates/dev/DevTestLabs-Artifacts/manage-artifacts/ConfigureLab.ps1'
+      DestinationFolder: '$(System.DefaultWorkingDirectory)\drop\$(ConfigureServerFolderName)'
+  
+  - task: automagically.DownloadFile.DownloadFile.DownloadFile@1
+    displayName: 'Download ConfigureLab.psm1'
+    inputs:
+      FileUrl: 'https://raw.githubusercontent.com/Yvand/AzureRM-Templates/dev/DevTestLabs-Artifacts/manage-artifacts/ConfigureLab.psm1'
+      DestinationFolder: '$(System.DefaultWorkingDirectory)\drop\$(ConfigureServerFolderName)'
 
   - task: AzurePowerShell@3
     displayName: 'Apply artifact "Azure Pipelines Agent"'
@@ -96,6 +108,18 @@ jobs:
     displayName: 'Download apply-dtl-artifact.ps1'
     inputs:
       FileUrl: 'https://raw.githubusercontent.com/Yvand/AzureRM-Templates/dev/DevTestLabs-Artifacts/manage-artifacts/apply-dtl-artifact.ps1'
+      DestinationFolder: '$(System.DefaultWorkingDirectory)\drop\$(ConfigureServerFolderName)'
+  
+  - task: automagically.DownloadFile.DownloadFile.DownloadFile@1
+    displayName: 'Download ConfigureLab.ps1'
+    inputs:
+      FileUrl: 'https://raw.githubusercontent.com/Yvand/AzureRM-Templates/dev/DevTestLabs-Artifacts/manage-artifacts/ConfigureLab.ps1'
+      DestinationFolder: '$(System.DefaultWorkingDirectory)\drop\$(ConfigureServerFolderName)'
+  
+  - task: automagically.DownloadFile.DownloadFile.DownloadFile@1
+    displayName: 'Download ConfigureLab.psm1'
+    inputs:
+      FileUrl: 'https://raw.githubusercontent.com/Yvand/AzureRM-Templates/dev/DevTestLabs-Artifacts/manage-artifacts/ConfigureLab.psm1'
       DestinationFolder: '$(System.DefaultWorkingDirectory)\drop\$(ConfigureServerFolderName)'
 
   - task: AzurePowerShell@3
