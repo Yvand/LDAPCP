@@ -7,6 +7,7 @@
 ![GitHub Release Date](https://img.shields.io/github/release-date/Yvand/LDAPCP.svg)
 ![GitHub release](https://img.shields.io/github/release/Yvand/LDAPCP.svg)
 ![Latest release downloads](https://img.shields.io/github/downloads/Yvand/LDAPCP/latest/total.svg)
+![GitHub All Releases](https://img.shields.io/github/downloads/Yvand/LDAPCP/total.svg)
 
 ## Version in development
 
