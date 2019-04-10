@@ -796,24 +796,31 @@ namespace ldapcp
 
         internal LDAPConnection CopyPublicProperties()
         {
-            return new LDAPConnection()
+            LDAPConnection copy = new LDAPConnection();
+            FieldInfo[] publicFields = this.GetType().GetFields(BindingFlags.Public | BindingFlags.Instance);
+            foreach (FieldInfo field in publicFields)
             {
-                Id = this.Id,
-                Path = this.Path,
-                Username = this.Username,
-                Password = this.Password,
-                Metadata = this.Metadata,
-                AuthenticationTypes = this.AuthenticationTypes,
-                UserServerDirectoryEntry = this.UserServerDirectoryEntry,
-                AugmentationEnabled = this.AugmentationEnabled,
-                GetGroupMembershipAsADDomain = this.GetGroupMembershipAsADDomain,
-                GroupMembershipAttributes = this.GroupMembershipAttributes,
-                Directory = this.Directory,
-                Filter = this.Filter,
-                DomainName = this.DomainName,
-                DomainFQDN = this.DomainFQDN,
-                RootContainer = this.RootContainer,
-            };
+                field.SetValue(copy, field.GetValue(this));
+            }
+            return copy;
+            //return new LDAPConnection()
+            //{
+            //    Id = this.Id,
+            //    Path = this.Path,
+            //    Username = this.Username,
+            //    Password = this.Password,
+            //    Metadata = this.Metadata,
+            //    AuthenticationTypes = this.AuthenticationTypes,
+            //    UserServerDirectoryEntry = this.UserServerDirectoryEntry,
+            //    AugmentationEnabled = this.AugmentationEnabled,
+            //    GetGroupMembershipAsADDomain = this.GetGroupMembershipAsADDomain,
+            //    GroupMembershipAttributes = this.GroupMembershipAttributes,
+            //    Directory = this.Directory,
+            //    Filter = this.Filter,
+            //    DomainName = this.DomainName,
+            //    DomainFQDN = this.DomainFQDN,
+            //    RootContainer = this.RootContainer,
+            //};
         }
     }
 
