@@ -177,7 +177,7 @@ namespace ldapcp
 
                     // Create local version of the persisted object, that will never be saved in config DB
                     // This copy is unique to current object instance to avoid thread safety issues
-                    this.CurrentConfiguration = ((LDAPCPConfig)globalConfiguration).CopyPersistedProperties();
+                    this.CurrentConfiguration = ((LDAPCPConfig)globalConfiguration).CopyConfiguration();
 
 #pragma warning disable CS0618 // Type or member is obsolete
                     SetCustomConfiguration(context, entityTypes);
@@ -624,7 +624,7 @@ namespace ldapcp
             List<LDAPConnection> ldapServers = new List<LDAPConnection>(this.CurrentConfiguration.LDAPConnectionsProp.Count);
             foreach (LDAPConnection ldapServer in this.CurrentConfiguration.LDAPConnectionsProp)
             {
-                ldapServers.Add(ldapServer.CopyPublicProperties());
+                ldapServers.Add(ldapServer.CopyConfiguration());
             }
 
             BuildLDAPFilter(currentContext, ldapServers);
@@ -1106,7 +1106,7 @@ namespace ldapcp
                     List<LDAPConnection> ldapServers = new List<LDAPConnection>(this.CurrentConfiguration.LDAPConnectionsProp.Count);
                     foreach (LDAPConnection ldapServer in this.CurrentConfiguration.LDAPConnectionsProp.Where(x => x.AugmentationEnabled))
                     {
-                        ldapServers.Add(ldapServer.CopyPublicProperties());
+                        ldapServers.Add(ldapServer.CopyConfiguration());
                     }
 
                     Parallel.ForEach(ldapServers, ldapConnection =>

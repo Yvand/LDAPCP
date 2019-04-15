@@ -5,8 +5,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Reflection;
 using WIF4_5 = System.Security.Claims;
 
 namespace ldapcp
@@ -187,47 +186,34 @@ namespace ldapcp
         {
         }
 
-        public ClaimTypeConfig CopyPersistedProperties()
+        /// <summary>
+        /// Returns a copy of the current object. This copy does not have any member of the base SharePoint base class set
+        /// </summary>
+        /// <returns></returns>
+        public ClaimTypeConfig CopyConfiguration()
         {
-            return new ClaimTypeConfig()
+            ClaimTypeConfig copy = new ClaimTypeConfig();
+            // Copy non-inherited private members
+            FieldInfo[] fieldsToCopy = this.GetType().GetFields(BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly);
+            foreach (FieldInfo field in fieldsToCopy)
             {
-                _AdditionalLDAPFilter = this._AdditionalLDAPFilter,
-                _DirectoryObjectType = this._DirectoryObjectType,
-                _ClaimType = this._ClaimType,
-                _ClaimValueType = this._ClaimValueType,
-                _DoNotAddClaimValuePrefixIfBypassLookup = this._DoNotAddClaimValuePrefixIfBypassLookup,
-                _FilterExactMatchOnly = this._FilterExactMatchOnly,
-                _PrefixToBypassLookup = this._PrefixToBypassLookup,
-                _LDAPAttribute = this._LDAPAttribute,
-                _LDAPAttributeToShowAsDisplayText = this._LDAPAttributeToShowAsDisplayText,
-                _LDAPClass = this._LDAPClass,
-                _EntityDataKey = this._EntityDataKey,
-                _ClaimTypeMappingName = this._ClaimTypeMappingName,
-                _ClaimValuePrefix = this._ClaimValuePrefix,
-                _UseMainClaimTypeOfDirectoryObject = this._UseMainClaimTypeOfDirectoryObject,
-                _ShowClaimNameInDisplayText = this._ShowClaimNameInDisplayText,
-                _SupportsWildcard = this._SupportsWildcard,
-            };
+                field.SetValue(copy, field.GetValue(this));
+            }
+            return copy;
         }
 
-        internal void SetFromObject(ClaimTypeConfig objectToCopy)
+        /// <summary>
+        /// Apply configuration in parameter to current object. It does not copy SharePoint base class properties
+        /// </summary>
+        /// <param name="configToApply"></param>
+        internal void ApplyConfiguration(ClaimTypeConfig configToApply)
         {
-            _AdditionalLDAPFilter = objectToCopy._AdditionalLDAPFilter;
-            _DirectoryObjectType = objectToCopy._DirectoryObjectType;
-            _ClaimType = objectToCopy._ClaimType;
-            _ClaimValueType = objectToCopy._ClaimValueType;
-            _DoNotAddClaimValuePrefixIfBypassLookup = objectToCopy._DoNotAddClaimValuePrefixIfBypassLookup;
-            _FilterExactMatchOnly = objectToCopy._FilterExactMatchOnly;
-            _PrefixToBypassLookup = objectToCopy._PrefixToBypassLookup;
-            _LDAPAttribute = objectToCopy._LDAPAttribute;
-            _LDAPAttributeToShowAsDisplayText = objectToCopy._LDAPAttributeToShowAsDisplayText;
-            _LDAPClass = objectToCopy._LDAPClass;
-            _EntityDataKey = objectToCopy._EntityDataKey;
-            _ClaimTypeMappingName = objectToCopy._ClaimTypeMappingName;
-            _ClaimValuePrefix = objectToCopy._ClaimValuePrefix;
-            _UseMainClaimTypeOfDirectoryObject = objectToCopy._UseMainClaimTypeOfDirectoryObject;
-            _ShowClaimNameInDisplayText = objectToCopy._ShowClaimNameInDisplayText;
-            _SupportsWildcard = objectToCopy._SupportsWildcard;
+            // Copy non-inherited private members
+            FieldInfo[] fieldsToCopy = this.GetType().GetFields(BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly);
+            foreach (FieldInfo field in fieldsToCopy)
+            {
+                field.SetValue(this, field.GetValue(configToApply));
+            }
         }
 
         public bool Equals(ClaimTypeConfig other)
@@ -396,12 +382,12 @@ namespace ldapcp
             ClaimTypeConfigCollection testUpdateCollection = new ClaimTypeConfigCollection();
             foreach (ClaimTypeConfig curCTConfig in innerCol)
             {
-                testUpdateCollection.Add(curCTConfig.CopyPersistedProperties(), false);
+                testUpdateCollection.Add(curCTConfig.CopyConfiguration(), false);
             }
 
             // Update ClaimTypeConfig in testUpdateCollection
             ClaimTypeConfig ctConfigToUpdate = testUpdateCollection.First(x => String.Equals(x.ClaimType, oldClaimType, StringComparison.InvariantCultureIgnoreCase));
-            ctConfigToUpdate.SetFromObject(newItem);
+            ctConfigToUpdate.ApplyConfiguration(newItem);
 
             // Test change in testUpdateCollection by adding all items in a new temp collection
             ClaimTypeConfigCollection testNewItemCollection = new ClaimTypeConfigCollection();
@@ -412,7 +398,7 @@ namespace ldapcp
             }
 
             // No error, current collection can safely be updated
-            innerCol.First(x => String.Equals(x.ClaimType, oldClaimType, StringComparison.InvariantCultureIgnoreCase)).SetFromObject(newItem);
+            innerCol.First(x => String.Equals(x.ClaimType, oldClaimType, StringComparison.InvariantCultureIgnoreCase)).ApplyConfiguration(newItem);
         }
 
         /// <summary>

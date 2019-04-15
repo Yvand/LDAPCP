@@ -147,7 +147,7 @@ namespace LDAPCP.Tests
         [Test]
         public void ModifyUserIdentifier()
         {
-            ClaimTypeConfig backupIdentityCTConfig = Config.ClaimTypes.GetByClaimType(UnitTestsHelper.SPTrust.IdentityClaimTypeInformation.MappedClaimType).CopyPersistedProperties();
+            ClaimTypeConfig backupIdentityCTConfig = Config.ClaimTypes.GetByClaimType(UnitTestsHelper.SPTrust.IdentityClaimTypeInformation.MappedClaimType).CopyConfiguration();
 
             Assert.Throws<ArgumentNullException>(() => Config.ClaimTypes.UpdateUserIdentifier(String.Empty, String.Empty), $"Update user identifier with either LDAPAttribute / LDAPClass null or empty should throw exception ArgumentNullException");
 

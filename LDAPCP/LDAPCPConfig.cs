@@ -396,39 +396,49 @@ namespace ldapcp
             CheckAndCleanConfiguration(String.Empty);
         }
 
+        /// <summary>
+        /// Apply configuration in parameter to current object. It does not copy SharePoint base class properties
+        /// </summary>
+        /// <param name="configToApply"></param>
         public void ApplyConfiguration(LDAPCPConfig configToApply)
         {
-            this.LDAPConnectionsProp = configToApply.LDAPConnectionsProp;
-            this.ClaimTypes = configToApply.ClaimTypes;
-            this.BypassLDAPLookup = configToApply.BypassLDAPLookup;
-            this.AddWildcardAsPrefixOfInput = configToApply.AddWildcardAsPrefixOfInput;
-            this.DisplayLdapMatchForIdentityClaimTypeProp = configToApply.DisplayLdapMatchForIdentityClaimTypeProp;
-            this.PickerEntityGroupNameProp = configToApply.PickerEntityGroupNameProp;
-            this.FilterEnabledUsersOnlyProp = configToApply.FilterEnabledUsersOnlyProp;
-            this.FilterSecurityGroupsOnlyProp = configToApply.FilterSecurityGroupsOnlyProp;
-            this.FilterExactMatchOnlyProp = configToApply.FilterExactMatchOnlyProp;
-            this.LDAPQueryTimeout = configToApply.LDAPQueryTimeout;
-            this.CompareResultsWithDomainNameProp = configToApply.CompareResultsWithDomainNameProp;
-            this.EnableAugmentation = configToApply.EnableAugmentation;
-            this.MainGroupClaimType = configToApply.MainGroupClaimType;
-            this.EntityDisplayTextPrefix = configToApply.EntityDisplayTextPrefix;
-            this.CustomData = configToApply.CustomData;
-            this.MaxSearchResultsCount = configToApply.MaxSearchResultsCount;
+            // Copy non-inherited public members
+            FieldInfo[] fieldsToCopy = this.GetType().GetFields(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly);
+            foreach (FieldInfo field in fieldsToCopy)
+            {
+                field.SetValue(this, field.GetValue(configToApply));
+            }
+            // Copy non-inherited public properties
+            PropertyInfo[] propertiesToCopy = this.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly);
+            foreach (PropertyInfo property in propertiesToCopy)
+            {
+                if (property.CanWrite)
+                {
+                    object value = property.GetValue(configToApply);
+                    if (value != null)
+                        property.SetValue(this, value);
+                }
+            }
         }
 
-        public LDAPCPConfig CopyPersistedProperties()
+        /// <summary>
+        /// Returns a copy of the current object. This copy does not have any member of the base SharePoint base class set
+        /// </summary>
+        /// <returns></returns>
+        public LDAPCPConfig CopyConfiguration()
         {
+            // Cannot use reflection here to copy object because of the calls to methods CopyConfiguration() on some properties
             LDAPCPConfig copy = new LDAPCPConfig();
             copy.SPTrustName = this.SPTrustName;
             copy.LDAPConnectionsProp = new List<LDAPConnection>();
             foreach (LDAPConnection currentCoco in this.LDAPConnectionsProp)
             {
-                copy.LDAPConnectionsProp.Add(currentCoco.CopyPublicProperties());
+                copy.LDAPConnectionsProp.Add(currentCoco.CopyConfiguration());
             }
             copy.ClaimTypes = new ClaimTypeConfigCollection();
             foreach (ClaimTypeConfig currentObject in this.ClaimTypes)
             {
-                copy.ClaimTypes.Add(currentObject.CopyPersistedProperties(), false);
+                copy.ClaimTypes.Add(currentObject.CopyConfiguration(), false);
             }
             copy.BypassLDAPLookup = this.BypassLDAPLookup;
             copy.AddWildcardAsPrefixOfInput = this.AddWildcardAsPrefixOfInput;
@@ -794,33 +804,20 @@ namespace ldapcp
         {
         }
 
-        internal LDAPConnection CopyPublicProperties()
+        /// <summary>
+        /// Returns a copy of the current object.
+        /// </summary>
+        /// <returns></returns>
+        internal LDAPConnection CopyConfiguration()
         {
             LDAPConnection copy = new LDAPConnection();
-            FieldInfo[] publicFields = this.GetType().GetFields(BindingFlags.Public | BindingFlags.Instance);
-            foreach (FieldInfo field in publicFields)
+            // Copy non-inherited public properties
+            FieldInfo[] fieldsToCopy = this.GetType().GetFields(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly);
+            foreach (FieldInfo field in fieldsToCopy)
             {
                 field.SetValue(copy, field.GetValue(this));
             }
             return copy;
-            //return new LDAPConnection()
-            //{
-            //    Id = this.Id,
-            //    Path = this.Path,
-            //    Username = this.Username,
-            //    Password = this.Password,
-            //    Metadata = this.Metadata,
-            //    AuthenticationTypes = this.AuthenticationTypes,
-            //    UserServerDirectoryEntry = this.UserServerDirectoryEntry,
-            //    AugmentationEnabled = this.AugmentationEnabled,
-            //    GetGroupMembershipAsADDomain = this.GetGroupMembershipAsADDomain,
-            //    GroupMembershipAttributes = this.GroupMembershipAttributes,
-            //    Directory = this.Directory,
-            //    Filter = this.Filter,
-            //    DomainName = this.DomainName,
-            //    DomainFQDN = this.DomainFQDN,
-            //    RootContainer = this.RootContainer,
-            //};
         }
     }
 
