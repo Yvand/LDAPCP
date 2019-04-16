@@ -397,12 +397,14 @@ namespace ldapcp
         }
 
         /// <summary>
-        /// Apply configuration in parameter to current object. It does not copy SharePoint base class properties
+        /// Apply configuration in parameter to current object. It does not copy SharePoint base class members
         /// </summary>
         /// <param name="configToApply"></param>
         public void ApplyConfiguration(LDAPCPConfig configToApply)
         {
-            // Copy non-inherited public members
+            // Copy non-inherited public fields
+            // This copies persisted field SPTrustName (it doesn't have a corresponding property).
+            // Private fields should not be retrieved here, since their corresponding properties are retrieved just after.
             FieldInfo[] fieldsToCopy = this.GetType().GetFields(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly);
             foreach (FieldInfo field in fieldsToCopy)
             {
@@ -805,13 +807,13 @@ namespace ldapcp
         }
 
         /// <summary>
-        /// Returns a copy of the current object.
+        /// Returns a copy of the current object. This copy does not have any member of the base SharePoint base class set
         /// </summary>
         /// <returns></returns>
         internal LDAPConnection CopyConfiguration()
         {
             LDAPConnection copy = new LDAPConnection();
-            // Copy non-inherited public properties
+            // Copy non-inherited public fields
             FieldInfo[] fieldsToCopy = this.GetType().GetFields(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly);
             foreach (FieldInfo field in fieldsToCopy)
             {

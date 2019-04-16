@@ -193,7 +193,7 @@ namespace ldapcp
         public ClaimTypeConfig CopyConfiguration()
         {
             ClaimTypeConfig copy = new ClaimTypeConfig();
-            // Copy non-inherited private members
+            // Copy non-inherited private fields
             FieldInfo[] fieldsToCopy = this.GetType().GetFields(BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly);
             foreach (FieldInfo field in fieldsToCopy)
             {
@@ -203,12 +203,12 @@ namespace ldapcp
         }
 
         /// <summary>
-        /// Apply configuration in parameter to current object. It does not copy SharePoint base class properties
+        /// Apply configuration in parameter to current object. It does not copy SharePoint base class members
         /// </summary>
         /// <param name="configToApply"></param>
         internal void ApplyConfiguration(ClaimTypeConfig configToApply)
         {
-            // Copy non-inherited private members
+            // Copy non-inherited private fields
             FieldInfo[] fieldsToCopy = this.GetType().GetFields(BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly);
             foreach (FieldInfo field in fieldsToCopy)
             {

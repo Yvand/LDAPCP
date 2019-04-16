@@ -1,5 +1,9 @@
 # Change log for LDAPCP
 
+## Unreleased
+
+* Use reflection to copy configuration objects, whenever possible
+
 ## LDAPCP 12.0.20190321.770 enhancements & bug-fixes - Published in March 21, 2019
 
 * Add more strict checks on the claim type passed during augmentation and validation, to record a more meaningful error if needed
