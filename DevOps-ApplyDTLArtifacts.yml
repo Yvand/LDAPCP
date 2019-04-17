@@ -13,7 +13,7 @@ jobs:
   variables:
     jobSharePointVersion: 2013
   pool:
-    name: Hosted VS2017
+    vmImage: 'windows-2019'
   steps:
   - checkout: none #skip checking out the default repository resource
   - task: automagically.DownloadFile.DownloadFile.DownloadFile@1
@@ -57,7 +57,7 @@ jobs:
   variables:
     jobSharePointVersion: 2016
   pool:
-    name: Hosted VS2017
+    vmImage: 'windows-2019'
   steps:
   - checkout: none #skip checking out the default repository resource
   - task: automagically.DownloadFile.DownloadFile.DownloadFile@1
@@ -101,7 +101,7 @@ jobs:
   variables:
     jobSharePointVersion: 2019
   pool:
-    name: Hosted VS2017
+    vmImage: 'windows-2019'
   steps:
   - checkout: none #skip checking out the default repository resource      
   - task: automagically.DownloadFile.DownloadFile.DownloadFile@1
