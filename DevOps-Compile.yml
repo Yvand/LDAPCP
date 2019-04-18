@@ -47,8 +47,8 @@ jobs:
      
      Write-Output ("Copy Microsoft.SharePoint.dll from Azure storage account")
      $azureContext = New-AzureStorageContext $(AzureStorageAccountName) $(AzureStorageAccountKey)
-     $azureShare = Get-AzureStorageShare $(AzureStorageShareName) –Context $azureContext
-     Get-AzureStorageFileContent –Share $azureShare –Path "$azureStorageBaseDirectory\SharePoint 2013\Microsoft.SharePoint.dll" "$projectLocalPath\Microsoft.SharePoint.dll"
+     $azureShare = Get-AzureStorageShare $(AzureStorageShareName) -Context $azureContext
+     Get-AzureStorageFileContent -Share $azureShare -Path "$azureStorageBaseDirectory\SharePoint 2013\Microsoft.SharePoint.dll" "$projectLocalPath\Microsoft.SharePoint.dll"
      Write-Output ("Add Microsoft.SharePoint.dll to the GAC")
      [System.Reflection.Assembly]::Load("System.EnterpriseServices, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a")
      $publish = New-Object System.EnterpriseServices.Internal.Publish
