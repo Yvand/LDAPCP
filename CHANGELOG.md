@@ -3,6 +3,7 @@
 ## Unreleased
 
 * Use reflection to copy configuration objects, whenever possible
+* Add mapping to populate the email of groups
 
 ## LDAPCP 12.0.20190321.770 enhancements & bug-fixes - Published in March 21, 2019
 
