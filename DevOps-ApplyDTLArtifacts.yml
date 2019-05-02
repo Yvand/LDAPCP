@@ -15,6 +15,12 @@ jobs:
     vmImage: 'windows-2019'
   steps:
   - checkout: none #skip checking out the default repository resource
+  - task: automagically.DownloadFile.DownloadFile.DownloadFile@1
+    displayName: 'Download apply-dtl-artifact.ps1'
+    inputs:
+      FileUrl: 'https://raw.githubusercontent.com/Yvand/AzureRM-Templates/dev/DevTestLabs-Artifacts/manage-artifacts/apply-dtl-artifact.ps1'
+      DestinationFolder: '$(System.DefaultWorkingDirectory)\drop\$(Deployment.ConfigureServerFolderName)'
+  
   - task: AzurePowerShell@3
     displayName: 'Apply artifact "Azure Pipelines Agent"'
     inputs:
@@ -41,6 +47,12 @@ jobs:
     vmImage: 'windows-2019'
   steps:
   - checkout: none #skip checking out the default repository resource
+  - task: automagically.DownloadFile.DownloadFile.DownloadFile@1
+    displayName: 'Download apply-dtl-artifact.ps1'
+    inputs:
+      FileUrl: 'https://raw.githubusercontent.com/Yvand/AzureRM-Templates/dev/DevTestLabs-Artifacts/manage-artifacts/apply-dtl-artifact.ps1'
+      DestinationFolder: '$(System.DefaultWorkingDirectory)\drop\$(Deployment.ConfigureServerFolderName)'
+  
   - task: AzurePowerShell@3
     displayName: 'Apply artifact "Azure Pipelines Agent"'
     inputs:
@@ -67,6 +79,12 @@ jobs:
     vmImage: 'windows-2019'
   steps:
   - checkout: none #skip checking out the default repository resource
+  - task: automagically.DownloadFile.DownloadFile.DownloadFile@1
+    displayName: 'Download apply-dtl-artifact.ps1'
+    inputs:
+      FileUrl: 'https://raw.githubusercontent.com/Yvand/AzureRM-Templates/dev/DevTestLabs-Artifacts/manage-artifacts/apply-dtl-artifact.ps1'
+      DestinationFolder: '$(System.DefaultWorkingDirectory)\drop\$(Deployment.ConfigureServerFolderName)'
+  
   - task: AzurePowerShell@3
     displayName: 'Apply artifact "Azure Pipelines Agent"'
     inputs:
