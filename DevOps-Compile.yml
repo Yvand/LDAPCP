@@ -4,8 +4,6 @@ resources:
 
 variables:
   SolutionFileName: '$(system.teamProject).sln'
-  IntegrationTestsDataFolderName: 'Integration tests data'
-  ConfigureServerFolderName: Configure server
 
 jobs:
 - job: Compile
@@ -35,12 +33,12 @@ jobs:
      # Set variables
      $azureStorageBaseDirectory = "Resources\$(system.teamProject)"
      $projectLocalPath = "$(System.DefaultWorkingDirectory)\$(system.teamProject)"
-     $devTestLabsLocalPath = "$(Build.ArtifactStagingDirectory)\$(IntegrationTestsDataFolderName)"
+     $devTestLabsLocalPath = "$(Build.ArtifactStagingDirectory)\$(Tests.DataFolderName)"
      
      # Create now folder that will contain later scripts to configure local test server
-     if ((Test-Path -Path "$(ConfigureServerFolderName)" -PathType Container) -eq $false) {
-         New-Item -ItemType Directory -Path "$(ConfigureServerFolderName)"
-     }
+     #if ((Test-Path -Path "$(Build.ArtifactStagingDirectory)\$(Deployment.ConfigureServerFolderName)" -PathType Container) -eq $false) {
+         #New-Item -ItemType Directory -Path "$(Build.ArtifactStagingDirectory)\$(Deployment.ConfigureServerFolderName)"
+     #}
      
      Write-Output ("Copy signing key from $(DownloadSecureFile.secureFilePath) to $projectLocalPath")
      Copy-Item "$(DownloadSecureFile.secureFilePath)" -Destination "$projectLocalPath"
@@ -59,11 +57,29 @@ jobs:
      if ((Test-Path -Path $devTestLabsLocalPath -PathType Container) -eq $false) {
          New-Item -ItemType Directory -Path $devTestLabsLocalPath
      }
-     $azurePath = Join-Path -Path $azureStorageBaseDirectory -ChildPath "$(IntegrationTestsDataFolderName)"
+     $azurePath = Join-Path -Path $azureStorageBaseDirectory -ChildPath "$(Tests.DataFolderName)"
      Get-AzureStorageFile -ShareName $(AzureStorageShareName) -Context $azureContext -Path $azurePath | Get-AzureStorageFile | ?{$_.GetType().Name -eq "CloudFile"} | Get-AzureStorageFileContent -Destination $devTestLabsLocalPath
      
     displayName: 'Import resources'
 
+    - task: automagically.DownloadFile.DownloadFile.DownloadFile@1
+    displayName: 'Download apply-dtl-artifact.ps1'
+    inputs:
+      FileUrl: 'https://raw.githubusercontent.com/Yvand/AzureRM-Templates/dev/DevTestLabs-Artifacts/manage-artifacts/apply-dtl-artifact.ps1'
+      DestinationFolder: '$(System.DefaultWorkingDirectory)\drop\$(Deployment.ConfigureServerFolderName)'
+  
+  - task: automagically.DownloadFile.DownloadFile.DownloadFile@1
+    displayName: 'Download ConfigureLab.ps1'
+    inputs:
+      FileUrl: 'https://raw.githubusercontent.com/Yvand/AzureRM-Templates/dev/DevTestLabs-Artifacts/manage-artifacts/ConfigureLab.ps1'
+      DestinationFolder: '$(System.DefaultWorkingDirectory)\drop\$(Deployment.ConfigureServerFolderName)'
+  
+  - task: automagically.DownloadFile.DownloadFile.DownloadFile@1
+    displayName: 'Download ConfigureLab.psm1'
+    inputs:
+      FileUrl: 'https://raw.githubusercontent.com/Yvand/AzureRM-Templates/dev/DevTestLabs-Artifacts/manage-artifacts/ConfigureLab.psm1'
+      DestinationFolder: '$(System.DefaultWorkingDirectory)\drop\$(Deployment.ConfigureServerFolderName)'
+  
   - task: NuGetToolInstaller@0
     displayName: 'Use NuGet 4.4.1'
     inputs:
