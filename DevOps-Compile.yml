@@ -62,7 +62,7 @@ jobs:
      
     displayName: 'Import resources'
 
-    - task: automagically.DownloadFile.DownloadFile.DownloadFile@1
+  - task: automagically.DownloadFile.DownloadFile.DownloadFile@1
     displayName: 'Download apply-dtl-artifact.ps1'
     inputs:
       FileUrl: 'https://raw.githubusercontent.com/Yvand/AzureRM-Templates/dev/DevTestLabs-Artifacts/manage-artifacts/apply-dtl-artifact.ps1'
