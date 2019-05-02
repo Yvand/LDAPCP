@@ -51,7 +51,7 @@ jobs:
     displayName: 'Download apply-dtl-artifact.ps1'
     inputs:
       FileUrl: 'https://raw.githubusercontent.com/Yvand/AzureRM-Templates/dev/DevTestLabs-Artifacts/manage-artifacts/apply-dtl-artifact.ps1'
-      DestinationFolder: '$(System.DefaultWorkingDirectory)\scripts\$(Deployment.ConfigureServerFolderName)'
+      DestinationFolder: '$(System.DefaultWorkingDirectory)\scripts'
   
   - task: AzurePowerShell@3
     displayName: 'Apply artifact "Azure Pipelines Agent"'
@@ -83,7 +83,7 @@ jobs:
     displayName: 'Download apply-dtl-artifact.ps1'
     inputs:
       FileUrl: 'https://raw.githubusercontent.com/Yvand/AzureRM-Templates/dev/DevTestLabs-Artifacts/manage-artifacts/apply-dtl-artifact.ps1'
-      DestinationFolder: '$(System.DefaultWorkingDirectory)\scripts\$(Deployment.ConfigureServerFolderName)'
+      DestinationFolder: '$(System.DefaultWorkingDirectory)\scripts'
   
   - task: AzurePowerShell@3
     displayName: 'Apply artifact "Azure Pipelines Agent"'
