@@ -1,8 +1,6 @@
 resources:
 - repo: self
 
-variables:
-
 jobs:
 - job: RunTestSP2013
   condition: eq(variables['Deployment.ProvisionSharePoint2013'], 'yes')
