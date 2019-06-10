@@ -112,7 +112,7 @@ namespace ldapcp.ControlTemplates
             tr.Cells.Add(th);
             th = GetTableHeaderCell("LDAP attribute to display");
             tr.Cells.Add(th);
-            th = GetTableHeaderCell("<a href='http://msdn.microsoft.com/en-us/library/office/microsoft.sharepoint.webcontrols.peopleeditorentitydatakeys_members(v=office.15).aspx' target='_blank'>PickerEntity Metadata</a>");
+            th = GetTableHeaderCell("<a href='http://msdn.microsoft.com/en-us/library/office/microsoft.sharepoint.webcontrols.peopleeditorentitydatakeys_members(v=office.15).aspx' target='_blank'>PickerEntity metadata</a>");
             tr.Cells.Add(th);
             th = GetTableHeaderCell("Additional LDAP filter");
             tr.Cells.Add(th);
@@ -191,11 +191,11 @@ namespace ldapcp.ControlTemplates
                     {
                         if (!attr.Value.UseMainClaimTypeOfDirectoryObject)
                         {
-                            c = GetTableCell("Map LDAP attribute with a PickerEntity metadata");
+                            c = GetTableCell("LDAP attribute linked to a PickerEntity metadata");
                         }
                         else
                         {
-                            c = GetTableCell($"Use main claim type of object {attr.Value.EntityType}");
+                            c = GetTableCell($"LDAP attribute linked to the main mapping for object {attr.Value.EntityType}");
                             if (attr.Value.EntityType == DirectoryObjectType.User)
                             {
                                 tr.CssClass = "ldapcp-rowUserProperty";
