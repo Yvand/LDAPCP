@@ -24,9 +24,9 @@ namespace LDAPCP.Tests
             Config.LDAPConnectionsProp = ldapConnections;
             foreach (LDAPConnection coco in Config.LDAPConnectionsProp)
             {
-                coco.UserServerDirectoryEntry = false;
-                coco.AugmentationEnabled = true;
-                coco.GetGroupMembershipAsADDomain = true;
+                coco.UseSPServerConnectionToAD = false;
+                coco.EnableAugmentation = true;
+                coco.GetGroupMembershipUsingDotNetHelpers = true;
             }
             Config.Update();
         }
@@ -49,9 +49,9 @@ namespace LDAPCP.Tests
             Config.LDAPConnectionsProp = ldapConnections;
             foreach (LDAPConnection coco in Config.LDAPConnectionsProp)
             {
-                coco.UserServerDirectoryEntry = false;
-                coco.AugmentationEnabled = true;
-                coco.GetGroupMembershipAsADDomain = false;
+                coco.UseSPServerConnectionToAD = false;
+                coco.EnableAugmentation = true;
+                coco.GetGroupMembershipUsingDotNetHelpers = false;
             }
             Config.Update();
         }
@@ -71,8 +71,8 @@ namespace LDAPCP.Tests
             Config.MainGroupClaimType = ClaimsProviderConstants.DefaultMainGroupClaimType;
             foreach (LDAPConnection ldapConn in Config.LDAPConnectionsProp)
             {
-                ldapConn.AugmentationEnabled = true;
-                ldapConn.GetGroupMembershipAsADDomain = true;
+                ldapConn.EnableAugmentation = true;
+                ldapConn.GetGroupMembershipUsingDotNetHelpers = true;
             }
             Config.Update();
         }
@@ -89,8 +89,8 @@ namespace LDAPCP.Tests
             Config.MainGroupClaimType = ClaimsProviderConstants.DefaultMainGroupClaimType;
             foreach (LDAPConnection ldapConn in Config.LDAPConnectionsProp)
             {
-                ldapConn.AugmentationEnabled = true;
-                ldapConn.GetGroupMembershipAsADDomain = true;
+                ldapConn.EnableAugmentation = true;
+                ldapConn.GetGroupMembershipUsingDotNetHelpers = true;
             }
             Config.Update();
         }
@@ -118,8 +118,8 @@ namespace LDAPCP.Tests
             Config.MainGroupClaimType = ClaimsProviderConstants.DefaultMainGroupClaimType;
             foreach (LDAPConnection ldapConn in Config.LDAPConnectionsProp)
             {
-                ldapConn.AugmentationEnabled = true;
-                ldapConn.GetGroupMembershipAsADDomain = false;
+                ldapConn.EnableAugmentation = true;
+                ldapConn.GetGroupMembershipUsingDotNetHelpers = false;
             }
             Config.Update();
         }
@@ -132,7 +132,7 @@ namespace LDAPCP.Tests
             //LDAPConnection coco = new LDAPConnection();
             //coco.AugmentationEnabled = true;
             //coco.GetGroupMembershipAsADDomain = false;
-            //coco.UserServerDirectoryEntry = false;
+            //coco.UseSPServerConnectionToAD = false;
             //coco.Path = "LDAP://test";
             //coco.Username = "userTest";
             //Config.LDAPConnectionsProp.Add(coco);
@@ -152,9 +152,9 @@ namespace LDAPCP.Tests
             Config.MainGroupClaimType = ClaimsProviderConstants.DefaultMainGroupClaimType;
             foreach (LDAPConnection ldapConn in Config.LDAPConnectionsProp)
             {
-                ldapConn.AugmentationEnabled = true;
-                ldapConn.GetGroupMembershipAsADDomain = false;
-                ldapConn.GroupMembershipAttributes = new string[] { "memberOf", "uniquememberof" };
+                ldapConn.EnableAugmentation = true;
+                ldapConn.GetGroupMembershipUsingDotNetHelpers = false;
+                ldapConn.GroupMembershipLDAPAttributes = new string[] { "memberOf", "uniquememberof" };
             }
             Config.Update();
         }

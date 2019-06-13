@@ -265,10 +265,10 @@
                     <asp:TemplateField>
                         <ItemTemplate>
 							<fieldset>
-                            <asp:TextBox ID="IdPropHidden" runat="server" Text='<%# Bind("IdProp") %>' Visible="false" />
-							<legend><span>LDAP Server "<asp:Label ID="TextPath" runat="server" Text='<%# Bind("PathProp") %>' />":</span></legend>
-                            <asp:CheckBox ID="ChkAugmentationEnableOnCoco" runat="server" Checked='<%# Bind("AugmentationEnabledProp") %>' Text="Query this server" />
-                            <asp:CheckBox ID="ChkGetGroupMembershipAsADDomain" runat="server" Checked='<%# Bind("GetGroupMembershipAsADDomainProp") %>' Text="Use <a href='https://docs.microsoft.com/en-us/dotnet/api/system.directoryservices.accountmanagement.userprincipal.getauthorizationgroups' target='_blank'>.NET helper</a> (for Active Directory only)"/>
+                            <asp:TextBox ID="IdPropHidden" runat="server" Text='<%# Bind("Identifier") %>' Visible="false" />
+							<legend><span>LDAP Server "<asp:Label ID="TextPath" runat="server" Text='<%# Bind("LDAPPath") %>' />":</span></legend>
+                            <asp:CheckBox ID="ChkAugmentationEnableOnCoco" runat="server" Checked='<%# Bind("EnableAugmentation") %>' Text="Query this server" />
+                            <asp:CheckBox ID="ChkGetGroupMembershipAsADDomain" runat="server" Checked='<%# Bind("GetGroupMembershipUsingDotNetHelpers") %>' Text="Use <a href='https://docs.microsoft.com/en-us/dotnet/api/system.directoryservices.accountmanagement.userprincipal.getauthorizationgroups' target='_blank'>.NET helper</a> (for Active Directory only)"/>
 							</fieldset>
                         </ItemTemplate>
                     </asp:TemplateField>

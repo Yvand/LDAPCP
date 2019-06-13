@@ -25,7 +25,7 @@ namespace LDAPCP.Tests
 
             // Extra initialization for current test class
             Config.EnableAugmentation = true;
-            Config.LDAPConnectionsProp.ForEach(x => x.AugmentationEnabled = true);
+            Config.LDAPConnectionsProp.ForEach(x => x.EnableAugmentation = true);
             Config.ClaimTypes.GetByClaimType(UnitTestsHelper.SPTrust.IdentityClaimTypeInformation.MappedClaimType).PrefixToBypassLookup = "bypass-user:";
             Config.ClaimTypes.GetByClaimType(UnitTestsHelper.TrustedGroupToAdd_ClaimType).PrefixToBypassLookup = "bypass-group:";
             Config.ClaimTypes.GetByClaimType(UnitTestsHelper.TrustedGroupToAdd_ClaimType).ClaimValuePrefix = @"{fqdn}\";

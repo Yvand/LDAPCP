@@ -106,11 +106,11 @@ namespace ldapcp.ControlTemplates
                 DdlClaimTypes.SelectedValue = PersistedObject.MainGroupClaimType;
 
             // Initialize grid for LDAP connections
-            var spDomainCoco = PersistedObject.LDAPConnectionsProp.FirstOrDefault(x => x.UserServerDirectoryEntry);
-            if (spDomainCoco != null) spDomainCoco.Path = TextSharePointDomain;
+            var spDomainCoco = PersistedObject.LDAPConnectionsProp.FirstOrDefault(x => x.UseSPServerConnectionToAD);
+            if (spDomainCoco != null) spDomainCoco.LDAPPath = TextSharePointDomain;
 
             GridLdapConnections.DataSource = PersistedObject.LDAPConnectionsProp;
-            GridLdapConnections.DataKeyNames = new string[] { "IdProp" };
+            GridLdapConnections.DataKeyNames = new string[] { "Identifier" };
             GridLdapConnections.DataBind();
         }
 
@@ -121,15 +121,15 @@ namespace ldapcp.ControlTemplates
                 PropertyCollectionBinder pcb = new PropertyCollectionBinder();
                 foreach (LDAPConnection coco in PersistedObject.LDAPConnectionsProp)
                 {
-                    if (coco.UserServerDirectoryEntry)
+                    if (coco.UseSPServerConnectionToAD)
                     {
                         ViewState["IsDefaultADConnectionCreated"] = true;
 
-                        pcb.AddRow(coco.Id, TextSharePointDomain, "Process account");
+                        pcb.AddRow(coco.Identifier, TextSharePointDomain, "Process account");
                     }
                     else
                     {
-                        pcb.AddRow(coco.Id, coco.Path, coco.Username);
+                        pcb.AddRow(coco.Identifier, coco.LDAPPath, coco.LDAPUsername);
                     }
                 }
                 pcb.BindGrid(grdLDAPConnections);
@@ -236,9 +236,9 @@ namespace ldapcp.ControlTemplates
                 CheckBox chkIsADDomain = (CheckBox)item.FindControl("ChkGetGroupMembershipAsADDomain");
                 TextBox txtId = (TextBox)item.FindControl("IdPropHidden");
 
-                var coco = PersistedObject.LDAPConnectionsProp.First(x => x.Id == new Guid(txtId.Text));
-                coco.AugmentationEnabled = chkAugEn.Checked;
-                coco.GetGroupMembershipAsADDomain = chkIsADDomain.Checked;
+                var coco = PersistedObject.LDAPConnectionsProp.First(x => x.Identifier == new Guid(txtId.Text));
+                coco.EnableAugmentation = chkAugEn.Checked;
+                coco.GetGroupMembershipUsingDotNetHelpers = chkIsADDomain.Checked;
             }
         }
 
@@ -301,7 +301,7 @@ namespace ldapcp.ControlTemplates
 
             if (this.RbUseServerDomain.Checked)
             {
-                PersistedObject.LDAPConnectionsProp.Add(new LDAPConnection { UserServerDirectoryEntry = true });
+                PersistedObject.LDAPConnectionsProp.Add(new LDAPConnection { UseSPServerConnectionToAD = true });
             }
             else
             {
@@ -309,11 +309,11 @@ namespace ldapcp.ControlTemplates
                 PersistedObject.LDAPConnectionsProp.Add(
                     new LDAPConnection
                     {
-                        UserServerDirectoryEntry = false,
-                        Path = this.TxtLdapConnectionString.Text,
-                        Username = this.TxtLdapUsername.Text,
-                        Password = this.TxtLdapPassword.Text,
-                        AuthenticationTypes = authNType,
+                        UseSPServerConnectionToAD = false,
+                        LDAPPath = this.TxtLdapConnectionString.Text,
+                        LDAPUsername = this.TxtLdapUsername.Text,
+                        LDAPPassword = this.TxtLdapPassword.Text,
+                        AuthenticationSettings = authNType,
                     }
                 );
             }
@@ -370,7 +370,7 @@ namespace ldapcp.ControlTemplates
 
             GridViewRow rowToDelete = grdLDAPConnections.Rows[e.RowIndex];
             Guid Id = new Guid(rowToDelete.Cells[0].Text);
-            LDAPConnection connectionToRemove = PersistedObject.LDAPConnectionsProp.FirstOrDefault(x => x.Id == Id);
+            LDAPConnection connectionToRemove = PersistedObject.LDAPConnectionsProp.FirstOrDefault(x => x.Identifier == Id);
             if (connectionToRemove != null)
             {
                 PersistedObject.LDAPConnectionsProp.Remove(connectionToRemove);
