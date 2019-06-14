@@ -12,26 +12,26 @@ namespace ldapcp.ControlTemplates
 {
     public partial class ClaimTypesConfigUserControl : LdapcpUserControl
     {
-        public string TrustName = String.Empty; // This must be a field to be accessible from marup code, it cannot be a property
+        public string TrustName = String.Empty; // This must be a member to be accessible from marup code, it cannot be a property
         List<KeyValuePair<int, ClaimTypeConfig>> ClaimsMapping;
         protected bool ShowNewItemForm = false;
         protected bool HideAllContent = false;
 
-        string TextErrorFieldsMissing = "Some mandatory fields are missing.";
-        string TextErrorUpdateEmptyClaimType = "Claim type must be set.";
+        readonly string TextErrorFieldsMissing = "Some mandatory fields are missing.";
+        readonly string TextErrorUpdateEmptyClaimType = "Claim type must be set.";
 
-        string HtmlCellClaimType = "<span name=\"span_claimtype_{1}\" id=\"span_claimtype_{1}\">{0}</span><input name=\"input_claimtype_{1}\" id=\"input_claimtype_{1}\" style=\"display: none; width: 90%;\" value=\"{0}\"></input>";
-        string HtmlCellLAttrName = "<span name=\"span_attrname_{1}\" id=\"span_attrname_{1}\">{0}</span><input name=\"input_attrname_{1}\" id=\"input_attrname_{1}\" style=\"display:none;\" value=\"{0}\"></input>";
-        string HtmlCellLAttrClass = "<span name=\"span_attrclass_{1}\" id=\"span_attrclass_{1}\">{0}</span><input name=\"input_attrclass_{1}\" id=\"input_attrclass_{1}\" style=\"display:none;\" value=\"{0}\"></input>";
-        string HtmlCellLDAPAttrToDisplay = "<span name=\"span_LDAPAttrToDisplay_{1}\" id=\"span_LDAPAttrToDisplay_{1}\">{0}</span><input name=\"input_LDAPAttrToDisplay_{1}\" id=\"input_LDAPAttrToDisplay_{1}\" style=\"display:none;\" value=\"{0}\"></input>";
-        string HtmlCellMetadata = "<span name=\"span_Metadata_{1}\" id=\"span_Metadata_{1}\">{0}</span><select name=\"list_Metadata_{1}\" id=\"list_Metadata_{1}\" style=\"display:none;\">{2}</select>";
-        string HtmlCellLAddLDAPFilter = "<span name=\"span_AddLDAPFilter_{1}\" id=\"span_AddLDAPFilter_{1}\">{0}</span><input name=\"input_AddLDAPFilter_{1}\" id=\"input_AddLDAPFilter_{1}\" style=\"display:none;\" value=\"{0}\"></input>";
-        string HtmlCellKeywordToValidateInputWithoutLookup = "<span name=\"span_KeywordToValidateInputWithoutLookup_{1}\" id=\"span_KeywordToValidateInputWithoutLookup_{1}\">{0}</span><input name=\"input_KeywordToValidateInputWithoutLookup_{1}\" id=\"input_KeywordToValidateInputWithoutLookup_{1}\" style=\"display:none;\" value=\"{0}\"></input>";
-        string HtmlCellPrefixToAddToValueReturned = "<span name=\"span_PrefixToAddToValueReturned_{1}\" id=\"span_PrefixToAddToValueReturned_{1}\">{0}</span><input name=\"input_PrefixToAddToValueReturned_{1}\" id=\"input_PrefixToAddToValueReturned_{1}\" style=\"display:none;\" value=\"{0}\"></input>";
-        string HtmlCellDirectoryObjectType = "<span name=\"span_ClaimEntityType_{1}\" id=\"span_ClaimEntityType_{1}\">{0}</span><select name=\"list_ClaimEntityType_{1}\" id=\"list_ClaimEntityType_{1}\" style=\"display:none;\">{2}</select>";
+        readonly string HtmlCellClaimType = "<span name=\"span_claimtype_{1}\" id=\"span_claimtype_{1}\">{0}</span><input name=\"input_claimtype_{1}\" id=\"input_claimtype_{1}\" style=\"display: none; width: 90%;\" value=\"{0}\"></input>";
+        readonly string HtmlCellLAttrName = "<span name=\"span_attrname_{1}\" id=\"span_attrname_{1}\">{0}</span><input name=\"input_attrname_{1}\" id=\"input_attrname_{1}\" style=\"display:none;\" value=\"{0}\"></input>";
+        readonly string HtmlCellLAttrClass = "<span name=\"span_attrclass_{1}\" id=\"span_attrclass_{1}\">{0}</span><input name=\"input_attrclass_{1}\" id=\"input_attrclass_{1}\" style=\"display:none;\" value=\"{0}\"></input>";
+        readonly string HtmlCellLDAPAttrToDisplay = "<span name=\"span_LDAPAttrToDisplay_{1}\" id=\"span_LDAPAttrToDisplay_{1}\">{0}</span><input name=\"input_LDAPAttrToDisplay_{1}\" id=\"input_LDAPAttrToDisplay_{1}\" style=\"display:none;\" value=\"{0}\"></input>";
+        readonly string HtmlCellMetadata = "<span name=\"span_Metadata_{1}\" id=\"span_Metadata_{1}\">{0}</span><select name=\"list_Metadata_{1}\" id=\"list_Metadata_{1}\" style=\"display:none;\">{2}</select>";
+        readonly string HtmlCellLAddLDAPFilter = "<span name=\"span_AddLDAPFilter_{1}\" id=\"span_AddLDAPFilter_{1}\">{0}</span><input name=\"input_AddLDAPFilter_{1}\" id=\"input_AddLDAPFilter_{1}\" style=\"display:none;\" value=\"{0}\"></input>";
+        readonly string HtmlCellKeywordToValidateInputWithoutLookup = "<span name=\"span_KeywordToValidateInputWithoutLookup_{1}\" id=\"span_KeywordToValidateInputWithoutLookup_{1}\">{0}</span><input name=\"input_KeywordToValidateInputWithoutLookup_{1}\" id=\"input_KeywordToValidateInputWithoutLookup_{1}\" style=\"display:none;\" value=\"{0}\"></input>";
+        readonly string HtmlCellPrefixToAddToValueReturned = "<span name=\"span_PrefixToAddToValueReturned_{1}\" id=\"span_PrefixToAddToValueReturned_{1}\">{0}</span><input name=\"input_PrefixToAddToValueReturned_{1}\" id=\"input_PrefixToAddToValueReturned_{1}\" style=\"display:none;\" value=\"{0}\"></input>";
+        readonly string HtmlCellDirectoryObjectType = "<span name=\"span_ClaimEntityType_{1}\" id=\"span_ClaimEntityType_{1}\">{0}</span><select name=\"list_ClaimEntityType_{1}\" id=\"list_ClaimEntityType_{1}\" style=\"display:none;\">{2}</select>";
 
-        string HtmlEditLink = "<a name=\"editLink_{0}\" id=\"editLink_{0}\" href=\"javascript:Ldapcp.ClaimsTablePage.EditItem('{0}')\">Edit</a>";
-        string HtmlCancelEditLink = "<a name=\"cancelLink_{0}\" id=\"cancelLink_{0}\" href=\"javascript:Ldapcp.ClaimsTablePage.CancelEditItem('{0}')\" style=\"display:none;\">Cancel</a>";
+        readonly string HtmlEditLink = "<a name=\"editLink_{0}\" id=\"editLink_{0}\" href=\"javascript:Ldapcp.ClaimsTablePage.EditItem('{0}')\">Edit</a>";
+        readonly string HtmlCancelEditLink = "<a name=\"cancelLink_{0}\" id=\"cancelLink_{0}\" href=\"javascript:Ldapcp.ClaimsTablePage.CancelEditItem('{0}')\" style=\"display:none;\">Cancel</a>";
 
         protected void Page_Load(object sender, EventArgs e)
         {
@@ -103,7 +103,6 @@ namespace ldapcp.ControlTemplates
 
             // SECONDE ROW HEADERS
             tr = new TableRow();
-            th = new TableHeaderCell();
             th = GetTableHeaderCell("Entity type");
             tr.Cells.Add(th);
             th = GetTableHeaderCell("LDAP class");
@@ -145,7 +144,10 @@ namespace ldapcp.ControlTemplates
                     //LnkDeleteItem.Text = "<div class='ms-cui-img-16by16 ms-cui-img-cont-float'><img style='left: -271px; top: -271px;' alt='' src='/_layouts/15/1033/images/formatmap16x16.png?rev=23' unselectable='on'></div>";
                     LnkDeleteItem.Text = "Delete";
                     LnkDeleteItem.OnClientClick = "javascript:return confirm('This will delete this item. Do you want to continue?');";
-                    if (pendingUpdate) LnkDeleteItem.Visible = false;
+                    if (pendingUpdate)
+                    {
+                        LnkDeleteItem.Visible = false;
+                    }
                     tc.Controls.Add(LnkDeleteItem);
                 }
 
@@ -155,7 +157,10 @@ namespace ldapcp.ControlTemplates
                 LnkUpdateItem.CommandArgument = attr.Key.ToString();
                 LnkUpdateItem.Text = "Save";
                 LnkUpdateItem.Style.Add("display", "none");
-                if (pendingUpdate) LnkUpdateItem.Visible = false;
+                if (pendingUpdate)
+                {
+                    LnkUpdateItem.Visible = false;
+                }
 
                 tc.Controls.Add(LnkUpdateItem);
                 tc.Controls.Add(new LiteralControl("&nbsp;&nbsp;" + String.Format(HtmlCancelEditLink, attr.Key)));
@@ -172,7 +177,6 @@ namespace ldapcp.ControlTemplates
                     {
                         html = String.Format(HtmlCellClaimType, attr.Value.ClaimType, attr.Key);
                         c = GetTableCell(html);
-                        allowEditItem = true;
                         if (isIdentityClaimType)
                         {
                             tr.CssClass = "ldapcp-rowidentityclaim";
@@ -253,7 +257,7 @@ namespace ldapcp.ControlTemplates
             }
         }
 
-        private string BuildDDLFromTypeMembers(string htmlCell, KeyValuePair<int, ClaimTypeConfig> attr, string propertyToCheck, MemberInfo[] members, bool addEmptyChoice)
+        private static string BuildDDLFromTypeMembers(string htmlCell, KeyValuePair<int, ClaimTypeConfig> attr, string propertyToCheck, MemberInfo[] members, bool addEmptyChoice)
         {
             string option = "<option value=\"{0}\" {1}>{2}</option>";
             string selected = String.Empty;
@@ -271,7 +275,10 @@ namespace ldapcp.ControlTemplates
                     selected = "selected";
                     metadataFound = true;
                 }
-                else selected = String.Empty;
+                else
+                {
+                    selected = String.Empty;
+                }
                 options.Append(String.Format(option, member.Name, selected, member.Name));
             }
 
@@ -296,22 +303,22 @@ namespace ldapcp.ControlTemplates
             return String.Format(HtmlCellDirectoryObjectType, azureObject.Value.EntityType, azureObject.Key, directoryObjectTypeOptions.ToString());
         }
 
-        private TableHeaderCell GetTableHeaderCell(string Value)
+        private static TableHeaderCell GetTableHeaderCell(string Value)
         {
             TableHeaderCell tc = new TableHeaderCell();
             tc.Text = Value;
             return tc;
         }
-        private TableCell GetTableCell(string Value)
+        private static TableCell GetTableCell(string Value)
         {
             TableCell tc = new TableCell();
             tc.Text = Value;
             return tc;
-        }        
+        }
 
         void LnkDeleteItem_Command(object sender, CommandEventArgs e)
         {
-            if (ValidatePrerequisite() != ConfigStatus.AllGood && Status != ConfigStatus.NoIdentityClaimType) return;
+            if (ValidatePrerequisite() != ConfigStatus.AllGood && Status != ConfigStatus.NoIdentityClaimType) { return; }
 
             string itemId = e.CommandArgument.ToString();
             ClaimTypeConfig ctConfig = ClaimsMapping.Find(x => x.Key == Convert.ToInt32(itemId)).Value;

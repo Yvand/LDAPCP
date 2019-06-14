@@ -15,7 +15,11 @@ namespace ldapcp.ControlTemplates
         protected bool ShowValidateSection
         {
             get { return ValidateSection.Visible; }
-            set { ValidateSection.Visible = ValidateTopSection.Visible = value; }
+            set
+            {
+                ValidateTopSection.Visible = value;
+                ValidateSection.Visible = value;
+            }
         }
 
         protected bool ShowCurrentLdapConnectionSection
@@ -36,12 +40,12 @@ namespace ldapcp.ControlTemplates
             set { AugmentationSection.Visible = value; }
         }
 
-        string TextErrorNoGroupClaimType = "There is no claim type associated with an entity type 'FormsRole' or 'SecurityGroup'.";
-        string TextErrorLDAPFieldsMissing = "Some mandatory fields are missing.";
-        string TextErrorTestLdapConnection = "Unable to connect to LDAP for following reason:<br/>{0}<br/>It may be expected if w3wp process of central admin has intentionally no access to LDAP server.";
-        string TextConnectionSuccessful = "Connection successful.";
-        string TextSharePointDomain = "Connect to SharePoint domain";
-        string TextUpdateAdditionalLdapFilterOk = "LDAP filter was successfully applied to all LDAP attributes of class 'user'.";
+        readonly string TextErrorNoGroupClaimType = "There is no claim type associated with an entity type 'FormsRole' or 'SecurityGroup'.";
+        readonly string TextErrorLDAPFieldsMissing = "Some mandatory fields are missing.";
+        readonly string TextErrorTestLdapConnection = "Unable to connect to LDAP for following reason:<br/>{0}<br/>It may be expected if w3wp process of central admin has intentionally no access to LDAP server.";
+        readonly string TextConnectionSuccessful = "Connection successful.";
+        readonly string TextSharePointDomain = "Connect to SharePoint domain";
+        readonly string TextUpdateAdditionalLdapFilterOk = "LDAP filter was successfully applied to all LDAP attributes of class 'user'.";
 
         protected void Page_Load(object sender, EventArgs e)
         {
@@ -62,7 +66,8 @@ namespace ldapcp.ControlTemplates
             if (ValidatePrerequisite() != ConfigStatus.AllGood)
             {
                 this.LabelErrorMessage.Text = base.MostImportantError;
-                this.BtnOK.Enabled = this.BtnOKTop.Enabled = false;
+                this.BtnOK.Enabled = false;
+                this.BtnOKTop.Enabled = false;
                 return;
             }
 
@@ -103,11 +108,16 @@ namespace ldapcp.ControlTemplates
             ChkEnableAugmentation.Checked = PersistedObject.EnableAugmentation;
 
             if (!String.IsNullOrEmpty(PersistedObject.MainGroupClaimType) && DdlClaimTypes.Items.FindByValue(PersistedObject.MainGroupClaimType) != null)
+            {
                 DdlClaimTypes.SelectedValue = PersistedObject.MainGroupClaimType;
+            }
 
             // Initialize grid for LDAP connections
             var spDomainCoco = PersistedObject.LDAPConnectionsProp.FirstOrDefault(x => x.UseSPServerConnectionToAD);
-            if (spDomainCoco != null) spDomainCoco.LDAPPath = TextSharePointDomain;
+            if (spDomainCoco != null)
+            {
+                spDomainCoco.LDAPPath = TextSharePointDomain;
+            }
 
             GridLdapConnections.DataSource = PersistedObject.LDAPConnectionsProp;
             GridLdapConnections.DataKeyNames = new string[] { "Identifier" };
@@ -156,7 +166,10 @@ namespace ldapcp.ControlTemplates
             {
                 string valueName = Enum.GetName(enumType, (int)value);
                 // Encryption and SecureSocketsLayer have same value and adding both to Dictionary would violate uniqueness of the key
-                if (String.Equals(valueName, "Encryption", StringComparison.InvariantCultureIgnoreCase) && list.ContainsValue("Encryption")) continue;
+                if (String.Equals(valueName, "Encryption", StringComparison.InvariantCultureIgnoreCase) && list.ContainsValue("Encryption"))
+                {
+                    continue;
+                }
                 list.Add((int)value, valueName);
             }
             return list;
@@ -189,10 +202,13 @@ namespace ldapcp.ControlTemplates
 
         protected bool UpdateConfiguration(bool commitChanges)
         {
-            if (ValidatePrerequisite() != ConfigStatus.AllGood) return false;
+            if (ValidatePrerequisite() != ConfigStatus.AllGood) { return false; }
             UpdateGeneralSettings();
             UpdateAugmentationSettings();
-            if (commitChanges) CommitChanges();
+            if (commitChanges)
+            {
+                CommitChanges();
+            }
             return true;
         }
 
@@ -210,7 +226,9 @@ namespace ldapcp.ControlTemplates
             }
 
             if (!String.IsNullOrWhiteSpace(TxtUserIdentifierLDAPClass.Text) && !String.IsNullOrWhiteSpace(TxtUserIdentifierLDAPAttribute.Text))
+            {
                 PersistedObject.ClaimTypes.UpdateUserIdentifier(TxtUserIdentifierLDAPClass.Text, TxtUserIdentifierLDAPAttribute.Text);
+            }
 
             PersistedObject.BypassLDAPLookup = this.ChkAlwaysResolveUserInput.Checked;
             PersistedObject.FilterEnabledUsersOnlyProp = this.ChkFilterEnabledUsersOnly.Checked;
@@ -224,7 +242,9 @@ namespace ldapcp.ControlTemplates
 
             int timeOut;
             if (!Int32.TryParse(this.txtTimeout.Text, out timeOut) || timeOut < 0)
+            {
                 timeOut = ClaimsProviderConstants.LDAPCPCONFIG_TIMEOUT; //set to default if unable to parse
+            }
             PersistedObject.LDAPQueryTimeout = timeOut;
         }
 
@@ -244,9 +264,18 @@ namespace ldapcp.ControlTemplates
 
         protected void BtnOK_Click(Object sender, EventArgs e)
         {
-            if (ValidatePrerequisite() != ConfigStatus.AllGood) return;
-            if (UpdateConfiguration(true)) Response.Redirect("/Security.aspx", false);
-            else LabelErrorMessage.Text = base.MostImportantError;
+            if (ValidatePrerequisite() != ConfigStatus.AllGood)
+            {
+                return;
+            }
+            if (UpdateConfiguration(true))
+            {
+                Response.Redirect("/Security.aspx", false);
+            }
+            else
+            {
+                LabelErrorMessage.Text = base.MostImportantError;
+            }
         }
 
         protected void BtnResetLDAPCPConfig_Click(Object sender, EventArgs e)
@@ -267,7 +296,7 @@ namespace ldapcp.ControlTemplates
 
         void UpdateAdditionalUserLdapFilter()
         {
-            if (PersistedObject == null) return;
+            if (PersistedObject == null) { return; }
             foreach (var userAttr in this.PersistedObject.ClaimTypes.Where(x => x.EntityType == DirectoryObjectType.User || x.UseMainClaimTypeOfDirectoryObject))
             {
                 userAttr.AdditionalLDAPFilter = this.TxtAdditionalUserLdapFilter.Text;
@@ -326,7 +355,8 @@ namespace ldapcp.ControlTemplates
             ViewState["LDAPpwd"] = String.Empty;
             this.TxtLdapPassword.Attributes.Remove("value");
             this.TxtLdapConnectionString.Text = "LDAP://";
-            this.TxtLdapUsername.Text = this.TxtLdapPassword.Text = String.Empty;
+            this.TxtLdapUsername.Text = String.Empty;
+            this.TxtLdapPassword.Text = String.Empty;
         }
 
         protected void ValidateLdapConnection()
@@ -355,8 +385,8 @@ namespace ldapcp.ControlTemplates
             }
             finally
             {
-                if (deSearch != null) deSearch.Dispose();
-                if (de != null) de.Dispose();
+                if (deSearch != null) { deSearch.Dispose(); }
+                if (de != null) { de.Dispose(); }
             }
 
             // Required to set radio buttons of LDAP connections correctly in UI
@@ -365,8 +395,8 @@ namespace ldapcp.ControlTemplates
 
         protected void grdLDAPConnections_RowDeleting(object sender, GridViewDeleteEventArgs e)
         {
-            if (ValidatePrerequisite() != ConfigStatus.AllGood) return;
-            if (PersistedObject.LDAPConnectionsProp == null) return;
+            if (ValidatePrerequisite() != ConfigStatus.AllGood) { return; }
+            if (PersistedObject.LDAPConnectionsProp == null) { return; }
 
             GridViewRow rowToDelete = grdLDAPConnections.Rows[e.RowIndex];
             Guid Id = new Guid(rowToDelete.Cells[0].Text);
@@ -390,11 +420,14 @@ namespace ldapcp.ControlTemplates
             AuthenticationTypes authNTypes = 0;
             foreach (ListItem item in this.CblAuthenticationTypes.Items)
             {
-                if (!item.Selected) continue;
+                if (!item.Selected) { continue; }
                 int selectedType;
-                if (!Int32.TryParse(item.Value, out selectedType)) continue;
+                if (!Int32.TryParse(item.Value, out selectedType)) { continue; }
                 authNTypes += selectedType;
-                if (ClearSelection) item.Selected = false;
+                if (ClearSelection)
+                {
+                    item.Selected = false;
+                }
             }
             return authNTypes;
         }
