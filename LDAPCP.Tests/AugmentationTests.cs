@@ -95,6 +95,10 @@ namespace LDAPCP.Tests
             Config.Update();
         }
 
+        /// <summary>
+        /// Test augmentation from the data file. Assumes augmentation is enabled and configured in the claims provider (handled in the constructor)
+        /// </summary>
+        /// <param name="registrationData"></param>
         [Test, TestCaseSource(typeof(ValidateEntityDataSource), "GetTestData")]
         [Repeat(UnitTestsHelper.TestRepeatCount)]
         public void TestAugmentation(ValidateEntityData registrationData)
