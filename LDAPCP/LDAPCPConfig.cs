@@ -9,6 +9,7 @@ using System.Diagnostics;
 using System.DirectoryServices;
 using System.Linq;
 using System.Reflection;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Web;
 using static ldapcp.ClaimsProviderLogging;
@@ -1214,8 +1215,8 @@ namespace ldapcp
         /// <param name="domainFQDN">Fully qualified domain name</param>
         public static void GetDomainInformation(string distinguishedName, out string domainName, out string domainFQDN)
         {
-            // Retrieve FQDN and domain name of current DirectoryEntry
-            domainName = domainFQDN = String.Empty;
+            StringBuilder sbDomainFQDN = new StringBuilder();
+            domainName = String.Empty;
             if (distinguishedName.Contains("DC="))
             {
                 int start = distinguishedName.IndexOf("DC=", StringComparison.InvariantCultureIgnoreCase);
@@ -1223,7 +1224,7 @@ namespace ldapcp
                 bool setDomainName = true;
                 foreach (string dc in dnSplitted)
                 {
-                    domainFQDN += dc.Replace(',', '.');
+                    sbDomainFQDN.Append(dc.Replace(',', '.'));
                     if (setDomainName)
                     {
                         domainName = dc.Trim(new char[] { ',' });
@@ -1231,6 +1232,7 @@ namespace ldapcp
                     }
                 }
             }
+            domainFQDN = sbDomainFQDN.ToString();
         }
 
         /// <summary>
