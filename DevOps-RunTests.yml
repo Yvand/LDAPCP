@@ -32,9 +32,9 @@ jobs:
   - task: VSTest@2
     displayName: 'Run Visual Studio tests'
     inputs:
-      searchFolder: '$(Build.ArtifactStagingDirectory)/drop/$(System.TeamProject).Tests/bin/Release'
+      searchFolder: '$(Build.ArtifactStagingDirectory)/drop_$(Tests.BuildConfiguration)/$(System.TeamProject).Tests/bin/Release'
       vsTestVersion: toolsInstaller
-      runSettingsFile: '$(Build.ArtifactStagingDirectory)/drop/$(Tests.DataFolderName)/DTLServer.runsettings'
+      runSettingsFile: '$(Build.ArtifactStagingDirectory)/drop_$(Tests.BuildConfiguration)/$(Tests.DataFolderName)/DTLServer.runsettings'
       overrideTestrunParameters: '$(Tests.OverrideTestrunParameters)'
       codeCoverageEnabled: $(Tests.CodeCoverageEnabled)
       otherConsoleOptions: '/Platform:x64'
@@ -72,9 +72,9 @@ jobs:
   - task: VSTest@2
     displayName: 'Run Visual Studio tests'
     inputs:
-      searchFolder: '$(Build.ArtifactStagingDirectory)/drop/$(System.TeamProject).Tests/bin/Release'
+      searchFolder: '$(Build.ArtifactStagingDirectory)/drop_$(Tests.BuildConfiguration)/$(System.TeamProject).Tests/bin/Release'
       vsTestVersion: toolsInstaller
-      runSettingsFile: '$(Build.ArtifactStagingDirectory)/drop/$(Tests.DataFolderName)/DTLServer.runsettings'
+      runSettingsFile: '$(Build.ArtifactStagingDirectory)/drop_$(Tests.BuildConfiguration)/$(Tests.DataFolderName)/DTLServer.runsettings'
       overrideTestrunParameters: '$(Tests.OverrideTestrunParameters)'
       codeCoverageEnabled: $(Tests.CodeCoverageEnabled)
       otherConsoleOptions: '/Platform:x64'
@@ -112,9 +112,9 @@ jobs:
   - task: VSTest@2
     displayName: 'Run Visual Studio tests'
     inputs:
-      searchFolder: '$(Build.ArtifactStagingDirectory)/drop/$(System.TeamProject).Tests/bin/Release'
+      searchFolder: '$(Build.ArtifactStagingDirectory)/drop_$(Tests.BuildConfiguration)/$(System.TeamProject).Tests/bin/Release'
       vsTestVersion: toolsInstaller
-      runSettingsFile: '$(Build.ArtifactStagingDirectory)/drop/$(Tests.DataFolderName)/DTLServer.runsettings'
+      runSettingsFile: '$(Build.ArtifactStagingDirectory)/drop_$(Tests.BuildConfiguration)/$(Tests.DataFolderName)/DTLServer.runsettings'
       overrideTestrunParameters: '$(Tests.OverrideTestrunParameters)'
       codeCoverageEnabled: $(Tests.CodeCoverageEnabled)
       otherConsoleOptions: '/Platform:x64'
