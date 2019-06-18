@@ -19,7 +19,7 @@ jobs:
       project: '$(System.TeamProjectId)'
       pipeline: $(DevOps.BuildArtifactsPipelineID)
       specificBuildWithTriggering: true
-      artifactName: drop
+      artifactName: 'drop_$(Tests.BuildConfiguration)'
       downloadPath: $(Build.ArtifactStagingDirectory)
       itemPattern: |
        drop/$(System.TeamProject)/bin/Release/$(System.TeamProject).pdb
@@ -59,7 +59,7 @@ jobs:
       project: '$(System.TeamProjectId)'
       pipeline: $(DevOps.BuildArtifactsPipelineID)
       specificBuildWithTriggering: true
-      artifactName: drop
+      artifactName: 'drop_$(Tests.BuildConfiguration)'
       downloadPath: $(Build.ArtifactStagingDirectory)
       itemPattern: |
        drop/$(System.TeamProject)/bin/Release/$(System.TeamProject).pdb
@@ -99,7 +99,7 @@ jobs:
       project: '$(System.TeamProjectId)'
       pipeline: $(DevOps.BuildArtifactsPipelineID)
       specificBuildWithTriggering: true
-      artifactName: drop
+      artifactName: 'drop_$(Tests.BuildConfiguration)'
       downloadPath: $(Build.ArtifactStagingDirectory)
       itemPattern: |
        drop/$(System.TeamProject)/bin/Release/$(System.TeamProject).pdb
