@@ -22,9 +22,9 @@ jobs:
       artifactName: 'drop_$(Tests.BuildConfiguration)'
       downloadPath: $(Build.ArtifactStagingDirectory)
       itemPattern: |
-       drop/$(System.TeamProject)/bin/Release/$(System.TeamProject).pdb
-       drop/$(System.TeamProject).Tests/bin/Release/*.dll
-       drop/$(Tests.DataFolderName)/?(*.csv|*.json|*.runsettings)
+       drop_$(Tests.BuildConfiguration)/$(System.TeamProject)/bin/Release/$(System.TeamProject).pdb
+       drop_$(Tests.BuildConfiguration)/$(System.TeamProject).Tests/bin/Release/*.dll
+       drop_$(Tests.BuildConfiguration)/$(Tests.DataFolderName)/?(*.csv|*.json|*.runsettings)
 
   - task: VisualStudioTestPlatformInstaller@1
     displayName: 'Visual Studio Test Platform Installer'
@@ -62,9 +62,9 @@ jobs:
       artifactName: 'drop_$(Tests.BuildConfiguration)'
       downloadPath: $(Build.ArtifactStagingDirectory)
       itemPattern: |
-       drop/$(System.TeamProject)/bin/Release/$(System.TeamProject).pdb
-       drop/$(System.TeamProject).Tests/bin/Release/*.dll
-       drop/$(Tests.DataFolderName)/?(*.csv|*.json|*.runsettings)
+       drop_$(Tests.BuildConfiguration)/$(System.TeamProject)/bin/Release/$(System.TeamProject).pdb
+       drop_$(Tests.BuildConfiguration)/$(System.TeamProject).Tests/bin/Release/*.dll
+       drop_$(Tests.BuildConfiguration)/$(Tests.DataFolderName)/?(*.csv|*.json|*.runsettings)
 
   - task: VisualStudioTestPlatformInstaller@1
     displayName: 'Visual Studio Test Platform Installer'
@@ -102,9 +102,9 @@ jobs:
       artifactName: 'drop_$(Tests.BuildConfiguration)'
       downloadPath: $(Build.ArtifactStagingDirectory)
       itemPattern: |
-       drop/$(System.TeamProject)/bin/Release/$(System.TeamProject).pdb
-       drop/$(System.TeamProject).Tests/bin/Release/*.dll
-       drop/$(Tests.DataFolderName)/?(*.csv|*.json|*.runsettings)
+       drop_$(Tests.BuildConfiguration)/$(System.TeamProject)/bin/Release/$(System.TeamProject).pdb
+       drop_$(Tests.BuildConfiguration)/$(System.TeamProject).Tests/bin/Release/*.dll
+       drop_$(Tests.BuildConfiguration)/$(Tests.DataFolderName)/?(*.csv|*.json|*.runsettings)
 
   - task: VisualStudioTestPlatformInstaller@1
     displayName: 'Visual Studio Test Platform Installer'
