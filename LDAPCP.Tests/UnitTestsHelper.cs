@@ -52,7 +52,7 @@ public class UnitTestsHelper
     {
 #if DEBUG
         TestSiteCollUri = new Uri("http://spsites/sites/" + TestContext.Parameters["TestSiteCollectionName"]);
-        //return; // Uncommented when debugging LDAPCP code from unit tests
+        return; // Uncommented when debugging LDAPCP code from unit tests
 #endif
 
         logFileListener = new TextWriterTraceListener(TestContext.Parameters["TestLogFileName"]);
@@ -221,18 +221,24 @@ public class UnitTestsHelper
         Uri context = new Uri(TestSiteCollUri.AbsoluteUri);
         SPClaim[] groups = ClaimsProvider.GetClaimsForEntity(context, inputClaim);
         bool groupFound = false;
-        if (groups != null && groups.Contains(TrustedGroup))
+        string groupsValueText = "No group was returned by the claims provider.";
+
+        if (groups != null)
         {
-            groupFound = true;
+            groupsValueText = "List of returned groups returned by claims provider: " + string.Join(", ", Array.ConvertAll(groups, x => x.Value));
+            if (groups.Contains(TrustedGroup))
+            {
+                groupFound = true;
+            }
         }
 
         if (isMemberOfTrustedGroup)
         {
-            Assert.IsTrue(groupFound, $"Entity \"{claimValue}\" should be member of group \"{TrustedGroupToAdd_ClaimValue}\", but this group was not found in the claims returned by the claims provider.");
+            Assert.IsTrue(groupFound, $"Entity \"{claimValue}\" should be member of group \"{TrustedGroupToAdd_ClaimValue}\", but this group was not found in the claims returned by the claims provider. {groupsValueText}");
         }
         else
         {
-            Assert.IsFalse(groupFound, $"Entity \"{claimValue}\" should NOT be member of group \"{TrustedGroupToAdd_ClaimValue}\", but this group was found in the claims returned by the claims provider.");
+            Assert.IsFalse(groupFound, $"Entity \"{claimValue}\" should NOT be member of group \"{TrustedGroupToAdd_ClaimValue}\", but this group was found in the claims returned by the claims provider. {groupsValueText}");
         }
     }
 }
