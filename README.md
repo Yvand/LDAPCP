@@ -13,6 +13,7 @@
 
 ![GitHub (Pre-)Release Date](https://img.shields.io/github/release-date-pre/Yvand/LDAPCP.svg)
 ![GitHub release](https://img.shields.io/github/release-pre/Yvand/LDAPCP.svg)
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/bc214d40281943fbaafd5458bf8e0ae4)](https://app.codacy.com/app/Yvand/LDAPCP?utm_source=github.com&utm_medium=referral&utm_content=Yvand/LDAPCP&utm_campaign=Badge_Grade_Dashboard)
 [![Build Status](https://dev.azure.com/YvanDev/LDAPCP/_apis/build/status/CI-Compile-Tag?branchName=dev)](https://dev.azure.com/YvanDev/LDAPCP/_build/latest?definitionId=2&branchName=dev)
 
 ## Miscellaneous
