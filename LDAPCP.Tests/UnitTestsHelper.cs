@@ -223,9 +223,9 @@ public class UnitTestsHelper
         bool groupFound = false;
         string groupsValueText = "No group was returned by the claims provider.";
 
-        if (groups != null)
+        if (groups != null && groups.Count() > 0)
         {
-            groupsValueText = "List of returned groups returned by claims provider: " + string.Join(", ", Array.ConvertAll(groups, x => x.Value));
+            groupsValueText = $"Claims provider returned those {groups.Count()} groups: {string.Join(", ", Array.ConvertAll(groups, x => x.Value))}";
             if (groups.Contains(TrustedGroup))
             {
                 groupFound = true;
