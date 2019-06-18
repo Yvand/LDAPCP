@@ -120,4 +120,4 @@ jobs:
     displayName: 'Publish Artifact: drop'
     inputs:
       pathtoPublish: '$(Build.ArtifactStagingDirectory)'
-      artifactName: drop
+      artifactName: 'drop_$(configuration)'
