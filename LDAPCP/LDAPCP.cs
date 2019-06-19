@@ -1001,6 +1001,8 @@ namespace ldapcp
             else
             {
                 ldapConnection.Directory = Domain.GetComputerDomain().GetDirectoryEntry();
+                // Property LDAPConnection.AuthenticationSettings must be set, in order to build the PrincipalContext correctly in GetGroupsFromActiveDirectory()
+                ldapConnection.AuthenticationSettings = ldapConnection.Directory.AuthenticationType;
             }
 
             // Operations in this block do LDAP queries, so let's monitor their execution time
