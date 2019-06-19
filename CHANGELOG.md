@@ -4,6 +4,7 @@
 
 * Add a default mapping to populate the email of groups
 * Update text in claims mapping page to better explain settings
+* Fix bug: During augmentation, PrincipalContext is not built with expected ContextOptions if LDAPConnection.UseSPServerConnectionToAD is true
 * Improve logging during augmentation
 * Improve logging when testing augmentation doesn't return expected result
 * Update DevOps build pipelines
