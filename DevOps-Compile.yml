@@ -1,8 +1,10 @@
 name: $(BuildVersion).$(date:yyyyMMdd).$(Build.BuildId)
 resources:
 - repo: self
+
 variables:
   SolutionFileName: '$(system.teamProject).sln'
+
 jobs:
 - job: Compile
   strategy:
@@ -16,7 +18,7 @@ jobs:
         platform: $(BuildPlatform)
   displayName: Compile
   pool:
-    name: Hosted VS2017
+    vmImage: 'windows-2019'
     demands: 
     - msbuild
     - visualstudio
@@ -31,41 +33,47 @@ jobs:
      # Set variables
      $azureStorageBaseDirectory = "Resources\$(system.teamProject)"
      $projectLocalPath = "$(System.DefaultWorkingDirectory)\$(system.teamProject)"
-     $devTestLabsLocalPath = "$(Build.ArtifactStagingDirectory)\SPTestServer artifacts"
-     $buildResourcesLocalPath = "$(Build.ArtifactStagingDirectory)\BuildPipeline"
+     $devTestLabsLocalPath = "$(Build.ArtifactStagingDirectory)\$(Tests.DataFolderName)"
      
-     # Create the SPTestServer artifacts directory if it doesn't exist
-     if ((Test-Path -Path $devTestLabsLocalPath -PathType Container) -eq $false) {
-         New-Item -ItemType Directory -Path $devTestLabsLocalPath
-     }
+     # Create now folder that will contain later scripts to configure local test server
+     #if ((Test-Path -Path "$(Build.ArtifactStagingDirectory)\$(Deployment.ConfigureServerFolderName)" -PathType Container) -eq $false) {
+         #New-Item -ItemType Directory -Path "$(Build.ArtifactStagingDirectory)\$(Deployment.ConfigureServerFolderName)"
+     #}
      
-     # Create the Build pipeline directory if it doesn't exist
-     if ((Test-Path -Path $buildResourcesLocalPath -PathType Container) -eq $false) {
-         New-Item -ItemType Directory -Path $buildResourcesLocalPath
-     }
-     
-     Write-Output ("Copy files to build $(system.teamProject) from Azure storage account")
-     $azureContext = New-AzureStorageContext $(AzureStorageAccountName) $(AzureStorageAccountKey)
-     $azureShare = Get-AzureStorageShare $(AzureStorageShareName) –Context $azureContext
-     #Get-AzureStorageFileContent –Share $azureShare –Path "$azureStorageBaseDirectory\$(system.teamProject).snk" "$projectLocalPath\$(system.teamProject).snk"
      Write-Output ("Copy signing key from $(DownloadSecureFile.secureFilePath) to $projectLocalPath")
      Copy-Item "$(DownloadSecureFile.secureFilePath)" -Destination "$projectLocalPath"
-     Get-AzureStorageFileContent –Share $azureShare –Path "$azureStorageBaseDirectory\SharePoint 2013\Microsoft.SharePoint.dll" "$projectLocalPath\Microsoft.SharePoint.dll"
      
-     Write-Output ("Copy SPTestServer artifacts content from Azure storage account")
-     $azurePath = Join-Path -Path $azureStorageBaseDirectory -ChildPath "SPTestServer artifacts"
-     Get-AzureStorageFile -ShareName $(AzureStorageShareName) -Context $azureContext -Path $azurePath | Get-AzureStorageFile | ?{$_.GetType().Name -eq "CloudFile"} | Get-AzureStorageFileContent -Destination $devTestLabsLocalPath
-     
-     Write-Output ("Copy BuildResources content from Azure storage account")
-     $azurePath = Join-Path -Path $azureStorageBaseDirectory -ChildPath "BuildPipeline"
-     Get-AzureStorageFile -ShareName $(AzureStorageShareName) -Context $azureContext -Path $azurePath | Get-AzureStorageFile | ? {$_.GetType().Name -eq "CloudFile"} | Get-AzureStorageFileContent -Destination $buildResourcesLocalPath
-     
-     Write-Output ("Add assembly Microsoft.SharePoint.dll to the GAC")
+     Write-Output ("Copy Microsoft.SharePoint.dll from Azure storage account")
+     $azureContext = New-AzureStorageContext $(AzureStorageAccountName) $(AzureStorageAccountKey)
+     $azureShare = Get-AzureStorageShare $(AzureStorageShareName) -Context $azureContext
+     Get-AzureStorageFileContent -Share $azureShare -Path "$azureStorageBaseDirectory\SharePoint 2013\Microsoft.SharePoint.dll" "$projectLocalPath\Microsoft.SharePoint.dll"
+     Write-Output ("Add Microsoft.SharePoint.dll to the GAC")
      [System.Reflection.Assembly]::Load("System.EnterpriseServices, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a")
      $publish = New-Object System.EnterpriseServices.Internal.Publish
      $publish.GacInstall("$projectLocalPath\Microsoft.SharePoint.dll")
      
-    displayName: 'Import resources from Azure storage account'
+     Write-Output ("Copy integration tests data from the Azure storage account")
+     # Create the destination directory
+     if ((Test-Path -Path $devTestLabsLocalPath -PathType Container) -eq $false) {
+         New-Item -ItemType Directory -Path $devTestLabsLocalPath
+     }
+     $azurePath = Join-Path -Path $azureStorageBaseDirectory -ChildPath "$(Tests.DataFolderName)"
+     Get-AzureStorageFile -ShareName $(AzureStorageShareName) -Context $azureContext -Path $azurePath | Get-AzureStorageFile | ?{$_.GetType().Name -eq "CloudFile"} | Get-AzureStorageFileContent -Destination $devTestLabsLocalPath
+     
+    displayName: 'Import resources'
+
+  - task: automagically.DownloadFile.DownloadFile.DownloadFile@1
+    displayName: 'Download ConfigureLab.ps1'
+    inputs:
+      FileUrl: 'https://raw.githubusercontent.com/Yvand/AzureRM-Templates/dev/DevTestLabs-Artifacts/manage-artifacts/ConfigureLab.ps1'
+      DestinationFolder: '$(Build.ArtifactStagingDirectory)\$(Deployment.ConfigureServerFolderName)'
+  
+  - task: automagically.DownloadFile.DownloadFile.DownloadFile@1
+    displayName: 'Download ConfigureLab.psm1'
+    inputs:
+      FileUrl: 'https://raw.githubusercontent.com/Yvand/AzureRM-Templates/dev/DevTestLabs-Artifacts/manage-artifacts/ConfigureLab.psm1'
+      DestinationFolder: '$(Build.ArtifactStagingDirectory)\$(Deployment.ConfigureServerFolderName)'
+  
   - task: NuGetToolInstaller@0
     displayName: 'Use NuGet 4.4.1'
     inputs:
@@ -112,4 +120,4 @@ jobs:
     displayName: 'Publish Artifact: drop'
     inputs:
       pathtoPublish: '$(Build.ArtifactStagingDirectory)'
-      artifactName: drop
+      artifactName: 'drop_$(configuration)'

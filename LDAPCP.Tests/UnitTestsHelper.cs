@@ -17,31 +17,31 @@ using System.Text;
 [SetUpFixture]
 public class UnitTestsHelper
 {
-    public static ldapcp.LDAPCP ClaimsProvider = new ldapcp.LDAPCP(UnitTestsHelper.ClaimsProviderName);
-    public const string ClaimsProviderName = "LDAPCP";
-    public static string ClaimsProviderConfigName = TestContext.Parameters["ClaimsProviderConfigName"];
+    public static readonly ldapcp.LDAPCP ClaimsProvider = new ldapcp.LDAPCP(UnitTestsHelper.ClaimsProviderName);
+    public static string ClaimsProviderName => "LDAPCP";
+    public static readonly string ClaimsProviderConfigName = TestContext.Parameters["ClaimsProviderConfigName"];
     public static Uri TestSiteCollUri;
-    public static string TestSiteRelativePath = $"/sites/{TestContext.Parameters["TestSiteCollectionName"]}";
+    public static readonly string TestSiteRelativePath = $"/sites/{TestContext.Parameters["TestSiteCollectionName"]}";
     public const int MaxTime = 500000;
-    public static string FarmAdmin = TestContext.Parameters["FarmAdmin"];
+    public static readonly string FarmAdmin = TestContext.Parameters["FarmAdmin"];
 #if DEBUG
     public const int TestRepeatCount = 5;
 #else
     public const int TestRepeatCount = 20;
 #endif
 
-    public const string RandomClaimType = "http://schemas.yvand.com/ws/claims/random";
-    public const string RandomClaimValue = "IDoNotExist";
-    public const string RandomLDAPAttribute = "randomAttribute";
-    public const string RandomLDAPClass = "randomClass";
+    public static string RandomClaimType => "http://schemas.yvand.com/ws/claims/random";
+    public static string RandomClaimValue => "IDoNotExist";
+    public static string RandomLDAPAttribute => "randomAttribute";
+    public static string RandomLDAPClass => "randomClass";
 
-    public static string TrustedGroupToAdd_ClaimType = ClaimsProviderConstants.DefaultMainGroupClaimType;
-    public static string TrustedGroupToAdd_ClaimValue = TestContext.Parameters["TrustedGroupToAdd_ClaimValue"];
-    public static SPClaim TrustedGroup = new SPClaim(TrustedGroupToAdd_ClaimType, TrustedGroupToAdd_ClaimValue, ClaimValueTypes.String, SPOriginalIssuers.Format(SPOriginalIssuerType.TrustedProvider, SPTrust.Name));
+    public static readonly string TrustedGroupToAdd_ClaimType = ClaimsProviderConstants.DefaultMainGroupClaimType;
+    public static readonly string TrustedGroupToAdd_ClaimValue = TestContext.Parameters["TrustedGroupToAdd_ClaimValue"];
+    public static readonly SPClaim TrustedGroup = new SPClaim(TrustedGroupToAdd_ClaimType, TrustedGroupToAdd_ClaimValue, ClaimValueTypes.String, SPOriginalIssuers.Format(SPOriginalIssuerType.TrustedProvider, SPTrust.Name));
 
-    public static string CustomLDAPConnections = TestContext.Parameters["CustomLDAPConnections"];
-    public static string DataFile_AllAccounts_Search = TestContext.Parameters["DataFile_AllAccounts_Search"];
-    public static string DataFile_AllAccounts_Validate = TestContext.Parameters["DataFile_AllAccounts_Validate"];
+    public static readonly string CustomLDAPConnections = TestContext.Parameters["CustomLDAPConnections"];
+    public static readonly string DataFile_AllAccounts_Search = TestContext.Parameters["DataFile_AllAccounts_Search"];
+    public static readonly string DataFile_AllAccounts_Validate = TestContext.Parameters["DataFile_AllAccounts_Validate"];
 
     public static SPTrustedLoginProvider SPTrust => SPSecurityTokenServiceManager.Local.TrustedLoginProviders.FirstOrDefault(x => String.Equals(x.ClaimProviderName, UnitTestsHelper.ClaimsProviderName, StringComparison.InvariantCultureIgnoreCase));
 
@@ -63,9 +63,13 @@ public class UnitTestsHelper
         Trace.WriteLine($"{DateTime.Now.ToString("s")} DataFile_AllAccounts_Validate: {DataFile_AllAccounts_Validate}");
         Trace.WriteLine($"{DateTime.Now.ToString("s")} TestSiteCollectionName: {TestContext.Parameters["TestSiteCollectionName"]}");
         if (SPTrust == null)
+        {
             Trace.TraceError($"{DateTime.Now.ToString("s")} SPTrust: is null");
+        }
         else
+        {
             Trace.WriteLine($"{DateTime.Now.ToString("s")} SPTrust: {SPTrust.Name}");
+        }
 
         LDAPCPConfig config = LDAPCPConfig.GetConfiguration(UnitTestsHelper.ClaimsProviderConfigName, UnitTestsHelper.SPTrust.Name);
         if (config == null)
@@ -127,12 +131,14 @@ public class UnitTestsHelper
     }
 
     [OneTimeTearDown]
-    public void Cleanup()
+    public static void Cleanup()
     {
         Trace.WriteLine($"{DateTime.Now.ToString("s")} Integration tests of {ClaimsProviderName} {FileVersionInfo.GetVersionInfo(Assembly.GetAssembly(typeof(ldapcp.LDAPCP)).Location).FileVersion} finished.");
         Trace.Flush();
         if (logFileListener != null)
+        {
             logFileListener.Dispose();
+        }
     }
 
     public static void InitializeConfiguration(LDAPCPConfig config)
@@ -188,7 +194,9 @@ public class UnitTestsHelper
         }
 
         if (expectedCount == Int32.MaxValue)
+        {
             expectedCount = entities.Count;
+        }
 
         Assert.AreEqual(expectedCount, entities.Count, $"Input \"{input}\" should have returned {expectedCount} entities, but it returned {entities.Count} instead. {detailedLog.ToString()}");
     }
@@ -211,17 +219,27 @@ public class UnitTestsHelper
     {
         SPClaim inputClaim = new SPClaim(claimType, claimValue, ClaimValueTypes.String, SPOriginalIssuers.Format(SPOriginalIssuerType.TrustedProvider, UnitTestsHelper.SPTrust.Name));
         Uri context = new Uri(TestSiteCollUri.AbsoluteUri);
-
         SPClaim[] groups = ClaimsProvider.GetClaimsForEntity(context, inputClaim);
-
         bool groupFound = false;
-        if (groups != null && groups.Contains(TrustedGroup))
-            groupFound = true;
+        string groupsValueText = "No group was returned by the claims provider.";
+
+        if (groups != null && groups.Count() > 0)
+        {
+            groupsValueText = $"Claims provider returned those {groups.Count()} groups: {string.Join(", ", Array.ConvertAll(groups, x => x.Value))}";
+            if (groups.Contains(TrustedGroup))
+            {
+                groupFound = true;
+            }
+        }
 
         if (isMemberOfTrustedGroup)
-            Assert.IsTrue(groupFound, $"Entity \"{claimValue}\" should be member of group \"{TrustedGroupToAdd_ClaimValue}\", but this group was not found in the claims returned by the claims provider.");
+        {
+            Assert.IsTrue(groupFound, $"Entity \"{claimValue}\" should be member of group \"{TrustedGroupToAdd_ClaimValue}\", but this group was not found in the claims returned by the claims provider. {groupsValueText}");
+        }
         else
-            Assert.IsFalse(groupFound, $"Entity \"{claimValue}\" should NOT be member of group \"{TrustedGroupToAdd_ClaimValue}\", but this group was found in the claims returned by the claims provider.");
+        {
+            Assert.IsFalse(groupFound, $"Entity \"{claimValue}\" should NOT be member of group \"{TrustedGroupToAdd_ClaimValue}\", but this group was found in the claims returned by the claims provider. {groupsValueText}");
+        }
     }
 }
 

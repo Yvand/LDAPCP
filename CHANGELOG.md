@@ -1,5 +1,18 @@
 # Change log for LDAPCP
 
+## Unreleased
+
+* Add a default mapping to populate the email of groups
+* Update text in claims mapping page to better explain settings
+* Fix bug: During augmentation, PrincipalContext is not built with expected ContextOptions if LDAPConnection.UseSPServerConnectionToAD is true
+* Improve logging during augmentation
+* Improve logging when testing augmentation doesn't return expected result
+* Update DevOps build pipelines
+* Improve code quality as per Codacy's static code analysis
+* Update NuGet package NUnit from 3.11 to 3.12
+* Make most of public members privates and replace them with public properties, to meet best practices
+* Use reflection to copy configuration objects, whenever possible, to avoid misses when new properties are added
+
 ## LDAPCP 12.0.20190321.770 enhancements & bug-fixes - Published in March 21, 2019
 
 * Add more strict checks on the claim type passed during augmentation and validation, to record a more meaningful error if needed

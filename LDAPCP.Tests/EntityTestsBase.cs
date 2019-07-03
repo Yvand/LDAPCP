@@ -78,11 +78,11 @@ namespace LDAPCP.Tests
             if (!TestSearch) return;
 
             LDAPConnection coco = new LDAPConnection();
-            coco.AugmentationEnabled = true;
-            coco.GetGroupMembershipAsADDomain = false;
-            coco.UserServerDirectoryEntry = false;
-            coco.Path = "LDAP://test";
-            coco.Username = "userTest";
+            coco.EnableAugmentation = true;
+            coco.GetGroupMembershipUsingDotNetHelpers = false;
+            coco.UseSPServerConnectionToAD = false;
+            coco.LDAPPath = "LDAP://test";
+            coco.LDAPUsername = "userTest";
             Config.LDAPConnectionsProp.Add(coco);
             Config.Update();
 

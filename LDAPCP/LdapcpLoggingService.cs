@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Text;
 
 namespace ldapcp
 {
@@ -13,7 +14,7 @@ namespace ldapcp
     [System.Runtime.InteropServices.GuidAttribute("1317F638-A5A1-4980-8570-C8F72EC9EF37")]
     public class ClaimsProviderLogging : SPDiagnosticsServiceBase
     {
-        public static string DiagnosticsAreaName = "LDAPCP";
+        public static readonly string DiagnosticsAreaName = "LDAPCP";
 
         public enum TraceCategory
         {
@@ -74,7 +75,7 @@ namespace ldapcp
             {
                 if (ex is AggregateException)
                 {
-                    string message = String.Format("[{0}] Unexpected error(s) occurred {1}:", ProviderInternalName, faultyAction);
+                    StringBuilder message = new StringBuilder($"[{ProviderInternalName}] Unexpected error(s) occurred {faultyAction}:");
                     string excetpionMessage = Environment.NewLine + "[EXCEPTION {0}]: {1}: {2}. Callstack: {3}";
                     var aggEx = ex as AggregateException;
                     int count = 1;
@@ -82,20 +83,28 @@ namespace ldapcp
                     {
                         string currentMessage;
                         if (innerEx.InnerException != null)
+                        {
                             currentMessage = String.Format(excetpionMessage, count++.ToString(), innerEx.InnerException.GetType().FullName, innerEx.InnerException.Message, innerEx.InnerException.StackTrace);
+                        }
                         else
+                        {
                             currentMessage = String.Format(excetpionMessage, count++.ToString(), innerEx.GetType().FullName, innerEx.Message, innerEx.StackTrace);
-                        message += currentMessage;
+                        }
+                        message.Append(currentMessage);
                     }
-                    WriteTrace(category, TraceSeverity.Unexpected, message);
+                    WriteTrace(category, TraceSeverity.Unexpected, message.ToString());
                 }
                 else
                 {
                     string message = "[{0}] Unexpected error occurred {1}: {2}: {3}, Callstack: {4}";
                     if (ex.InnerException != null)
+                    {
                         message = String.Format(message, ProviderInternalName, faultyAction, ex.InnerException.GetType().FullName, ex.InnerException.Message, ex.InnerException.StackTrace);
+                    }
                     else
+                    {
                         message = String.Format(message, ProviderInternalName, faultyAction, ex.GetType().FullName, ex.Message, ex.StackTrace);
+                    }
                     WriteTrace(category, TraceSeverity.Unexpected, message);
                 }
             }
@@ -127,7 +136,9 @@ namespace ldapcp
                 var LogSvc = SPDiagnosticsServiceBase.GetLocal<ClaimsProviderLogging>();
                 // if the Logging Service is registered, just return it.
                 if (LogSvc != null)
+                {
                     return LogSvc;
+                }
 
                 ClaimsProviderLogging svc = null;
                 SPSecurity.RunWithElevatedPrivileges(delegate ()
@@ -186,7 +197,7 @@ namespace ldapcp
             {
                 return new SPDiagnosticsArea(
                     DiagnosticsAreaName,
-                    new List<SPDiagnosticsCategory>()
+                    new List<SPDiagnosticsCategory>
                     {
                         CreateCategory(TraceCategory.Claims_Picking),
                         CreateCategory(TraceCategory.Configuration),

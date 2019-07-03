@@ -6,7 +6,7 @@ jobs:
   displayName: Create test environment
   timeoutInMinutes: 90
   pool:
-    name: Hosted VS2017
+    vmImage: 'windows-2019'
   steps:
   - checkout: none #skip checking out the default repository resource
   - task: ms-azuredevtestlabs.tasks.azure-dtl-task-createEnvironment.AzureDevTestLabsCreateEnvironment@1
@@ -15,9 +15,9 @@ jobs:
       ConnectedServiceName: '$(DevTestLabs.AzureConnectionName)'
       LabId: '/subscriptions/$(DevTestLabs.AzureSubscriptionId)/resourceGroups/$(DevTestLabs.LabName)/providers/Microsoft.DevTestLab/labs/$(DevTestLabs.LabName)'
       RepositoryId: '/subscriptions/$(DevTestLabs.AzureSubscriptionId)/resourcegroups/$(DevTestLabs.LabName)/providers/microsoft.devtestlab/labs/$(DevTestLabs.LabName)/artifactsources/$(DevTestLabs.RepoID)'
-      TemplateId: '/subscriptions/$(DevTestLabs.AzureSubscriptionId)/resourceGroups/$(DevTestLabs.LabName)/providers/Microsoft.DevTestLab/labs/$(DevTestLabs.LabName)/artifactSources/$(DevTestLabs.RepoID)/armTemplates/SharePoint-ADFS-DevTestLabs'
+      TemplateId: '/subscriptions/$(DevTestLabs.AzureSubscriptionId)/resourceGroups/$(DevTestLabs.LabName)/providers/Microsoft.DevTestLab/labs/$(DevTestLabs.LabName)/artifactSources/$(DevTestLabs.RepoID)/armTemplates/$(DevTestLabs.ARMTemplateName)'
       EnvironmentName: 'Tests-$(system.teamProject)'
-      ParameterOverrides: "-location '$(Deployment.Location)' -provisionSharePoint2013 '$(Deployment.ProvisionSharePoint2013)' -provisionSharePoint2016 '$(Deployment.ProvisionSharePoint2016)' -provisionSharePoint2019 '$(Deployment.ProvisionSharePoint2019)' -enableHybridBenefitServerLicenses 'Yes' -adminUserName '$(Deployment.AdminUserName)' -adminPassword '$(Deployment.AdminPassword)' -serviceAccountsPassword '$(Deployment.ServiceAccountsPassword)'"
+      ParameterOverrides: "-provisionSharePoint2013 '$(Deployment.ProvisionSharePoint2013)' -provisionSharePoint2016 '$(Deployment.ProvisionSharePoint2016)' -provisionSharePoint2019 '$(Deployment.ProvisionSharePoint2019)' -enableHybridBenefitServerLicenses 'Yes' -adminUserName '$(Deployment.AdminUserName)' -adminPassword '$(Deployment.AdminPassword)' -serviceAccountsPassword '$(Deployment.ServiceAccountsPassword)' -createPublicIPAndDNS '$(Deployment.CreatePublicIPAndDNS)'"
       TemplateOutputVariables: true
       ExportEnvironmentTemplate: true
     timeoutInMinutes: 90

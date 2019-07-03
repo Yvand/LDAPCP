@@ -19,12 +19,12 @@ jobs:
       project: '$(System.TeamProjectId)'
       pipeline: $(DevOps.BuildArtifactsPipelineID)
       specificBuildWithTriggering: true
-      artifactName: drop
+      artifactName: 'drop_$(Tests.BuildConfiguration)'
       downloadPath: $(Build.ArtifactStagingDirectory)
       itemPattern: |
-       drop/$(System.TeamProject)/bin/Release/$(System.TeamProject).pdb
-       drop/$(System.TeamProject).Tests/bin/Release/*.dll
-       drop/SPTestServer artifacts/?(*.csv|*.json|*.runsettings)
+       drop_$(Tests.BuildConfiguration)/$(System.TeamProject)/bin/Release/$(System.TeamProject).pdb
+       drop_$(Tests.BuildConfiguration)/$(System.TeamProject).Tests/bin/Release/*.dll
+       drop_$(Tests.BuildConfiguration)/$(Tests.DataFolderName)/?(*.csv|*.json|*.runsettings)
 
   - task: VisualStudioTestPlatformInstaller@1
     displayName: 'Visual Studio Test Platform Installer'
@@ -32,15 +32,15 @@ jobs:
   - task: VSTest@2
     displayName: 'Run Visual Studio tests'
     inputs:
-      searchFolder: '$(Build.ArtifactStagingDirectory)/drop/$(System.TeamProject).Tests/bin/Release'
+      searchFolder: '$(Build.ArtifactStagingDirectory)/drop_$(Tests.BuildConfiguration)/$(System.TeamProject).Tests/bin/Release'
       vsTestVersion: toolsInstaller
-      runSettingsFile: '$(Build.ArtifactStagingDirectory)/drop/SPTestServer artifacts/DTLServer.runsettings'
-      overrideTestrunParameters: '$(Deployment.OverrideTestrunParameters)'
-      codeCoverageEnabled: true
+      runSettingsFile: '$(Build.ArtifactStagingDirectory)/drop_$(Tests.BuildConfiguration)/$(Tests.DataFolderName)/DTLServer.runsettings'
+      overrideTestrunParameters: '$(Tests.OverrideTestrunParameters)'
+      codeCoverageEnabled: $(Tests.CodeCoverageEnabled)
       otherConsoleOptions: '/Platform:x64'
       testRunTitle: '$(System.TeamProject)-Tests-SP$(jobSharePointVersion)'
       platform: '$(BuildPlatform)'
-      configuration: $(BuildConfiguration)
+      configuration: $(Tests.BuildConfiguration)
 
 - job: RunTestSP2016
   condition: eq(variables['Deployment.ProvisionSharePoint2016'], 'yes')
@@ -59,12 +59,12 @@ jobs:
       project: '$(System.TeamProjectId)'
       pipeline: $(DevOps.BuildArtifactsPipelineID)
       specificBuildWithTriggering: true
-      artifactName: drop
+      artifactName: 'drop_$(Tests.BuildConfiguration)'
       downloadPath: $(Build.ArtifactStagingDirectory)
       itemPattern: |
-       drop/$(System.TeamProject)/bin/Release/$(System.TeamProject).pdb
-       drop/$(System.TeamProject).Tests/bin/Release/*.dll
-       drop/SPTestServer artifacts/?(*.csv|*.json|*.runsettings)
+       drop_$(Tests.BuildConfiguration)/$(System.TeamProject)/bin/Release/$(System.TeamProject).pdb
+       drop_$(Tests.BuildConfiguration)/$(System.TeamProject).Tests/bin/Release/*.dll
+       drop_$(Tests.BuildConfiguration)/$(Tests.DataFolderName)/?(*.csv|*.json|*.runsettings)
 
   - task: VisualStudioTestPlatformInstaller@1
     displayName: 'Visual Studio Test Platform Installer'
@@ -72,15 +72,15 @@ jobs:
   - task: VSTest@2
     displayName: 'Run Visual Studio tests'
     inputs:
-      searchFolder: '$(Build.ArtifactStagingDirectory)/drop/$(System.TeamProject).Tests/bin/Release'
+      searchFolder: '$(Build.ArtifactStagingDirectory)/drop_$(Tests.BuildConfiguration)/$(System.TeamProject).Tests/bin/Release'
       vsTestVersion: toolsInstaller
-      runSettingsFile: '$(Build.ArtifactStagingDirectory)/drop/SPTestServer artifacts/DTLServer.runsettings'
-      overrideTestrunParameters: '$(Deployment.OverrideTestrunParameters)'
-      codeCoverageEnabled: true
+      runSettingsFile: '$(Build.ArtifactStagingDirectory)/drop_$(Tests.BuildConfiguration)/$(Tests.DataFolderName)/DTLServer.runsettings'
+      overrideTestrunParameters: '$(Tests.OverrideTestrunParameters)'
+      codeCoverageEnabled: $(Tests.CodeCoverageEnabled)
       otherConsoleOptions: '/Platform:x64'
       testRunTitle: '$(System.TeamProject)-Tests-SP$(jobSharePointVersion)'
       platform: '$(BuildPlatform)'
-      configuration: $(BuildConfiguration)
+      configuration: $(Tests.BuildConfiguration)
 
 - job: RunTestSP2019
   condition: eq(variables['Deployment.ProvisionSharePoint2019'], 'yes')
@@ -99,12 +99,12 @@ jobs:
       project: '$(System.TeamProjectId)'
       pipeline: $(DevOps.BuildArtifactsPipelineID)
       specificBuildWithTriggering: true
-      artifactName: drop
+      artifactName: 'drop_$(Tests.BuildConfiguration)'
       downloadPath: $(Build.ArtifactStagingDirectory)
       itemPattern: |
-       drop/$(System.TeamProject)/bin/Release/$(System.TeamProject).pdb
-       drop/$(System.TeamProject).Tests/bin/Release/*.dll
-       drop/SPTestServer artifacts/?(*.csv|*.json|*.runsettings)
+       drop_$(Tests.BuildConfiguration)/$(System.TeamProject)/bin/Release/$(System.TeamProject).pdb
+       drop_$(Tests.BuildConfiguration)/$(System.TeamProject).Tests/bin/Release/*.dll
+       drop_$(Tests.BuildConfiguration)/$(Tests.DataFolderName)/?(*.csv|*.json|*.runsettings)
 
   - task: VisualStudioTestPlatformInstaller@1
     displayName: 'Visual Studio Test Platform Installer'
@@ -112,12 +112,12 @@ jobs:
   - task: VSTest@2
     displayName: 'Run Visual Studio tests'
     inputs:
-      searchFolder: '$(Build.ArtifactStagingDirectory)/drop/$(System.TeamProject).Tests/bin/Release'
+      searchFolder: '$(Build.ArtifactStagingDirectory)/drop_$(Tests.BuildConfiguration)/$(System.TeamProject).Tests/bin/Release'
       vsTestVersion: toolsInstaller
-      runSettingsFile: '$(Build.ArtifactStagingDirectory)/drop/SPTestServer artifacts/DTLServer.runsettings'
-      overrideTestrunParameters: '$(Deployment.OverrideTestrunParameters)'
-      codeCoverageEnabled: true
+      runSettingsFile: '$(Build.ArtifactStagingDirectory)/drop_$(Tests.BuildConfiguration)/$(Tests.DataFolderName)/DTLServer.runsettings'
+      overrideTestrunParameters: '$(Tests.OverrideTestrunParameters)'
+      codeCoverageEnabled: $(Tests.CodeCoverageEnabled)
       otherConsoleOptions: '/Platform:x64'
       testRunTitle: '$(System.TeamProject)-Tests-SP$(jobSharePointVersion)'
       platform: '$(BuildPlatform)'
-      configuration: $(BuildConfiguration)
+      configuration: $(Tests.BuildConfiguration)

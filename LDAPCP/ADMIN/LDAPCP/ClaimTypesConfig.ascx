@@ -199,8 +199,7 @@
             $(this).text($(this).text().replace("{trustname}", window.Ldapcp.ClaimsTablePage.TrustName));
         });
 
-        // ONLY FOR SP 2013
-        // Display only current page in full screen mode
+        // ONLY FOR SP 2013: Force display of current page in full screen mode
         window.Ldapcp.ClaimsTablePage.SetFullScreenModeInCurPageOnly();
 
         // Initialize display
@@ -217,7 +216,7 @@
         }
     }
 
-    // Display only current page in full screen mode
+    // Force display of current page in full screen mode
     window.Ldapcp.ClaimsTablePage.SetFullScreenModeInCurPageOnly = function () {
         // Remove call to OOB InitFullScreenMode function. If not removed, it will disable full screen mode just after because it will not find cookie WSS_FullScreenMode
         _spBodyOnLoadFunctions.pop("InitFullScreenMode");
@@ -271,20 +270,20 @@
         <input type="button" value="Quit page" onclick="location.href = '/';" class="ms-ButtonHeightWidth" />
         <input id="btnDisableFullScreenMode" type="button" value="Show navigation" onclick="SetFullScreenMode(false); PreventDefaultNavigation(); $('#btnDisableFullScreenMode').hide(); $('#btnEnableFullScreenMode').show(); return false;" class="ms-ButtonHeightWidth" />
         <input id="btnEnableFullScreenMode" type="button" value="Maximize content" onclick="window.Ldapcp.ClaimsTablePage.SetFullScreenModeInCurPageOnly(); $('#btnEnableFullScreenMode').hide(); $('#btnDisableFullScreenMode').show(); return false;" style="display: none;" class="ms-ButtonHeightWidth" />
-        <input type="button" value="Refresh page" onClick="window.location.href=window.location.href; return false;">
+        <input type="button" value="Refresh page" onClick="window.location.href = window.location.href; return false;">
     </div>
     <div id="divTblClaims">
-        <span style="display: block; margin-bottom: 10px;">This table is used by LDAPCP to map claim types set in SPTrustedIdentityTokenIssuer &quot;{trustname}&quot; with LDAP objects.</span>
+        <span style="display: block; margin-bottom: 10px;">This table shows the mappings between the claim types (initially defined in SPTrustedIdentityTokenIssuer &quot;{trustname}&quot;) and the LDAP/AD objects and properties.</span>
         <asp:Table ID="TblClaimsMapping" runat="server"></asp:Table>
         <div id="divLegend">
             <fieldset>
                 <legend>Formatting legend:</legend>
                 <ol>
-                    <li><span class="ldapcp-rowidentityclaim">This formatting</span><span> shows the identity claim type set in SPTrust &quot;{trustname}&quot;. It is required for LDAPCP to work.</span></li>
-                    <li><span class="ldapcp-rowUserProperty">This formatting</span><span> shows an additional property used to search a User. Permission will be created using identity claim type configuration.</span></li>
-                    <li><span class="ldapcp-rowMainGroupClaimType">This formatting</span><span> shows the main &quot;Group&quot; claim type, used for augmentation (which can be enabled or disabled in LDAPCP global settings page).</span></li>
-					<li><span class="ldapcp-rowGroupProperty">This formatting</span><span> shows an additional property used to search a Group. Permission will be created using the main &quot;Group&quot; claim type configuration.</span></li>
-					<li><span class="ldapcp-rowClaimTypeNotUsedInTrust">This formatting</span><span> shows a claim type not set in SPTrust &quot;{trustname}&quot;, it will be ignored by LDAPCP and can be safely deleted.</span></li>
+                    <li><span class="ldapcp-rowidentityclaim">This formatting</span><span> shows the main &quot;User&quot; mapping, between LDAP object &quot;User&quot; and the identity claim type set in SPTrust &quot;{trustname}&quot;. It is required for LDAPCP to work.</span></li>
+                    <li><span class="ldapcp-rowUserProperty">This formatting</span><span> shows a LDAP user attribute used only in LDAP query. Permission is created using the main &quot;User&quot; mapping.</span></li>
+                    <li><span class="ldapcp-rowMainGroupClaimType">This formatting</span><span> shows the main &quot;Group&quot; mapping, between LDAP object &quot;Group&quot; and a claim type.</span></li>
+					<li><span class="ldapcp-rowGroupProperty">This formatting</span><span> shows a LDAP group attribute used only in LDAP query. Permission is created using the main &quot;Group&quot; mapping.</span></li>
+					<li><span class="ldapcp-rowClaimTypeNotUsedInTrust">This formatting</span><span> shows a claim type not set in SPTrust &quot;{trustname}&quot;, it is ignored by LDAPCP and can be safely deleted.</span></li>
                 </ol>
             </fieldset>
         </div>
@@ -295,18 +294,18 @@
     </div>
     <div id="divNewItem" style="display: none;">
         <fieldset>
-            <legend><b>Add a new item to the list</b></legend>
+            <legend><b>Add a new mapping</b></legend>
             <ol>
                 <li>
-                    <label>Select which type of entry to create: <em>*</em></label>
+                    <label>Select which type of mapping to create: <em>*</em></label>
                     <div>
-                        <asp:RadioButton ID="RdbNewItemClassicClaimType" runat="server" GroupName="RdgGroupNewItem" Text="Add a new claim type configuration" AutoPostBack="false" OnClick="$('#divNewItemControls').show('slow'); $('#rowClaimType').show('slow'); $('#emPermissionMetadata').hide('slow'); $('#rowClaimEntityType').show('slow');" />
+                        <asp:RadioButton ID="RdbNewItemClassicClaimType" runat="server" GroupName="RdgGroupNewItem" Text="Add a mapping between a LDAP object and a claim type" AutoPostBack="false" OnClick="$('#divNewItemControls').show('slow'); $('#rowClaimType').show('slow'); $('#emPermissionMetadata').hide('slow'); $('#rowClaimEntityType').show('slow');" />
                     </div>
                     <div>
-                        <asp:RadioButton ID="RdbNewItemLinkdedToIdClaim" runat="server" GroupName="RdgGroupNewItem" Text="Specify only directory object details and create permission using the configuration of the corresponding directory object type" AutoPostBack="false" OnClick="$('#divNewItemControls').show('slow'); $('#rowClaimType').hide('slow'); $('#emPermissionMetadata').hide('slow'); $('#rowClaimEntityType').hide('slow');" />
+                        <asp:RadioButton ID="RdbNewItemLinkdedToIdClaim" runat="server" GroupName="RdgGroupNewItem" Text="Add a mapping between a LDAP object and the main corresponding object type" AutoPostBack="false" OnClick="$('#divNewItemControls').show('slow'); $('#rowClaimType').hide('slow'); $('#emPermissionMetadata').hide('slow'); $('#rowClaimEntityType').hide('slow');" />
                     </div>
                     <div>
-                        <asp:RadioButton ID="RdbNewItemPermissionMetadata" runat="server" GroupName="RdgGroupNewItem" Text="Create a mapping between a directory object property and a <a href='http://msdn.microsoft.com/en-us/library/microsoft.sharepoint.webcontrols.peopleeditorentitydatakeys_members.aspx' target='_blank'>PickerEntity metadata</a>" AutoPostBack="false" OnClick="$('#divNewItemControls').show('slow'); $('#rowClaimType').hide('slow'); $('#emPermissionMetadata').show('slow'); $('#rowClaimEntityType').hide('slow');" />
+                        <asp:RadioButton ID="RdbNewItemPermissionMetadata" runat="server" GroupName="RdgGroupNewItem" Text="Add a mapping between a LDAP object and a <a href='http://msdn.microsoft.com/en-us/library/microsoft.sharepoint.webcontrols.peopleeditorentitydatakeys_members.aspx' target='_blank'>PickerEntity metadata</a>" AutoPostBack="false" OnClick="$('#divNewItemControls').show('slow'); $('#rowClaimType').hide('slow'); $('#emPermissionMetadata').show('slow'); $('#rowClaimEntityType').hide('slow');" />
                     </div>
                 </li>
                 <div id="divNewItemControls" style="display: none;">
@@ -315,19 +314,19 @@
                         <asp:TextBox ID="TxtNewClaimType" runat="server" CssClass="ms-inputformcontrols"></asp:TextBox>
                     </li>
                     <li>
-                        <label for="<%= DdlNewDirectoryObjectType.ClientID %>">Directory object type: <em>*</em></label>
+                        <label for="<%= DdlNewDirectoryObjectType.ClientID %>">Object type: <em>*</em></label>
                         <asp:DropDownList ID="DdlNewDirectoryObjectType" runat="server" CssClass="ms-inputformcontrols"></asp:DropDownList>
                     </li>
                     <li>
-                        <label for="<%= TxtNewObjectClass.ClientID %>">LDAP class: <em>*</em></label>
+                        <label for="<%= TxtNewObjectClass.ClientID %>">LDAP object class: <em>*</em></label>
                         <asp:TextBox ID="TxtNewObjectClass" runat="server" CssClass="ms-inputformcontrols"></asp:TextBox>
                     </li>
                     <li>
-                        <label for="<%= TxtNewAttrName.ClientID %>">LDAP Attribute: <em>*</em></label>
+                        <label for="<%= TxtNewAttrName.ClientID %>">LDAP object attribute: <em>*</em></label>
                         <asp:TextBox ID="TxtNewAttrName" runat="server" CssClass="ms-inputformcontrols"></asp:TextBox>
                     </li>
                     <li id="rowPermissionMetadata">
-                        <label for="<%= DdlNewEntityMetadata.ClientID %>">Type of <a href="http://msdn.microsoft.com/en-us/library/microsoft.sharepoint.webcontrols.peopleeditorentitydatakeys_members.aspx" target="_blank">permission metadata: </a><em id="emPermissionMetadata" style="display: none;">*</em></label>
+                        <label for="<%= DdlNewEntityMetadata.ClientID %>"><a href="http://msdn.microsoft.com/en-us/library/microsoft.sharepoint.webcontrols.peopleeditorentitydatakeys_members.aspx" target="_blank">PickerEntity metadata</a> value:&nbsp;<em id="emPermissionMetadata" style="display: none;">*</em></label>
                         <asp:DropDownList ID="DdlNewEntityMetadata" runat="server" CssClass="ms-inputformcontrols"></asp:DropDownList>
                     </li>
                 </div>
