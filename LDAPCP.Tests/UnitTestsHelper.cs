@@ -17,8 +17,8 @@ using System.Text;
 [SetUpFixture]
 public class UnitTestsHelper
 {
-    public static readonly ldapcp.LDAPCP ClaimsProvider = new ldapcp.LDAPCP(UnitTestsHelper.ClaimsProviderName);
     public static string ClaimsProviderName => "LDAPCP";
+    public static readonly ldapcp.LDAPCP ClaimsProvider = new ldapcp.LDAPCP(UnitTestsHelper.ClaimsProviderName);
     public static readonly string ClaimsProviderConfigName = TestContext.Parameters["ClaimsProviderConfigName"];
     public static Uri TestSiteCollUri;
     public static readonly string TestSiteRelativePath = $"/sites/{TestContext.Parameters["TestSiteCollectionName"]}";
@@ -74,7 +74,7 @@ public class UnitTestsHelper
         LDAPCPConfig config = LDAPCPConfig.GetConfiguration(UnitTestsHelper.ClaimsProviderConfigName, UnitTestsHelper.SPTrust.Name);
         if (config == null)
         {
-            LDAPCPConfig.CreateDefaultConfiguration(UnitTestsHelper.SPTrust.Name);
+            LDAPCPConfig.CreateConfiguration(ClaimsProviderConstants.CONFIG_ID, ClaimsProviderConstants.CONFIG_NAME, SPTrust.Name);
         }
 
         var service = SPFarm.Local.Services.GetValue<SPWebService>(String.Empty);

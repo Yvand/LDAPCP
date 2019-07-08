@@ -482,17 +482,11 @@ namespace ldapcp
         }
 
         /// <summary>
-        /// Create LDAPCP configuration with default settings, and save it into configuration database. If it already exists, it will be deleted.
+        /// If LDAPCP is associated with a SPTrustedLoginProvider, create its configuration with default settings and save it into configuration database. If it already exists, it will be replaced.
         /// </summary>
-        /// <param name="spTrustName">Name of the SPTrustedLoginProvider that LDAPCP is associated with</param>
         /// <returns></returns>
-        public static LDAPCPConfig CreateDefaultConfiguration(string spTrustName)
+        public static LDAPCPConfig CreateDefaultConfiguration()
         {
-            if (String.IsNullOrEmpty(spTrustName))
-            {
-                throw new ArgumentNullException("spTrustName");
-            }
-
             SPTrustedLoginProvider spTrust = LDAPCP.GetSPTrustAssociatedWithCP(LDAPCP._ProviderInternalName);
             if (spTrust == null)
             {
