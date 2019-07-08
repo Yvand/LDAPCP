@@ -46,7 +46,7 @@ namespace ldapcp
                     {
                         LDAPCPConfig existingConfig = LDAPCPConfig.GetConfiguration(ClaimsProviderConstants.CONFIG_NAME);
                         if (existingConfig == null)
-                            LDAPCPConfig.CreateConfiguration(ClaimsProviderConstants.CONFIG_ID, ClaimsProviderConstants.CONFIG_NAME, spTrust.Name);
+                            LDAPCPConfig.CreateDefaultConfiguration(spTrust.Name);
                         else
                             ClaimsProviderLogging.Log($"[{LDAPCP._ProviderInternalName}] Use configuration \"{ClaimsProviderConstants.CONFIG_NAME}\" found in the configuration database", TraceSeverity.High, EventSeverity.Information, ClaimsProviderLogging.TraceCategory.Configuration);
                     }

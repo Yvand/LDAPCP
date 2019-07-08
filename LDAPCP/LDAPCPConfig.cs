@@ -482,16 +482,40 @@ namespace ldapcp
         }
 
         /// <summary>
+        /// Create LDAPCP configuration with default settings, and save it into configuration database. If it already exists, it will be deleted.
+        /// </summary>
+        /// <param name="spTrustName">Name of the SPTrustedLoginProvider that LDAPCP is associated with</param>
+        /// <returns></returns>
+        public static LDAPCPConfig CreateDefaultConfiguration(string spTrustName)
+        {
+            if (String.IsNullOrEmpty(spTrustName))
+            {
+                throw new ArgumentNullException("spTrustName");
+            }
+
+            SPTrustedLoginProvider spTrust = LDAPCP.GetSPTrustAssociatedWithCP(LDAPCP._ProviderInternalName);
+            if (spTrust == null)
+            {
+                return null;
+            }
+            else
+            {
+                return CreateConfiguration(ClaimsProviderConstants.CONFIG_ID, ClaimsProviderConstants.CONFIG_NAME, spTrust.Name);
+            }
+        }
+
+        /// <summary>
         /// Create a persisted object with default configuration of LDAPCP. If it already exists, it will be deleted.
         /// </summary>
         /// <param name="persistedObjectID">GUID of persisted object</param>
         /// <param name="persistedObjectName">Name of persisted object</param>
+        /// <param name="spTrustName">Name of the SPTrustedLoginProvider that LDAPCP is associated with</param>
         /// <returns></returns>
         public static LDAPCPConfig CreateConfiguration(string persistedObjectID, string persistedObjectName, string spTrustName)
         {
             if (String.IsNullOrEmpty(spTrustName))
             {
-                throw new ArgumentNullException("spTrust");
+                throw new ArgumentNullException("spTrustName");
             }
 
             // Ensure it doesn't already exists and delete it if so

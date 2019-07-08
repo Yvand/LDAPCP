@@ -1,5 +1,9 @@
 # Change log for LDAPCP
 
+## Unreleased
+
+* Add method LDAPCPConfig.CreateDefaultConfiguration
+
 ## LDAPCP 13.0.20190621.905 enhancements & bug-fixes - Published in June 21, 2019
 
 * Add a default mapping to populate the email of groups

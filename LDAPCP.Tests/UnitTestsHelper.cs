@@ -74,7 +74,7 @@ public class UnitTestsHelper
         LDAPCPConfig config = LDAPCPConfig.GetConfiguration(UnitTestsHelper.ClaimsProviderConfigName, UnitTestsHelper.SPTrust.Name);
         if (config == null)
         {
-            LDAPCPConfig.CreateConfiguration(ClaimsProviderConstants.CONFIG_ID, ClaimsProviderConstants.CONFIG_NAME, SPTrust.Name);
+            LDAPCPConfig.CreateDefaultConfiguration(UnitTestsHelper.SPTrust.Name);
         }
 
         var service = SPFarm.Local.Services.GetValue<SPWebService>(String.Empty);

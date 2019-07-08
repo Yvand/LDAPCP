@@ -20,7 +20,7 @@ namespace LDAPCP.Tests
             if (Config == null)
             {
                 Trace.TraceWarning($"{DateTime.Now.ToString("s")} Configuration {UnitTestsHelper.ClaimsProviderConfigName} does not exist, create it with default settings...");
-                Config = LDAPCPConfig.CreateConfiguration(ClaimsProviderConstants.CONFIG_ID, ClaimsProviderConstants.CONFIG_NAME, UnitTestsHelper.SPTrust.Name);
+                Config = LDAPCPConfig.CreateDefaultConfiguration(UnitTestsHelper.SPTrust.Name);
             }
             BackupConfig = Config.CopyConfiguration();
             InitializeConfiguration();
