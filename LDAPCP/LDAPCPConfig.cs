@@ -415,14 +415,6 @@ namespace ldapcp
         /// <param name="configToApply"></param>
         public void ApplyConfiguration(LDAPCPConfig configToApply)
         {
-            // Copy non-inherited public fields
-            // This copies persisted field SPTrustName (it doesn't have a corresponding property).
-            // Private fields should not be retrieved here, since their corresponding properties are retrieved just after.
-            FieldInfo[] fieldsToCopy = this.GetType().GetFields(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly);
-            foreach (FieldInfo field in fieldsToCopy)
-            {
-                field.SetValue(this, field.GetValue(configToApply));
-            }
             // Copy non-inherited public properties
             PropertyInfo[] propertiesToCopy = this.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly);
             foreach (PropertyInfo property in propertiesToCopy)
@@ -434,6 +426,9 @@ namespace ldapcp
                         property.SetValue(this, value);
                 }
             }
+
+            // Member SPTrustName is not exposed through a property, so it must be set explicitly
+            this.SPTrustName = configToApply.SPTrustName;
         }
 
         /// <summary>
