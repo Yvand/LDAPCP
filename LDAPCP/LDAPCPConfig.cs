@@ -496,9 +496,9 @@ namespace ldapcp
         /// <summary>
         /// Create a persisted object with default configuration of LDAPCP. If it already exists, it will be deleted.
         /// </summary>
-        /// <param name="persistedObjectID">GUID of persisted object</param>
-        /// <param name="persistedObjectName">Name of persisted object</param>
-        /// <param name="spTrustName">Name of the SPTrustedLoginProvider that LDAPCP is associated with</param>
+        /// <param name="persistedObjectID">GUID of the configuration, stored as a persisted object into SharePoint configuration database</param>
+        /// <param name="persistedObjectName">Name of the configuration, stored as a persisted object into SharePoint configuration database</param>
+        /// <param name="spTrustName">Name of the SPTrustedLoginProvider that claims provider is associated with</param>
         /// <returns></returns>
         public static LDAPCPConfig CreateConfiguration(string persistedObjectID, string persistedObjectName, string spTrustName)
         {
