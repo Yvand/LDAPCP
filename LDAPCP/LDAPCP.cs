@@ -226,7 +226,8 @@ namespace ldapcp
                 {
                     // Search if current claim type in trust exists in ClaimTypeConfigCollection
                     ClaimTypeConfig claimTypeConfig = nonProcessedClaimTypes.FirstOrDefault(x =>
-                        String.Equals(x.ClaimType, claimTypeInformation.MappedClaimType, StringComparison.InvariantCultureIgnoreCase) &&
+                        !String.IsNullOrWhiteSpace(x.ClaimType) &&
+                        SPClaimTypes.Equals(x.ClaimType, claimTypeInformation.MappedClaimType) &&
                         !x.UseMainClaimTypeOfDirectoryObject &&
                         !String.IsNullOrEmpty(x.LDAPAttribute) &&
                         !String.IsNullOrEmpty(x.LDAPClass));
@@ -234,7 +235,7 @@ namespace ldapcp
                     if (claimTypeConfig == null) { continue; }
                     claimTypeConfig.ClaimTypeDisplayName = claimTypeInformation.DisplayName;
                     claimTypesSetInTrust.Add(claimTypeConfig);
-                    if (String.Equals(SPTrust.IdentityClaimTypeInformation.MappedClaimType, claimTypeConfig.ClaimType, StringComparison.InvariantCultureIgnoreCase))
+                    if (SPClaimTypes.Equals(SPTrust.IdentityClaimTypeInformation.MappedClaimType, claimTypeConfig.ClaimType))
                     {
                         // Identity claim type found, set IdentityClaimTypeConfig property
                         identityClaimTypeFound = true;
@@ -245,7 +246,7 @@ namespace ldapcp
                         if (!String.IsNullOrEmpty(this.CurrentConfiguration.MainGroupClaimType))
                         {
                             // If MainGroupClaimType is set, try to set MainGroupClaimTypeConfig with the ClaimTypeConfig that has the same ClaimType
-                            if (String.Equals(claimTypeConfig.ClaimType, this.CurrentConfiguration.MainGroupClaimType, StringComparison.InvariantCultureIgnoreCase))
+                            if (SPClaimTypes.Equals(claimTypeConfig.ClaimType, this.CurrentConfiguration.MainGroupClaimType))
                             {
                                 MainGroupClaimTypeConfig = claimTypeConfig;
                                 groupClaimTypeFound = true;
@@ -501,7 +502,7 @@ namespace ldapcp
                         {
                             ClaimTypeConfig ctConfig = ProcessedClaimTypesList.FirstOrDefault(x =>
                                 !x.UseMainClaimTypeOfDirectoryObject &&
-                                String.Equals(x.ClaimType, entity.Claim.ClaimType, StringComparison.InvariantCultureIgnoreCase));
+                                SPClaimTypes.Equals(x.ClaimType, entity.Claim.ClaimType));
 
                             string nodeName = ctConfig != null ? ctConfig.ClaimTypeDisplayName : entity.Claim.ClaimType;
                             matchNode = new SPProviderHierarchyNode(_ProviderInternalName, nodeName, entity.Claim.ClaimType, true);
@@ -1156,7 +1157,7 @@ namespace ldapcp
                     }
 
                     IEnumerable<ClaimTypeConfig> allGroupsCTConfig = this.ProcessedClaimTypesList.Where(x => x.EntityType == DirectoryObjectType.Group && !x.UseMainClaimTypeOfDirectoryObject);
-                    ClaimTypeConfig mainGroupCTConfig = allGroupsCTConfig.FirstOrDefault(x => String.Equals(x.ClaimType, this.CurrentConfiguration.MainGroupClaimType, StringComparison.InvariantCultureIgnoreCase));
+                    ClaimTypeConfig mainGroupCTConfig = allGroupsCTConfig.FirstOrDefault(x => SPClaimTypes.Equals(x.ClaimType, this.CurrentConfiguration.MainGroupClaimType));
                     if (mainGroupCTConfig == null)
                     {
                         ClaimsProviderLogging.Log($"[{ProviderInternalName}] Configuration for claim type '{this.CurrentConfiguration.MainGroupClaimType}' cannot be found, please add it in claim types configuration list.",
@@ -1184,7 +1185,7 @@ namespace ldapcp
                         if (ldapConnection.GetGroupMembershipUsingDotNetHelpers)
                         {
                             directoryGroups = GetGroupsFromActiveDirectory(ldapConnection, currentContext, mainGroupCTConfig);
-                            directoryGroups.AddRange(GetGroupsFromLDAPDirectory(ldapConnection, currentContext, allGroupsCTConfig.Where(x => !String.Equals(x.ClaimType, this.CurrentConfiguration.MainGroupClaimType, StringComparison.InvariantCultureIgnoreCase))));
+                            directoryGroups.AddRange(GetGroupsFromLDAPDirectory(ldapConnection, currentContext, allGroupsCTConfig.Where(x => !SPClaimTypes.Equals(x.ClaimType, this.CurrentConfiguration.MainGroupClaimType))));
                         }
                         else
                         {
@@ -1273,7 +1274,7 @@ namespace ldapcp
                         }
 
                         // https://github.com/Yvand/LDAPCP/issues/22: UserPrincipal.FindByIdentity() doesn't support emails, so if IncomingEntity is an email, user needs to be retrieved in a different way
-                        if (String.Equals(currentContext.IncomingEntity.ClaimType, WIF4_5.ClaimTypes.Email, StringComparison.InvariantCultureIgnoreCase))
+                        if (SPClaimTypes.Equals(currentContext.IncomingEntity.ClaimType, WIF4_5.ClaimTypes.Email))
                         {
                             using (UserPrincipal userEmailPrincipal = new UserPrincipal(principalContext) { Enabled = true, EmailAddress = currentContext.IncomingEntity.Value })
                             {
@@ -1596,7 +1597,7 @@ namespace ldapcp
         {
             string claimValue = String.Empty;
             //var attr = ProcessedAttributes.Where(x => x.ClaimTypeProp == type).FirstOrDefault();
-            var attr = ProcessedClaimTypesList.FirstOrDefault(x => String.Equals(x.ClaimType, type, StringComparison.InvariantCultureIgnoreCase));
+            var attr = ProcessedClaimTypesList.FirstOrDefault(x => SPClaimTypes.Equals(x.ClaimType, type));
             //if (inputHasKeyword && attr.DoNotAddPrefixIfInputHasKeywordProp)
             if ((!inputHasKeyword || !attr.DoNotAddClaimValuePrefixIfBypassLookup) &&
                 !HasPrefixToken(attr.ClaimValuePrefix, ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINNAME) &&
@@ -1620,7 +1621,7 @@ namespace ldapcp
             string permissionClaimType = result.ClaimTypeConfig.ClaimType;
             bool isIdentityClaimType = false;
 
-            if ((String.Equals(permissionClaimType, SPTrust.IdentityClaimTypeInformation.MappedClaimType, StringComparison.InvariantCultureIgnoreCase)
+            if ((SPClaimTypes.Equals(permissionClaimType, SPTrust.IdentityClaimTypeInformation.MappedClaimType)
                 || result.ClaimTypeConfig.UseMainClaimTypeOfDirectoryObject) && result.ClaimTypeConfig.LDAPClass == IdentityClaimTypeConfig.LDAPClass)
             {
                 isIdentityClaimType = true;
@@ -1705,7 +1706,7 @@ namespace ldapcp
         {
             string value = claimValue;
 
-            var attr = ProcessedClaimTypesList.FirstOrDefault(x => String.Equals(x.ClaimType, claimType, StringComparison.InvariantCultureIgnoreCase));
+            var attr = ProcessedClaimTypesList.FirstOrDefault(x => SPClaimTypes.Equals(x.ClaimType, claimType));
             if (HasPrefixToken(attr.ClaimValuePrefix, ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINNAME))
             {
                 value = string.Format("{0}{1}", attr.ClaimValuePrefix.Replace(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINNAME, domainName), value);
@@ -1861,7 +1862,7 @@ namespace ldapcp
                 ConsolidatedResult result = new ConsolidatedResult();
                 result.ClaimTypeConfig = ctConfig;
                 result.Value = input;
-                bool isIdentityClaimType = String.Equals(claim.ClaimType, IdentityClaimTypeConfig.ClaimType, StringComparison.InvariantCultureIgnoreCase);
+                bool isIdentityClaimType = SPClaimTypes.Equals(claim.ClaimType, IdentityClaimTypeConfig.ClaimType);
                 pe.DisplayText = FormatPermissionDisplayText(pe, isIdentityClaimType, result);
 
                 entities.Add(pe);
