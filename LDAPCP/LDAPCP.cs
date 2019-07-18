@@ -1006,28 +1006,20 @@ namespace ldapcp
                 ldapConnection.AuthenticationSettings = ldapConnection.Directory.AuthenticationType;
             }
 
-            // Operations in this block do LDAP queries, so let's monitor their execution time
+            // This block does LDAP operations
             using (new SPMonitoredScope($"[{ProviderInternalName}] Get domain names / root container information about LDAP server \"{ldapConnection.Directory.Path}\"", 2000))
             {
                 // Retrieve FQDN and domain name of current DirectoryEntry
                 string domainName = String.Empty;
                 string domainFQDN = String.Empty;
-                try
-                {
-                    // Operations below may fail if LDAP server cannot be reached                    
-                    // Cache those values for the whole lifetime of the process, because getting them triggers LDAP queries in the background
-                    OperationContext.GetDomainInformation(ldapConnection.Directory, out domainName, out domainFQDN);
-                    ldapConnection.DomainName = domainName;
-                    ldapConnection.DomainFQDN = domainFQDN;
-                    if (ldapConnection.Directory.Properties.Contains("distinguishedName"))
-                    {
-                        ldapConnection.RootContainer = ldapConnection.Directory.Properties["distinguishedName"].Value.ToString();
-                    }
-                }
-                catch (Exception ex)
-                {
-                    ClaimsProviderLogging.LogException(ProviderInternalName, $"while getting domain names information for LDAP connection {ldapConnection.Directory.Path}", TraceCategory.Configuration, ex);
-                }
+                string domaindistinguishedName = String.Empty;
+
+                // If there is no existing LDAPCP configuration, this method will be called each time (LDAPConnection properties will be null)
+                OperationContext.GetDomainInformation(ldapConnection.Directory, out domaindistinguishedName, out domainName, out domainFQDN);
+                // Cache those values for the whole lifetime of the process, because getting them requires LDAP operations
+                ldapConnection.RootContainer = domaindistinguishedName;
+                ldapConnection.DomainName = domainName;
+                ldapConnection.DomainFQDN = domainFQDN;
             }
         }
 
@@ -1256,7 +1248,7 @@ namespace ldapcp
                 Stopwatch stopWatch = new Stopwatch();
                 stopWatch.Start();
                 UserPrincipal adUser = null;
-                PrincipalContext principalContext = null;                
+                PrincipalContext principalContext = null;
                 try
                 {
                     using (new SPMonitoredScope($"[{ProviderInternalName}] Get AD Principal of user {currentContext.IncomingEntity.Value} " + directoryDetails, 1000))

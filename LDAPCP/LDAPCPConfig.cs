@@ -423,7 +423,9 @@ namespace ldapcp
                 {
                     object value = property.GetValue(configToApply);
                     if (value != null)
+                    {
                         property.SetValue(this, value);
+                    }
                 }
             }
 
@@ -1254,24 +1256,52 @@ namespace ldapcp
         /// <param name="directory">LDAP Server to query</param>
         /// <param name="domainName">Domain name</param>
         /// <param name="domainFQDN">Fully qualified domain name</param>
-        public static void GetDomainInformation(DirectoryEntry directory, out string domainName, out string domainFQDN)
+        public static void GetDomainInformation(DirectoryEntry directory, out string domaindistinguishedName, out string domainName, out string domainFQDN)
         {
-            string distinguishedName = String.Empty;
-            domainName = domainFQDN = String.Empty;
-            // Method PropertyCollection.Contains("distinguishedName") does a LDAP bind behind the scene
-            if (directory.Properties.Contains("distinguishedName"))
+            bool success = false;
+            domaindistinguishedName = String.Empty;
+            domainName = String.Empty;
+            domainFQDN = String.Empty;
+            int count = 0;
+            do
             {
-                distinguishedName = directory.Properties["distinguishedName"].Value.ToString();
-                GetDomainInformation(distinguishedName, out domainName, out domainFQDN);
+                count++;
+                try
+                {
+#if DEBUG
+                    directory.AuthenticationType = AuthenticationTypes.None;
+                    ClaimsProviderLogging.Log($"directory.AuthenticationType = {directory.AuthenticationType}", TraceSeverity.Unexpected, EventSeverity.Error, TraceCategory.Configuration);
+#endif
+
+                    // Method PropertyCollection.Contains("distinguishedName") does a LDAP bind
+                    // In AD LDS: property "distinguishedName" = "CN=LDSInstance2,DC=ADLDS,DC=local", properties "name" and "cn" = "LDSInstance2"
+                    if (directory.Properties.Contains("distinguishedName"))
+                    {
+                        domaindistinguishedName = directory.Properties["distinguishedName"].Value.ToString();
+                        GetDomainInformation(domaindistinguishedName, out domainName, out domainFQDN);
+                    }
+                    else if (directory.Properties.Contains("name"))
+                    {
+                        domainName = directory.Properties["name"].Value.ToString();
+                    }
+                    else if (directory.Properties.Contains("cn"))
+                    {
+                        // Tivoli stores domain name in property "cn" (properties "distinguishedName" and "name" don't exist)
+                        domainName = directory.Properties["cn"].Value.ToString();
+                    }
+
+                    success = true;
+                }
+                catch (DirectoryServicesCOMException ex)
+                {
+                    ClaimsProviderLogging.LogException("", $"while getting domain names information for LDAP connection {directory.Path} (DirectoryServicesCOMException) at attempt {count}", TraceCategory.Configuration, ex);
+                }
+                catch (Exception ex)
+                {
+                    ClaimsProviderLogging.LogException("", $"while getting domain names information for LDAP connection {directory.Path} (Exception) at attempt {count}", TraceCategory.Configuration, ex);
+                }
             }
-            else
-            {
-                // This logic to get the domainName may not work with AD LDS:
-                // if distinguishedName = "CN=Partition1,DC=MyLDS,DC=local", then both "name" and "cn" = "Partition1", while we expect "MyLDS"
-                // So now it's only made if the distinguishedName is not available (very unlikely codepath)
-                if (directory.Properties.Contains("name")) domainName = directory.Properties["name"].Value.ToString();
-                else if (directory.Properties.Contains("cn")) domainName = directory.Properties["cn"].Value.ToString(); // Tivoli sets domain name in cn property (property name does not exist)
-            }
+            while (success == false && count < 5);
         }
 
         /// <summary>
