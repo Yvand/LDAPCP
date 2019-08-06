@@ -909,8 +909,8 @@ namespace ldapcp
 
             Parallel.ForEach(ldapServers.Where(x => !String.IsNullOrEmpty(x.Filter)), ldapConnection =>
             {
-                Debug.WriteLine($"ldapConnection: Path: {ldapConnection.LDAPPath}, UseSPServerConnectionToAD: {ldapConnection.UseSPServerConnectionToAD}");
-                ClaimsProviderLogging.LogDebug($"ldapConnection: Path: {ldapConnection.LDAPPath}, UseSPServerConnectionToAD: {ldapConnection.UseSPServerConnectionToAD}");
+                Debug.WriteLine($"ldapConnection: Path: {ldapConnection.Directory.Path}, UseSPServerConnectionToAD: {ldapConnection.UseSPServerConnectionToAD}");
+                ClaimsProviderLogging.LogDebug($"ldapConnection: Path: {ldapConnection.Directory.Path}, UseSPServerConnectionToAD: {ldapConnection.UseSPServerConnectionToAD}");
 #pragma warning disable CS0618 // Type or member is obsolete
                 SetLDAPConnection(currentContext, ldapConnection);
 #pragma warning restore CS0618 // Type or member is obsolete
@@ -1001,25 +1001,40 @@ namespace ldapcp
             }
             else
             {
-                ldapConnection.Directory = Domain.GetComputerDomain().GetDirectoryEntry();
+                Domain computerDomain = Domain.GetComputerDomain();
+                ldapConnection.Directory = computerDomain.GetDirectoryEntry();
+                ldapConnection.DomainFQDN = computerDomain.Name;
+                ldapConnection.DomainName = OperationContext.GetDomainName(ldapConnection.DomainFQDN);
                 // Property LDAPConnection.AuthenticationSettings must be set, in order to build the PrincipalContext correctly in GetGroupsFromActiveDirectory()
                 ldapConnection.AuthenticationSettings = ldapConnection.Directory.AuthenticationType;
             }
 
-            // This block does LDAP operations
-            using (new SPMonitoredScope($"[{ProviderInternalName}] Get domain names / root container information about LDAP server \"{ldapConnection.Directory.Path}\"", 2000))
+            if (String.IsNullOrEmpty(ldapConnection.RootContainer) || String.IsNullOrEmpty(ldapConnection.DomainFQDN) || String.IsNullOrEmpty(ldapConnection.DomainName))
             {
-                // Retrieve FQDN and domain name of current DirectoryEntry
-                string domainName = String.Empty;
-                string domainFQDN = String.Empty;
-                string domaindistinguishedName = String.Empty;
+                // This block does LDAP operations
+                using (new SPMonitoredScope($"[{ProviderInternalName}] Get domain names / root container information about LDAP server \"{ldapConnection.Directory.Path}\"", 2000))
+                {
+                    // Retrieve FQDN and domain name of current DirectoryEntry
+                    string domainName = String.Empty;
+                    string domainFQDN = String.Empty;
+                    string domaindistinguishedName = String.Empty;
 
-                // If there is no existing LDAPCP configuration, this method will be called each time (LDAPConnection properties will be null)
-                OperationContext.GetDomainInformation(ldapConnection.Directory, out domaindistinguishedName, out domainName, out domainFQDN);
-                // Cache those values for the whole lifetime of the process, because getting them requires LDAP operations
-                ldapConnection.RootContainer = domaindistinguishedName;
-                ldapConnection.DomainName = domainName;
-                ldapConnection.DomainFQDN = domainFQDN;
+                    // If there is no existing LDAPCP configuration, this method will be called each time as property LDAPConnection.RootContainer will be null
+                    OperationContext.GetDomainInformation(ldapConnection.Directory, out domaindistinguishedName, out domainName, out domainFQDN);
+                    // Cache those values for the whole lifetime of the process, because getting them requires LDAP operations
+                    if (!String.IsNullOrWhiteSpace(domaindistinguishedName))
+                    {
+                        ldapConnection.RootContainer = domaindistinguishedName;
+                    }
+                    if (!String.IsNullOrWhiteSpace(domainName))
+                    {
+                        ldapConnection.DomainName = domainName;
+                    }
+                    if (!String.IsNullOrWhiteSpace(domainFQDN))
+                    {
+                        ldapConnection.DomainFQDN = domainFQDN;
+                    }
+                }
             }
         }
 
