@@ -109,11 +109,27 @@ namespace ldapcp
                     globalConfiguration = GetConfiguration(context, entityTypes, PersistedObjectName, SPTrust.Name);
                     if (globalConfiguration == null)
                     {
-                        ClaimsProviderLogging.Log($"[{ProviderInternalName}] Configuration '{PersistedObjectName}' was not foundin configuration database, use default configuration instead. Visit LDAPCP admin pages in central administration to create it.",
-                            TraceSeverity.Unexpected, EventSeverity.Error, TraceCategory.Core);
-                        // Run with default configuration, which creates a connection to connect to current AD domain
                         globalConfiguration = LDAPCPConfig.ReturnDefaultConfiguration(SPTrust.Name);
-                        refreshConfig = true;
+                        // There is no thread safety issue in reading this.CurrentConfiguration here, thanks to the lock Sync_Init
+                        if (this.CurrentConfiguration == null)
+                        {
+                            ClaimsProviderLogging.Log($"[{ProviderInternalName}] Configuration '{PersistedObjectName}' was not found in configuration database, switch to default. Visit LDAPCP admin pages in central administration to create it.",
+                                TraceSeverity.Unexpected, EventSeverity.Error, TraceCategory.Core);
+                            // Run with default configuration, which creates a connection to connect to current AD domain
+                            refreshConfig = true;
+                        }
+                        else
+                        {
+                            // Default configuration has only 1 connection to AD domain of current SP server. 
+                            // If its property LDAPConnection.RootContainer is null, it means that LDAPConnection properties were not set because it was previously done in a thread that did not run as application pool account (https://github.com/Yvand/LDAPCP/issues/87)
+                            // If so, recreate defalt configuration
+                            if (String.IsNullOrEmpty(this.CurrentConfiguration.LDAPConnectionsProp.First().RootContainer))
+                            {
+                                ClaimsProviderLogging.Log($"[{ProviderInternalName}] Default configuration was not fully initialized, recreating it...",
+                                    TraceSeverity.Unexpected, EventSeverity.Error, TraceCategory.Core);
+                                refreshConfig = true;
+                            }
+                        }
                     }
                     else
                     {
@@ -1932,7 +1948,7 @@ namespace ldapcp
         protected override SPClaim GetUserKeyForEntity(SPClaim entity)
         {
             bool initSucceeded = false;
-            
+
             // Elevation of privileges when calling LDAPCP.Initialize is very important to prevent issue https://github.com/Yvand/LDAPCP/issues/87
             SPSecurity.RunWithElevatedPrivileges(delegate ()
             {
