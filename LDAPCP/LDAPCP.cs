@@ -122,7 +122,7 @@ namespace ldapcp
                         {
                             // Default configuration has only 1 connection to AD domain of current SP server. 
                             // If its property LDAPConnection.RootContainer is null, it means that LDAPConnection properties were not set because it was previously done in a thread that did not run as application pool account (https://github.com/Yvand/LDAPCP/issues/87)
-                            // If so, recreate defalt configuration
+                            // If so, recreate default configuration
                             if (String.IsNullOrEmpty(this.CurrentConfiguration.LDAPConnectionsProp.First().RootContainer))
                             {
                                 ClaimsProviderLogging.Log($"[{ProviderInternalName}] Default configuration was not fully initialized, recreating it...",
@@ -156,14 +156,24 @@ namespace ldapcp
                     {
                         if (this.CurrentConfigurationVersion == ((SPPersistedObject)globalConfiguration).Version)
                         {
-                            ClaimsProviderLogging.Log($"[{ProviderInternalName}] Configuration '{PersistedObjectName}' was found, version {((SPPersistedObject)globalConfiguration).Version.ToString()}",
+                            ClaimsProviderLogging.Log($"[{ProviderInternalName}] Configuration '{PersistedObjectName}' version {((SPPersistedObject)globalConfiguration).Version.ToString()} was found",
                                 TraceSeverity.VerboseEx, EventSeverity.Information, TraceCategory.Core);
+
+                            // Local configuration may need to be recreated due to bug https://github.com/Yvand/LDAPCP/issues/87:
+                            // If a LDAPConnection with UseSPServerConnectionToAD true has its property LDAPConnection.RootContainer null, it means that LDAPConnection properties failed to be set, because thread did not run as application pool account
+                            if (this.CurrentConfiguration != null &&
+                                this.CurrentConfiguration.LDAPConnectionsProp.FirstOrDefault(x => x.UseSPServerConnectionToAD && String.IsNullOrEmpty(x.RootContainer)) != null)
+                            {
+                                ClaimsProviderLogging.Log($"[{ProviderInternalName}] Configuration '{PersistedObjectName}' version {((SPPersistedObject)globalConfiguration).Version.ToString()} was found, but local copy is not fully initialized. Refreshing local copy...",
+                                    TraceSeverity.Medium, EventSeverity.Information, TraceCategory.Core);
+                                refreshConfig = true;
+                            }
                         }
                         else
                         {
                             refreshConfig = true;
                             this.CurrentConfigurationVersion = ((SPPersistedObject)globalConfiguration).Version;
-                            ClaimsProviderLogging.Log($"[{ProviderInternalName}] Configuration '{PersistedObjectName}' changed to version {((SPPersistedObject)globalConfiguration).Version.ToString()}, refreshing local copy",
+                            ClaimsProviderLogging.Log($"[{ProviderInternalName}] Configuration '{PersistedObjectName}' changed to version {((SPPersistedObject)globalConfiguration).Version.ToString()}, refreshing local copy...",
                                 TraceSeverity.Medium, EventSeverity.Information, TraceCategory.Core);
                         }
                     }
