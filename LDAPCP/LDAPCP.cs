@@ -1003,8 +1003,11 @@ namespace ldapcp
             {
                 Domain computerDomain = Domain.GetComputerDomain();
                 ldapConnection.Directory = computerDomain.GetDirectoryEntry();
+
+                // Set properties LDAPConnection.DomainFQDN and LDAPConnection.DomainName here as a workaround to issue https://github.com/Yvand/LDAPCP/issues/87
                 ldapConnection.DomainFQDN = computerDomain.Name;
                 ldapConnection.DomainName = OperationContext.GetDomainName(ldapConnection.DomainFQDN);
+
                 // Property LDAPConnection.AuthenticationSettings must be set, in order to build the PrincipalContext correctly in GetGroupsFromActiveDirectory()
                 ldapConnection.AuthenticationSettings = ldapConnection.Directory.AuthenticationType;
             }
@@ -1893,17 +1896,20 @@ namespace ldapcp
         /// <summary>
         /// Return the identity claim type
         /// </summary>
-        /// <returns></returns>
+        /// <returns>Identity claim type. Should not return null to prevent exceptions in SharePoint when users sign-in</returns>
         public override string GetClaimTypeForUserKey()
         {
-            // Initialization may fail because there is no yet configuration (fresh install)
-            // In this case, LDAPCP should not return null because it causes null exceptions in SharePoint when users sign-in
+            // Elevation of privileges when calling LDAPCP.Initialize is very important to prevent issue https://github.com/Yvand/LDAPCP/issues/87
+            // But calling SPSecurity.RunWithElevatedPrivileges here is not possible as it causes a StackOverflowException
             Initialize(null, null);
 
             this.Lock_Config.EnterReadLock();
             try
             {
-                if (SPTrust == null) { return String.Empty; }
+                if (SPTrust == null)
+                {
+                    return String.Empty;
+                }
 
                 return SPTrust.IdentityClaimTypeInformation.MappedClaimType;
             }
@@ -1921,20 +1927,27 @@ namespace ldapcp
         /// <summary>
         /// Return the user key (SPClaim with identity claim type) from the incoming entity
         /// </summary>
-        /// <param name="entity"></param>
+        /// <param name="entity">SPClaim corresponding to the user key of the incoming entity. Should not return null to prevent exceptions in SharePoint when users sign-in</param>
         /// <returns></returns>
         protected override SPClaim GetUserKeyForEntity(SPClaim entity)
         {
-            // Initialization may fail because there is no yet configuration (fresh install)
-            // In this case, LDAPCP should not return null because it causes null exceptions in SharePoint when users sign-in
-            bool initSucceeded = Initialize(null, null);
+            bool initSucceeded = false;
+            
+            // Elevation of privileges when calling LDAPCP.Initialize is very important to prevent issue https://github.com/Yvand/LDAPCP/issues/87
+            SPSecurity.RunWithElevatedPrivileges(delegate ()
+            {
+                initSucceeded = Initialize(null, null);
+            });
 
             this.Lock_Config.EnterReadLock();
             try
             {
                 // If initialization failed but SPTrust is not null, rest of the method can be executed normally
                 // Otherwise return the entity
-                if (!initSucceeded && SPTrust == null) { return entity; }
+                if (!initSucceeded && SPTrust == null)
+                {
+                    return entity;
+                }
 
                 // There are 2 scenarios:
                 // 1: OriginalIssuer is "SecurityTokenService": Value looks like "05.t|yvanhost|yvand@yvanhost.local", claim type is "http://schemas.microsoft.com/sharepoint/2009/08/claims/userid" and it must be decoded properly
