@@ -1,6 +1,6 @@
 # Change log for LDAPCP
 
-## Unreleased
+## LDAPCP 14.0.20190821.952 enhancements & bug-fixes - Published in August 21, 2019
 
 * Add method LDAPCPConfig.CreateDefaultConfiguration
 * Fix bug: randomly, LDAPCP returned results that were missing their domain name. In SharePoint logs, a DirectoryServicesCOMException error was recorded. https://github.com/Yvand/LDAPCP/issues/87
