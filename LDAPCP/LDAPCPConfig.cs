@@ -415,14 +415,6 @@ namespace ldapcp
         /// <param name="configToApply"></param>
         public void ApplyConfiguration(LDAPCPConfig configToApply)
         {
-            // Copy non-inherited public fields
-            // This copies persisted field SPTrustName (it doesn't have a corresponding property).
-            // Private fields should not be retrieved here, since their corresponding properties are retrieved just after.
-            FieldInfo[] fieldsToCopy = this.GetType().GetFields(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly);
-            foreach (FieldInfo field in fieldsToCopy)
-            {
-                field.SetValue(this, field.GetValue(configToApply));
-            }
             // Copy non-inherited public properties
             PropertyInfo[] propertiesToCopy = this.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly);
             foreach (PropertyInfo property in propertiesToCopy)
@@ -431,9 +423,14 @@ namespace ldapcp
                 {
                     object value = property.GetValue(configToApply);
                     if (value != null)
+                    {
                         property.SetValue(this, value);
+                    }
                 }
             }
+
+            // Member SPTrustName is not exposed through a property, so it must be set explicitly
+            this.SPTrustName = configToApply.SPTrustName;
         }
 
         /// <summary>
@@ -482,16 +479,34 @@ namespace ldapcp
         }
 
         /// <summary>
+        /// If LDAPCP is associated with a SPTrustedLoginProvider, create its configuration with default settings and save it into configuration database. If it already exists, it will be replaced.
+        /// </summary>
+        /// <returns></returns>
+        public static LDAPCPConfig CreateDefaultConfiguration()
+        {
+            SPTrustedLoginProvider spTrust = LDAPCP.GetSPTrustAssociatedWithCP(LDAPCP._ProviderInternalName);
+            if (spTrust == null)
+            {
+                return null;
+            }
+            else
+            {
+                return CreateConfiguration(ClaimsProviderConstants.CONFIG_ID, ClaimsProviderConstants.CONFIG_NAME, spTrust.Name);
+            }
+        }
+
+        /// <summary>
         /// Create a persisted object with default configuration of LDAPCP. If it already exists, it will be deleted.
         /// </summary>
-        /// <param name="persistedObjectID">GUID of persisted object</param>
-        /// <param name="persistedObjectName">Name of persisted object</param>
+        /// <param name="persistedObjectID">GUID of the configuration, stored as a persisted object into SharePoint configuration database</param>
+        /// <param name="persistedObjectName">Name of the configuration, stored as a persisted object into SharePoint configuration database</param>
+        /// <param name="spTrustName">Name of the SPTrustedLoginProvider that claims provider is associated with</param>
         /// <returns></returns>
         public static LDAPCPConfig CreateConfiguration(string persistedObjectID, string persistedObjectName, string spTrustName)
         {
             if (String.IsNullOrEmpty(spTrustName))
             {
-                throw new ArgumentNullException("spTrust");
+                throw new ArgumentNullException("spTrustName");
             }
 
             // Ensure it doesn't already exists and delete it if so
@@ -1208,6 +1223,21 @@ namespace ldapcp
         }
 
         /// <summary>
+        /// Return the domain name from the domain FQDN
+        /// </summary>
+        /// <param name="domainFQDN">Fully qualified domain name</param>
+        /// <returns>Domain name</returns>
+        public static string GetDomainName(string domainFQDN)
+        {
+            string domainName = String.Empty;
+            if (domainFQDN.Contains("."))
+            {
+                domainName = domainFQDN.Split(new char[] { '.' })[0];
+            }
+            return domainName;
+        }
+
+        /// <summary>
         /// Extract domain name information from the distinguishedName supplied
         /// </summary>
         /// <param name="distinguishedName">distinguishedName to use to extract domain name information</param>
@@ -1241,24 +1271,49 @@ namespace ldapcp
         /// <param name="directory">LDAP Server to query</param>
         /// <param name="domainName">Domain name</param>
         /// <param name="domainFQDN">Fully qualified domain name</param>
-        public static void GetDomainInformation(DirectoryEntry directory, out string domainName, out string domainFQDN)
+        public static bool GetDomainInformation(DirectoryEntry directory, out string domaindistinguishedName, out string domainName, out string domainFQDN)
         {
-            string distinguishedName = String.Empty;
-            domainName = domainFQDN = String.Empty;
-            // Method PropertyCollection.Contains("distinguishedName") does a LDAP bind behind the scene
-            if (directory.Properties.Contains("distinguishedName"))
+            bool success = false;
+            domaindistinguishedName = String.Empty;
+            domainName = String.Empty;
+            domainFQDN = String.Empty;
+
+            try
             {
-                distinguishedName = directory.Properties["distinguishedName"].Value.ToString();
-                GetDomainInformation(distinguishedName, out domainName, out domainFQDN);
+#if DEBUG
+                directory.AuthenticationType = AuthenticationTypes.None;
+                ClaimsProviderLogging.LogDebug($"Hardcoded property DirectoryEntry.AuthenticationType to {directory.AuthenticationType} for \"{directory.Path}\"");
+#endif
+
+                // Method PropertyCollection.Contains("distinguishedName") does a LDAP bind
+                // In AD LDS: property "distinguishedName" = "CN=LDSInstance2,DC=ADLDS,DC=local", properties "name" and "cn" = "LDSInstance2"
+                if (directory.Properties.Contains("distinguishedName"))
+                {
+                    domaindistinguishedName = directory.Properties["distinguishedName"].Value.ToString();
+                    GetDomainInformation(domaindistinguishedName, out domainName, out domainFQDN);
+                }
+                else if (directory.Properties.Contains("name"))
+                {
+                    domainName = directory.Properties["name"].Value.ToString();
+                }
+                else if (directory.Properties.Contains("cn"))
+                {
+                    // Tivoli stores domain name in property "cn" (properties "distinguishedName" and "name" don't exist)
+                    domainName = directory.Properties["cn"].Value.ToString();
+                }
+
+                success = true;
             }
-            else
+            catch (DirectoryServicesCOMException ex)
             {
-                // This logic to get the domainName may not work with AD LDS:
-                // if distinguishedName = "CN=Partition1,DC=MyLDS,DC=local", then both "name" and "cn" = "Partition1", while we expect "MyLDS"
-                // So now it's only made if the distinguishedName is not available (very unlikely codepath)
-                if (directory.Properties.Contains("name")) domainName = directory.Properties["name"].Value.ToString();
-                else if (directory.Properties.Contains("cn")) domainName = directory.Properties["cn"].Value.ToString(); // Tivoli sets domain name in cn property (property name does not exist)
+                ClaimsProviderLogging.LogException("", $"while getting domain names information for LDAP connection {directory.Path} (DirectoryServicesCOMException)", TraceCategory.Configuration, ex);
             }
+            catch (Exception ex)
+            {
+                ClaimsProviderLogging.LogException("", $"while getting domain names information for LDAP connection {directory.Path} (Exception)", TraceCategory.Configuration, ex);
+            }
+
+            return success;
         }
 
         /// <summary>

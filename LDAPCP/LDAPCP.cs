@@ -109,11 +109,27 @@ namespace ldapcp
                     globalConfiguration = GetConfiguration(context, entityTypes, PersistedObjectName, SPTrust.Name);
                     if (globalConfiguration == null)
                     {
-                        ClaimsProviderLogging.Log($"[{ProviderInternalName}] Configuration '{PersistedObjectName}' was not foundin configuration database, use default configuration instead. Visit LDAPCP admin pages in central administration to create it.",
-                            TraceSeverity.Unexpected, EventSeverity.Error, TraceCategory.Core);
-                        // Run with default configuration, which creates a connection to connect to current AD domain
                         globalConfiguration = LDAPCPConfig.ReturnDefaultConfiguration(SPTrust.Name);
-                        refreshConfig = true;
+                        // There is no thread safety issue in reading this.CurrentConfiguration here, thanks to the lock Sync_Init
+                        if (this.CurrentConfiguration == null)
+                        {
+                            ClaimsProviderLogging.Log($"[{ProviderInternalName}] Configuration '{PersistedObjectName}' was not found in configuration database, switch to default. Visit LDAPCP admin pages in central administration to create it.",
+                                TraceSeverity.Unexpected, EventSeverity.Error, TraceCategory.Core);
+                            // Run with default configuration, which creates a connection to connect to current AD domain
+                            refreshConfig = true;
+                        }
+                        else
+                        {
+                            // Default configuration has only 1 connection to AD domain of current SP server. 
+                            // If its property LDAPConnection.RootContainer is null, it means that LDAPConnection properties were not set because it was previously done in a thread that did not run as application pool account (https://github.com/Yvand/LDAPCP/issues/87)
+                            // If so, recreate default configuration
+                            if (String.IsNullOrEmpty(this.CurrentConfiguration.LDAPConnectionsProp.First().RootContainer))
+                            {
+                                ClaimsProviderLogging.Log($"[{ProviderInternalName}] Default configuration was not fully initialized, recreating it...",
+                                    TraceSeverity.Unexpected, EventSeverity.Error, TraceCategory.Core);
+                                refreshConfig = true;
+                            }
+                        }
                     }
                     else
                     {
@@ -140,14 +156,24 @@ namespace ldapcp
                     {
                         if (this.CurrentConfigurationVersion == ((SPPersistedObject)globalConfiguration).Version)
                         {
-                            ClaimsProviderLogging.Log($"[{ProviderInternalName}] Configuration '{PersistedObjectName}' was found, version {((SPPersistedObject)globalConfiguration).Version.ToString()}",
+                            ClaimsProviderLogging.Log($"[{ProviderInternalName}] Configuration '{PersistedObjectName}' version {((SPPersistedObject)globalConfiguration).Version.ToString()} was found",
                                 TraceSeverity.VerboseEx, EventSeverity.Information, TraceCategory.Core);
+
+                            // Local configuration may need to be recreated due to bug https://github.com/Yvand/LDAPCP/issues/87:
+                            // If a LDAPConnection with UseSPServerConnectionToAD true has its property LDAPConnection.RootContainer null, it means that LDAPConnection properties failed to be set, because thread did not run as application pool account
+                            if (this.CurrentConfiguration != null &&
+                                this.CurrentConfiguration.LDAPConnectionsProp.FirstOrDefault(x => x.UseSPServerConnectionToAD && String.IsNullOrEmpty(x.RootContainer)) != null)
+                            {
+                                ClaimsProviderLogging.Log($"[{ProviderInternalName}] Configuration '{PersistedObjectName}' version {((SPPersistedObject)globalConfiguration).Version.ToString()} was found, but local copy is not fully initialized. Refreshing local copy...",
+                                    TraceSeverity.Medium, EventSeverity.Information, TraceCategory.Core);
+                                refreshConfig = true;
+                            }
                         }
                         else
                         {
                             refreshConfig = true;
                             this.CurrentConfigurationVersion = ((SPPersistedObject)globalConfiguration).Version;
-                            ClaimsProviderLogging.Log($"[{ProviderInternalName}] Configuration '{PersistedObjectName}' changed to version {((SPPersistedObject)globalConfiguration).Version.ToString()}, refreshing local copy",
+                            ClaimsProviderLogging.Log($"[{ProviderInternalName}] Configuration '{PersistedObjectName}' changed to version {((SPPersistedObject)globalConfiguration).Version.ToString()}, refreshing local copy...",
                                 TraceSeverity.Medium, EventSeverity.Information, TraceCategory.Core);
                         }
                     }
@@ -226,7 +252,8 @@ namespace ldapcp
                 {
                     // Search if current claim type in trust exists in ClaimTypeConfigCollection
                     ClaimTypeConfig claimTypeConfig = nonProcessedClaimTypes.FirstOrDefault(x =>
-                        String.Equals(x.ClaimType, claimTypeInformation.MappedClaimType, StringComparison.InvariantCultureIgnoreCase) &&
+                        !String.IsNullOrWhiteSpace(x.ClaimType) &&
+                        SPClaimTypes.Equals(x.ClaimType, claimTypeInformation.MappedClaimType) &&
                         !x.UseMainClaimTypeOfDirectoryObject &&
                         !String.IsNullOrEmpty(x.LDAPAttribute) &&
                         !String.IsNullOrEmpty(x.LDAPClass));
@@ -234,7 +261,7 @@ namespace ldapcp
                     if (claimTypeConfig == null) { continue; }
                     claimTypeConfig.ClaimTypeDisplayName = claimTypeInformation.DisplayName;
                     claimTypesSetInTrust.Add(claimTypeConfig);
-                    if (String.Equals(SPTrust.IdentityClaimTypeInformation.MappedClaimType, claimTypeConfig.ClaimType, StringComparison.InvariantCultureIgnoreCase))
+                    if (SPClaimTypes.Equals(SPTrust.IdentityClaimTypeInformation.MappedClaimType, claimTypeConfig.ClaimType))
                     {
                         // Identity claim type found, set IdentityClaimTypeConfig property
                         identityClaimTypeFound = true;
@@ -245,7 +272,7 @@ namespace ldapcp
                         if (!String.IsNullOrEmpty(this.CurrentConfiguration.MainGroupClaimType))
                         {
                             // If MainGroupClaimType is set, try to set MainGroupClaimTypeConfig with the ClaimTypeConfig that has the same ClaimType
-                            if (String.Equals(claimTypeConfig.ClaimType, this.CurrentConfiguration.MainGroupClaimType, StringComparison.InvariantCultureIgnoreCase))
+                            if (SPClaimTypes.Equals(claimTypeConfig.ClaimType, this.CurrentConfiguration.MainGroupClaimType))
                             {
                                 MainGroupClaimTypeConfig = claimTypeConfig;
                                 groupClaimTypeFound = true;
@@ -501,7 +528,7 @@ namespace ldapcp
                         {
                             ClaimTypeConfig ctConfig = ProcessedClaimTypesList.FirstOrDefault(x =>
                                 !x.UseMainClaimTypeOfDirectoryObject &&
-                                String.Equals(x.ClaimType, entity.Claim.ClaimType, StringComparison.InvariantCultureIgnoreCase));
+                                SPClaimTypes.Equals(x.ClaimType, entity.Claim.ClaimType));
 
                             string nodeName = ctConfig != null ? ctConfig.ClaimTypeDisplayName : entity.Claim.ClaimType;
                             matchNode = new SPProviderHierarchyNode(_ProviderInternalName, nodeName, entity.Claim.ClaimType, true);
@@ -908,8 +935,8 @@ namespace ldapcp
 
             Parallel.ForEach(ldapServers.Where(x => !String.IsNullOrEmpty(x.Filter)), ldapConnection =>
             {
-                Debug.WriteLine($"ldapConnection: Path: {ldapConnection.LDAPPath}, UseSPServerConnectionToAD: {ldapConnection.UseSPServerConnectionToAD}");
-                ClaimsProviderLogging.LogDebug($"ldapConnection: Path: {ldapConnection.LDAPPath}, UseSPServerConnectionToAD: {ldapConnection.UseSPServerConnectionToAD}");
+                Debug.WriteLine($"ldapConnection: Path: {ldapConnection.Directory.Path}, UseSPServerConnectionToAD: {ldapConnection.UseSPServerConnectionToAD}");
+                ClaimsProviderLogging.LogDebug($"ldapConnection: Path: {ldapConnection.Directory.Path}, UseSPServerConnectionToAD: {ldapConnection.UseSPServerConnectionToAD}");
 #pragma warning disable CS0618 // Type or member is obsolete
                 SetLDAPConnection(currentContext, ldapConnection);
 #pragma warning restore CS0618 // Type or member is obsolete
@@ -1000,32 +1027,42 @@ namespace ldapcp
             }
             else
             {
-                ldapConnection.Directory = Domain.GetComputerDomain().GetDirectoryEntry();
+                Domain computerDomain = Domain.GetComputerDomain();
+                ldapConnection.Directory = computerDomain.GetDirectoryEntry();
+
+                // Set properties LDAPConnection.DomainFQDN and LDAPConnection.DomainName here as a workaround to issue https://github.com/Yvand/LDAPCP/issues/87
+                ldapConnection.DomainFQDN = computerDomain.Name;
+                ldapConnection.DomainName = OperationContext.GetDomainName(ldapConnection.DomainFQDN);
+
                 // Property LDAPConnection.AuthenticationSettings must be set, in order to build the PrincipalContext correctly in GetGroupsFromActiveDirectory()
                 ldapConnection.AuthenticationSettings = ldapConnection.Directory.AuthenticationType;
             }
 
-            // Operations in this block do LDAP queries, so let's monitor their execution time
-            using (new SPMonitoredScope($"[{ProviderInternalName}] Get domain names / root container information about LDAP server \"{ldapConnection.Directory.Path}\"", 2000))
+            if (String.IsNullOrEmpty(ldapConnection.RootContainer) || String.IsNullOrEmpty(ldapConnection.DomainFQDN) || String.IsNullOrEmpty(ldapConnection.DomainName))
             {
-                // Retrieve FQDN and domain name of current DirectoryEntry
-                string domainName = String.Empty;
-                string domainFQDN = String.Empty;
-                try
+                // This block does LDAP operations
+                using (new SPMonitoredScope($"[{ProviderInternalName}] Get domain names / root container information about LDAP server \"{ldapConnection.Directory.Path}\"", 2000))
                 {
-                    // Operations below may fail if LDAP server cannot be reached                    
-                    // Cache those values for the whole lifetime of the process, because getting them triggers LDAP queries in the background
-                    OperationContext.GetDomainInformation(ldapConnection.Directory, out domainName, out domainFQDN);
-                    ldapConnection.DomainName = domainName;
-                    ldapConnection.DomainFQDN = domainFQDN;
-                    if (ldapConnection.Directory.Properties.Contains("distinguishedName"))
+                    // Retrieve FQDN and domain name of current DirectoryEntry
+                    string domainName = String.Empty;
+                    string domainFQDN = String.Empty;
+                    string domaindistinguishedName = String.Empty;
+
+                    // If there is no existing LDAPCP configuration, this method will be called each time as property LDAPConnection.RootContainer will be null
+                    OperationContext.GetDomainInformation(ldapConnection.Directory, out domaindistinguishedName, out domainName, out domainFQDN);
+                    // Cache those values for the whole lifetime of the process, because getting them requires LDAP operations
+                    if (!String.IsNullOrWhiteSpace(domaindistinguishedName))
                     {
-                        ldapConnection.RootContainer = ldapConnection.Directory.Properties["distinguishedName"].Value.ToString();
+                        ldapConnection.RootContainer = domaindistinguishedName;
                     }
-                }
-                catch (Exception ex)
-                {
-                    ClaimsProviderLogging.LogException(ProviderInternalName, $"while getting domain names information for LDAP connection {ldapConnection.Directory.Path}", TraceCategory.Configuration, ex);
+                    if (!String.IsNullOrWhiteSpace(domainName))
+                    {
+                        ldapConnection.DomainName = domainName;
+                    }
+                    if (!String.IsNullOrWhiteSpace(domainFQDN))
+                    {
+                        ldapConnection.DomainFQDN = domainFQDN;
+                    }
                 }
             }
         }
@@ -1156,7 +1193,7 @@ namespace ldapcp
                     }
 
                     IEnumerable<ClaimTypeConfig> allGroupsCTConfig = this.ProcessedClaimTypesList.Where(x => x.EntityType == DirectoryObjectType.Group && !x.UseMainClaimTypeOfDirectoryObject);
-                    ClaimTypeConfig mainGroupCTConfig = allGroupsCTConfig.FirstOrDefault(x => String.Equals(x.ClaimType, this.CurrentConfiguration.MainGroupClaimType, StringComparison.InvariantCultureIgnoreCase));
+                    ClaimTypeConfig mainGroupCTConfig = allGroupsCTConfig.FirstOrDefault(x => SPClaimTypes.Equals(x.ClaimType, this.CurrentConfiguration.MainGroupClaimType));
                     if (mainGroupCTConfig == null)
                     {
                         ClaimsProviderLogging.Log($"[{ProviderInternalName}] Configuration for claim type '{this.CurrentConfiguration.MainGroupClaimType}' cannot be found, please add it in claim types configuration list.",
@@ -1184,7 +1221,7 @@ namespace ldapcp
                         if (ldapConnection.GetGroupMembershipUsingDotNetHelpers)
                         {
                             directoryGroups = GetGroupsFromActiveDirectory(ldapConnection, currentContext, mainGroupCTConfig);
-                            directoryGroups.AddRange(GetGroupsFromLDAPDirectory(ldapConnection, currentContext, allGroupsCTConfig.Where(x => !String.Equals(x.ClaimType, this.CurrentConfiguration.MainGroupClaimType, StringComparison.InvariantCultureIgnoreCase))));
+                            directoryGroups.AddRange(GetGroupsFromLDAPDirectory(ldapConnection, currentContext, allGroupsCTConfig.Where(x => !SPClaimTypes.Equals(x.ClaimType, this.CurrentConfiguration.MainGroupClaimType))));
                         }
                         else
                         {
@@ -1255,7 +1292,7 @@ namespace ldapcp
                 Stopwatch stopWatch = new Stopwatch();
                 stopWatch.Start();
                 UserPrincipal adUser = null;
-                PrincipalContext principalContext = null;                
+                PrincipalContext principalContext = null;
                 try
                 {
                     using (new SPMonitoredScope($"[{ProviderInternalName}] Get AD Principal of user {currentContext.IncomingEntity.Value} " + directoryDetails, 1000))
@@ -1273,7 +1310,7 @@ namespace ldapcp
                         }
 
                         // https://github.com/Yvand/LDAPCP/issues/22: UserPrincipal.FindByIdentity() doesn't support emails, so if IncomingEntity is an email, user needs to be retrieved in a different way
-                        if (String.Equals(currentContext.IncomingEntity.ClaimType, WIF4_5.ClaimTypes.Email, StringComparison.InvariantCultureIgnoreCase))
+                        if (SPClaimTypes.Equals(currentContext.IncomingEntity.ClaimType, WIF4_5.ClaimTypes.Email))
                         {
                             using (UserPrincipal userEmailPrincipal = new UserPrincipal(principalContext) { Enabled = true, EmailAddress = currentContext.IncomingEntity.Value })
                             {
@@ -1596,7 +1633,7 @@ namespace ldapcp
         {
             string claimValue = String.Empty;
             //var attr = ProcessedAttributes.Where(x => x.ClaimTypeProp == type).FirstOrDefault();
-            var attr = ProcessedClaimTypesList.FirstOrDefault(x => String.Equals(x.ClaimType, type, StringComparison.InvariantCultureIgnoreCase));
+            var attr = ProcessedClaimTypesList.FirstOrDefault(x => SPClaimTypes.Equals(x.ClaimType, type));
             //if (inputHasKeyword && attr.DoNotAddPrefixIfInputHasKeywordProp)
             if ((!inputHasKeyword || !attr.DoNotAddClaimValuePrefixIfBypassLookup) &&
                 !HasPrefixToken(attr.ClaimValuePrefix, ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINNAME) &&
@@ -1620,7 +1657,7 @@ namespace ldapcp
             string permissionClaimType = result.ClaimTypeConfig.ClaimType;
             bool isIdentityClaimType = false;
 
-            if ((String.Equals(permissionClaimType, SPTrust.IdentityClaimTypeInformation.MappedClaimType, StringComparison.InvariantCultureIgnoreCase)
+            if ((SPClaimTypes.Equals(permissionClaimType, SPTrust.IdentityClaimTypeInformation.MappedClaimType)
                 || result.ClaimTypeConfig.UseMainClaimTypeOfDirectoryObject) && result.ClaimTypeConfig.LDAPClass == IdentityClaimTypeConfig.LDAPClass)
             {
                 isIdentityClaimType = true;
@@ -1705,7 +1742,7 @@ namespace ldapcp
         {
             string value = claimValue;
 
-            var attr = ProcessedClaimTypesList.FirstOrDefault(x => String.Equals(x.ClaimType, claimType, StringComparison.InvariantCultureIgnoreCase));
+            var attr = ProcessedClaimTypesList.FirstOrDefault(x => SPClaimTypes.Equals(x.ClaimType, claimType));
             if (HasPrefixToken(attr.ClaimValuePrefix, ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINNAME))
             {
                 value = string.Format("{0}{1}", attr.ClaimValuePrefix.Replace(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINNAME, domainName), value);
@@ -1861,7 +1898,7 @@ namespace ldapcp
                 ConsolidatedResult result = new ConsolidatedResult();
                 result.ClaimTypeConfig = ctConfig;
                 result.Value = input;
-                bool isIdentityClaimType = String.Equals(claim.ClaimType, IdentityClaimTypeConfig.ClaimType, StringComparison.InvariantCultureIgnoreCase);
+                bool isIdentityClaimType = SPClaimTypes.Equals(claim.ClaimType, IdentityClaimTypeConfig.ClaimType);
                 pe.DisplayText = FormatPermissionDisplayText(pe, isIdentityClaimType, result);
 
                 entities.Add(pe);
@@ -1885,17 +1922,20 @@ namespace ldapcp
         /// <summary>
         /// Return the identity claim type
         /// </summary>
-        /// <returns></returns>
+        /// <returns>Identity claim type. Should not return null to prevent exceptions in SharePoint when users sign-in</returns>
         public override string GetClaimTypeForUserKey()
         {
-            // Initialization may fail because there is no yet configuration (fresh install)
-            // In this case, LDAPCP should not return null because it causes null exceptions in SharePoint when users sign-in
+            // Elevation of privileges when calling LDAPCP.Initialize is very important to prevent issue https://github.com/Yvand/LDAPCP/issues/87
+            // But calling SPSecurity.RunWithElevatedPrivileges here is not possible as it causes a StackOverflowException
             Initialize(null, null);
 
             this.Lock_Config.EnterReadLock();
             try
             {
-                if (SPTrust == null) { return String.Empty; }
+                if (SPTrust == null)
+                {
+                    return String.Empty;
+                }
 
                 return SPTrust.IdentityClaimTypeInformation.MappedClaimType;
             }
@@ -1913,20 +1953,27 @@ namespace ldapcp
         /// <summary>
         /// Return the user key (SPClaim with identity claim type) from the incoming entity
         /// </summary>
-        /// <param name="entity"></param>
+        /// <param name="entity">SPClaim corresponding to the user key of the incoming entity. Should not return null to prevent exceptions in SharePoint when users sign-in</param>
         /// <returns></returns>
         protected override SPClaim GetUserKeyForEntity(SPClaim entity)
         {
-            // Initialization may fail because there is no yet configuration (fresh install)
-            // In this case, LDAPCP should not return null because it causes null exceptions in SharePoint when users sign-in
-            bool initSucceeded = Initialize(null, null);
+            bool initSucceeded = false;
+
+            // Elevation of privileges when calling LDAPCP.Initialize is very important to prevent issue https://github.com/Yvand/LDAPCP/issues/87
+            SPSecurity.RunWithElevatedPrivileges(delegate ()
+            {
+                initSucceeded = Initialize(null, null);
+            });
 
             this.Lock_Config.EnterReadLock();
             try
             {
                 // If initialization failed but SPTrust is not null, rest of the method can be executed normally
                 // Otherwise return the entity
-                if (!initSucceeded && SPTrust == null) { return entity; }
+                if (!initSucceeded && SPTrust == null)
+                {
+                    return entity;
+                }
 
                 // There are 2 scenarios:
                 // 1: OriginalIssuer is "SecurityTokenService": Value looks like "05.t|yvanhost|yvand@yvanhost.local", claim type is "http://schemas.microsoft.com/sharepoint/2009/08/claims/userid" and it must be decoded properly

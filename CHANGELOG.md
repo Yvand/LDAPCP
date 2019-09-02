@@ -1,5 +1,10 @@
 # Change log for LDAPCP
 
+## Unreleased
+
+* Add method LDAPCPConfig.CreateDefaultConfiguration
+* Fix bug: randomly, LDAPCP returned results that were missing their domain name. In SharePoint logs, a DirectoryServicesCOMException error was recorded. https://github.com/Yvand/LDAPCP/issues/87
+
 ## LDAPCP 13.0.20190621.905 enhancements & bug-fixes - Published in June 21, 2019
 
 * Add a default mapping to populate the email of groups

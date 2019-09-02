@@ -17,8 +17,8 @@ using System.Text;
 [SetUpFixture]
 public class UnitTestsHelper
 {
-    public static readonly ldapcp.LDAPCP ClaimsProvider = new ldapcp.LDAPCP(UnitTestsHelper.ClaimsProviderName);
     public static string ClaimsProviderName => "LDAPCP";
+    public static readonly ldapcp.LDAPCP ClaimsProvider = new ldapcp.LDAPCP(UnitTestsHelper.ClaimsProviderName);
     public static readonly string ClaimsProviderConfigName = TestContext.Parameters["ClaimsProviderConfigName"];
     public static Uri TestSiteCollUri;
     public static readonly string TestSiteRelativePath = $"/sites/{TestContext.Parameters["TestSiteCollectionName"]}";

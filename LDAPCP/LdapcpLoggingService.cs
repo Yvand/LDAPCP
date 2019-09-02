@@ -118,7 +118,7 @@ namespace ldapcp
             try
             {
 #if DEBUG
-                WriteTrace(TraceCategory.Debug, TraceSeverity.VerboseEx, message);
+                WriteTrace(TraceCategory.Debug, TraceSeverity.Verbose, message);
                 Debug.WriteLine(message);
 #else
                 // Do nothing

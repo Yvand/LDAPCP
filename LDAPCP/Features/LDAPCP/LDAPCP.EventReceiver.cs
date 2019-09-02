@@ -40,15 +40,14 @@ namespace ldapcp
                 {
                     ClaimsProviderLogging svc = ClaimsProviderLogging.Local;
                     ClaimsProviderLogging.Log($"[{LDAPCP._ProviderInternalName}] Activating farm-scoped feature for claims provider \"{LDAPCP._ProviderInternalName}\"", TraceSeverity.High, EventSeverity.Information, ClaimsProviderLogging.TraceCategory.Configuration);
-
-                    var spTrust = LDAPCP.GetSPTrustAssociatedWithCP(LDAPCP._ProviderInternalName);
-                    if (spTrust != null)
+                    LDAPCPConfig existingConfig = LDAPCPConfig.GetConfiguration(ClaimsProviderConstants.CONFIG_NAME);
+                    if (existingConfig == null)
                     {
-                        LDAPCPConfig existingConfig = LDAPCPConfig.GetConfiguration(ClaimsProviderConstants.CONFIG_NAME);
-                        if (existingConfig == null)
-                            LDAPCPConfig.CreateConfiguration(ClaimsProviderConstants.CONFIG_ID, ClaimsProviderConstants.CONFIG_NAME, spTrust.Name);
-                        else
-                            ClaimsProviderLogging.Log($"[{LDAPCP._ProviderInternalName}] Use configuration \"{ClaimsProviderConstants.CONFIG_NAME}\" found in the configuration database", TraceSeverity.High, EventSeverity.Information, ClaimsProviderLogging.TraceCategory.Configuration);
+                        LDAPCPConfig.CreateDefaultConfiguration();
+                    }
+                    else
+                    {
+                        ClaimsProviderLogging.Log($"[{LDAPCP._ProviderInternalName}] Use configuration \"{existingConfig.Name}\" found in the configuration database", TraceSeverity.High, EventSeverity.Information, ClaimsProviderLogging.TraceCategory.Configuration);
                     }
                 }
                 catch (Exception ex)
