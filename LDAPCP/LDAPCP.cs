@@ -1960,10 +1960,11 @@ namespace ldapcp
             bool initSucceeded = false;
 
             // Elevation of privileges when calling LDAPCP.Initialize is very important to prevent issue https://github.com/Yvand/LDAPCP/issues/87
-            SPSecurity.RunWithElevatedPrivileges(delegate ()
-            {
-                initSucceeded = Initialize(null, null);
-            });
+            // But doing elevation of privileges here causes issue https://github.com/Yvand/LDAPCP/issues/99 in some environments (I could not repro)
+            //SPSecurity.RunWithElevatedPrivileges(delegate ()
+            //{
+            initSucceeded = Initialize(null, null);
+            //});
 
             this.Lock_Config.EnterReadLock();
             try
