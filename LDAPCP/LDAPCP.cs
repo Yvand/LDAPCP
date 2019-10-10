@@ -1027,15 +1027,33 @@ namespace ldapcp
             }
             else
             {
-                Domain computerDomain = Domain.GetComputerDomain();
-                ldapConnection.Directory = computerDomain.GetDirectoryEntry();
+                try
+                {
+                    // This try block is to get domain name information about AD domain of current computer
+                    // If this fails, execution should still continue as:
+                    // - It will be attempted again in a different way in OperationContext.GetDomainInformation(), so it should be given a chance
+                    // - It often (only) fails with COMException, which tend to occur only in some code path, but finally works depending on how LDAPCP is called
+                    // - It's not essential, even though it can have serious impacts, for example, value of role claims miss the domain name
+                    Domain computerDomain = Domain.GetComputerDomain();
+                    ldapConnection.Directory = computerDomain.GetDirectoryEntry();
 
-                // Set properties LDAPConnection.DomainFQDN and LDAPConnection.DomainName here as a workaround to issue https://github.com/Yvand/LDAPCP/issues/87
-                ldapConnection.DomainFQDN = computerDomain.Name;
-                ldapConnection.DomainName = OperationContext.GetDomainName(ldapConnection.DomainFQDN);
+                    // Set properties LDAPConnection.DomainFQDN and LDAPConnection.DomainName here as a workaround to issue https://github.com/Yvand/LDAPCP/issues/87
+                    ldapConnection.DomainFQDN = computerDomain.Name;
+                    ldapConnection.DomainName = OperationContext.GetDomainName(ldapConnection.DomainFQDN);
 
-                // Property LDAPConnection.AuthenticationSettings must be set, in order to build the PrincipalContext correctly in GetGroupsFromActiveDirectory()
-                ldapConnection.AuthenticationSettings = ldapConnection.Directory.AuthenticationType;
+                    // Property LDAPConnection.AuthenticationSettings must be set, in order to build the PrincipalContext correctly in GetGroupsFromActiveDirectory()
+                    ldapConnection.AuthenticationSettings = ldapConnection.Directory.AuthenticationType;
+                }
+                catch (System.Runtime.InteropServices.COMException ex)
+                {
+                    // Domain.GetDomain() may fail with the following error: System.Runtime.InteropServices.COMException: Retrieving the COM class factory for component with CLSID {080D0D78-F421-11D0-A36E-00C04FB950DC} failed due to the following error: 800703fa Illegal operation attempted on a registry key that has been marked for deletion. (Exception from HRESULT: 0x800703FA).
+                    ClaimsProviderLogging.LogException("", $"while getting domain names information about AD domain of current computer (COMException)", TraceCategory.Configuration, ex);
+                }
+                catch (Exception ex)
+                {
+                    // Domain.GetDomain() may fail with the following error: System.Runtime.InteropServices.COMException: Retrieving the COM class factory for component with CLSID {080D0D78-F421-11D0-A36E-00C04FB950DC} failed due to the following error: 800703fa Illegal operation attempted on a registry key that has been marked for deletion. (Exception from HRESULT: 0x800703FA).
+                    ClaimsProviderLogging.LogException("", $"while getting domain names information about AD domain of current computer", TraceCategory.Configuration, ex);
+                }
             }
 
             if (String.IsNullOrEmpty(ldapConnection.RootContainer) || String.IsNullOrEmpty(ldapConnection.DomainFQDN) || String.IsNullOrEmpty(ldapConnection.DomainName))
@@ -1960,10 +1978,11 @@ namespace ldapcp
             bool initSucceeded = false;
 
             // Elevation of privileges when calling LDAPCP.Initialize is very important to prevent issue https://github.com/Yvand/LDAPCP/issues/87
-            SPSecurity.RunWithElevatedPrivileges(delegate ()
-            {
-                initSucceeded = Initialize(null, null);
-            });
+            // But doing elevation of privileges here causes issue https://github.com/Yvand/LDAPCP/issues/99 in some environments (I could not repro)
+            //SPSecurity.RunWithElevatedPrivileges(delegate ()
+            //{
+            initSucceeded = Initialize(null, null);
+            //});
 
             this.Lock_Config.EnterReadLock();
             try

@@ -1,5 +1,9 @@
 # Change log for LDAPCP
 
+## LDAPCP 14.1.20191007.981 enhancements & bug-fixes - Published in October 7, 2019
+
+* Fix regression: after installing v14, users are stuck in SharePoint just after sign-in to ADFS. https://github.com/Yvand/LDAPCP/issues/99
+
 ## LDAPCP 14.0.20190821.952 enhancements & bug-fixes - Published in August 21, 2019
 
 * Add method LDAPCPConfig.CreateDefaultConfiguration
