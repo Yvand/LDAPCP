@@ -17,7 +17,7 @@ jobs:
       RepositoryId: '/subscriptions/$(DevTestLabs.AzureSubscriptionId)/resourcegroups/$(DevTestLabs.LabName)/providers/microsoft.devtestlab/labs/$(DevTestLabs.LabName)/artifactsources/$(DevTestLabs.RepoID)'
       TemplateId: '/subscriptions/$(DevTestLabs.AzureSubscriptionId)/resourceGroups/$(DevTestLabs.LabName)/providers/Microsoft.DevTestLab/labs/$(DevTestLabs.LabName)/artifactSources/$(DevTestLabs.RepoID)/armTemplates/$(DevTestLabs.ARMTemplateName)'
       EnvironmentName: 'Tests-$(system.teamProject)'
-      ParameterOverrides: "-provisionSharePoint2013 '$(Deployment.ProvisionSharePoint2013)' -provisionSharePoint2016 '$(Deployment.ProvisionSharePoint2016)' -provisionSharePoint2019 '$(Deployment.ProvisionSharePoint2019)' -enableHybridBenefitServerLicenses 'Yes' -adminUserName '$(Deployment.AdminUserName)' -adminPassword '$(Deployment.AdminPassword)' -serviceAccountsPassword '$(Deployment.ServiceAccountsPassword)' -createPublicIPAndDNS '$(Deployment.CreatePublicIPAndDNS)' -configureADFS 'Yes'"
+      ParameterOverrides: "-provisionSharePoint2013 '$(Deployment.ProvisionSharePoint2013)' -provisionSharePoint2016 '$(Deployment.ProvisionSharePoint2016)' -provisionSharePoint2019 '$(Deployment.ProvisionSharePoint2019)' -enableHybridBenefitServerLicenses 'Yes' -adminUserName '$(Deployment.AdminUserName)' -adminPassword '$(Deployment.AdminPassword)' -serviceAccountsPassword '$(Deployment.ServiceAccountsPassword)' -createPublicIPAndDNS '$(Deployment.CreatePublicIPAndDNS)' -configureADFS 'Yes' -addAzureBastion 'Yes'"
       TemplateOutputVariables: true
       ExportEnvironmentTemplate: true
     timeoutInMinutes: 90

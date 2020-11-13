@@ -1,0 +1,53 @@
+resources:
+- repo: self
+
+jobs:
+- job: RunTests
+  strategy:
+    maxParallel: 3
+    matrix:
+      OnSharePoint2013:
+        deployThisSharePointVersion: variables['Deployment.ProvisionSharePoint2013']
+        sharePointVersion: 2013
+      OnSharePoint2016:
+        deployThisSharePointVersion: variables['Deployment.ProvisionSharePoint2016']
+        sharePointVersion: 2016
+      OnSharePoint2019:
+        deployThisSharePointVersion: variables['Deployment.ProvisionSharePoint2019']
+        sharePointVersion: 2019
+  displayName: Run integration tests
+  #condition: eq(variables['deployThisSharePointVersion'], 'yes') # Not working: variables['deployThisSharePointVersion'] is evaluated to Null
+  timeoutInMinutes: 30
+  pool:
+    name: $(System.TeamProject)-Tests-$(sharePointVersion)
+  steps:
+  - checkout: none #skip checking out the default repository resource
+  - task: DownloadBuildArtifacts@0
+    displayName: 'Download Build Artifacts'
+    inputs:
+      buildType: specific
+      project: '$(System.TeamProjectId)'
+      pipeline: $(DevOps.BuildArtifactsPipelineID)
+      specificBuildWithTriggering: true
+      artifactName: 'drop_$(Tests.BuildConfiguration)'
+      downloadPath: $(Build.ArtifactStagingDirectory)
+      itemPattern: |
+       drop_$(Tests.BuildConfiguration)/$(System.TeamProject)/bin/Release/$(System.TeamProject).pdb
+       drop_$(Tests.BuildConfiguration)/$(System.TeamProject).Tests/bin/Release/*.dll
+       drop_$(Tests.BuildConfiguration)/$(Tests.DataFolderName)/?(*.csv|*.json|*.runsettings)
+
+  - task: VisualStudioTestPlatformInstaller@1
+    displayName: 'Visual Studio Test Platform Installer'
+
+  - task: VSTest@2
+    displayName: 'Run Visual Studio tests'
+    inputs:
+      searchFolder: '$(Build.ArtifactStagingDirectory)/drop_$(Tests.BuildConfiguration)/$(System.TeamProject).Tests/bin/Release'
+      vsTestVersion: toolsInstaller
+      runSettingsFile: '$(Build.ArtifactStagingDirectory)/drop_$(Tests.BuildConfiguration)/$(Tests.DataFolderName)/DTLServer.runsettings'
+      overrideTestrunParameters: '$(Tests.OverrideTestrunParameters)'
+      codeCoverageEnabled: $(Tests.CodeCoverageEnabled)
+      otherConsoleOptions: '/Platform:x64'
+      testRunTitle: '$(System.TeamProject)-Tests-SP$(sharePointVersion)'
+      platform: '$(BuildPlatform)'
+      configuration: $(Tests.BuildConfiguration)

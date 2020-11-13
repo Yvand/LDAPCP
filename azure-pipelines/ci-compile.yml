@@ -12,10 +12,8 @@ jobs:
     matrix:
       debugJob:
         configuration: debug
-        platform: $(BuildPlatform)
       releaseJob:
         configuration: release
-        platform: $(BuildPlatform)
   displayName: Compile
   pool:
     vmImage: 'windows-2019'
