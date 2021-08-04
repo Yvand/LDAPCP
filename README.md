@@ -1,4 +1,4 @@
-# LDAPCP for SharePoint 2019 / 2016 / 2013
+# LDAPCP for SharePoint Subscription / 2019 / 2016 / 2013
 
 **Please visit [ldapcp.com](https://ldapcp.com) to download LDAPCP and find documentation.**
 
