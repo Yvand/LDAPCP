@@ -3,7 +3,7 @@ resources:
 
 jobs:
 - job: ApplyArtifactsSP2013
-  condition: eq(variables['Deployment.ProvisionSharePoint2013'], 'yes')
+  condition: eq(variables['Deployment.ProvisionSharePoint2013'], true)
   displayName: Apply artifacts on SP2013
   timeoutInMinutes: 30
   variables:
@@ -35,7 +35,7 @@ jobs:
       preferredAzurePowerShellVersion: 5.1.1
 
 - job: ApplyArtifactsSP2016
-  condition: eq(variables['Deployment.ProvisionSharePoint2016'], 'yes')
+  condition: eq(variables['Deployment.ProvisionSharePoint2016'], true)
   displayName: Apply artifacts on SP2016
   timeoutInMinutes: 30
   variables:
@@ -67,7 +67,7 @@ jobs:
       preferredAzurePowerShellVersion: 5.1.1
 
 - job: ApplyArtifactsSP2019
-  condition: eq(variables['Deployment.ProvisionSharePoint2019'], 'yes')
+  condition: eq(variables['Deployment.ProvisionSharePoint2019'], true)
   displayName: Apply artifacts on SP2019
   timeoutInMinutes: 30
   variables:
