@@ -25,4 +25,13 @@
       Sequence="20">
     <UrlAction Url="/_admin/Ldapcp/ClaimTypesConfig.aspx" />
   </CustomAction>
+
+  <CustomAction
+      Id="LdapcpPrivacyPolicy"
+      GroupId="LDAPCP"
+      Location="Microsoft.SharePoint.Administration.Security"
+      Title="Privacy policy"
+      Sequence="30">
+    <UrlAction Url="https://www.ldapcp.com/privacy-policy/" />
+  </CustomAction>
 </Elements>
