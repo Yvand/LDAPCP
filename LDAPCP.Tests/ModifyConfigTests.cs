@@ -85,8 +85,10 @@ namespace LDAPCP.Tests
 
             // Modify an existing claim type to set a claim type already defined should throw exception InvalidOperationException
             var anotherCTConfig = Config.ClaimTypes.FirstOrDefault(x => !String.IsNullOrEmpty(x.ClaimType) && !String.Equals(firstCTConfig.ClaimType, x.ClaimType, StringComparison.InvariantCultureIgnoreCase));
+            string backupClaimType = anotherCTConfig.ClaimType;
             anotherCTConfig.ClaimType = firstCTConfig.ClaimType;
             Assert.Throws<InvalidOperationException>(() => Config.Update(), $"Modify an existing claim type to set a claim type already defined should throw exception InvalidOperationException with this message: \"{ConfigUpdateErrorMessage}\"");
+            anotherCTConfig.ClaimType = backupClaimType;    // Revert the change to continue with a clean config
         }
 
         [Test]
