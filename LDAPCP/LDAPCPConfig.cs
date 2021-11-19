@@ -1248,10 +1248,10 @@ namespace ldapcp
             StringBuilder sbDomainFQDN = new StringBuilder();
             domainName = String.Empty;
             // String search in distinguishedName should not be case sensitive - https://github.com/Yvand/LDAPCP/issues/147
-            if (distinguishedName.IndexOf("DC=", StringComparison.InvariantCultureIgnoreCase) > 0)
+            if (distinguishedName.IndexOf("DC=", StringComparison.InvariantCultureIgnoreCase) >= 0)
             {
                 int start = distinguishedName.IndexOf("DC=", StringComparison.InvariantCultureIgnoreCase);
-                string[] dnSplitted = distinguishedName.ToUpper().Substring(start).Split(new string[] { "DC=" }, StringSplitOptions.RemoveEmptyEntries);
+                string[] dnSplitted = distinguishedName.Substring(start).ToLower().Split(new string[] { "dc=" }, StringSplitOptions.RemoveEmptyEntries);
                 bool setDomainName = true;
                 foreach (string dc in dnSplitted)
                 {
