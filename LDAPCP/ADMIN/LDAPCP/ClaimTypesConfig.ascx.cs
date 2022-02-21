@@ -58,7 +58,9 @@ namespace ldapcp.ControlTemplates
                 Type EntityDataKeysInfo = typeof(PeopleEditorEntityDataKeys);
                 foreach (object field in EntityDataKeysInfo.GetFields())
                 {
-                    DdlNewEntityMetadata.Items.Add(((FieldInfo)field).Name);
+                    FieldInfo fi = (FieldInfo)field;
+                    object fieldValue = fi.GetValue(null);
+                    DdlNewEntityMetadata.Items.Add(fieldValue.ToString());
                 }
 
                 // Populate EntityType DDL
