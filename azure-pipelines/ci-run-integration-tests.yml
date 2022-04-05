@@ -4,7 +4,7 @@ resources:
 jobs:
 - job: RunTests
   strategy:
-    maxParallel: 3
+    maxParallel: 4
     matrix:
       OnSharePoint2013:
         deployThisSharePointVersion: variables['Deployment.ProvisionSharePoint2013']
@@ -15,6 +15,9 @@ jobs:
       OnSharePoint2019:
         deployThisSharePointVersion: variables['Deployment.ProvisionSharePoint2019']
         sharePointVersion: 2019
+      OnSharePointSubscription:
+        deployThisSharePointVersion: variables['Deployment.ProvisionSharePointSubscription']
+        sharePointVersion: Subscription
   displayName: Run integration tests
   #condition: eq(variables['deployThisSharePointVersion'], 'yes') # Not working: variables['deployThisSharePointVersion'] is evaluated to Null
   timeoutInMinutes: 30
