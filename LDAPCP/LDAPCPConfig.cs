@@ -598,7 +598,10 @@ namespace ldapcp
         {
             return new List<LDAPConnection>
             {
-                new LDAPConnection{UseSPServerConnectionToAD = true}
+                new LDAPConnection{
+                    UseSPServerConnectionToAD = true,
+                    EnableAugmentation = true,
+                }
             };
         }
 
