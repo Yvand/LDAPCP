@@ -12,10 +12,8 @@ jobs:
     matrix:
       debugJob:
         configuration: debug
-        platform: $(BuildPlatform)
       releaseJob:
         configuration: release
-        platform: $(BuildPlatform)
   displayName: Compile
   pool:
     vmImage: 'windows-2019'
@@ -65,13 +63,13 @@ jobs:
   - task: automagically.DownloadFile.DownloadFile.DownloadFile@1
     displayName: 'Download ConfigureLab.ps1'
     inputs:
-      FileUrl: 'https://raw.githubusercontent.com/Yvand/AzureRM-Templates/dev/DevTestLabs-Artifacts/manage-artifacts/ConfigureLab.ps1'
+      FileUrl: 'https://raw.githubusercontent.com/Yvand/AzureRM-Templates/master/DevTestLabs-Artifacts/manage-artifacts/ConfigureLab.ps1'
       DestinationFolder: '$(Build.ArtifactStagingDirectory)\$(Deployment.ConfigureServerFolderName)'
   
   - task: automagically.DownloadFile.DownloadFile.DownloadFile@1
     displayName: 'Download ConfigureLab.psm1'
     inputs:
-      FileUrl: 'https://raw.githubusercontent.com/Yvand/AzureRM-Templates/dev/DevTestLabs-Artifacts/manage-artifacts/ConfigureLab.psm1'
+      FileUrl: 'https://raw.githubusercontent.com/Yvand/AzureRM-Templates/master/DevTestLabs-Artifacts/manage-artifacts/ConfigureLab.psm1'
       DestinationFolder: '$(Build.ArtifactStagingDirectory)\$(Deployment.ConfigureServerFolderName)'
   
   - task: NuGetToolInstaller@0

@@ -1365,7 +1365,25 @@ namespace ldapcp
                         foreach (Principal adGroup in adGroups)
                         {
                             string groupDomainName, groupDomainFqdn;
-                            string claimValue = adGroup.Name;
+
+                            // https://github.com/Yvand/LDAPCP/issues/148 - the group property used for the group value should be based on the LDAPCP configuration
+                            // By default it should be the SamAccountName, since it's also the default attribute set in LDAPCP configuration
+                            string claimValue = adGroup.SamAccountName;
+                            switch (groupCTConfig.LDAPAttribute.ToLower())
+                            {
+                                case "name":
+                                    claimValue = adGroup.Name;
+                                    break;
+
+                                case "distinguishedname":
+                                    claimValue = adGroup.DistinguishedName;
+                                    break;
+
+                                case "samaccountname":
+                                    claimValue = adGroup.SamAccountName;
+                                    break;
+                            }
+
                             if (!String.IsNullOrEmpty(groupCTConfig.ClaimValuePrefix))
                             {
                                 // Principal.DistinguishedName is used to build the domain name / FQDN of the current group. Example of value: CN=group1,CN=Users,DC=contoso,DC=local
@@ -1375,11 +1393,11 @@ namespace ldapcp
                                 OperationContext.GetDomainInformation(groupDN, out groupDomainName, out groupDomainFqdn);
                                 if (groupCTConfig.ClaimValuePrefix.Contains(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINNAME))
                                 {
-                                    claimValue = groupCTConfig.ClaimValuePrefix.Replace(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINNAME, groupDomainName) + adGroup.Name;
+                                    claimValue = groupCTConfig.ClaimValuePrefix.Replace(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINNAME, groupDomainName) + claimValue;
                                 }
                                 else if (groupCTConfig.ClaimValuePrefix.Contains(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINFQDN))
                                 {
-                                    claimValue = groupCTConfig.ClaimValuePrefix.Replace(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINFQDN, groupDomainFqdn) + adGroup.Name;
+                                    claimValue = groupCTConfig.ClaimValuePrefix.Replace(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINFQDN, groupDomainFqdn) + claimValue;
                                 }
                             }
 

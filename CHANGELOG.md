@@ -1,5 +1,13 @@
 # Change log for LDAPCP
 
+## Unreleased
+
+* Augmentation is now enabled by default on a new LDAP connection, when it is added through the UI
+* Augment groups with the same attribute as the one set in the LDAPCP configuration. https://github.com/Yvand/LDAPCP/issues/148
+* Fix: In claims configurfation page, the values in the list of "PickerEntity metadata" was not populated correctly, which caused an issue with the "Title" (and a few others)
+* Update NuGet package NUnit3TestAdapter to v3.16.1
+* Update NuGet package Newtonsoft.Json to 12.0.3
+
 ## LDAPCP 14.1.20191007.981 enhancements & bug-fixes - Published in October 7, 2019
 
 * Fix regression: after installing v14, users are stuck in SharePoint just after sign-in to ADFS. https://github.com/Yvand/LDAPCP/issues/99

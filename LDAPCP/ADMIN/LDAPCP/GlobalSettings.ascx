@@ -166,9 +166,9 @@
     </template_buttons>
 </wssuc:ButtonSection>
 
-<wssuc:InputFormSection ID="CurrentLdapConnectionSection" Title="Existing LDAP connections" runat="server" Visible="<%# ShowCurrentLdapConnectionSection %>">
+<wssuc:InputFormSection ID="CurrentLdapConnectionSection" Title="Registered LDAP connections" runat="server" Visible="<%# ShowCurrentLdapConnectionSection %>">
     <template_description>
-		<wssawc:EncodedLiteral runat="server" text="LDAP connections registered." EncodeMethod='HtmlEncodeAllowSimpleTextFormatting'/>
+		<wssawc:EncodedLiteral runat="server" text="LDAP connections currently registered in LDAPCP configuration." EncodeMethod='HtmlEncodeAllowSimpleTextFormatting'/>
 	</template_description>
     <template_inputformcontrols>
 		<tr><td>
@@ -184,9 +184,9 @@
 	</template_inputformcontrols>
 </wssuc:InputFormSection>
 
-<wssuc:InputFormSection ID="NewLdapConnectionSection" Title="New LDAP connection" runat="server" Visible="<%# ShowNewLdapConnectionSection %>">
+<wssuc:InputFormSection ID="NewLdapConnectionSection" Title="Register a new LDAP connection" runat="server" Visible="<%# ShowNewLdapConnectionSection %>">
     <template_description>
-		<wssawc:EncodedLiteral runat="server" text="Register a new LDAP connection. By default, LDAPCP adds a connection to the Active Directory domain of SharePoint servers, labelled 'Connect to SharePoint domain'." EncodeMethod='HtmlEncodeAllowSimpleTextFormatting'/>
+		<wssawc:EncodedLiteral runat="server" text="By default, LDAPCP connects to the Active Directory domain of the SharePoint servers using the application pool identity. This connection is labelled 'Connect to SharePoint domain'." EncodeMethod='HtmlEncodeAllowSimpleTextFormatting'/>
 	</template_description>
     <template_inputformcontrols>
 		<tr><td>
@@ -247,7 +247,7 @@
 	</template_inputformcontrols>
 </wssuc:InputFormSection>
 
-<wssuc:inputformsection ID="AugmentationSection" runat="server" Visible="<%# ShowAugmentationSection %>" title="Augmentation" description="Enable augmentation to let LDAPCP get group membership of federated users.<br/><br/>If not enabled, permissions granted on federated groups may not work.">
+<wssuc:inputformsection ID="AugmentationSection" runat="server" Visible="<%# ShowAugmentationSection %>" title="Augmentation" description="Enable augmentation to let LDAPCP get all the groups that the user is a member of.<br/><br/>If not enabled, permissions granted to federated groups may not work correctly.">
     <template_inputformcontrols>
         <p class="ms-error"><asp:Label ID="Label1" runat="server" EnableViewState="False" /></p>
         <asp:Checkbox Checked="false" Runat="server" Name="ChkEnableAugmentation" ID="ChkEnableAugmentation" OnClick="window.Ldapcp.AdminGlobalSettingsControl.InitAugmentationControls();" Text="Enable augmentation" />
@@ -301,7 +301,7 @@
 	</template_inputformcontrols>
 </wssuc:inputformsection>
 
-<wssuc:InputFormSection runat="server" Title="Display of user identifier results" description="Configure how entities created with identity claim type are shown in the people picker.<br/>It does not change the actual value of the entity, that is the user identifier.">
+<wssuc:InputFormSection runat="server" Title="Display of user identifier results" description="Configure how entities created with the identity claim type appear in the people picker.<br/>It does not affect the actual value of the entity, which is always set with the user identifier attribute.">
     <template_inputformcontrols>
 		<wssawc:InputFormRadioButton id="RbIdentityDefault"
 			LabelText="Show the user identifier value"
@@ -326,14 +326,14 @@
 		</td></tr>
 	</template_inputformcontrols>
 </wssuc:InputFormSection>
-<wssuc:InputFormSection runat="server" Title="Bypass LDAP lookup" Description="Completely bypass LDAP lookup and consider any input as valid.<br/><br/>This can be useful to keep people picker working even if connectivity with LDAP server is lost.">
+<wssuc:InputFormSection runat="server" Title="Bypass LDAP lookup" Description="Skip LDAP lookup and consider any input as valid.<br/><br/>This can be useful to keep people picker working even if connectivity with LDAP server is lost.">
     <template_inputformcontrols>
         <asp:Checkbox Checked="false" Runat="server" Name="ChkAlwaysResolveUserInput" ID="ChkAlwaysResolveUserInput" Text="Bypass LDAP lookup" />
 	</template_inputformcontrols>
 </wssuc:InputFormSection>
 <wssuc:InputFormSection runat="server" Title="Active Directory specific settings" Description="Customize LDAP lookup with settings specific to Active Directory.">
     <template_inputformcontrols>
-        <asp:Checkbox Checked="false" Runat="server" Name="ChkFilterEnabledUsersOnly" ID="ChkFilterEnabledUsersOnly" Text="Exclude disabled users (as documented in <a href='http://support.microsoft.com/kb/827754/' target='blank'>KB 827754</a>)." />
+        <asp:Checkbox Checked="false" Runat="server" Name="ChkFilterEnabledUsersOnly" ID="ChkFilterEnabledUsersOnly" Text="Exclude disabled users" />
         <br /><br />
         <asp:Checkbox Checked="false" Runat="server" Name="ChkFilterSecurityGroupsOnly" ID="ChkFilterSecurityGroupsOnly" Text="Exclude distribution lists" />
 	</template_inputformcontrols>
@@ -348,7 +348,7 @@
 		<wssawc:InputFormTextBox title="Text to display" class="ms-input" ID="TxtPickerEntityGroupName" Columns="50" Runat="server" MaxLength=255 />
 	</template_inputformcontrols>
 </wssuc:InputFormSection> --%>
-<wssuc:InputFormSection runat="server" Title="Require exact match" Description="Set to only return results that exactly match the user input (case-insensitive).">
+<wssuc:InputFormSection runat="server" Title="Require exact match" Description="Enable this to return only results that match exactly the user input (case-insensitive). ">
     <template_inputformcontrols>
 		<asp:Checkbox Checked="false" Runat="server" Name="ChkFilterExactMatchOnly" ID="ChkFilterExactMatchOnly" Text="Require exact match" />
 	</template_inputformcontrols>
@@ -361,7 +361,7 @@
         <p class="ldapcp-success"><asp:Label ID="LabelUpdateAdditionalLdapFilterOk" Runat="server" EnableViewState="False" /></p>
 	</template_inputformcontrols>
 </wssuc:InputFormSection>
-<wssuc:InputFormSection runat="server" Title="Reset LDAPCP configuration" description="Restore configuration to its default values. Every changes, including claim types configuration, will be reset.">
+<wssuc:InputFormSection runat="server" Title="Reset LDAPCP configuration" description="Restore configuration to its default values. All changes, including in claim types mappings, will be lost.">
     <template_inputformcontrols>
 		<asp:Button runat="server" ID="BtnResetLDAPCPConfig" Text="Reset LDAPCP configuration" onclick="BtnResetLDAPCPConfig_Click" class="ms-ButtonHeightWidth" OnClientClick="return confirm('Do you really want to reset LDAPCP configuration?');" />
 	</template_inputformcontrols>

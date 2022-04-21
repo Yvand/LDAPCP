@@ -60,13 +60,15 @@
       <Version>1.0.12</Version>
     </PackageReference>
     <PackageReference Include="Newtonsoft.Json">
-      <Version>12.0.2</Version>
+      <Version>13.0.1</Version>
     </PackageReference>
     <PackageReference Include="NUnit">
-      <Version>3.12.0</Version>
+      <Version>3.13.3</Version>
     </PackageReference>
     <PackageReference Include="NUnit3TestAdapter">
-      <Version>3.13.0</Version>
+      <Version>4.2.1</Version>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
     </PackageReference>
   </ItemGroup>
   <ItemGroup>

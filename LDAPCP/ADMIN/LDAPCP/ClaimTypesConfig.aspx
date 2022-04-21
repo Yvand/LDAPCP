@@ -11,7 +11,7 @@
     Claim types configuration for LDAPCP
 </asp:Content>
 <asp:Content ID="PageTitleInTitleArea" ContentPlaceHolderID="PlaceHolderPageTitleInTitleArea" runat="server">
-<%= String.Format("LDAPCP v{0} - <a href=\"{1}\" target=\"_blank\">LDAPCP.com</a>", FileVersionInfo.GetVersionInfo(Assembly.GetAssembly(typeof(LDAPCP)).Location).FileVersion, ClaimsProviderConstants.PUBLICSITEURL) %>
+    <%= String.Format("LDAPCP {0} - <a href=\"{1}\" target=\"_blank\">LDAPCP.com</a>", FileVersionInfo.GetVersionInfo(Assembly.GetAssembly(typeof(LDAPCP)).Location).FileVersion, ClaimsProviderConstants.PUBLICSITEURL) %>
 </asp:Content>
 <asp:Content ID="Main" ContentPlaceHolderID="PlaceHolderMain" runat="server">
     <table border="0" cellspacing="0" cellpadding="0" width="100%">

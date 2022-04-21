@@ -330,7 +330,13 @@ namespace ldapcp.ControlTemplates
 
             if (this.RbUseServerDomain.Checked)
             {
-                PersistedObject.LDAPConnectionsProp.Add(new LDAPConnection { UseSPServerConnectionToAD = true });
+                PersistedObject.LDAPConnectionsProp.Add(
+                    new LDAPConnection 
+                    {
+                        UseSPServerConnectionToAD = true ,
+                        EnableAugmentation = true,
+                    }
+                );
             }
             else
             {
@@ -343,6 +349,7 @@ namespace ldapcp.ControlTemplates
                         LDAPUsername = this.TxtLdapUsername.Text,
                         LDAPPassword = this.TxtLdapPassword.Text,
                         AuthenticationSettings = authNType,
+                        EnableAugmentation = true,
                     }
                 );
             }
