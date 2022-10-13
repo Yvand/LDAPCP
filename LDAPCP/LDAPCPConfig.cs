@@ -1,13 +1,17 @@
 ﻿using Microsoft.SharePoint;
 using Microsoft.SharePoint.Administration;
 using Microsoft.SharePoint.Administration.Claims;
+using Microsoft.SharePoint.Utilities;
 using Microsoft.SharePoint.WebControls;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.DirectoryServices;
+using System.DirectoryServices.ActiveDirectory;
+using System.DirectoryServices.Protocols;
 using System.Linq;
+using System.Net;
 using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -81,6 +85,10 @@ namespace ldapcp
                 }
             }
         }
+        /// <summary>
+        /// Regex to validate the following pattern: LDAP://contoso.local:636/DC=contoso,DC=local
+        /// </summary>
+        public static string RegexLdapPathValid = @"(?<ldapServer>.+)(?=\/)\/(?<distinguishedName>(?i)(DC=|CN=|OU=).*)";
 
         /// <summary>
         /// Escape characters to use for special characters in LDAP filters, as documented in https://ldap.com/ldap-filters/
@@ -775,10 +783,29 @@ namespace ldapcp
         public string LDAPPath  // Also required as a property for ASP.NET server side controls in admin pages.
         {
             get => Path;
-            set => Path = value;
+            set
+            {
+                Regex r1 = new Regex(ClaimsProviderConstants.RegexLdapPathValid);
+                Match match = r1.Match(value);
+                if (match.Success)
+                {
+                    Path = value;
+                    LdapServer = match.Groups["ldapServer"].Value;
+                    LdapDistinguishedName = match.Groups["distinguishedName"].Value;
+                }
+                else
+                {
+                    throw new ArgumentException("The value must match the following pattern: LDAP://contoso.local:port/DC=contoso,DC=local");
+                }
+            }
         }
         [Persisted]
         private string Path;
+
+        // Contains "LDAP://contoso.local:port"
+        private string LdapServer;
+        // Contains "DC=contoso,DC=local"
+        private string LdapDistinguishedName;
 
         public string LDAPUsername
         {
@@ -854,14 +881,14 @@ namespace ldapcp
         [Persisted]
         private string[] GroupMembershipAttributes = new string[] { "memberOf", "uniquememberof" };
 
-        /// <summary>
-        /// DirectoryEntry used to make LDAP queries
-        /// </summary>
-        public DirectoryEntry Directory
-        {
-            get => _Directory;
-            set => _Directory = value;
-        }
+        ///// <summary>
+        ///// DirectoryEntry used to make LDAP queries
+        ///// </summary>
+        //public DirectoryEntry Directory
+        //{
+        //    get => _Directory;
+        //    set => _Directory = value;
+        //}
         private DirectoryEntry _Directory;
 
         /// <summary>
@@ -904,6 +931,19 @@ namespace ldapcp
         }
         private string _RootContainer;
 
+        /// <summary>
+        /// Set to true to connect using LDAPS over SSL
+        /// </summary>
+        public bool EnableLDAPSOverSSL
+        {
+            get => _EnableLDAPSOverSSL;
+            set => _EnableLDAPSOverSSL = value;
+        }
+        [Persisted]
+        private bool _EnableLDAPSOverSSL = false;
+
+        private LdapConnection ldapConnection2;
+
         public LDAPConnection()
         {
         }
@@ -927,6 +967,161 @@ namespace ldapcp
                 }
             }
             return copy;
+        }
+
+        public void SetLDAPConnection(Uri currentContext)
+        {
+            string ProviderInternalName = "LDAPCP";
+            if (!this.UseSPServerConnectionToAD)
+            {
+                this._Directory = new DirectoryEntry(this.LDAPPath, this.LDAPUsername, this.LDAPPassword, this.AuthenticationSettings);
+            }
+            else if (this.EnableLDAPSOverSSL)
+            {
+                ldapConnection2 = new LdapConnection(this.LdapServer);
+                ldapConnection2.SessionOptions.SecureSocketLayer = true;
+                ldapConnection2.AuthType = AuthType.Negotiate;
+                NetworkCredential creds = null;
+                if (this.LDAPUsername.Contains('\\'))
+                {
+                    string[] domainAndName = this.LDAPUsername.Split('\\');
+                    creds = new NetworkCredential(domainAndName[0], this.LDAPPassword, domainAndName[1]);
+                }
+                else
+                {
+                    creds = new NetworkCredential(this.LDAPUsername, this.LDAPPassword);
+                }
+            }
+            else
+            {
+                try
+                {
+                    // This try block is to get domain name information about AD domain of current computer
+                    // If this fails, execution should still continue as:
+                    // - It will be attempted again in a different way in OperationContext.GetDomainInformation(), so it should be given a chance
+                    // - It often (only) fails with COMException, which tend to occur only in some code path, but finally works depending on how LDAPCP is called
+                    // - It's not essential, even though it can have serious impacts, for example, value of role claims miss the domain name
+                    Domain computerDomain = Domain.GetComputerDomain();
+                    this._Directory = computerDomain.GetDirectoryEntry();
+
+                    // Set properties this.DomainFQDN and this.DomainName here as a workaround to issue https://github.com/Yvand/LDAPCP/issues/87
+                    this.DomainFQDN = computerDomain.Name;
+                    this.DomainName = OperationContext.GetDomainName(this.DomainFQDN);
+
+                    // Property this.AuthenticationSettings must be set, in order to build the PrincipalContext correctly in GetGroupsFromActiveDirectory()
+                    this.AuthenticationSettings = this._Directory.AuthenticationType;
+                }
+                catch (System.Runtime.InteropServices.COMException ex)
+                {
+                    // Domain.GetDomain() may fail with the following error: System.Runtime.InteropServices.COMException: Retrieving the COM class factory for component with CLSID {080D0D78-F421-11D0-A36E-00C04FB950DC} failed due to the following error: 800703fa Illegal operation attempted on a registry key that has been marked for deletion. (Exception from HRESULT: 0x800703FA).
+                    ClaimsProviderLogging.LogException("", $"while getting domain names information about AD domain of current computer (COMException)", TraceCategory.Configuration, ex);
+                }
+                catch (Exception ex)
+                {
+                    // Domain.GetDomain() may fail with the following error: System.Runtime.InteropServices.COMException: Retrieving the COM class factory for component with CLSID {080D0D78-F421-11D0-A36E-00C04FB950DC} failed due to the following error: 800703fa Illegal operation attempted on a registry key that has been marked for deletion. (Exception from HRESULT: 0x800703FA).
+                    ClaimsProviderLogging.LogException("", $"while getting domain names information about AD domain of current computer", TraceCategory.Configuration, ex);
+                }
+            }
+
+            if (String.IsNullOrEmpty(this.RootContainer) || String.IsNullOrEmpty(this.DomainFQDN) || String.IsNullOrEmpty(this.DomainName))
+            {
+                // This block does LDAP operations
+                using (new SPMonitoredScope($"[{ProviderInternalName}] Get domain names / root container information about LDAP server \"{this._Directory.Path}\"", 2000))
+                {
+                    // Retrieve FQDN and domain name of current DirectoryEntry
+                    string domainName = String.Empty;
+                    string domainFQDN = String.Empty;
+                    string domaindistinguishedName = String.Empty;
+
+                    // If there is no existing LDAPCP configuration, this method will be called each time as property this.RootContainer will be null
+                    OperationContext.GetDomainInformation(this._Directory, out domaindistinguishedName, out domainName, out domainFQDN);
+                    // Cache those values for the whole lifetime of the process, because getting them requires LDAP operations
+                    if (!String.IsNullOrWhiteSpace(domaindistinguishedName))
+                    {
+                        this.RootContainer = domaindistinguishedName;
+                    }
+                    if (!String.IsNullOrWhiteSpace(domainName))
+                    {
+                        this.DomainName = domainName;
+                    }
+                    if (!String.IsNullOrWhiteSpace(domainFQDN))
+                    {
+                        this.DomainFQDN = domainFQDN;
+                    }
+                }
+            }
+        }
+
+        public SearchResult FindOne(string filter, string[] propertiesToLoad)
+        {
+            SearchResultCollection result = Find(filter, propertiesToLoad, true);
+            return result[0];
+        }
+
+        public SearchResultCollection FindAll(string filter, string[] propertiesToLoad)
+        {
+            IEnumerable<SearchResult> results = Find(filter, propertiesToLoad, false);
+            List<LDAPSearchResult> LDAPSearchResuls = new List<LDAPSearchResult>(results.Count());
+            foreach (SearchResult result in results)
+            {
+                LDAPSearchResuls.Add(new LDAPSearchResult()
+                {
+                    DN = result.Path,
+                    propertyCollection = result.Properties,
+                }
+                );
+            }
+        }
+
+        public IEnumerable<SearchResult> Find(string filter, string[] propertiesToLoad, bool fineOne)
+        {
+            string ProviderInternalName = "LDAPCP";
+            if (EnableLDAPSOverSSL)
+            {
+
+            }
+            else
+            {
+                DirectoryEntry directory = this._Directory;
+                using (DirectorySearcher ds = new DirectorySearcher(filter))
+                {
+                    ds.SearchRoot = directory;
+                    //ds.SizeLimit = currentContext.MaxCount;
+                    //ds.ClientTimeout = new TimeSpan(0, 0, this.CurrentConfiguration.LDAPQueryTimeout); // Set the timeout of the query
+                    ds.PropertiesToLoad.AddRange(propertiesToLoad);
+
+                    string loggMessage = $"[{ProviderInternalName}] Connecting to \"{this.LDAPPath}\" with AuthenticationType \"{this.AuthenticationTypes}\", authenticating ";
+                    loggMessage += String.IsNullOrWhiteSpace(this.LDAPUsername) ? "as process identity" : $"with credentials \"{this.LDAPUsername}\"";
+                    loggMessage += $" and sending a query with filter \"{ds.Filter}\"...";
+                    using (new SPMonitoredScope(loggMessage, 3000)) // threshold of 3 seconds before it's considered too much. If exceeded it is recorded in a higher logging level
+                    {
+                        try
+                        {
+                            ClaimsProviderLogging.Log(loggMessage, TraceSeverity.Verbose, EventSeverity.Information, TraceCategory.LDAP_Lookup);
+                            Stopwatch stopWatch = new Stopwatch();
+                            stopWatch.Start();
+                            // https://stackoverflow.com/questions/10715159/does-principalsearchresultt-automatically-dispose-all-elements-in-its-collecti
+                            using (SearchResultCollection directoryResults = ds.FindAll())
+                            {
+                                stopWatch.Stop();
+                                ClaimsProviderLogging.Log($"[{ProviderInternalName}] Got {directoryResults.Count.ToString()} result(s) in {stopWatch.ElapsedMilliseconds.ToString()}ms from '{directory.Path}' with filter '{ds.Filter}'", TraceSeverity.Medium, EventSeverity.Information, TraceCategory.LDAP_Lookup);
+                                foreach (SearchResult item in directoryResults)
+                                {
+                                    yield return item;
+                                }
+                            }
+                        }
+                        //catch (Exception ex)
+                        //{
+                        //    ClaimsProviderLogging.LogException(ProviderInternalName, "while connecting to LDAP server " + directory.Path, TraceCategory.LDAP_Lookup, ex);
+                        //}
+                        finally
+                        {
+                            directory.Dispose();
+                        }
+                    }
+                }
+            }
         }
     }
 

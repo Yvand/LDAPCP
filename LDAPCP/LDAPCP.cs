@@ -935,8 +935,8 @@ namespace ldapcp
 
             Parallel.ForEach(ldapServers.Where(x => !String.IsNullOrEmpty(x.Filter)), ldapConnection =>
             {
-                Debug.WriteLine($"ldapConnection: Path: {ldapConnection.Directory.Path}, UseSPServerConnectionToAD: {ldapConnection.UseSPServerConnectionToAD}");
-                ClaimsProviderLogging.LogDebug($"ldapConnection: Path: {ldapConnection.Directory.Path}, UseSPServerConnectionToAD: {ldapConnection.UseSPServerConnectionToAD}");
+                Debug.WriteLine($"ldapConnection: Path: {ldapConnection.LDAPPath}, UseSPServerConnectionToAD: {ldapConnection.UseSPServerConnectionToAD}");
+                ClaimsProviderLogging.LogDebug($"ldapConnection: Path: {ldapConnection.LDAPPath}, UseSPServerConnectionToAD: {ldapConnection.UseSPServerConnectionToAD}");
 #pragma warning disable CS0618 // Type or member is obsolete
                 SetLDAPConnection(currentContext, ldapConnection);
 #pragma warning restore CS0618 // Type or member is obsolete
@@ -965,8 +965,8 @@ namespace ldapcp
                         }
                     }
 
-                    string loggMessage = $"[{ProviderInternalName}] Connecting to \"{ldapConnection.Directory.Path}\" with AuthenticationType \"{ldapConnection.Directory.AuthenticationType}\", authenticating ";
-                    loggMessage += String.IsNullOrWhiteSpace(ldapConnection.Directory.Username) ? "as process identity" : $"with credentials \"{ldapConnection.Directory.Username}\"";
+                    string loggMessage = $"[{ProviderInternalName}] Connecting to \"{ldapConnection.LDAPPath}\" with AuthenticationType \"{ldapConnection.AuthenticationType}\", authenticating ";
+                    loggMessage += String.IsNullOrWhiteSpace(ldapConnection.LDAPUsername) ? "as process identity" : $"with credentials \"{ldapConnection.LDAPUsername}\"";
                     loggMessage += $" and sending a query with filter \"{ds.Filter}\"...";
                     using (new SPMonitoredScope(loggMessage, 3000)) // threshold of 3 seconds before it's considered too much. If exceeded it is recorded in a higher logging level
                     {
@@ -1021,68 +1021,69 @@ namespace ldapcp
         /// <param name="ldapConnection">LDAPConnection to configure</param>
         protected virtual void SetLDAPConnection(Uri currentContext, LDAPConnection ldapConnection)
         {
-            if (!ldapConnection.UseSPServerConnectionToAD)
-            {
-                ldapConnection.Directory = new DirectoryEntry(ldapConnection.LDAPPath, ldapConnection.LDAPUsername, ldapConnection.LDAPPassword, ldapConnection.AuthenticationSettings);
-            }
-            else
-            {
-                try
-                {
-                    // This try block is to get domain name information about AD domain of current computer
-                    // If this fails, execution should still continue as:
-                    // - It will be attempted again in a different way in OperationContext.GetDomainInformation(), so it should be given a chance
-                    // - It often (only) fails with COMException, which tend to occur only in some code path, but finally works depending on how LDAPCP is called
-                    // - It's not essential, even though it can have serious impacts, for example, value of role claims miss the domain name
-                    Domain computerDomain = Domain.GetComputerDomain();
-                    ldapConnection.Directory = computerDomain.GetDirectoryEntry();
+            ldapConnection.SetLDAPConnection(currentContext);
+            //if (!ldapConnection.UseSPServerConnectionToAD)
+            //{
+            //    ldapConnection.Directory = new DirectoryEntry(ldapConnection.LDAPPath, ldapConnection.LDAPUsername, ldapConnection.LDAPPassword, ldapConnection.AuthenticationSettings);
+            //}
+            //else
+            //{
+            //    try
+            //    {
+            //        // This try block is to get domain name information about AD domain of current computer
+            //        // If this fails, execution should still continue as:
+            //        // - It will be attempted again in a different way in OperationContext.GetDomainInformation(), so it should be given a chance
+            //        // - It often (only) fails with COMException, which tend to occur only in some code path, but finally works depending on how LDAPCP is called
+            //        // - It's not essential, even though it can have serious impacts, for example, value of role claims miss the domain name
+            //        Domain computerDomain = Domain.GetComputerDomain();
+            //        ldapConnection.Directory = computerDomain.GetDirectoryEntry();
 
-                    // Set properties LDAPConnection.DomainFQDN and LDAPConnection.DomainName here as a workaround to issue https://github.com/Yvand/LDAPCP/issues/87
-                    ldapConnection.DomainFQDN = computerDomain.Name;
-                    ldapConnection.DomainName = OperationContext.GetDomainName(ldapConnection.DomainFQDN);
+            //        // Set properties LDAPConnection.DomainFQDN and LDAPConnection.DomainName here as a workaround to issue https://github.com/Yvand/LDAPCP/issues/87
+            //        ldapConnection.DomainFQDN = computerDomain.Name;
+            //        ldapConnection.DomainName = OperationContext.GetDomainName(ldapConnection.DomainFQDN);
 
-                    // Property LDAPConnection.AuthenticationSettings must be set, in order to build the PrincipalContext correctly in GetGroupsFromActiveDirectory()
-                    ldapConnection.AuthenticationSettings = ldapConnection.Directory.AuthenticationType;
-                }
-                catch (System.Runtime.InteropServices.COMException ex)
-                {
-                    // Domain.GetDomain() may fail with the following error: System.Runtime.InteropServices.COMException: Retrieving the COM class factory for component with CLSID {080D0D78-F421-11D0-A36E-00C04FB950DC} failed due to the following error: 800703fa Illegal operation attempted on a registry key that has been marked for deletion. (Exception from HRESULT: 0x800703FA).
-                    ClaimsProviderLogging.LogException("", $"while getting domain names information about AD domain of current computer (COMException)", TraceCategory.Configuration, ex);
-                }
-                catch (Exception ex)
-                {
-                    // Domain.GetDomain() may fail with the following error: System.Runtime.InteropServices.COMException: Retrieving the COM class factory for component with CLSID {080D0D78-F421-11D0-A36E-00C04FB950DC} failed due to the following error: 800703fa Illegal operation attempted on a registry key that has been marked for deletion. (Exception from HRESULT: 0x800703FA).
-                    ClaimsProviderLogging.LogException("", $"while getting domain names information about AD domain of current computer", TraceCategory.Configuration, ex);
-                }
-            }
+            //        // Property LDAPConnection.AuthenticationSettings must be set, in order to build the PrincipalContext correctly in GetGroupsFromActiveDirectory()
+            //        ldapConnection.AuthenticationSettings = ldapConnection.Directory.AuthenticationType;
+            //    }
+            //    catch (System.Runtime.InteropServices.COMException ex)
+            //    {
+            //        // Domain.GetDomain() may fail with the following error: System.Runtime.InteropServices.COMException: Retrieving the COM class factory for component with CLSID {080D0D78-F421-11D0-A36E-00C04FB950DC} failed due to the following error: 800703fa Illegal operation attempted on a registry key that has been marked for deletion. (Exception from HRESULT: 0x800703FA).
+            //        ClaimsProviderLogging.LogException("", $"while getting domain names information about AD domain of current computer (COMException)", TraceCategory.Configuration, ex);
+            //    }
+            //    catch (Exception ex)
+            //    {
+            //        // Domain.GetDomain() may fail with the following error: System.Runtime.InteropServices.COMException: Retrieving the COM class factory for component with CLSID {080D0D78-F421-11D0-A36E-00C04FB950DC} failed due to the following error: 800703fa Illegal operation attempted on a registry key that has been marked for deletion. (Exception from HRESULT: 0x800703FA).
+            //        ClaimsProviderLogging.LogException("", $"while getting domain names information about AD domain of current computer", TraceCategory.Configuration, ex);
+            //    }
+            //}
 
-            if (String.IsNullOrEmpty(ldapConnection.RootContainer) || String.IsNullOrEmpty(ldapConnection.DomainFQDN) || String.IsNullOrEmpty(ldapConnection.DomainName))
-            {
-                // This block does LDAP operations
-                using (new SPMonitoredScope($"[{ProviderInternalName}] Get domain names / root container information about LDAP server \"{ldapConnection.Directory.Path}\"", 2000))
-                {
-                    // Retrieve FQDN and domain name of current DirectoryEntry
-                    string domainName = String.Empty;
-                    string domainFQDN = String.Empty;
-                    string domaindistinguishedName = String.Empty;
+            //if (String.IsNullOrEmpty(ldapConnection.RootContainer) || String.IsNullOrEmpty(ldapConnection.DomainFQDN) || String.IsNullOrEmpty(ldapConnection.DomainName))
+            //{
+            //    // This block does LDAP operations
+            //    using (new SPMonitoredScope($"[{ProviderInternalName}] Get domain names / root container information about LDAP server \"{ldapConnection.Directory.Path}\"", 2000))
+            //    {
+            //        // Retrieve FQDN and domain name of current DirectoryEntry
+            //        string domainName = String.Empty;
+            //        string domainFQDN = String.Empty;
+            //        string domaindistinguishedName = String.Empty;
 
-                    // If there is no existing LDAPCP configuration, this method will be called each time as property LDAPConnection.RootContainer will be null
-                    OperationContext.GetDomainInformation(ldapConnection.Directory, out domaindistinguishedName, out domainName, out domainFQDN);
-                    // Cache those values for the whole lifetime of the process, because getting them requires LDAP operations
-                    if (!String.IsNullOrWhiteSpace(domaindistinguishedName))
-                    {
-                        ldapConnection.RootContainer = domaindistinguishedName;
-                    }
-                    if (!String.IsNullOrWhiteSpace(domainName))
-                    {
-                        ldapConnection.DomainName = domainName;
-                    }
-                    if (!String.IsNullOrWhiteSpace(domainFQDN))
-                    {
-                        ldapConnection.DomainFQDN = domainFQDN;
-                    }
-                }
-            }
+            //        // If there is no existing LDAPCP configuration, this method will be called each time as property LDAPConnection.RootContainer will be null
+            //        OperationContext.GetDomainInformation(ldapConnection.Directory, out domaindistinguishedName, out domainName, out domainFQDN);
+            //        // Cache those values for the whole lifetime of the process, because getting them requires LDAP operations
+            //        if (!String.IsNullOrWhiteSpace(domaindistinguishedName))
+            //        {
+            //            ldapConnection.RootContainer = domaindistinguishedName;
+            //        }
+            //        if (!String.IsNullOrWhiteSpace(domainName))
+            //        {
+            //            ldapConnection.DomainName = domainName;
+            //        }
+            //        if (!String.IsNullOrWhiteSpace(domainFQDN))
+            //        {
+            //            ldapConnection.DomainFQDN = domainFQDN;
+            //        }
+            //    }
+            //}
         }
 
         /// <summary>
@@ -1448,8 +1449,8 @@ namespace ldapcp
             SetLDAPConnection(currentContext, ldapConnection);
 #pragma warning restore CS0618 // Type or member is obsolete
             string ldapFilter = string.Format("(&(ObjectClass={0}) ({1}={2}){3})", IdentityClaimTypeConfig.LDAPClass, IdentityClaimTypeConfig.LDAPAttribute, currentContext.IncomingEntity.Value, IdentityClaimTypeConfig.AdditionalLDAPFilter);
-            string logMessageCredentials = String.IsNullOrWhiteSpace(ldapConnection.Directory.Username) ? "process identity" : ldapConnection.Directory.Username;
-            string directoryDetails = $"from LDAP server \"{ldapConnection.Directory.Path}\" with LDAP filter \"{ldapFilter}\" (authenticate as \"{logMessageCredentials}\" with AuthenticationType \"{ldapConnection.Directory.AuthenticationType}\").";
+            string logMessageCredentials = String.IsNullOrWhiteSpace(ldapConnection.LDAPUsername) ? "process identity" : ldapConnection.LDAPUsername;
+            string directoryDetails = $"from LDAP server \"{ldapConnection.LDAPPath}\" with LDAP filter \"{ldapFilter}\" (authenticate as \"{logMessageCredentials}\" with AuthenticationType \"{ldapConnection.Directory.AuthenticationType}\").";
             ClaimsProviderLogging.Log($"[{ProviderInternalName}] Getting LDAP groups of user \"{currentContext.IncomingEntity.Value}\" {directoryDetails}", TraceSeverity.Verbose, EventSeverity.Information, TraceCategory.Augmentation);
             using (new SPMonitoredScope($"[{ProviderInternalName}] Get LDAP groups of user \"{currentContext.IncomingEntity.Value}\" {directoryDetails}", 1000))
             {
@@ -2068,6 +2069,10 @@ namespace ldapcp
         public SearchResult SearchResult;
         public string DomainName;
         public string DomainFQDN;
+
+        public string DN;
+        public ResultPropertyCollection propertyCollection;
+        public KeyValuePair<string, string[]> ldapProperties;
     }
 
     public class ConsolidatedResultCollection : Collection<ConsolidatedResult>

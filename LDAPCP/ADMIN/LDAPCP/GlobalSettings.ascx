@@ -225,7 +225,11 @@
 			</fieldset>
 			</div>
 			<tr><td colspan='2' style="padding-left: 30px;">
-				<label>Select the <a href="http://msdn.microsoft.com/en-us/library/system.directoryservices.authenticationtypes(v=vs.110).aspx" target="_blank">authentication type</a> to use (optional):</label>
+				<%--<label>Connect using <a href="https://docs.microsoft.com/en-us/troubleshoot/windows-server/identity/enable-ldap-over-ssl-3rd-certification-authority" target="_blank">LDAPS over SSL</a></label>--%>
+                <asp:Checkbox Checked="false" Runat="server" Name="ChkEnableLDAPSOverSSL" ID="Checkbox1" OnClick="window.Ldapcp.AdminGlobalSettingsControl.InitAugmentationControls();" Text="Connect using <a href='https://docs.microsoft.com/en-us/troubleshoot/windows-server/identity/enable-ldap-over-ssl-3rd-certification-authority' target='_blank'>LDAPS over SSL</a>. In this case the format MUST be like this: \"LDAP://contoso.local:636/DC=contoso,DC=local\"" />
+			</td></tr>
+			<tr><td colspan='2' style="padding-left: 30px;">
+				<label>Or set the <a href="http://msdn.microsoft.com/en-us/library/system.directoryservices.authenticationtypes(v=vs.110).aspx" target="_blank">authentication type</a> (optional):</label>
 				<wssawc:InputFormCheckBoxList
 					id="CblAuthenticationTypes" 
 					runat="server"
