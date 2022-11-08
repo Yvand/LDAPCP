@@ -46,7 +46,7 @@ namespace ldapcp
 #if DEBUG
              DefaultTraceSeverity(TraceSeverity.Verbose),
 #else
-             DefaultTraceSeverity(TraceSeverity.VerboseEx),
+             DefaultTraceSeverity(TraceSeverity.High),
 #endif
              DefaultEventSeverity(EventSeverity.Error)]
             Debug,
