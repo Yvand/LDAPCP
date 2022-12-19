@@ -1296,11 +1296,17 @@ namespace ldapcp
         {
             // Build ContextOptions as documented in https://stackoverflow.com/questions/17451277/what-equivalent-of-authenticationtypes-secure-in-principalcontexts-contextoptio
             ContextOptions contextOptions = new ContextOptions();
-            if ((ldapConnection.AuthenticationSettings & AuthenticationTypes.Sealing) == AuthenticationTypes.Sealing) { contextOptions |= ContextOptions.Sealing; }
-            if ((ldapConnection.AuthenticationSettings & AuthenticationTypes.Encryption) == AuthenticationTypes.Encryption) { contextOptions |= ContextOptions.SecureSocketLayer; }
-            if ((ldapConnection.AuthenticationSettings & AuthenticationTypes.ServerBind) == AuthenticationTypes.ServerBind) { contextOptions |= ContextOptions.ServerBind; }
-            if ((ldapConnection.AuthenticationSettings & AuthenticationTypes.Signing) == AuthenticationTypes.Signing) { contextOptions |= ContextOptions.Signing; }
-            if ((ldapConnection.AuthenticationSettings & AuthenticationTypes.None) == AuthenticationTypes.None) { contextOptions |= ContextOptions.SimpleBind; }
+            if (ldapConnection.AuthenticationSettings == AuthenticationTypes.None)
+            {
+                contextOptions |= ContextOptions.SimpleBind;
+            }
+            else
+            {
+                if ((ldapConnection.AuthenticationSettings & AuthenticationTypes.Sealing) == AuthenticationTypes.Sealing) { contextOptions |= ContextOptions.Sealing; }
+                if ((ldapConnection.AuthenticationSettings & AuthenticationTypes.Encryption) == AuthenticationTypes.Encryption) { contextOptions |= ContextOptions.SecureSocketLayer; }
+                if ((ldapConnection.AuthenticationSettings & AuthenticationTypes.ServerBind) == AuthenticationTypes.ServerBind) { contextOptions |= ContextOptions.ServerBind; }
+                if ((ldapConnection.AuthenticationSettings & AuthenticationTypes.Signing) == AuthenticationTypes.Signing) { contextOptions |= ContextOptions.Signing; }
+            }
 
             List<SPClaim> groups = new List<SPClaim>();
             string logMessageCredentials = ldapConnection.UseSPServerConnectionToAD ? "process identity" : ldapConnection.LDAPUsername;
