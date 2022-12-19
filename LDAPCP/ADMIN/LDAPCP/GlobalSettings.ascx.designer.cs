@@ -7,13 +7,11 @@
 // </auto-generated>
 //------------------------------------------------------------------------------
 
-namespace ldapcp.ControlTemplates
-{
-
-
-    public partial class GlobalSettings
-    {
-
+namespace ldapcp.ControlTemplates {
+    
+    
+    public partial class GlobalSettings {
+        
         /// <summary>
         /// LabelErrorMessage control.
         /// </summary>
@@ -22,7 +20,7 @@ namespace ldapcp.ControlTemplates
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
         protected global::System.Web.UI.WebControls.Label LabelErrorMessage;
-
+        
         /// <summary>
         /// ValidateTopSection control.
         /// </summary>
@@ -31,7 +29,7 @@ namespace ldapcp.ControlTemplates
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
         protected global::System.Web.UI.UserControl ValidateTopSection;
-
+        
         /// <summary>
         /// BtnOKTop control.
         /// </summary>
@@ -40,7 +38,7 @@ namespace ldapcp.ControlTemplates
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
         protected global::System.Web.UI.WebControls.Button BtnOKTop;
-
+        
         /// <summary>
         /// CurrentLdapConnectionSection control.
         /// </summary>
@@ -49,7 +47,7 @@ namespace ldapcp.ControlTemplates
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
         protected global::System.Web.UI.UserControl CurrentLdapConnectionSection;
-
+        
         /// <summary>
         /// grdLDAPConnections control.
         /// </summary>
@@ -58,7 +56,7 @@ namespace ldapcp.ControlTemplates
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
         protected global::Microsoft.SharePoint.WebControls.SPGridView grdLDAPConnections;
-
+        
         /// <summary>
         /// NewLdapConnectionSection control.
         /// </summary>
@@ -67,7 +65,7 @@ namespace ldapcp.ControlTemplates
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
         protected global::System.Web.UI.UserControl NewLdapConnectionSection;
-
+        
         /// <summary>
         /// RbUseServerDomain control.
         /// </summary>
@@ -76,7 +74,7 @@ namespace ldapcp.ControlTemplates
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
         protected global::Microsoft.SharePoint.WebControls.InputFormRadioButton RbUseServerDomain;
-
+        
         /// <summary>
         /// RbUseCustomConnection control.
         /// </summary>
@@ -85,7 +83,7 @@ namespace ldapcp.ControlTemplates
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
         protected global::Microsoft.SharePoint.WebControls.InputFormRadioButton RbUseCustomConnection;
-
+        
         /// <summary>
         /// TxtLdapConnectionString control.
         /// </summary>
@@ -94,7 +92,7 @@ namespace ldapcp.ControlTemplates
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
         protected global::Microsoft.SharePoint.WebControls.InputFormTextBox TxtLdapConnectionString;
-
+        
         /// <summary>
         /// TxtLdapUsername control.
         /// </summary>
@@ -103,7 +101,7 @@ namespace ldapcp.ControlTemplates
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
         protected global::Microsoft.SharePoint.WebControls.InputFormTextBox TxtLdapUsername;
-
+        
         /// <summary>
         /// TxtLdapPassword control.
         /// </summary>
@@ -112,7 +110,7 @@ namespace ldapcp.ControlTemplates
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
         protected global::Microsoft.SharePoint.WebControls.InputFormTextBox TxtLdapPassword;
-
+        
         /// <summary>
         /// CblAuthenticationTypes control.
         /// </summary>
@@ -121,7 +119,7 @@ namespace ldapcp.ControlTemplates
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
         protected global::Microsoft.SharePoint.WebControls.InputFormCheckBoxList CblAuthenticationTypes;
-
+        
         /// <summary>
         /// BtnTestLdapConnection control.
         /// </summary>
@@ -130,7 +128,7 @@ namespace ldapcp.ControlTemplates
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
         protected global::System.Web.UI.WebControls.Button BtnTestLdapConnection;
-
+        
         /// <summary>
         /// BtnAddLdapConnection control.
         /// </summary>
@@ -139,7 +137,7 @@ namespace ldapcp.ControlTemplates
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
         protected global::System.Web.UI.WebControls.Button BtnAddLdapConnection;
-
+        
         /// <summary>
         /// LabelErrorTestLdapConnection control.
         /// </summary>
@@ -148,7 +146,7 @@ namespace ldapcp.ControlTemplates
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
         protected global::System.Web.UI.WebControls.Label LabelErrorTestLdapConnection;
-
+        
         /// <summary>
         /// LabelTestLdapConnectionOK control.
         /// </summary>
@@ -157,7 +155,7 @@ namespace ldapcp.ControlTemplates
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
         protected global::System.Web.UI.WebControls.Label LabelTestLdapConnectionOK;
-
+        
         /// <summary>
         /// AugmentationSection control.
         /// </summary>
@@ -166,7 +164,7 @@ namespace ldapcp.ControlTemplates
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
         protected global::System.Web.UI.UserControl AugmentationSection;
-
+        
         /// <summary>
         /// Label1 control.
         /// </summary>
@@ -175,7 +173,7 @@ namespace ldapcp.ControlTemplates
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
         protected global::System.Web.UI.WebControls.Label Label1;
-
+        
         /// <summary>
         /// ChkEnableAugmentation control.
         /// </summary>
@@ -184,7 +182,7 @@ namespace ldapcp.ControlTemplates
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
         protected global::System.Web.UI.WebControls.CheckBox ChkEnableAugmentation;
-
+        
         /// <summary>
         /// DdlClaimTypes control.
         /// </summary>
@@ -193,7 +191,7 @@ namespace ldapcp.ControlTemplates
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
         protected global::System.Web.UI.WebControls.DropDownList DdlClaimTypes;
-
+        
         /// <summary>
         /// GridLdapConnections control.
         /// </summary>
@@ -202,7 +200,7 @@ namespace ldapcp.ControlTemplates
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
         protected global::Microsoft.SharePoint.WebControls.SPGridView GridLdapConnections;
-
+        
         /// <summary>
         /// txtTimeout control.
         /// </summary>
@@ -211,7 +209,7 @@ namespace ldapcp.ControlTemplates
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
         protected global::Microsoft.SharePoint.WebControls.InputFormTextBox txtTimeout;
-
+        
         /// <summary>
         /// TxtUserIdentifierLDAPClass control.
         /// </summary>
@@ -220,7 +218,7 @@ namespace ldapcp.ControlTemplates
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
         protected global::System.Web.UI.WebControls.TextBox TxtUserIdentifierLDAPClass;
-
+        
         /// <summary>
         /// TxtUserIdentifierLDAPAttribute control.
         /// </summary>
@@ -229,7 +227,7 @@ namespace ldapcp.ControlTemplates
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
         protected global::System.Web.UI.WebControls.TextBox TxtUserIdentifierLDAPAttribute;
-
+        
         /// <summary>
         /// RbIdentityDefault control.
         /// </summary>
@@ -238,7 +236,7 @@ namespace ldapcp.ControlTemplates
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
         protected global::Microsoft.SharePoint.WebControls.InputFormRadioButton RbIdentityDefault;
-
+        
         /// <summary>
         /// RbIdentityCustomLDAP control.
         /// </summary>
@@ -247,7 +245,7 @@ namespace ldapcp.ControlTemplates
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
         protected global::Microsoft.SharePoint.WebControls.InputFormRadioButton RbIdentityCustomLDAP;
-
+        
         /// <summary>
         /// TxtLdapAttributeToDisplay control.
         /// </summary>
@@ -256,7 +254,7 @@ namespace ldapcp.ControlTemplates
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
         protected global::Microsoft.SharePoint.WebControls.InputFormTextBox TxtLdapAttributeToDisplay;
-
+        
         /// <summary>
         /// ChkIdentityShowAdditionalAttribute control.
         /// </summary>
@@ -265,7 +263,7 @@ namespace ldapcp.ControlTemplates
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
         protected global::System.Web.UI.WebControls.CheckBox ChkIdentityShowAdditionalAttribute;
-
+        
         /// <summary>
         /// ChkAlwaysResolveUserInput control.
         /// </summary>
@@ -274,7 +272,7 @@ namespace ldapcp.ControlTemplates
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
         protected global::System.Web.UI.WebControls.CheckBox ChkAlwaysResolveUserInput;
-
+        
         /// <summary>
         /// ChkFilterEnabledUsersOnly control.
         /// </summary>
@@ -283,7 +281,7 @@ namespace ldapcp.ControlTemplates
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
         protected global::System.Web.UI.WebControls.CheckBox ChkFilterEnabledUsersOnly;
-
+        
         /// <summary>
         /// ChkFilterSecurityGroupsOnly control.
         /// </summary>
@@ -292,7 +290,7 @@ namespace ldapcp.ControlTemplates
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
         protected global::System.Web.UI.WebControls.CheckBox ChkFilterSecurityGroupsOnly;
-
+        
         /// <summary>
         /// ChkFilterExactMatchOnly control.
         /// </summary>
@@ -301,7 +299,7 @@ namespace ldapcp.ControlTemplates
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
         protected global::System.Web.UI.WebControls.CheckBox ChkFilterExactMatchOnly;
-
+        
         /// <summary>
         /// TxtAdditionalUserLdapFilter control.
         /// </summary>
@@ -310,7 +308,7 @@ namespace ldapcp.ControlTemplates
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
         protected global::Microsoft.SharePoint.WebControls.InputFormTextBox TxtAdditionalUserLdapFilter;
-
+        
         /// <summary>
         /// BtnUpdateAdditionalUserLdapFilter control.
         /// </summary>
@@ -319,7 +317,7 @@ namespace ldapcp.ControlTemplates
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
         protected global::System.Web.UI.WebControls.Button BtnUpdateAdditionalUserLdapFilter;
-
+        
         /// <summary>
         /// LabelUpdateAdditionalLdapFilterOk control.
         /// </summary>
@@ -328,7 +326,7 @@ namespace ldapcp.ControlTemplates
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
         protected global::System.Web.UI.WebControls.Label LabelUpdateAdditionalLdapFilterOk;
-
+        
         /// <summary>
         /// BtnResetLDAPCPConfig control.
         /// </summary>
@@ -337,7 +335,7 @@ namespace ldapcp.ControlTemplates
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
         protected global::System.Web.UI.WebControls.Button BtnResetLDAPCPConfig;
-
+        
         /// <summary>
         /// ValidateSection control.
         /// </summary>
@@ -346,7 +344,7 @@ namespace ldapcp.ControlTemplates
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
         protected global::System.Web.UI.UserControl ValidateSection;
-
+        
         /// <summary>
         /// BtnOK control.
         /// </summary>
