@@ -1293,7 +1293,9 @@ namespace ldapcp
         /// <returns></returns>
         protected virtual List<SPClaim> GetGroupsFromActiveDirectory(LDAPConnection ldapConnection, OperationContext currentContext, ClaimTypeConfig groupCTConfig)
         {
-            // Build ContextOptions as documented in https://stackoverflow.com/questions/17451277/what-equivalent-of-authenticationtypes-secure-in-principalcontexts-contextoptio
+            // Convert AuthenticationTypes to ContextOptions, slightly inspired by https://stackoverflow.com/questions/17451277/what-equivalent-of-authenticationtypes-secure-in-principalcontexts-contextoptio
+            // AuthenticationTypes Enum: https://learn.microsoft.com/en-us/dotnet/api/system.directoryservices.authenticationtypes?view=netframework-4.8.1
+            // ContextOptions Enum: https://learn.microsoft.com/en-us/dotnet/api/system.directoryservices.accountmanagement.contextoptions?view=netframework-4.8.1
             ContextOptions contextOptions = new ContextOptions();
             if (ldapConnection.AuthenticationSettings == AuthenticationTypes.None)
             {
@@ -1302,7 +1304,10 @@ namespace ldapcp
             else
             {
                 if ((ldapConnection.AuthenticationSettings & AuthenticationTypes.Sealing) == AuthenticationTypes.Sealing) { contextOptions |= ContextOptions.Sealing; }
-                if ((ldapConnection.AuthenticationSettings & AuthenticationTypes.Encryption) == AuthenticationTypes.Encryption) { contextOptions |= ContextOptions.SecureSocketLayer; }
+                if (
+                    (ldapConnection.AuthenticationSettings & AuthenticationTypes.Encryption) == AuthenticationTypes.Encryption ||
+                    (ldapConnection.AuthenticationSettings & AuthenticationTypes.SecureSocketsLayer) == AuthenticationTypes.SecureSocketsLayer
+                ) { contextOptions |= ContextOptions.SecureSocketLayer; }
                 if ((ldapConnection.AuthenticationSettings & AuthenticationTypes.ServerBind) == AuthenticationTypes.ServerBind) { contextOptions |= ContextOptions.ServerBind; }
                 if ((ldapConnection.AuthenticationSettings & AuthenticationTypes.Signing) == AuthenticationTypes.Signing) { contextOptions |= ContextOptions.Signing; }
                 if ((ldapConnection.AuthenticationSettings & AuthenticationTypes.Secure) == AuthenticationTypes.Secure) { contextOptions |= ContextOptions.Negotiate; }
