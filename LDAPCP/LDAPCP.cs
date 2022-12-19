@@ -1305,6 +1305,7 @@ namespace ldapcp
                 if ((ldapConnection.AuthenticationSettings & AuthenticationTypes.Encryption) == AuthenticationTypes.Encryption) { contextOptions |= ContextOptions.SecureSocketLayer; }
                 if ((ldapConnection.AuthenticationSettings & AuthenticationTypes.ServerBind) == AuthenticationTypes.ServerBind) { contextOptions |= ContextOptions.ServerBind; }
                 if ((ldapConnection.AuthenticationSettings & AuthenticationTypes.Signing) == AuthenticationTypes.Signing) { contextOptions |= ContextOptions.Signing; }
+                if ((ldapConnection.AuthenticationSettings & AuthenticationTypes.Secure) == AuthenticationTypes.Secure) { contextOptions |= ContextOptions.Negotiate; }
             }
 
             List<SPClaim> groups = new List<SPClaim>();
