@@ -1,0 +1,87 @@
+name: Build solutions
+
+on:
+  push:
+    branches: [ "master", "dev" ]
+  pull_request:
+    branches: [ "master", "dev" ]
+
+jobs:
+  build:
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        configuration: [Debug, Release]
+    env:
+      Solution_Name: LDAPCP.sln
+      Project_Name: LDAPCP
+      Project_Directory: LDAPCP
+      Project_File_Path: LDAPCP/LDAPCP.csproj
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+
+    - name: Get current date
+      id: date
+      run: echo "::set-output name=date::$(date +'%Y')"
+
+    - name: Set version
+      id: set-assembly-version
+      uses: secondbounce/assemblyinfo-update@v2
+      with:
+        version: "${{ vars.VERSION_MAJOR_MINOR }}.${{ steps.date.outputs.date }}"
+        directory: "${{ env.Project_Directory }}/Properties"
+        filename: 'AssemblyInfo.cs'
+        recursive: false
+
+    - name: Display the version used
+      run: echo "{{steps.set-assembly-version.outputs.version}}"
+
+    # Add MSBuild to the PATH: https://github.com/microsoft/setup-msbuild
+    - name: Setup MSBuild.exe
+      uses: microsoft/setup-msbuild@v1.3.1
+    
+    - name: Restore Packages
+      run: nuget restore $env:Solution_Name
+
+    # Decode the base 64 encoded signing key
+    # Key encoded using PowerShell Core:
+    # $cert = Get-Content "C:\...\LDAPCP.snk" -AsByteStream -ReadCount 
+    # [System.Convert]::ToBase64String($cert) | Out-File "C:\...\LDAPCP_b64Encoded.txt"
+    - name: Decode the signing key
+      run: |
+        $data = [System.Convert]::FromBase64String("${{ secrets.BASE64_ENCODED_SIGNINGKEY }}")
+        $certificatePath = Join-Path -Path $env:Project_Directory -ChildPath "${{ env.Project_Name }}.snk"
+        [IO.File]::WriteAllBytes($certificatePath, $data)
+
+    # Build the application
+    - name: Build the application and create the solution package
+      run: msbuild $env:Solution_Name /p:Configuration=$env:Configuration /p:IsPackaging=true /p:platform="Any CPU"
+      env:
+        Configuration: ${{ matrix.configuration }}
+
+    - name: Remove the signing key
+      run: Remove-Item -path "${{ env.Project_Directory }}/${{ env.Project_Name }}.snk"
+
+    - name: Upload artifact - wsp solution
+      uses: actions/upload-artifact@v3
+      with:
+        name: "${{ env.Project_Name }}-${{ env.Configuration }}-wsp"
+        path: "${{ env.Project_Directory }}/bin/${{ env.Configuration }}/${{ env.Project_Name }}.wsp"
+        if-no-files-found: error
+      env:
+        Configuration: ${{ matrix.configuration }}
+        
+    - name: Upload artifact - dependencies
+      uses: actions/upload-artifact@v3
+      with:
+        name: "${{ env.Project_Name }}-${{ env.Configuration }}-dependencies"
+        path: |
+            ${{ env.Project_Directory }}/bin/${{ env.Configuration }}/*.dll
+            ${{ env.Project_Directory }}/bin/${{ env.Configuration }}/*.pdb
+        if-no-files-found: error
+      env:
+        Configuration: ${{ matrix.configuration }}
