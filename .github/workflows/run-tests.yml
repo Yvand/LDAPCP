@@ -4,6 +4,11 @@ on: repository_dispatch
 jobs:
   create-test-environment:
     runs-on: ubuntu-latest
+    env:
+      dtl_provisionSharePointSubscription: ${{ contains(github.event.client_payload.sharepoint_versions, 'Subscription-RTM') }}
+      dtl_provisionSharePoint2019: ${{ contains(github.event.client_payload.sharepoint_versions, '2019') }}
+      dtl_provisionSharePoint2016: ${{ contains(github.event.client_payload.sharepoint_versions, '2016') }}
+      dtl_provisionSharePoint2013: ${{ contains(github.event.client_payload.sharepoint_versions, '2013') }}
     steps:
     - name: Azure Login
       uses: azure/login@v1
@@ -17,14 +22,18 @@ jobs:
           az account show
           az lab environment create --lab-name ${{ vars.dtl_serviceName }} --name ${{ vars.dtl_environmentName }} --resource-group ${{ vars.dtl_rgName }} --artifact-source-name "Public Repo" \
           --arm-template "/subscriptions/${{ vars.dtl_subscriptionId }}/resourceGroups/${{ vars.dtl_rgName }}/providers/Microsoft.DevTestLab/labs/${{ vars.dtl_serviceName }}/artifactSources/Public Environment Repo/armTemplates/SharePoint-AllVersions" \
-          --parameters "[ { \"name\": \"provisionSharePoint2013\", \"value\": \"${{ vars.dtl_provisionSharePoint2013 }}\" }, { \"name\": \"provisionSharePoint2016\", \"value\": \"${{ vars.dtl_provisionSharePoint2016 }}\" }, { \"name\": \"provisionSharePoint2019\", \"value\": \"${{ vars.dtl_provisionSharePoint2019 }}\" }, { \"name\": \"provisionSharePointSubscription\", \"value\": \"${{ vars.dtl_provisionSharePointSubscription }}\" }, { \"name\": \"configureADFS\", \"value\": \"${{ vars.dtl_configureADFS }}\" }, { \"name\": \"enableHybridBenefitServerLicenses\", \"value\": \"${{ vars.dtl_enableHybridBenefitServerLicenses }}\" }, { \"name\": \"enableAutomaticUpdates\", \"value\": \"${{ vars.dtl_enableAutomaticUpdates }}\" }, { \"name\": \"adminUserName\", \"value\": \"${{ vars.dtl_adminUserName }}\" }, { \"name\": \"adminPassword\", \"value\": \"${{ secrets.dtl_accountsPassword }}\" }, { \"name\": \"serviceAccountsPassword\", \"value\": \"${{ secrets.dtl_accountsPassword }}\" }, { \"name\": \"addPublicIPAddress\", \"value\": \"${{ vars.dtl_addPublicIPAddress }}\" }, { \"name\": \"RDPTrafficAllowed\", \"value\": \"${{ vars.dtl_RDPTrafficAllowed }}\" }, { \"name\": \"addAzureBastion\", \"value\": \"${{ vars.dtl_addAzureBastion }}\" } ]"
+          --parameters "[ { \"name\": \"provisionSharePoint2013\", \"value\": \"${{ env.dtl_provisionSharePoint2013 }}\" }, { \"name\": \"provisionSharePoint2016\", \"value\": \"${{ env.dtl_provisionSharePoint2016 }}\" }, { \"name\": \"provisionSharePoint2019\", \"value\": \"${{ env.dtl_provisionSharePoint2019 }}\" }, { \"name\": \"provisionSharePointSubscription\", \"value\": \"${{ env.dtl_provisionSharePointSubscription }}\" }, { \"name\": \"configureADFS\", \"value\": \"${{ vars.dtl_configureADFS }}\" }, { \"name\": \"enableHybridBenefitServerLicenses\", \"value\": \"${{ vars.dtl_enableHybridBenefitServerLicenses }}\" }, { \"name\": \"enableAutomaticUpdates\", \"value\": \"${{ vars.dtl_enableAutomaticUpdates }}\" }, { \"name\": \"adminUserName\", \"value\": \"${{ vars.dtl_adminUserName }}\" }, { \"name\": \"adminPassword\", \"value\": \"${{ secrets.dtl_accountsPassword }}\" }, { \"name\": \"serviceAccountsPassword\", \"value\": \"${{ secrets.dtl_accountsPassword }}\" }, { \"name\": \"addPublicIPAddress\", \"value\": \"${{ vars.dtl_addPublicIPAddress }}\" }, { \"name\": \"RDPTrafficAllowed\", \"value\": \"${{ vars.dtl_RDPTrafficAllowed }}\" }, { \"name\": \"addAzureBastion\", \"value\": \"${{ vars.dtl_addAzureBastion }}\" } ]"
           
-  apply-artifacts-spse:
+  #apply-artifacts-spse:
+  apply-artifacts:
     runs-on: ubuntu-latest
     needs: create-test-environment
-    if: startsWith(vars.dtl_provisionSharePointSubscription, 'Subscription-')
+    #if: startsWith(vars.dtl_provisionSharePointSubscription, 'Subscription-')
+    strategy:
+      matrix:
+        sharepoint_version: ${{ github.event.client_payload.sharepoint_versions }}
     env:
-      vm_name: SPSE
+      vm_name: ${{ format('SP{0}', matrix.sharepoint_version) }} #SPSE
     steps:
     - name: Azure Login
       uses: azure/login@v1
@@ -36,4 +45,4 @@ jobs:
       with:
         inlineScript: |
           az lab vm apply-artifacts --lab-name ${{ vars.dtl_serviceName }} --name ${{ env.vm_name }} --resource-group ${{ vars.dtl_rgName }} \
-          --artifacts "[ { \"artifactId\": \"/subscriptions/${{ vars.dtl_subscriptionId }}/resourceGroups/${{ vars.dtl_rgName }}/providers/Microsoft.DevTestLab/labs/${{ vars.dtl_serviceName }}/artifactSources/public repo/artifacts/windows-vsts-build-agent\", \"parameters\": [ { \"name\": \"vstsAccount\", \"value\": \"${{ vars.dtl_azdevopsAccount }}\" }, { \"name\": \"vstsPassword\", \"value\": \"${{ vars.dtl_azdevopsPassword }}\" }, { \"name\": \"poolName\", \"value\": \"${{ vars.dtl_poolName }}\" }, { \"name\": \"windowsLogonAccount\", \"value\": \"${{ format('{0}@contoso.local', vars.dtl_adminUserName) }}\" }, { \"name\": \"windowsLogonPassword\", \"value\": \"${{ vars.dtl_accountsPassword }}\" }, { \"name\": \"agentName\", \"value\": \"${{ env.vm_name }}\" }, { \"name\": \"agentNameSuffix\", \"value\": \"${{ vars.dtl_agentNameSuffix }}\" }, { \"name\": \"RunAsAutoLogon\", \"value\": \"false\" }, { \"name\": \"driveLetter\", \"value\": \"C\" }, { \"name\": \"workDirectory\", \"value\": \"\" } ] } ]"
+          --artifacts "[ { \"artifactId\": \"/subscriptions/${{ vars.dtl_subscriptionId }}/resourceGroups/${{ vars.dtl_rgName }}/providers/Microsoft.DevTestLab/labs/${{ vars.dtl_serviceName }}/artifactSources/public repo/artifacts/windows-vsts-build-agent\", \"parameters\": [ { \"name\": \"vstsAccount\", \"value\": \"${{ vars.dtl_azdevopsAccount }}\" }, { \"name\": \"vstsPassword\", \"value\": \"${{ secrets.dtl_azdevopsPassword }}\" }, { \"name\": \"poolName\", \"value\": \"${{ vars.dtl_poolName }}\" }, { \"name\": \"windowsLogonAccount\", \"value\": \"${{ format('{0}@contoso.local', vars.dtl_adminUserName) }}\" }, { \"name\": \"windowsLogonPassword\", \"value\": \"${{ secrets.dtl_accountsPassword }}\" }, { \"name\": \"agentName\", \"value\": \"${{ env.vm_name }}\" }, { \"name\": \"agentNameSuffix\", \"value\": \"${{ vars.dtl_agentNameSuffix }}\" }, { \"name\": \"RunAsAutoLogon\", \"value\": \"false\" }, { \"name\": \"driveLetter\", \"value\": \"C\" }, { \"name\": \"workDirectory\", \"value\": \"\" } ] } ]"
