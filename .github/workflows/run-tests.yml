@@ -5,6 +5,7 @@ jobs:
   create-test-environment:
     runs-on: ubuntu-latest
     env:
+      # ternary 'else' is not supported, so use this workaround: https://github.com/orgs/community/discussions/25725#discussioncomment-3248924
       dtl_provisionSharePointSubscription: ${{ contains(github.event.client_payload.sharepoint_versions, 'Subscription-RTM') && github.event.client_payload.sharepoint_versions || 'No' }}
       dtl_provisionSharePoint2019: ${{ contains(github.event.client_payload.sharepoint_versions, '2019') }}
       dtl_provisionSharePoint2016: ${{ contains(github.event.client_payload.sharepoint_versions, '2016') }}
@@ -19,10 +20,9 @@ jobs:
       uses: azure/CLI@v1
       with:
         inlineScript: |
-          az account show
           az lab environment create --lab-name ${{ vars.dtl_serviceName }} --name ${{ vars.dtl_environmentName }} --resource-group ${{ vars.dtl_rgName }} --artifact-source-name "Public Repo" \
           --arm-template "/subscriptions/${{ vars.dtl_subscriptionId }}/resourceGroups/${{ vars.dtl_rgName }}/providers/Microsoft.DevTestLab/labs/${{ vars.dtl_serviceName }}/artifactSources/Public Environment Repo/armTemplates/SharePoint-AllVersions" \
-          --parameters "[ { \"name\": \"provisionSharePoint2013\", \"value\": \"${{ env.dtl_provisionSharePoint2013 }}\" }, { \"name\": \"provisionSharePoint2016\", \"value\": \"${{ env.dtl_provisionSharePoint2016 }}\" }, { \"name\": \"provisionSharePoint2019\", \"value\": \"${{ env.dtl_provisionSharePoint2019 }}\" }, { \"name\": \"provisionSharePointSubscription\", \"value\": \"${{ env.dtl_provisionSharePointSubscription }}\" }, { \"name\": \"configureADFS\", \"value\": \"${{ vars.dtl_configureADFS }}\" }, { \"name\": \"enableHybridBenefitServerLicenses\", \"value\": \"${{ vars.dtl_enableHybridBenefitServerLicenses }}\" }, { \"name\": \"enableAutomaticUpdates\", \"value\": \"${{ vars.dtl_enableAutomaticUpdates }}\" }, { \"name\": \"adminUserName\", \"value\": \"${{ vars.dtl_adminUserName }}\" }, { \"name\": \"adminPassword\", \"value\": \"${{ secrets.dtl_accountsPassword }}\" }, { \"name\": \"serviceAccountsPassword\", \"value\": \"${{ secrets.dtl_accountsPassword }}\" }, { \"name\": \"addPublicIPAddress\", \"value\": \"${{ vars.dtl_addPublicIPAddress }}\" }, { \"name\": \"RDPTrafficAllowed\", \"value\": \"${{ vars.dtl_RDPTrafficAllowed }}\" }, { \"name\": \"addAzureBastion\", \"value\": \"${{ vars.dtl_addAzureBastion }}\" } ]"
+          --parameters "[ { \"name\": \"provisionSharePoint2013\", \"value\": \"${{ env.dtl_provisionSharePoint2013 }}\" }, { \"name\": \"provisionSharePoint2016\", \"value\": \"${{ env.dtl_provisionSharePoint2016 }}\" }, { \"name\": \"provisionSharePoint2019\", \"value\": \"${{ env.dtl_provisionSharePoint2019 }}\" }, { \"name\": \"provisionSharePointSubscription\", \"value\": \"${{ env.dtl_provisionSharePointSubscription }}\" }, { \"name\": \"configureADFS\", \"value\": \"true\" }, { \"name\": \"enableHybridBenefitServerLicenses\", \"value\": \"true\" }, { \"name\": \"enableAutomaticUpdates\", \"value\": \"${{ vars.dtl_enableAutomaticUpdates }}\" }, { \"name\": \"adminUserName\", \"value\": \"${{ vars.dtl_adminUserName }}\" }, { \"name\": \"adminPassword\", \"value\": \"${{ secrets.dtl_accountsPassword }}\" }, { \"name\": \"serviceAccountsPassword\", \"value\": \"${{ secrets.dtl_accountsPassword }}\" }, { \"name\": \"addPublicIPAddress\", \"value\": \"${{ vars.dtl_addPublicIPAddress }}\" }, { \"name\": \"RDPTrafficAllowed\", \"value\": \"${{ vars.dtl_RDPTrafficAllowed }}\" }, { \"name\": \"addAzureBastion\", \"value\": \"${{ vars.dtl_addAzureBastion }}\" } ]"
           
   #apply-artifacts-spse:
   apply-artifacts:
@@ -32,8 +32,17 @@ jobs:
     strategy:
       matrix:
         sharepoint_version: ${{ github.event.client_payload.sharepoint_versions }}
+        include:
+        - sharepoint_version: Subscription-RTM #${{ startsWith(matrix.sharepoint_version, 'Subscription-') }}
+          sps_version: 'SE'
+        - sharepoint_version: 2019
+          sps_version: '2019'
+        - sharepoint_version: 2016
+          sps_version: '2016'
+        - sharepoint_version: 2013
+          sps_version: '2013'
     env:
-      vm_name: ${{ format('SP{0}', matrix.sharepoint_version) }} #SPSE
+      vm_name: ${{ format('SP{0}', matrix.sps_version) }} #SPSE
     steps:
     - name: Azure Login
       uses: azure/login@v1
