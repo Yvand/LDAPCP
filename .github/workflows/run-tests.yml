@@ -6,7 +6,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       # ternary 'else' is not supported, so use this workaround: https://github.com/orgs/community/discussions/25725#discussioncomment-3248924
-      dtl_provisionSharePointSubscription: ${{ contains(github.event.client_payload.sharepoint_versions, 'Subscription-RTM') && github.event.client_payload.sharepoint_versions || 'No' }}
+      dtl_provisionSharePointSubscription: ${{ contains(github.event.client_payload.sharepoint_versions, 'Subscription-RTM') && 'Subscription-RTM' || 'No' }}
       dtl_provisionSharePoint2019: ${{ contains(github.event.client_payload.sharepoint_versions, '2019') }}
       dtl_provisionSharePoint2016: ${{ contains(github.event.client_payload.sharepoint_versions, '2016') }}
       dtl_provisionSharePoint2013: ${{ contains(github.event.client_payload.sharepoint_versions, '2013') }}
