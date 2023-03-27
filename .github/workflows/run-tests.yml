@@ -5,7 +5,7 @@ jobs:
   create-test-environment:
     runs-on: ubuntu-latest
     env:
-      dtl_provisionSharePointSubscription: ${{ contains(github.event.client_payload.sharepoint_versions, 'Subscription-RTM') }}
+      dtl_provisionSharePointSubscription: ${{ contains(github.event.client_payload.sharepoint_versions, 'Subscription-RTM') && github.event.client_payload.sharepoint_versions || 'No' }}
       dtl_provisionSharePoint2019: ${{ contains(github.event.client_payload.sharepoint_versions, '2019') }}
       dtl_provisionSharePoint2016: ${{ contains(github.event.client_payload.sharepoint_versions, '2016') }}
       dtl_provisionSharePoint2013: ${{ contains(github.event.client_payload.sharepoint_versions, '2013') }}
