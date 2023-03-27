@@ -35,12 +35,16 @@ jobs:
         include:
         - sharepoint_version: Subscription-RTM #${{ startsWith(matrix.sharepoint_version, 'Subscription-') }}
           sps_version: 'SE'
+          dtl_poolName: 'LDAPCP-Tests-Subscription'
         - sharepoint_version: 2019
           sps_version: '2019'
+          dtl_poolName: 'LDAPCP-Tests-2019'
         - sharepoint_version: 2016
           sps_version: '2016'
+          dtl_poolName: 'LDAPCP-Tests-2016'
         - sharepoint_version: 2013
           sps_version: '2013'
+          dtl_poolName: 'LDAPCP-Tests-2013'
     env:
       vm_name: ${{ format('SP{0}', matrix.sps_version) }} #SPSE
     steps:
@@ -54,4 +58,4 @@ jobs:
       with:
         inlineScript: |
           az lab vm apply-artifacts --lab-name ${{ vars.dtl_serviceName }} --name ${{ env.vm_name }} --resource-group ${{ vars.dtl_rgName }} \
-          --artifacts "[ { \"artifactId\": \"/subscriptions/${{ vars.dtl_subscriptionId }}/resourceGroups/${{ vars.dtl_rgName }}/providers/Microsoft.DevTestLab/labs/${{ vars.dtl_serviceName }}/artifactSources/public repo/artifacts/windows-vsts-build-agent\", \"parameters\": [ { \"name\": \"vstsAccount\", \"value\": \"${{ vars.dtl_azdevopsAccount }}\" }, { \"name\": \"vstsPassword\", \"value\": \"${{ secrets.dtl_azdevopsPassword }}\" }, { \"name\": \"poolName\", \"value\": \"${{ vars.dtl_poolName }}\" }, { \"name\": \"windowsLogonAccount\", \"value\": \"${{ format('{0}@contoso.local', vars.dtl_adminUserName) }}\" }, { \"name\": \"windowsLogonPassword\", \"value\": \"${{ secrets.dtl_accountsPassword }}\" }, { \"name\": \"agentName\", \"value\": \"${{ env.vm_name }}\" }, { \"name\": \"agentNameSuffix\", \"value\": \"${{ vars.dtl_agentNameSuffix }}\" }, { \"name\": \"RunAsAutoLogon\", \"value\": \"false\" }, { \"name\": \"driveLetter\", \"value\": \"C\" }, { \"name\": \"workDirectory\", \"value\": \"\" } ] } ]"
+          --artifacts "[ { \"artifactId\": \"/subscriptions/${{ vars.dtl_subscriptionId }}/resourceGroups/${{ vars.dtl_rgName }}/providers/Microsoft.DevTestLab/labs/${{ vars.dtl_serviceName }}/artifactSources/public repo/artifacts/windows-vsts-build-agent\", \"parameters\": [ { \"name\": \"vstsAccount\", \"value\": \"${{ vars.dtl_azdevopsAccount }}\" }, { \"name\": \"vstsPassword\", \"value\": \"${{ secrets.dtl_azdevopsPassword }}\" }, { \"name\": \"poolName\", \"value\": \"${{ env.dtl_poolName }}\" }, { \"name\": \"windowsLogonAccount\", \"value\": \"${{ format('{0}@contoso.local', vars.dtl_adminUserName) }}\" }, { \"name\": \"windowsLogonPassword\", \"value\": \"${{ secrets.dtl_accountsPassword }}\" }, { \"name\": \"agentName\", \"value\": \"${{ env.vm_name }}\" }, { \"name\": \"agentNameSuffix\", \"value\": \"${{ vars.dtl_agentNameSuffix }}\" }, { \"name\": \"RunAsAutoLogon\", \"value\": \"false\" }, { \"name\": \"driveLetter\", \"value\": \"C\" }, { \"name\": \"workDirectory\", \"value\": \"\" } ] } ]"
