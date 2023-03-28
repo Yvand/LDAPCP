@@ -1,12 +1,23 @@
 name: Run integration tests
-on: repository_dispatch
-  
+on:
+  repository_dispatch:
+    types:
+      - start-workflow-run-tests
+  workflow_dispatch:
+    inputs:
+      SPSE:
+        sharepoint_version: 'SE'
+        dtl_poolName: 'LDAPCP-Tests-Subscription'
+      SP2013:
+        sharepoint_version: '2013'
+        dtl_poolName: 'LDAPCP-Tests-2013'
+
 jobs:
   create-test-environment:
     runs-on: ubuntu-latest
     env:
       # ternary 'else' is not supported, so use this workaround: https://github.com/orgs/community/discussions/25725#discussioncomment-3248924
-      dtl_provisionSharePointSubscription: ${{ contains(github.event.client_payload.sharepoint_versions, 'Subscription-RTM') && 'Subscription-RTM' || 'No' }}
+      dtl_provisionSharePointSubscription: ${{ contains(github.event.client_payload.sharepoint_versions, 'SE') && 'Subscription-RTM' || 'No' }}
       dtl_provisionSharePoint2019: ${{ contains(github.event.client_payload.sharepoint_versions, '2019') }}
       dtl_provisionSharePoint2016: ${{ contains(github.event.client_payload.sharepoint_versions, '2016') }}
       dtl_provisionSharePoint2013: ${{ contains(github.event.client_payload.sharepoint_versions, '2013') }}
@@ -33,21 +44,22 @@ jobs:
     strategy:
       matrix:
         sharepoint_version: ${{ github.event.client_payload.sharepoint_versions }}
-        include:
-        - sharepoint_version: Subscription-RTM #${{ startsWith(matrix.sharepoint_version, 'Subscription-') }}
-          sps_version: 'SE'
-          dtl_poolName: 'LDAPCP-Tests-Subscription'
-        - sharepoint_version: 2019
-          sps_version: '2019'
-          dtl_poolName: 'LDAPCP-Tests-2019'
-        - sharepoint_version: 2016
-          sps_version: '2016'
-          dtl_poolName: 'LDAPCP-Tests-2016'
-        - sharepoint_version: 2013
-          sps_version: '2013'
-          dtl_poolName: 'LDAPCP-Tests-2013'
+        # include:
+        # - sharepoint_version: Subscription-RTM #${{ startsWith(matrix.sharepoint_version, 'Subscription-') }}
+          # sps_version: 'SE'
+          # dtl_poolName: 'LDAPCP-Tests-Subscription'
+        # - sharepoint_version: 2019
+          # sps_version: '2019'
+          # dtl_poolName: 'LDAPCP-Tests-2019'
+        # - sharepoint_version: 2016
+          # sps_version: '2016'
+          # dtl_poolName: 'LDAPCP-Tests-2016'
+        # - sharepoint_version: 2013
+          # sps_version: '2013'
+          # dtl_poolName: 'LDAPCP-Tests-2013'
     env:
-      vm_name: ${{ format('SP{0}', matrix.sps_version) }} #SPSE
+      vm_name: ${{ format('SP{0}', matrix.sharepoint_version) }} #${{ format('SP{0}', matrix.sps_version) }} #SPSE
+      dtl_poolName: ${{ format('LDAPCP-Tests-{0}', matrix.sharepoint_version) }}
     steps:
     - name: Azure Login
       uses: azure/login@v1
