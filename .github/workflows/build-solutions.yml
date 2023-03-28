@@ -11,7 +11,7 @@ jobs:
     runs-on: windows-latest
     strategy:
       matrix:
-        configuration: [Release]
+        configuration: [Debug, Release]
     env:
       Solution_Name: LDAPCP.sln
       Project_Name: LDAPCP
@@ -98,7 +98,16 @@ jobs:
           path: ./
           
       - name: Display structure of downloaded files
-        run: ls -R
+        run: |
+          ls -R
+          mkdir ${{ env.Project_Name }}-dependencies
+          mkdir ${{ env.Project_Name }}-dependencies/debug
+          mkdir ${{ env.Project_Name }}-dependencies/release
+          cp ./${{ env.Project_Name }}-Debug-dependencies/* ${{ env.Project_Name }}-dependencies/debug
+          cp ./${{ env.Project_Name }}-Release-dependencies/* ${{ env.Project_Name }}-dependencies/release
+          cd ${{ env.Project_Name }}-dependencies
+          zip -r ../${{ env.Project_Name }}-dependencies.zip ./*
+          ls -R
       
       - name: Update Nightly Release
         uses: andelf/nightly-release@main
@@ -109,6 +118,7 @@ jobs:
           name: 'Nightly Release $$'
           prerelease: true
           body: |
-            This is a nightly release, use it with caution **and do not deploy it in a production environment**!
+            This is a nightly release, use it with caution **and do not deploy it in a production environment**
           files: |
             ./${{ env.Project_Name }}-Release-wsp/${{ env.Project_Name }}.wsp
+            ./${{ env.Project_Name }}-dependencies.zip
