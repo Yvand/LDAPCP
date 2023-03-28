@@ -85,3 +85,30 @@ jobs:
         if-no-files-found: error
       env:
         Configuration: ${{ matrix.configuration }}
+
+  nightly-release:
+    needs: build
+    runs-on: ubuntu-latest
+    env:
+      Project_Name: LDAPCP
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v3
+        with:
+          # name: "${{ env.Project_Name }}-Release-wsp"
+          path: ./
+          
+      - name: Display structure of downloaded files
+        run: ls -R
+      
+      # - name: Update Nightly Release
+        # uses: andelf/nightly-release@main
+        # env:
+          # GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        # with:
+          # tag_name: nightly
+          # name: 'Nightly Release $$'
+          # prerelease: true
+          # body: 'This is a nightly release, use it with caution!'
+          # files: |
+            # ${{ env.Project_Directory }}/bin/${{ env.Configuration }}/${{ env.Project_Name }}.wsp
