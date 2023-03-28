@@ -18,6 +18,7 @@ jobs:
 
     - name: Create DevTest Labs environment
       uses: azure/CLI@v1
+      if: github.event.client_payload.skip_create_environment != true
       with:
         inlineScript: |
           az lab environment create --lab-name ${{ vars.dtl_serviceName }} --name ${{ vars.dtl_environmentName }} --resource-group ${{ vars.dtl_rgName }} --artifact-source-name "Public Repo" \
