@@ -40,6 +40,7 @@ jobs:
   apply-artifacts:
     runs-on: ubuntu-latest
     needs: create-test-environment
+    if: always()
     #if: startsWith(vars.dtl_provisionSharePointSubscription, 'Subscription-')
     strategy:
       matrix:
