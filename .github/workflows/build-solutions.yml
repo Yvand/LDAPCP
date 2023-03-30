@@ -28,7 +28,9 @@ jobs:
 
     - name: Get current date
       id: date
-      run: echo "::set-output name=date::$(date +'%Y%m%d')"
+      run: |
+        echo "::set-output name=date::$(date +'%Y%m%d')"
+        echo "::set-output name=year::$(date +'%Y')"
       
     - name: Set version
       id: set-assembly-version
@@ -38,6 +40,7 @@ jobs:
         directory: "${{ env.Project_Directory }}/Properties"
         filename: 'AssemblyInfo.cs'
         recursive: false
+        copyright: "Copyright ©${{ steps.date.outputs.year }} Yvan Duhamel, All rights reserved"
 
     - name: Show the version
       run: echo "${{steps.set-assembly-version.outputs.version}}"
