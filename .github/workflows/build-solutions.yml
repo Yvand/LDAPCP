@@ -79,9 +79,19 @@ jobs:
       uses: actions/upload-artifact@v3
       with:
         name: "${{ env.Project_Name }}-${{ env.Configuration }}-dependencies"
+        path: "${{ env.Project_Directory }}/bin/${{ env.Configuration }}/*.dll"
+        if-no-files-found: error
+      env:
+        Configuration: ${{ matrix.configuration }}
+        
+    - name: Upload artifact - symbols
+      uses: actions/upload-artifact@v3
+      with:
+        name: "${{ env.Project_Name }}-${{ env.Configuration }}-symbols"
         path: |
-            ${{ env.Project_Directory }}/bin/${{ env.Configuration }}/*.dll
-            ${{ env.Project_Directory }}/bin/${{ env.Configuration }}/*.pdb
+            ${{ env.Project_Directory }}/bin/${{ env.Configuration }}/${{ env.Project_Name }}.dll
+            ${{ env.Project_Directory }}/bin/${{ env.Configuration }}/${{ env.Project_Name }}.pdb
+            ${{ env.Project_Directory }}/bin/${{ env.Configuration }}/${{ env.Project_Name }}.wsp
         if-no-files-found: error
       env:
         Configuration: ${{ matrix.configuration }}
@@ -100,11 +110,16 @@ jobs:
       - name: Display structure of downloaded files
         run: |
           ls -R
+          mkdir ${{ env.Project_Name }}-symbols
+          mkdir ${{ env.Project_Name }}-symbols/debug
+          mkdir ${{ env.Project_Name }}-symbols/release
+          cp ./${{ env.Project_Name }}-Debug-symbols/* ${{ env.Project_Name }}-symbols/debug
+          cp ./${{ env.Project_Name }}-Release-symbols/* ${{ env.Project_Name }}-symbols/release
+          cd ${{ env.Project_Name }}-symbols
+          zip -r ../${{ env.Project_Name }}-symbols.zip ./*
+          cd ..
           mkdir ${{ env.Project_Name }}-dependencies
-          mkdir ${{ env.Project_Name }}-dependencies/debug
-          mkdir ${{ env.Project_Name }}-dependencies/release
-          cp ./${{ env.Project_Name }}-Debug-dependencies/* ${{ env.Project_Name }}-dependencies/debug
-          cp ./${{ env.Project_Name }}-Release-dependencies/* ${{ env.Project_Name }}-dependencies/release
+          cp ./${{ env.Project_Name }}-Release-dependencies/* ${{ env.Project_Name }}-dependencies
           cd ${{ env.Project_Name }}-dependencies
           zip -r ../${{ env.Project_Name }}-dependencies.zip ./*
           ls -R
@@ -121,4 +136,5 @@ jobs:
             This is a nightly release, use it with caution **and do not deploy it in a production environment**
           files: |
             ./${{ env.Project_Name }}-Release-wsp/${{ env.Project_Name }}.wsp
+            ./${{ env.Project_Name }}-symbols.zip
             ./${{ env.Project_Name }}-dependencies.zip
