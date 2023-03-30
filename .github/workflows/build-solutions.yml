@@ -12,6 +12,8 @@ jobs:
     strategy:
       matrix:
         configuration: [Debug, Release]
+    outputs:
+      assembly-version: ${{ steps.set-assembly-version.outputs.version }}
     env:
       Solution_Name: LDAPCP.sln
       Project_Name: LDAPCP
@@ -26,20 +28,20 @@ jobs:
 
     - name: Get current date
       id: date
-      run: echo "::set-output name=date::$(date +'%Y')"
-
+      run: echo "::set-output name=date::$(date +'%Y%m%d')"
+      
     - name: Set version
       id: set-assembly-version
-      uses: secondbounce/assemblyinfo-update@v2
+      uses: Yvand/assemblyinfo-update@main
       with:
         version: "${{ vars.VERSION_MAJOR_MINOR }}.${{ steps.date.outputs.date }}"
         directory: "${{ env.Project_Directory }}/Properties"
         filename: 'AssemblyInfo.cs'
         recursive: false
 
-    - name: Display the version used
-      run: echo "{{steps.set-assembly-version.outputs.version}}"
-
+    - name: Show the version
+      run: echo "${{steps.set-assembly-version.outputs.version}}"
+      
     # Add MSBuild to the PATH: https://github.com/microsoft/setup-msbuild
     - name: Setup MSBuild.exe
       uses: microsoft/setup-msbuild@v1.3.1
@@ -101,30 +103,32 @@ jobs:
     runs-on: ubuntu-latest
     env:
       Project_Name: LDAPCP
+      assembly-version: ${{ needs.build.outputs.assembly-version }}
     steps:
       - name: Download artifacts
         uses: actions/download-artifact@v3
         with:
           path: ./
           
-      - name: Display structure of downloaded files
+      - name: Create zip files to publish
         run: |
-          ls -R
           mkdir ${{ env.Project_Name }}-symbols
           mkdir ${{ env.Project_Name }}-symbols/debug
           mkdir ${{ env.Project_Name }}-symbols/release
+          echo "Generate symbols zip file"
           cp ./${{ env.Project_Name }}-Debug-symbols/* ${{ env.Project_Name }}-symbols/debug
           cp ./${{ env.Project_Name }}-Release-symbols/* ${{ env.Project_Name }}-symbols/release
           cd ${{ env.Project_Name }}-symbols
-          zip -r ../${{ env.Project_Name }}-symbols.zip ./*
+          zip -r ../${{ env.Project_Name }}-${{ env.assembly-version }}-symbols.zip ./*
           cd ..
+          echo "Generate dependencies zip file"
           mkdir ${{ env.Project_Name }}-dependencies
           cp ./${{ env.Project_Name }}-Release-dependencies/* ${{ env.Project_Name }}-dependencies
           cd ${{ env.Project_Name }}-dependencies
-          zip -r ../${{ env.Project_Name }}-dependencies.zip ./*
-          ls -R
+          zip -r ../${{ env.Project_Name }}-${{ env.assembly-version }}-dependencies.zip ./*
+          cd ..
       
-      - name: Update Nightly Release
+      - name: Update nightly release
         uses: andelf/nightly-release@main
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -136,5 +140,5 @@ jobs:
             This is a nightly release, use it with caution **and do not deploy it in a production environment**
           files: |
             ./${{ env.Project_Name }}-Release-wsp/${{ env.Project_Name }}.wsp
-            ./${{ env.Project_Name }}-symbols.zip
-            ./${{ env.Project_Name }}-dependencies.zip
+            ./${{ env.Project_Name }}-${{ env.assembly-version }}-symbols.zip
+            ./${{ env.Project_Name }}-${{ env.assembly-version }}-dependencies.zip
