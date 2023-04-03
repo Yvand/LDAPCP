@@ -46,9 +46,9 @@ jobs:
       with:
         fetch-depth: 0
       
-    - name: Set version
+    - name: Set assembly version
       id: set-assembly-version
-      uses: Yvand/assemblyinfo-update@dev
+      uses: Yvand/assemblyinfo-update@main
       with:
         version: "${{ needs.calculate-version.outputs.assembly-version }}" #"${{ vars.VERSION_MAJOR_MINOR }}.${{ steps.date.outputs.date }}"
         directory: "${{ env.Project_Directory }}/Properties"
