@@ -7,13 +7,33 @@ on:
     branches: [ "master", "dev" ]
 
 jobs:
+  calculate-version:
+    runs-on: ubuntu-latest
+    outputs:
+      assembly-version: ${{ steps.set-version.outputs.assembly-version }}
+      year: ${{ steps.set-version.outputs.year }}
+    steps:
+    - name: set-version
+      id: set-version
+      run: |
+        echo "date=$(date +'%Y%m%d')" >> $GITHUB_OUTPUT
+        echo "year=$(date +'%Y')" >> $GITHUB_OUTPUT
+        echo "assembly-version=${{ vars.VERSION_MAJOR_MINOR }}.$(date +'%Y%m%d').${{ github.run_number }}" >> $GITHUB_OUTPUT
+        
+    - name: Show the version
+      run: |
+        echo "assembly-version: ${{steps.set-version.outputs.assembly-version}}"
+        echo "date: ${{steps.set-version.outputs.date}}"
+        echo "year: ${{steps.set-version.outputs.year}}"
+
   build:
     runs-on: windows-latest
+    needs: calculate-version
     strategy:
       matrix:
         configuration: [Debug, Release]
     outputs:
-      assembly-version: ${{ steps.set-assembly-version.outputs.version }}
+      assembly-version: ${{ needs.calculate-version.outputs.assembly-version }}
     env:
       Solution_Name: LDAPCP.sln
       Project_Name: LDAPCP
@@ -25,25 +45,17 @@ jobs:
       uses: actions/checkout@v3
       with:
         fetch-depth: 0
-
-    - name: Get current date
-      id: date
-      run: |
-        echo "::set-output name=date::$(date +'%Y%m%d')"
-        echo "::set-output name=year::$(date +'%Y')"
       
     - name: Set version
       id: set-assembly-version
-      uses: Yvand/assemblyinfo-update@main
+      uses: Yvand/assemblyinfo-update@dev
       with:
-        version: "${{ vars.VERSION_MAJOR_MINOR }}.${{ steps.date.outputs.date }}"
+        version: "${{ needs.calculate-version.outputs.assembly-version }}" #"${{ vars.VERSION_MAJOR_MINOR }}.${{ steps.date.outputs.date }}"
         directory: "${{ env.Project_Directory }}/Properties"
         filename: 'AssemblyInfo.cs'
         recursive: false
-        copyright: "Copyright ©${{ steps.date.outputs.year }} Yvan Duhamel, All rights reserved"
+        copyright: "Copyright © Yvan Duhamel $${{ needs.calculate-version.outputs.year }}"
 
-    - name: Show the version
-      run: echo "${{steps.set-assembly-version.outputs.version}}"
       
     # Add MSBuild to the PATH: https://github.com/microsoft/setup-msbuild
     - name: Setup MSBuild.exe
@@ -115,6 +127,7 @@ jobs:
           
       - name: Create zip files to publish
         run: |
+          echo "assembly-version: ${{ env.assembly-version }}"
           mkdir ${{ env.Project_Name }}-symbols
           mkdir ${{ env.Project_Name }}-symbols/debug
           mkdir ${{ env.Project_Name }}-symbols/release
