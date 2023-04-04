@@ -1,4 +1,4 @@
-name: Build solutions
+name: Verify PRs and commits
 
 on:
   push:
@@ -112,49 +112,3 @@ jobs:
         if-no-files-found: error
       env:
         Configuration: ${{ matrix.configuration }}
-
-  nightly-release:
-    needs: build
-    runs-on: ubuntu-latest
-    env:
-      Project_Name: LDAPCP
-      assembly-version: ${{ needs.build.outputs.assembly-version }}
-    steps:
-      - name: Download artifacts
-        uses: actions/download-artifact@v3
-        with:
-          path: ./
-          
-      - name: Create zip files to publish
-        run: |
-          echo "assembly-version: ${{ env.assembly-version }}"
-          mkdir ${{ env.Project_Name }}-symbols
-          mkdir ${{ env.Project_Name }}-symbols/debug
-          mkdir ${{ env.Project_Name }}-symbols/release
-          echo "Generate symbols zip file"
-          cp ./${{ env.Project_Name }}-Debug-symbols/* ${{ env.Project_Name }}-symbols/debug
-          cp ./${{ env.Project_Name }}-Release-symbols/* ${{ env.Project_Name }}-symbols/release
-          cd ${{ env.Project_Name }}-symbols
-          zip -r ../${{ env.Project_Name }}-${{ env.assembly-version }}-symbols.zip ./*
-          cd ..
-          echo "Generate dependencies zip file"
-          mkdir ${{ env.Project_Name }}-dependencies
-          cp ./${{ env.Project_Name }}-Release-dependencies/* ${{ env.Project_Name }}-dependencies
-          cd ${{ env.Project_Name }}-dependencies
-          zip -r ../${{ env.Project_Name }}-${{ env.assembly-version }}-dependencies.zip ./*
-          cd ..
-      
-      - name: Update nightly release
-        uses: andelf/nightly-release@main
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: nightly
-          name: 'Nightly Release $$'
-          prerelease: true
-          body: |
-            This is a nightly release, use it with caution **and do not deploy it in a production environment**
-          files: |
-            ./${{ env.Project_Name }}-Release-wsp/${{ env.Project_Name }}.wsp
-            ./${{ env.Project_Name }}-${{ env.assembly-version }}-symbols.zip
-            ./${{ env.Project_Name }}-${{ env.assembly-version }}-dependencies.zip
