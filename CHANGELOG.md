@@ -6,6 +6,8 @@
 * Augment groups with the same attribute as the one set in the LDAPCP configuration. https://github.com/Yvand/LDAPCP/issues/148
 * Fix: In claims configurfation page, the values in the list of "PickerEntity metadata" was not populated correctly, which caused an issue with the "Title" (and a few others)
 * Fix: During augmentation, connection to LDAP always used SimpleBind, regardless of the authentication settings
+* Fix: "Apply to all user attributes" now only updates user entities (not also groups)
+* Reference SharePoint assemblies locally instead of the GAC
 * Update NuGet package NUnit3TestAdapter to v3.16.1
 * Update NuGet package Newtonsoft.Json to 12.0.3
 

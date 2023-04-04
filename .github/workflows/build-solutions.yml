@@ -1,0 +1,160 @@
+name: Build solutions
+
+on:
+  push:
+    branches: [ "master", "dev" ]
+  pull_request:
+    branches: [ "master", "dev" ]
+
+jobs:
+  calculate-version:
+    runs-on: ubuntu-latest
+    outputs:
+      assembly-version: ${{ steps.set-version.outputs.assembly-version }}
+      year: ${{ steps.set-version.outputs.year }}
+    steps:
+    - name: set-version
+      id: set-version
+      run: |
+        echo "date=$(date +'%Y%m%d')" >> $GITHUB_OUTPUT
+        echo "year=$(date +'%Y')" >> $GITHUB_OUTPUT
+        echo "assembly-version=${{ vars.VERSION_MAJOR_MINOR }}.$(date +'%Y%m%d').${{ github.run_number }}" >> $GITHUB_OUTPUT
+        
+    - name: Show the version
+      run: |
+        echo "assembly-version: ${{steps.set-version.outputs.assembly-version}}"
+        echo "date: ${{steps.set-version.outputs.date}}"
+        echo "year: ${{steps.set-version.outputs.year}}"
+
+  build:
+    runs-on: windows-latest
+    needs: calculate-version
+    strategy:
+      matrix:
+        configuration: [Debug, Release]
+    outputs:
+      assembly-version: ${{ needs.calculate-version.outputs.assembly-version }}
+    env:
+      Solution_Name: LDAPCP.sln
+      Project_Name: LDAPCP
+      Project_Directory: LDAPCP
+      Project_File_Path: LDAPCP/LDAPCP.csproj
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+      
+    - name: Set assembly version
+      id: set-assembly-version
+      uses: Yvand/assemblyinfo-update@main
+      with:
+        version: "${{ needs.calculate-version.outputs.assembly-version }}" #"${{ vars.VERSION_MAJOR_MINOR }}.${{ steps.date.outputs.date }}"
+        directory: "${{ env.Project_Directory }}/Properties"
+        filename: 'AssemblyInfo.cs'
+        recursive: false
+        copyright: "Copyright © Yvan Duhamel $${{ needs.calculate-version.outputs.year }}"
+
+      
+    # Add MSBuild to the PATH: https://github.com/microsoft/setup-msbuild
+    - name: Setup MSBuild.exe
+      uses: microsoft/setup-msbuild@v1.3.1
+    
+    - name: Restore Packages
+      run: nuget restore $env:Solution_Name
+
+    # Decode the base 64 encoded signing key
+    # Key encoded using PowerShell Core:
+    # $cert = Get-Content "C:\...\LDAPCP.snk" -AsByteStream -ReadCount 
+    # [System.Convert]::ToBase64String($cert) | Out-File "C:\...\LDAPCP_b64Encoded.txt"
+    - name: Decode the signing key
+      run: |
+        $data = [System.Convert]::FromBase64String("${{ secrets.BASE64_ENCODED_SIGNINGKEY }}")
+        $certificatePath = Join-Path -Path $env:Project_Directory -ChildPath "${{ env.Project_Name }}.snk"
+        [IO.File]::WriteAllBytes($certificatePath, $data)
+
+    # Build the application
+    - name: Build the application and create the solution package
+      run: msbuild $env:Solution_Name /p:Configuration=$env:Configuration /p:IsPackaging=true /p:platform="Any CPU"
+      env:
+        Configuration: ${{ matrix.configuration }}
+
+    - name: Remove the signing key
+      run: Remove-Item -path "${{ env.Project_Directory }}/${{ env.Project_Name }}.snk"
+
+    - name: Upload artifact - wsp solution
+      uses: actions/upload-artifact@v3
+      with:
+        name: "${{ env.Project_Name }}-${{ env.Configuration }}-wsp"
+        path: "${{ env.Project_Directory }}/bin/${{ env.Configuration }}/${{ env.Project_Name }}.wsp"
+        if-no-files-found: error
+      env:
+        Configuration: ${{ matrix.configuration }}
+        
+    - name: Upload artifact - dependencies
+      uses: actions/upload-artifact@v3
+      with:
+        name: "${{ env.Project_Name }}-${{ env.Configuration }}-dependencies"
+        path: "${{ env.Project_Directory }}/bin/${{ env.Configuration }}/*.dll"
+        if-no-files-found: error
+      env:
+        Configuration: ${{ matrix.configuration }}
+        
+    - name: Upload artifact - symbols
+      uses: actions/upload-artifact@v3
+      with:
+        name: "${{ env.Project_Name }}-${{ env.Configuration }}-symbols"
+        path: |
+            ${{ env.Project_Directory }}/bin/${{ env.Configuration }}/${{ env.Project_Name }}.dll
+            ${{ env.Project_Directory }}/bin/${{ env.Configuration }}/${{ env.Project_Name }}.pdb
+            ${{ env.Project_Directory }}/bin/${{ env.Configuration }}/${{ env.Project_Name }}.wsp
+        if-no-files-found: error
+      env:
+        Configuration: ${{ matrix.configuration }}
+
+  nightly-release:
+    needs: build
+    runs-on: ubuntu-latest
+    env:
+      Project_Name: LDAPCP
+      assembly-version: ${{ needs.build.outputs.assembly-version }}
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v3
+        with:
+          path: ./
+          
+      - name: Create zip files to publish
+        run: |
+          echo "assembly-version: ${{ env.assembly-version }}"
+          mkdir ${{ env.Project_Name }}-symbols
+          mkdir ${{ env.Project_Name }}-symbols/debug
+          mkdir ${{ env.Project_Name }}-symbols/release
+          echo "Generate symbols zip file"
+          cp ./${{ env.Project_Name }}-Debug-symbols/* ${{ env.Project_Name }}-symbols/debug
+          cp ./${{ env.Project_Name }}-Release-symbols/* ${{ env.Project_Name }}-symbols/release
+          cd ${{ env.Project_Name }}-symbols
+          zip -r ../${{ env.Project_Name }}-${{ env.assembly-version }}-symbols.zip ./*
+          cd ..
+          echo "Generate dependencies zip file"
+          mkdir ${{ env.Project_Name }}-dependencies
+          cp ./${{ env.Project_Name }}-Release-dependencies/* ${{ env.Project_Name }}-dependencies
+          cd ${{ env.Project_Name }}-dependencies
+          zip -r ../${{ env.Project_Name }}-${{ env.assembly-version }}-dependencies.zip ./*
+          cd ..
+      
+      - name: Update nightly release
+        uses: andelf/nightly-release@main
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: nightly
+          name: 'Nightly Release $$'
+          prerelease: true
+          body: |
+            This is a nightly release, use it with caution **and do not deploy it in a production environment**
+          files: |
+            ./${{ env.Project_Name }}-Release-wsp/${{ env.Project_Name }}.wsp
+            ./${{ env.Project_Name }}-${{ env.assembly-version }}-symbols.zip
+            ./${{ env.Project_Name }}-${{ env.assembly-version }}-dependencies.zip
