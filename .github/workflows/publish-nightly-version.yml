@@ -31,10 +31,10 @@ jobs:
     outputs:
       assembly-version: ${{ needs.calculate-version.outputs.assembly-version }}
     env:
-      Solution_Name: LDAPCP.sln
-      Project_Name: LDAPCP
-      Project_Directory: LDAPCP
-      Project_File_Path: LDAPCP/LDAPCP.csproj
+      Solution_Name: ${{ vars.PROJECT_NAME }}.sln
+      Project_Name: ${{ vars.PROJECT_NAME }}
+      Project_Directory: ${{ vars.PROJECT_NAME }}
+      Project_File_Path: ${{ vars.PROJECT_NAME }}/${{ vars.PROJECT_NAME }}.csproj
 
     steps:
     - name: Checkout
@@ -62,8 +62,8 @@ jobs:
 
     # Decode the base 64 encoded signing key
     # Key encoded using PowerShell Core:
-    # $cert = Get-Content "C:\...\LDAPCP.snk" -AsByteStream -ReadCount 
-    # [System.Convert]::ToBase64String($cert) | Out-File "C:\...\LDAPCP_b64Encoded.txt"
+    # $cert = Get-Content "C:\...\key.snk" -AsByteStream -ReadCount 
+    # [System.Convert]::ToBase64String($cert) | Out-File "C:\...\key_b64Encoded.txt"
     - name: Decode the signing key
       run: |
         $data = [System.Convert]::FromBase64String("${{ secrets.BASE64_ENCODED_SIGNINGKEY }}")
@@ -113,7 +113,7 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     env:
-      Project_Name: LDAPCP
+      Project_Name: ${{ vars.PROJECT_NAME }}
       assembly-version: ${{ needs.build.outputs.assembly-version }}
     steps:
       - name: Download artifacts
