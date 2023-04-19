@@ -1,6 +1,9 @@
 name: Publish nightly version
 
-on: repository_dispatch
+on:
+  repository_dispatch:
+    types:
+      - publish-nightly-version
 
 jobs:
   calculate-version:

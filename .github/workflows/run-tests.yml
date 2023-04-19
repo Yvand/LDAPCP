@@ -5,12 +5,14 @@ on:
       - start-workflow-run-tests
   workflow_dispatch:
     inputs:
-      SPSE:
-        sharepoint_version: 'SE'
-        dtl_poolName: 'LDAPCP-Tests-Subscription'
-      SP2013:
-        sharepoint_version: '2013'
-        dtl_poolName: 'LDAPCP-Tests-2013'
+      sharepoint_versions:
+        description: 'SharePoint versions to deploy'
+        required: true
+        default: '["SE"]'
+      skip_create_environment:
+        description: 'Set to true to skip deployment of template and jump to artifacts installation'
+        required: true
+        default: false
 
 jobs:
   create-test-environment:
@@ -64,6 +66,7 @@ jobs:
     env:
       vm_name: ${{ format('SP{0}', matrix.sharepoint_version) }} #${{ format('SP{0}', matrix.sps_version) }} #SPSE
       dtl_poolName: ${{ format('LDAPCP-Tests-{0}', matrix.sharepoint_version) }}
+      claims_provider_name: ${{ vars.PROJECT_NAME }}
     steps:
     - name: Azure Login
       uses: azure/login@v1
@@ -74,5 +77,22 @@ jobs:
       uses: azure/CLI@v1
       with:
         inlineScript: |
-          az lab vm apply-artifacts --lab-name ${{ vars.dtl_serviceName }} --name ${{ env.vm_name }} --resource-group ${{ vars.dtl_rgName }} \
-          --artifacts "[ { \"artifactId\": \"/subscriptions/${{ vars.dtl_subscriptionId }}/resourceGroups/${{ vars.dtl_rgName }}/providers/Microsoft.DevTestLab/labs/${{ vars.dtl_serviceName }}/artifactSources/public repo/artifacts/windows-vsts-build-agent\", \"parameters\": [ { \"name\": \"vstsAccount\", \"value\": \"${{ vars.dtl_azdevopsAccount }}\" }, { \"name\": \"vstsPassword\", \"value\": \"${{ secrets.dtl_azdevopsPassword }}\" }, { \"name\": \"poolName\", \"value\": \"${{ matrix.dtl_poolName }}\" }, { \"name\": \"windowsLogonAccount\", \"value\": \"${{ format('{0}@contoso.local', vars.dtl_adminUserName) }}\" }, { \"name\": \"windowsLogonPassword\", \"value\": \"${{ secrets.dtl_accountsPassword }}\" }, { \"name\": \"agentName\", \"value\": \"${{ env.vm_name }}\" }, { \"name\": \"agentNameSuffix\", \"value\": \"${{ vars.dtl_agentNameSuffix }}\" }, { \"name\": \"RunAsAutoLogon\", \"value\": \"false\" }, { \"name\": \"driveLetter\", \"value\": \"C\" }, { \"name\": \"workDirectory\", \"value\": \"\" } ] } ]"
+          artifactId="/subscriptions/${{ vars.dtl_subscriptionId }}/resourceGroups/${{ vars.dtl_rgName }}/providers/Microsoft.DevTestLab/labs/${{ vars.dtl_serviceName }}/artifactSources/public repo/artifacts/windows-vsts-build-agent"
+          artifactApplied=$(az lab vm show --lab-name ${{ vars.dtl_serviceName }} --resource-group ${{ vars.dtl_rgName }} --name ${{ env.vm_name }} --expand 'properties($expand=artifacts)' --query "artifacts[?artifactId=='$artifactId' && status == 'Succeeded'].status" --output tsv)
+          echo $artifactApplied
+          if [ -z $artifactApplied ]; then
+            az lab vm apply-artifacts --lab-name ${{ vars.dtl_serviceName }} --name ${{ env.vm_name }} --resource-group ${{ vars.dtl_rgName }} \
+            --artifacts "[ { \"artifactId\": \"$artifactId\", \"parameters\": [ { \"name\": \"vstsAccount\", \"value\": \"${{ vars.dtl_azdevopsAccount }}\" }, { \"name\": \"vstsPassword\", \"value\": \"${{ secrets.dtl_azdevopsPassword }}\" }, { \"name\": \"poolName\", \"value\": \"${{ env.dtl_poolName }}\" }, { \"name\": \"windowsLogonAccount\", \"value\": \"${{ format('{0}@contoso.local', vars.dtl_adminUserName) }}\" }, { \"name\": \"windowsLogonPassword\", \"value\": \"${{ secrets.dtl_accountsPassword }}\" }, { \"name\": \"agentName\", \"value\": \"${{ env.vm_name }}\" }, { \"name\": \"agentNameSuffix\", \"value\": \"${{ vars.dtl_agentNameSuffix }}\" }, { \"name\": \"RunAsAutoLogon\", \"value\": \"false\" }, { \"name\": \"driveLetter\", \"value\": \"C\" }, { \"name\": \"workDirectory\", \"value\": \"\" } ] } ]"
+          fi
+
+    - name: Apply artifact - Run a PowerShell script
+      uses: azure/CLI@v1
+      with:
+        inlineScript: |
+          artifactId="/subscriptions/${{ vars.dtl_subscriptionId }}/resourceGroups/${{ vars.dtl_rgName }}/providers/Microsoft.DevTestLab/labs/${{ vars.dtl_serviceName }}/artifactSources/public repo/artifacts/windows-run-powershell"
+          artifactApplied=$(az lab vm show --lab-name ${{ vars.dtl_serviceName }} --resource-group ${{ vars.dtl_rgName }} --name ${{ env.vm_name }} --expand 'properties($expand=artifacts)' --query "artifacts[?artifactId=='$artifactId' && status == 'Succeeded'].status" --output tsv)
+          echo $artifactApplied
+          if [ -z $artifactApplied ]; then
+            az lab vm apply-artifacts --lab-name ${{ vars.dtl_serviceName }} --name ${{ env.vm_name }} --resource-group ${{ vars.dtl_rgName }} \
+            --artifacts "[ { \"artifactId\": \"$artifactId\", \"parameters\": [ { \"name\": \"scriptFileUris\", \"value\": \" ${{ vars.DTL_PrepareSharePointVmScriptUris }} \" }, { \"name\": \"scriptToRun\", \"value\": \"ConfigureLab.ps1\" }, { \"name\": \"scriptArguments\", \"value\": \"-pathToPackage 'blablabla' -claimsProviderName '${{ env.claims_provider_name }}' -spTrustName 'contoso.local' -adminUserName '${{ format('contoso\{0}', vars.dtl_adminUserName) }}' -adminPassword '${{ secrets.dtl_accountsPassword }}'\" } ] } ]"
+          fi
