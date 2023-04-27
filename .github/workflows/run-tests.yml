@@ -73,7 +73,7 @@ jobs:
       with:
         creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-    - name: Apply artifact - Register a VSTS agent in DevOps agent pools
+    - name: Apply artifact - Register current VM as a VSTS agent in DevOps agent pools
       uses: azure/CLI@v1
       with:
         inlineScript: |
@@ -85,7 +85,7 @@ jobs:
             --artifacts "[ { \"artifactId\": \"$artifactId\", \"parameters\": [ { \"name\": \"vstsAccount\", \"value\": \"${{ vars.dtl_azdevopsAccount }}\" }, { \"name\": \"vstsPassword\", \"value\": \"${{ secrets.dtl_azdevopsPassword }}\" }, { \"name\": \"poolName\", \"value\": \"${{ env.dtl_poolName }}\" }, { \"name\": \"windowsLogonAccount\", \"value\": \"${{ format('{0}@contoso.local', vars.dtl_adminUserName) }}\" }, { \"name\": \"windowsLogonPassword\", \"value\": \"${{ secrets.dtl_accountsPassword }}\" }, { \"name\": \"agentName\", \"value\": \"${{ env.vm_name }}\" }, { \"name\": \"agentNameSuffix\", \"value\": \"${{ vars.dtl_agentNameSuffix }}\" }, { \"name\": \"RunAsAutoLogon\", \"value\": \"false\" }, { \"name\": \"driveLetter\", \"value\": \"C\" }, { \"name\": \"workDirectory\", \"value\": \"\" } ] } ]"
           fi
 
-    - name: Apply artifact - Run a PowerShell script
+    - name: Apply artifact - Run PowerShell script to download and install claims provider
       uses: azure/CLI@v1
       with:
         inlineScript: |
