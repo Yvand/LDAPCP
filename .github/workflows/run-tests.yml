@@ -15,84 +15,27 @@ on:
         default: false
 
 jobs:
-  create-test-environment:
-    if: github.event.client_payload.skip_create_environment != true
-    runs-on: ubuntu-latest
-    env:
-      # ternary 'else' is not supported, so use this workaround: https://github.com/orgs/community/discussions/25725#discussioncomment-3248924
-      dtl_provisionSharePointSubscription: ${{ contains(github.event.client_payload.sharepoint_versions, 'SE') && 'Subscription-RTM' || 'No' }}
-      dtl_provisionSharePoint2019: ${{ contains(github.event.client_payload.sharepoint_versions, '2019') }}
-      dtl_provisionSharePoint2016: ${{ contains(github.event.client_payload.sharepoint_versions, '2016') }}
-      dtl_provisionSharePoint2013: ${{ contains(github.event.client_payload.sharepoint_versions, '2013') }}
-    steps:
-    - name: Azure Login
-      uses: azure/login@v1
-      with:
-        creds: ${{ secrets.AZURE_CREDENTIALS }}
-
-    - name: Create DevTest Labs environment
-      uses: azure/CLI@v1
-      with:
-        inlineScript: |
-          az lab environment create --lab-name ${{ vars.dtl_serviceName }} --name ${{ vars.dtl_environmentName }} --resource-group ${{ vars.dtl_rgName }} --artifact-source-name "Public Repo" \
-          --arm-template "/subscriptions/${{ vars.dtl_subscriptionId }}/resourceGroups/${{ vars.dtl_rgName }}/providers/Microsoft.DevTestLab/labs/${{ vars.dtl_serviceName }}/artifactSources/Public Environment Repo/armTemplates/SharePoint-AllVersions" \
-          --parameters "[ { \"name\": \"provisionSharePoint2013\", \"value\": \"${{ env.dtl_provisionSharePoint2013 }}\" }, { \"name\": \"provisionSharePoint2016\", \"value\": \"${{ env.dtl_provisionSharePoint2016 }}\" }, { \"name\": \"provisionSharePoint2019\", \"value\": \"${{ env.dtl_provisionSharePoint2019 }}\" }, { \"name\": \"provisionSharePointSubscription\", \"value\": \"${{ env.dtl_provisionSharePointSubscription }}\" }, { \"name\": \"configureADFS\", \"value\": \"true\" }, { \"name\": \"enableHybridBenefitServerLicenses\", \"value\": \"true\" }, { \"name\": \"enableAutomaticUpdates\", \"value\": \"${{ vars.dtl_enableAutomaticUpdates }}\" }, { \"name\": \"adminUserName\", \"value\": \"${{ vars.dtl_adminUserName }}\" }, { \"name\": \"adminPassword\", \"value\": \"${{ secrets.dtl_accountsPassword }}\" }, { \"name\": \"serviceAccountsPassword\", \"value\": \"${{ secrets.dtl_accountsPassword }}\" }, { \"name\": \"addPublicIPAddress\", \"value\": \"${{ vars.dtl_addPublicIPAddress }}\" }, { \"name\": \"RDPTrafficAllowed\", \"value\": \"${{ vars.dtl_RDPTrafficAllowed }}\" }, { \"name\": \"addAzureBastion\", \"value\": \"${{ vars.dtl_addAzureBastion }}\" } ]"
-          
-  #apply-artifacts-spse:
-  apply-artifacts:
-    runs-on: ubuntu-latest
-    needs: create-test-environment
-    if: |
-      always() &&
-      !contains(needs.*.result, 'failure') &&
-      !contains(needs.*.result, 'cancelled')
-    #if: startsWith(vars.dtl_provisionSharePointSubscription, 'Subscription-')
-    strategy:
-      matrix:
-        sharepoint_version: ${{ github.event.client_payload.sharepoint_versions }}
-        # include:
-        # - sharepoint_version: Subscription-RTM #${{ startsWith(matrix.sharepoint_version, 'Subscription-') }}
-          # sps_version: 'SE'
-          # dtl_poolName: 'LDAPCP-Tests-Subscription'
-        # - sharepoint_version: 2019
-          # sps_version: '2019'
-          # dtl_poolName: 'LDAPCP-Tests-2019'
-        # - sharepoint_version: 2016
-          # sps_version: '2016'
-          # dtl_poolName: 'LDAPCP-Tests-2016'
-        # - sharepoint_version: 2013
-          # sps_version: '2013'
-          # dtl_poolName: 'LDAPCP-Tests-2013'
-    env:
-      vm_name: ${{ format('SP{0}', matrix.sharepoint_version) }} #${{ format('SP{0}', matrix.sps_version) }} #SPSE
-      dtl_poolName: ${{ format('LDAPCP-Tests-{0}', matrix.sharepoint_version) }}
-      claims_provider_name: ${{ vars.PROJECT_NAME }}
-    steps:
-    - name: Azure Login
-      uses: azure/login@v1
-      with:
-        creds: ${{ secrets.AZURE_CREDENTIALS }}
-
-    - name: Apply artifact - Register current VM as a VSTS agent in DevOps agent pools
-      uses: azure/CLI@v1
-      with:
-        inlineScript: |
-          artifactId="/subscriptions/${{ vars.dtl_subscriptionId }}/resourceGroups/${{ vars.dtl_rgName }}/providers/Microsoft.DevTestLab/labs/${{ vars.dtl_serviceName }}/artifactSources/public repo/artifacts/windows-vsts-build-agent"
-          artifactApplied=$(az lab vm show --lab-name ${{ vars.dtl_serviceName }} --resource-group ${{ vars.dtl_rgName }} --name ${{ env.vm_name }} --expand 'properties($expand=artifacts)' --query "artifacts[?artifactId=='$artifactId' && status == 'Succeeded'].status" --output tsv)
-          echo $artifactApplied
-          if [ -z $artifactApplied ]; then
-            az lab vm apply-artifacts --lab-name ${{ vars.dtl_serviceName }} --name ${{ env.vm_name }} --resource-group ${{ vars.dtl_rgName }} \
-            --artifacts "[ { \"artifactId\": \"$artifactId\", \"parameters\": [ { \"name\": \"vstsAccount\", \"value\": \"${{ vars.dtl_azdevopsAccount }}\" }, { \"name\": \"vstsPassword\", \"value\": \"${{ secrets.dtl_azdevopsPassword }}\" }, { \"name\": \"poolName\", \"value\": \"${{ env.dtl_poolName }}\" }, { \"name\": \"windowsLogonAccount\", \"value\": \"${{ format('{0}@contoso.local', vars.dtl_adminUserName) }}\" }, { \"name\": \"windowsLogonPassword\", \"value\": \"${{ secrets.dtl_accountsPassword }}\" }, { \"name\": \"agentName\", \"value\": \"${{ env.vm_name }}\" }, { \"name\": \"agentNameSuffix\", \"value\": \"${{ vars.dtl_agentNameSuffix }}\" }, { \"name\": \"RunAsAutoLogon\", \"value\": \"false\" }, { \"name\": \"driveLetter\", \"value\": \"C\" }, { \"name\": \"workDirectory\", \"value\": \"\" } ] } ]"
-          fi
-
-    - name: Apply artifact - Run PowerShell script to download and install claims provider
-      uses: azure/CLI@v1
-      with:
-        inlineScript: |
-          artifactId="/subscriptions/${{ vars.dtl_subscriptionId }}/resourceGroups/${{ vars.dtl_rgName }}/providers/Microsoft.DevTestLab/labs/${{ vars.dtl_serviceName }}/artifactSources/public repo/artifacts/windows-run-powershell"
-          artifactApplied=$(az lab vm show --lab-name ${{ vars.dtl_serviceName }} --resource-group ${{ vars.dtl_rgName }} --name ${{ env.vm_name }} --expand 'properties($expand=artifacts)' --query "artifacts[?artifactId=='$artifactId' && status == 'Succeeded'].status" --output tsv)
-          echo $artifactApplied
-          if [ -z $artifactApplied ]; then
-            az lab vm apply-artifacts --lab-name ${{ vars.dtl_serviceName }} --name ${{ env.vm_name }} --resource-group ${{ vars.dtl_rgName }} \
-            --artifacts "[ { \"artifactId\": \"$artifactId\", \"parameters\": [ { \"name\": \"scriptFileUris\", \"value\": \" ${{ vars.DTL_PrepareSharePointVmScriptUris }} \" }, { \"name\": \"scriptToRun\", \"value\": \"ConfigureLab.ps1\" }, { \"name\": \"scriptArguments\", \"value\": \"-pathToPackage 'blablabla' -claimsProviderName '${{ env.claims_provider_name }}' -spTrustName 'contoso.local' -adminUserName '${{ format('contoso\{0}', vars.dtl_adminUserName) }}' -adminPassword '${{ secrets.dtl_accountsPassword }}'\" } ] } ]"
-          fi
+  call-workflow-prepare-dtl-env:
+    uses: Yvand/AzureCP/.github/workflows/reusable-prepare-dtl-env.yml@master
+    with:
+      project-name: ${{ vars.PROJECT_NAME }}
+      sharepoint-versions: ${{ inputs.sharepoint_versions }}
+      skip-create-environment: ${{ inputs.skip_create_environment == 'true' }}
+      dtl-serviceName: ${{ vars.dtl_serviceName }}
+      dtl-rgName: ${{ vars.dtl_rgName }}
+      dtl-environmentName: ${{ vars.dtl_environmentName }}
+      dtl-subscriptionId: ${{ vars.dtl_subscriptionId }}
+      azdevops-organizationName: ${{ vars.DTL_AZDEVOPSACCOUNT }}
+      dtl-env-adminUserName: ${{ vars.dtl_adminUserName }}
+      dtl-env-addPublicIPAddress: ${{ vars.dtl_addPublicIPAddress }}
+      dtl-env-rdpTrafficAllowed: ${{ vars.dtl_RDPTrafficAllowed }}
+      dtl-env-addAzureBastion: ${{ vars.dtl_addAzureBastion == 'true' }}
+      test-prepareSharePointVmScriptUris: ${{ vars.DTL_PrepareSharePointVmScriptUris }}
+      test-claimsProviderPackageUri: ${{ vars.DTL_ClaimsProviderPackageUri }}
+      unittestfiles-storageAccountSourceRelativePath: ${{ vars.unittestfiles_storageAccountSourceRelativePath }}
+    secrets:
+      AZURE_CREDENTIALS: ${{ secrets.AZURE_CREDENTIALS }}
+      azdevops-pat-registerAgent: ${{ secrets.dtl_azdevopsPassword }}
+      dtl-env-accountsPassword: ${{ secrets.dtl_accountsPassword }}
+      unittestfiles-storageAccountEndpoint: ${{ secrets.unittestfiles_storageAccountEndpoint }}
+      unittestfiles-storageAccountShareName: ${{ secrets.unittestfiles_storageAccountShareName }}

@@ -1,4 +1,4 @@
-name: Publish nightly release
+name: Publish production release
 on: workflow_dispatch
 jobs:
   call-workflow-publish-nightly-release:
@@ -6,6 +6,6 @@ jobs:
     with:
       project-name: ${{ vars.PROJECT_NAME }}
       version-major-minor: ${{ vars.VERSION_MAJOR_MINOR }}
-      is-production-release: false
+      is-production-release: true
     secrets:
       base64-encoded-signingkey: ${{ secrets.BASE64_ENCODED_SIGNINGKEY }}

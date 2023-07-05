@@ -1,0 +1,17 @@
+name: Verify PRs and commits
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ "master", "dev" ]
+  pull_request:
+    branches: [ "master", "dev" ]
+
+jobs:
+  call-build:
+    uses: Yvand/AzureCP/.github/workflows/reusable-build.yml@master
+    with:
+      project-name: ${{ vars.PROJECT_NAME }}
+      version-major-minor: ${{ vars.VERSION_MAJOR_MINOR }}
+    secrets:
+      base64-encoded-signingkey: ${{ secrets.BASE64_ENCODED_SIGNINGKEY }}
