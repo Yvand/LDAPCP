@@ -1,6 +1,19 @@
-name: create test environment
-on: repository_dispatch
-  
+name: Run integration tests
+on:
+  repository_dispatch:
+    types:
+      - start-workflow-run-tests
+  workflow_dispatch:
+    inputs:
+      sharepoint_versions:
+        description: 'SharePoint versions to deploy'
+        required: true
+        default: '["SE"]'
+      skip_create_environment:
+        description: 'Set to true to skip deployment of template and jump to artifacts installation'
+        required: true
+        default: false
+
 jobs:
   call-workflow-prepare-dtl-env:
     uses: Yvand/AzureCP/.github/workflows/reusable-prepare-dtl-env.yml@master

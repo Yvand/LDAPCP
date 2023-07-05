@@ -1,0 +1,11 @@
+name: Publish nightly release
+on: workflow_dispatch
+jobs:
+  call-workflow-publish-nightly-release:
+    uses: Yvand/AzureCP/.github/workflows/reusable-build-publish-release.yml@master
+    with:
+      project-name: ${{ vars.PROJECT_NAME }}
+      version-major-minor: ${{ vars.VERSION_MAJOR_MINOR }}
+      is-production-release: false
+    secrets:
+      base64-encoded-signingkey: ${{ secrets.BASE64_ENCODED_SIGNINGKEY }}
