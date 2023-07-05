@@ -2,20 +2,27 @@ name: create test environment
 on: repository_dispatch
   
 jobs:
-  create-test-environment:
-    runs-on: ubuntu-latest
-    steps:
-    - name: Azure Login
-      uses: azure/login@v1
-      with:
-        creds: ${{ secrets.AZURE_CREDENTIALS }}
-
-    - name: Azure CLI script
-      uses: azure/CLI@v1
-      with:
-        inlineScript: |
-          az account show
-          az lab environment create --lab-name ${{ env.dtl_serviceName }} --name ${{ env.dtl_environmentName }} --resource-group ${{ env.dtl_rgName }} --artifact-source-name "Public Repo" \
-          --arm-template "/subscriptions/${{ env.dtl_subscriptionId }}/resourceGroups/${{ env.dtl_rgName }}/providers/Microsoft.DevTestLab/labs/${{ env.dtl_serviceName }}/artifactSources/Public Environment Repo/armTemplates/SharePoint-AllVersions" \
-          --parameters "[ { \"name\": \"provisionSharePoint2013\", \"value\": \"${{ env.dtl_provisionSharePoint2013 }}\"  }}, { \"name\": \"provisionSharePoint2016\", \"value\": \"${{ env.dtl_provisionSharePoint2016 }}\"  }}, { \"name\": \"provisionSharePoint2019\", \"value\": \"${{ env.dtl_provisionSharePoint2019 }}\"  }}, { \"name\": \"provisionSharePointSubscription\", \"value\": \"${{ env.dtl_provisionSharePointSubscription }}\"  }}, { \"name\": \"configureADFS\", \"value\": \"${{ env.dtl_configureADFS }}\"  }}, { \"name\": \"enableHybridBenefitServerLicenses\", \"value\": \"${{ env.dtl_enableHybridBenefitServerLicenses }}\"  }}, { \"name\": \"enableAutomaticUpdates\", \"value\": \"${{ env.dtl_enableAutomaticUpdates }}\"  }}, { \"name\": \"adminUserName\", \"value\": \"${{ env.dtl_adminUserName }}\"  }}, { \"name\": \"adminPassword\", \"value\": \"${{ env.dtl_accountsPassword }}\"  }}, { \"name\": \"serviceAccountsPassword\", \"value\": \"${{ env.dtl_accountsPassword }}\"  }}, { \"name\": \"addPublicIPAddress\", \"value\": \"${{ env.dtl_addPublicIPAddress }}\"  }}, { \"name\": \"RDPTrafficAllowed\", \"value\": \"${{ env.dtl_RDPTrafficAllowed }}\"  }}, { \"name\": \"addAzureBastion\", \"value\": \"${{ env.dtl_addAzureBastion }}\"  }} ]"
-          
+  call-workflow-prepare-dtl-env:
+    uses: Yvand/AzureCP/.github/workflows/reusable-prepare-dtl-env.yml@master
+    with:
+      project-name: ${{ vars.PROJECT_NAME }}
+      sharepoint-versions: ${{ inputs.sharepoint_versions }}
+      skip-create-environment: ${{ inputs.skip_create_environment == 'true' }}
+      dtl-serviceName: ${{ vars.dtl_serviceName }}
+      dtl-rgName: ${{ vars.dtl_rgName }}
+      dtl-environmentName: ${{ vars.dtl_environmentName }}
+      dtl-subscriptionId: ${{ vars.dtl_subscriptionId }}
+      azdevops-organizationName: ${{ vars.DTL_AZDEVOPSACCOUNT }}
+      dtl-env-adminUserName: ${{ vars.dtl_adminUserName }}
+      dtl-env-addPublicIPAddress: ${{ vars.dtl_addPublicIPAddress }}
+      dtl-env-rdpTrafficAllowed: ${{ vars.dtl_RDPTrafficAllowed }}
+      dtl-env-addAzureBastion: ${{ vars.dtl_addAzureBastion == 'true' }}
+      test-prepareSharePointVmScriptUris: ${{ vars.DTL_PrepareSharePointVmScriptUris }}
+      test-claimsProviderPackageUri: ${{ vars.DTL_ClaimsProviderPackageUri }}
+      unittestfiles-storageAccountSourceRelativePath: ${{ vars.unittestfiles_storageAccountSourceRelativePath }}
+    secrets:
+      AZURE_CREDENTIALS: ${{ secrets.AZURE_CREDENTIALS }}
+      azdevops-pat-registerAgent: ${{ secrets.dtl_azdevopsPassword }}
+      dtl-env-accountsPassword: ${{ secrets.dtl_accountsPassword }}
+      unittestfiles-storageAccountEndpoint: ${{ secrets.unittestfiles_storageAccountEndpoint }}
+      unittestfiles-storageAccountShareName: ${{ secrets.unittestfiles_storageAccountShareName }}
