@@ -49,7 +49,7 @@ jobs:
   - task: VSTest@2
     displayName: 'Run Visual Studio tests'
     inputs:
-      searchFolder: '$(RootLocalPath)/$(TestsPathName)/$(System.TeamProject)-unit-tests/bin/release'
+      searchFolder: '$(RootLocalPath)/$(TestsPathName)/$(System.TeamProject)-unit-tests'
       vsTestVersion: toolsInstaller
       runSettingsFile: '$(RootLocalPath)/$(TestsPathName)/DTLServer.runsettings'
       overrideTestrunParameters: '$(Tests.OverrideTestrunParameters)'
