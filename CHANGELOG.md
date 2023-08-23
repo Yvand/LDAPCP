@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+* IMPORTANT: due to the move to GitHub Actions and the configuration of the builtin Windows VM, LDAPCP now requires at least .NET 4.6.2
+* CI/CD is now implemented using GitHub Actions instead of Azure DevOps
 * Fix: During augmentation, connection to LDAP always used SimpleBind, regardless of the authentication settings
 * Fix: "Apply to all user attributes" now only updates user entities (not also groups)
 * Reference SharePoint assemblies locally instead of the GAC
