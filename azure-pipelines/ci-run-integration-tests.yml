@@ -1,6 +1,10 @@
 resources:
 - repo: self
 
+variables:
+  RootLocalPath: 'C:\drop'
+  TestsPathName: 'unit-tests'
+
 jobs:
 - job: RunTests
   strategy:
@@ -17,7 +21,7 @@ jobs:
         sharePointVersion: 2019
       OnSharePointSubscription:
         deployThisSharePointVersion: variables['Deployment.ProvisionSharePointSubscription']
-        sharePointVersion: Subscription
+        sharePointVersion: SE
   displayName: Run integration tests
   #condition: eq(variables['deployThisSharePointVersion'], 'yes') # Not working: variables['deployThisSharePointVersion'] is evaluated to Null
   timeoutInMinutes: 30
@@ -25,19 +29,19 @@ jobs:
     name: $(System.TeamProject)-Tests-$(sharePointVersion)
   steps:
   - checkout: none #skip checking out the default repository resource
-  - task: DownloadBuildArtifacts@0
-    displayName: 'Download Build Artifacts'
-    inputs:
-      buildType: specific
-      project: '$(System.TeamProjectId)'
-      pipeline: $(DevOps.BuildArtifactsPipelineID)
-      specificBuildWithTriggering: true
-      artifactName: 'drop_$(Tests.BuildConfiguration)'
-      downloadPath: $(Build.ArtifactStagingDirectory)
-      itemPattern: |
-       drop_$(Tests.BuildConfiguration)/$(System.TeamProject)/bin/Release/$(System.TeamProject).pdb
-       drop_$(Tests.BuildConfiguration)/$(System.TeamProject).Tests/bin/Release/*.dll
-       drop_$(Tests.BuildConfiguration)/$(Tests.DataFolderName)/?(*.csv|*.json|*.runsettings)
+  # - task: DownloadBuildArtifacts@0
+    # displayName: 'Download Build Artifacts'
+    # inputs:
+      # buildType: specific
+      # project: '$(System.TeamProjectId)'
+      # pipeline: $(DevOps.BuildArtifactsPipelineID)
+      # specificBuildWithTriggering: true
+      # artifactName: '$(TestsPathName)'
+      # downloadPath: $(RootLocalPath)
+      # itemPattern: |
+       # $(TestsPathName)/$(System.TeamProject)/bin/Release/$(System.TeamProject).pdb
+       # $(TestsPathName)/$(System.TeamProject).Tests/bin/Release/*.dll
+       # $(TestsPathName)/$(Tests.DataFolderName)/?(*.csv|*.json|*.runsettings)
 
   - task: VisualStudioTestPlatformInstaller@1
     displayName: 'Visual Studio Test Platform Installer'
@@ -45,9 +49,9 @@ jobs:
   - task: VSTest@2
     displayName: 'Run Visual Studio tests'
     inputs:
-      searchFolder: '$(Build.ArtifactStagingDirectory)/drop_$(Tests.BuildConfiguration)/$(System.TeamProject).Tests/bin/Release'
+      searchFolder: '$(RootLocalPath)/$(TestsPathName)/$(System.TeamProject)-unit-tests/release'
       vsTestVersion: toolsInstaller
-      runSettingsFile: '$(Build.ArtifactStagingDirectory)/drop_$(Tests.BuildConfiguration)/$(Tests.DataFolderName)/DTLServer.runsettings'
+      runSettingsFile: '$(RootLocalPath)/$(TestsPathName)/DTLServer.runsettings'
       overrideTestrunParameters: '$(Tests.OverrideTestrunParameters)'
       codeCoverageEnabled: $(Tests.CodeCoverageEnabled)
       otherConsoleOptions: '/Platform:x64'
