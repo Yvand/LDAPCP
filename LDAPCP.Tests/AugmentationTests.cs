@@ -28,6 +28,7 @@ namespace LDAPCP.Tests
                 coco.UseSPServerConnectionToAD = false;
                 coco.EnableAugmentation = true;
                 coco.GetGroupMembershipUsingDotNetHelpers = true;
+                coco.AuthenticationSettings = AuthenticationTypes.Secure | AuthenticationTypes.Signing | AuthenticationTypes.Sealing;
             }
             Config.Update();
         }
