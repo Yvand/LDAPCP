@@ -45,4 +45,4 @@ jobs:
       platform: '$(BuildPlatform)'
       configuration: $(Tests.BuildConfiguration)
       testAssemblyVer2: |
-        **\*test*.dll
+        **\$(System.TeamProject)*test*.dll
