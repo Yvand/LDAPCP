@@ -2,6 +2,7 @@
 using Microsoft.SharePoint.Administration.Claims;
 using NUnit.Framework;
 using System;
+using System.DirectoryServices;
 using System.Security.Claims;
 
 namespace LDAPCP.Tests
@@ -83,6 +84,7 @@ namespace LDAPCP.Tests
             coco.UseSPServerConnectionToAD = false;
             coco.LDAPPath = "LDAP://test";
             coco.LDAPUsername = "userTest";
+            coco.AuthenticationSettings = AuthenticationTypes.Secure | AuthenticationTypes.Signing | AuthenticationTypes.Sealing;
             Config.LDAPConnectionsProp.Add(coco);
             Config.Update();
 
