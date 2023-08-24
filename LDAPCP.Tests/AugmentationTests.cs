@@ -2,6 +2,7 @@
 using Newtonsoft.Json;
 using NUnit.Framework;
 using System.Collections.Generic;
+using System.DirectoryServices;
 using System.IO;
 
 namespace LDAPCP.Tests
@@ -27,6 +28,7 @@ namespace LDAPCP.Tests
                 coco.UseSPServerConnectionToAD = false;
                 coco.EnableAugmentation = true;
                 coco.GetGroupMembershipUsingDotNetHelpers = true;
+                coco.AuthenticationSettings = AuthenticationTypes.Secure | AuthenticationTypes.Signing | AuthenticationTypes.Sealing;
             }
             Config.Update();
         }
@@ -52,6 +54,7 @@ namespace LDAPCP.Tests
                 coco.UseSPServerConnectionToAD = false;
                 coco.EnableAugmentation = true;
                 coco.GetGroupMembershipUsingDotNetHelpers = false;
+                coco.AuthenticationSettings = AuthenticationTypes.Secure | AuthenticationTypes.Signing | AuthenticationTypes.Sealing;
             }
             Config.Update();
         }

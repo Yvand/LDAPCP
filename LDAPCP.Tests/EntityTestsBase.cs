@@ -2,6 +2,7 @@
 using Microsoft.SharePoint.Administration.Claims;
 using NUnit.Framework;
 using System;
+using System.DirectoryServices;
 using System.Security.Claims;
 
 namespace LDAPCP.Tests
@@ -72,7 +73,7 @@ namespace LDAPCP.Tests
         //[TestCase(@"group\ch", 1, @"contoso.local\group\chartest")]
         //[TestCase(@"test)", 2, @"test)char@contoso.local")]
         //[TestCase(@"group\ch", 1, @"group\chartest")]
-        [TestCase(@"user1", 2, @"user1@yvand.net")]
+        [TestCase(@"user1", 1, @"user1@contoso.local")]
         public virtual void DEBUG_SearchEntities(string inputValue, int expectedResultCount, string expectedEntityClaimValue)
         {
             if (!TestSearch) return;
@@ -83,6 +84,7 @@ namespace LDAPCP.Tests
             coco.UseSPServerConnectionToAD = false;
             coco.LDAPPath = "LDAP://test";
             coco.LDAPUsername = "userTest";
+            coco.AuthenticationSettings = AuthenticationTypes.Secure | AuthenticationTypes.Signing | AuthenticationTypes.Sealing;
             Config.LDAPConnectionsProp.Add(coco);
             Config.Update();
 

@@ -297,7 +297,7 @@ namespace ldapcp.ControlTemplates
         void UpdateAdditionalUserLdapFilter()
         {
             if (PersistedObject == null) { return; }
-            foreach (var userAttr in this.PersistedObject.ClaimTypes.Where(x => x.EntityType == DirectoryObjectType.User || x.UseMainClaimTypeOfDirectoryObject))
+            foreach (var userAttr in this.PersistedObject.ClaimTypes.Where(x => x.EntityType == DirectoryObjectType.User))
             {
                 userAttr.AdditionalLDAPFilter = this.TxtAdditionalUserLdapFilter.Text;
             }

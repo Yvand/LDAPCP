@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+* IMPORTANT: due to the move to GitHub Actions and the configuration of the builtin Windows VM, LDAPCP now requires at least .NET 4.6.2
+* CI/CD is now implemented using GitHub Actions instead of Azure DevOps
+* Fix: During augmentation, connection to LDAP always used SimpleBind, regardless of the authentication settings
+* Fix: "Apply to all user attributes" now only updates user entities (not also groups)
+* Reference SharePoint assemblies locally instead of the GAC
+
+## LDAPCP 15.0.20220421.1394 enhancements & bug-fixes - Published in April 22, 2022
+
 * Augmentation is now enabled by default on a new LDAP connection, when it is added through the UI
 * Augment groups with the same attribute as the one set in the LDAPCP configuration. https://github.com/Yvand/LDAPCP/issues/148
 * Fix: In claims configurfation page, the values in the list of "PickerEntity metadata" was not populated correctly, which caused an issue with the "Title" (and a few others)
