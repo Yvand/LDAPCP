@@ -1,6 +1,6 @@
 # Change log for LDAPCP
 
-## Unreleased
+## LDAPCP v16.0.20230824.1 enhancements & bug-fixes - Published in August 24, 2023
 
 * IMPORTANT: due to the move to GitHub Actions and the configuration of the builtin Windows VM, LDAPCP now requires at least .NET 4.6.2
 * CI/CD is now implemented using GitHub Actions instead of Azure DevOps
