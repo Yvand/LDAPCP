@@ -1,51 +1,65 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <!-- Common -->
   <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{66F4B88D-7D7E-4435-92DE-94810E2B8F9F}</ProjectGuid>
+    <PackageId>Yvand.LDAPCP</PackageId>
+    <Authors>Yvan Duhamel</Authors>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>ldapcp</RootNamespace>
-    <AssemblyName>ldapcp</AssemblyName>
-    <TargetFrameworkVersion>v4.6.2</TargetFrameworkVersion>
-    <TargetOfficeVersion>15.0</TargetOfficeVersion>
+    <RootNamespace>Yvand</RootNamespace>
+    <AssemblyName>Yvand.LDAPCP</AssemblyName>
+    <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
+    <LangVersion>8.0</LangVersion>
+    <TargetOfficeVersion>19.0</TargetOfficeVersion>
     <FileAlignment>512</FileAlignment>
     <ProjectTypeGuids>{C1CDDADD-2546-481F-9697-4EA41081F2FC};{14822709-B5A1-4724-98CA-57A101D1B079};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
     <SandboxedSolution>False</SandboxedSolution>
-    <SccProjectName>SAK</SccProjectName>
-    <SccLocalPath>SAK</SccLocalPath>
-    <SccAuxPath>SAK</SccAuxPath>
-    <SccProvider>SAK</SccProvider>
-    <TargetFrameworkProfile />
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>LDAPCP.snk</AssemblyOriginatorKeyFile>
+    <DependsOnNETStandard>false</DependsOnNETStandard>
+    <ProjectMode>SharePointCustomization</ProjectMode>
+    <MinimumOfficeToolsVersion>14.1</MinimumOfficeToolsVersion>
+    <MinimumVisualStudioVersion>15.0</MinimumVisualStudioVersion>
+    <AutoGenerateBindingRedirects>false</AutoGenerateBindingRedirects>
+    <!-- Publish the repository URL in the built .nupkg (in the NuSpec <Repository> element) -->
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <!-- compiler-generated source, like AssemblyInfo, are included in the PDB -->
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <!-- Recommended: Embed symbols containing Source Link in the main file (exe/dll) -->
+    <!-- <DebugType>embedded</DebugType> -->
   </PropertyGroup>
+  <!-- Debug configuration -->
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugType>embedded</DebugType>
     <DebugSymbols>true</DebugSymbols>
-    <DebugType>full</DebugType>
     <Optimize>false</Optimize>
     <OutputPath>bin\Debug\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <UseVSHostingProcess>false</UseVSHostingProcess>
-    <PlatformTarget>AnyCPU</PlatformTarget>
+    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
+  <!-- Release configuration -->
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <DebugType>pdbonly</DebugType>
+    <DebugType>portable</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>bin\Release\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
     <UseVSHostingProcess>false</UseVSHostingProcess>
+    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
-  <PropertyGroup>
-    <SignAssembly>true</SignAssembly>
+  <PropertyGroup Condition="'$(GITHUB_ACTIONS)' == 'true'">
+    <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
   </PropertyGroup>
-  <PropertyGroup>
-    <AssemblyOriginatorKeyFile>LDAPCP.snk</AssemblyOriginatorKeyFile>
-  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1" PrivateAssets="all" />
+  </ItemGroup>
+  <!-- Project references -->
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -78,8 +92,8 @@
     </Compile>
     <Compile Include="ClaimTypeConfig.cs" />
     <Compile Include="LdapcpLoggingService.cs" />
-    <Compile Include="Features\LDAPCP\LDAPCP.EventReceiver.cs">
-      <DependentUpon>LDAPCP.feature</DependentUpon>
+    <Compile Include="Features\LDAPCPSE\LDAPCPSE.EventReceiver.cs">
+      <DependentUpon>LDAPCPSE.feature</DependentUpon>
     </Compile>
     <Compile Include="LDAPCP.cs" />
     <Compile Include="LDAPCPConfig.cs" />
@@ -92,10 +106,10 @@
     <None Include="ADMIN\SharePointProjectItem.spdata">
       <SharePointProjectItemId>{f66ab842-cba9-4e8b-994a-082609fa04b9}</SharePointProjectItemId>
     </None>
-    <None Include="Features\LDAPCP.Administration\LDAPCP.Administration.feature">
+    <None Include="Features\LDAPCPSE.Administration\LDAPCPSE.Administration.feature">
       <FeatureId>{64451824-37fb-4ecb-8c3c-2501826bd17e}</FeatureId>
     </None>
-    <None Include="Features\LDAPCP\LDAPCP.feature">
+    <None Include="Features\LDAPCPSE\LDAPCPSE.feature">
       <FeatureId>{44294c3e-7072-44ba-8a9e-4a2a2e6d3de8}</FeatureId>
     </None>
     <None Include="Layouts\SharePointProjectItem.spdata">
@@ -112,17 +126,19 @@
       <DependentUpon>Package.package</DependentUpon>
     </None>
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <Folder Include="Yvand\" />
+  </ItemGroup>
   <ItemGroup>
     <Content Include="ADMIN\LDAPCP\ClaimTypesConfig.aspx" />
     <Content Include="ADMIN\LDAPCP\LdapcpSettings.aspx" />
     <Content Include="ADMIN\LDAPCP\ClaimTypesConfig.ascx" />
     <Content Include="ADMIN\LDAPCP\GlobalSettings.ascx" />
-    <Content Include="Features\LDAPCP.Administration\LDAPCP.Administration.Template.xml">
-      <DependentUpon>LDAPCP.Administration.feature</DependentUpon>
+    <Content Include="Features\LDAPCPSE.Administration\LDAPCPSE.Administration.Template.xml">
+      <DependentUpon>LDAPCPSE.Administration.feature</DependentUpon>
     </Content>
-    <Content Include="Features\LDAPCP\LDAPCP.Template.xml">
-      <DependentUpon>LDAPCP.feature</DependentUpon>
+    <Content Include="Features\LDAPCPSE\LDAPCPSE.Template.xml">
+      <DependentUpon>LDAPCPSE.feature</DependentUpon>
     </Content>
     <Content Include="Layouts\ldapcp\jquery-1.9.1.min.js" />
     <Content Include="Layouts\ldapcp\LDAPCP_logo_small.png" />
