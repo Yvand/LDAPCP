@@ -8,10 +8,10 @@ using System.Linq;
 using System.Reflection;
 using WIF4_5 = System.Security.Claims;
 
-namespace ldapcp
+namespace Yvand.Config
 {
     /// <summary>
-    /// Defines an attribute / claim type configuration
+    /// Stores configuration associated to a claim type, and its mapping with the Azure AD attribute (GraphProperty)
     /// </summary>
     public class ClaimTypeConfig : SPAutoSerializingObject, IEquatable<ClaimTypeConfig>
     {
@@ -73,7 +73,8 @@ namespace ldapcp
         private bool _UseMainClaimTypeOfDirectoryObject = false;
 
         /// <summary>
-        /// When creating a PickerEntry, it's possible to populate entry with additional attributes stored in EntityData hash table
+        /// Can contain a member of class PeopleEditorEntityDataKey http://msdn.microsoft.com/en-us/library/office/microsoft.sharepoint.webcontrols.peopleeditorentitydatakeys_members(v=office.15).aspx
+        /// to populate additional metadata in permission created
         /// </summary>
         public string EntityDataKey
         {
@@ -86,16 +87,16 @@ namespace ldapcp
         /// <summary>
         /// Stores property SPTrustedClaimTypeInformation.DisplayName of current claim type.
         /// </summary>
-        internal string ClaimTypeDisplayName
+        public string ClaimTypeDisplayName
         {
-            get { return _ClaimTypeMappingName; }
-            set { _ClaimTypeMappingName = value; }
+            get { return _ClaimTypeDisplayName; }
+            set { _ClaimTypeDisplayName = value; }
         }
         [Persisted]
-        private string _ClaimTypeMappingName;
+        private string _ClaimTypeDisplayName;
 
         /// <summary>
-        /// Every claim value type is a string by default
+        /// Every claim value type is String by default
         /// </summary>
         public string ClaimValueType
         {
@@ -150,7 +151,7 @@ namespace ldapcp
         private string _LDAPAttributeToShowAsDisplayText;
 
         /// <summary>
-        /// Set to only return values that exactly match the user input
+        /// Gets or sets a Boolean value specifying whether claims provider should only return values that match exactly the input
         /// </summary>
         public bool FilterExactMatchOnly
         {
@@ -240,17 +241,29 @@ namespace ldapcp
         /// </summary>
         internal Collection<ClaimTypeConfig> innerCol = new Collection<ClaimTypeConfig>();
 
-        public int Count => innerCol.Count;
+        public int Count
+        {
+            get
+            {
+                // If innerCol is null, it means that collection is not correctly set in the persisted object, very likely because it was migrated from a previons version of AzureCP
+                if (innerCol == null)
+                {
+                    return 0;
+                }
+                return innerCol.Count;
+            }
+        }
 
         public bool IsReadOnly => false;
 
         /// <summary>
         /// If set, more checks can be done when collection is changed
         /// </summary>
-        public SPTrustedLoginProvider SPTrust;
+        public SPTrustedLoginProvider SPTrust { get; private set; }
 
-        public ClaimTypeConfigCollection()
+        public ClaimTypeConfigCollection(SPTrustedLoginProvider spTrust)
         {
+            this.SPTrust = spTrust;
         }
 
         internal ClaimTypeConfigCollection(ref Collection<ClaimTypeConfig> innerCol)
@@ -355,8 +368,8 @@ namespace ldapcp
         /// <param name="newItem">New version of ClaimTypeConfig object</param>
         public void Update(string oldClaimType, ClaimTypeConfig newItem)
         {
-            if (String.IsNullOrEmpty(oldClaimType)) throw new ArgumentNullException("oldClaimType");
-            if (newItem == null) throw new ArgumentNullException("newItem");
+            if (String.IsNullOrEmpty(oldClaimType)) { throw new ArgumentNullException(nameof(oldClaimType)); }
+            if (newItem == null) { throw new ArgumentNullException(nameof(newItem)); }
 
             // If SPTrustedLoginProvider is set, additional checks can be done
             if (SPTrust != null)
@@ -379,7 +392,7 @@ namespace ldapcp
             }
 
             // Create a temp collection that is a copy of current collection
-            ClaimTypeConfigCollection testUpdateCollection = new ClaimTypeConfigCollection();
+            ClaimTypeConfigCollection testUpdateCollection = new ClaimTypeConfigCollection(this.SPTrust);
             foreach (ClaimTypeConfig curCTConfig in innerCol)
             {
                 testUpdateCollection.Add(curCTConfig.CopyConfiguration(), false);
@@ -390,7 +403,7 @@ namespace ldapcp
             ctConfigToUpdate.ApplyConfiguration(newItem);
 
             // Test change in testUpdateCollection by adding all items in a new temp collection
-            ClaimTypeConfigCollection testNewItemCollection = new ClaimTypeConfigCollection();
+            ClaimTypeConfigCollection testNewItemCollection = new ClaimTypeConfigCollection(this.SPTrust);
             foreach (ClaimTypeConfig curCTConfig in testUpdateCollection)
             {
                 // ClaimTypeConfigCollection.Add() may thrown an exception if newItem is not valid for any reason
@@ -435,7 +448,7 @@ namespace ldapcp
                     innerCol.RemoveAt(i);
                     break;  // There can be only 1 potential duplicate
                 }
-            }            
+            }
 
             identityClaimType.LDAPClass = newLDAPClass;
             identityClaimType.LDAPAttribute = newLDAPAttribute;
@@ -481,12 +494,9 @@ namespace ldapcp
 
         public void CopyTo(ClaimTypeConfig[] array, int arrayIndex)
         {
-            if (array == null)
-                throw new ArgumentNullException("The array cannot be null.");
-            if (arrayIndex < 0)
-                throw new ArgumentOutOfRangeException("The starting array index cannot be negative.");
-            if (Count > array.Length - arrayIndex + 1)
-                throw new ArgumentException("The destination array has fewer elements than the collection.");
+            if (array == null) { throw new ArgumentNullException(nameof(array)); }
+            if (arrayIndex < 0) { throw new ArgumentOutOfRangeException("The starting array index cannot be negative."); }
+            if (Count > array.Length - arrayIndex + 1) { throw new ArgumentException("The destination array has fewer elements than the collection."); }
 
             for (int i = 0; i < innerCol.Count; i++)
             {
@@ -496,7 +506,10 @@ namespace ldapcp
 
         public bool Remove(ClaimTypeConfig item)
         {
-            if (SPTrust != null && String.Equals(item.ClaimType, SPTrust.IdentityClaimTypeInformation.MappedClaimType, StringComparison.InvariantCultureIgnoreCase)) throw new InvalidOperationException($"Cannot delete claim type \"{item.ClaimType}\" because it is the identity claim type of \"{SPTrust.Name}\"");
+            if (SPTrust != null && String.Equals(item.ClaimType, SPTrust.IdentityClaimTypeInformation.MappedClaimType, StringComparison.InvariantCultureIgnoreCase))
+            {
+                throw new InvalidOperationException($"Cannot delete claim type \"{item.ClaimType}\" because it is the identity claim type of \"{SPTrust.Name}\"");
+            }
 
             bool result = false;
             for (int i = 0; i < innerCol.Count; i++)
@@ -514,8 +527,14 @@ namespace ldapcp
 
         public bool Remove(string claimType)
         {
-            if (String.IsNullOrEmpty(claimType)) throw new ArgumentNullException("claimType");
-            if (SPTrust != null && String.Equals(claimType, SPTrust.IdentityClaimTypeInformation.MappedClaimType, StringComparison.InvariantCultureIgnoreCase)) throw new InvalidOperationException($"Cannot delete claim type \"{claimType}\" because it is the identity claim type of \"{SPTrust.Name}\"");
+            if (String.IsNullOrEmpty(claimType))
+            {
+                throw new ArgumentNullException(nameof(claimType));
+            }
+            if (SPTrust != null && String.Equals(claimType, SPTrust.IdentityClaimTypeInformation.MappedClaimType, StringComparison.InvariantCultureIgnoreCase))
+            {
+                throw new InvalidOperationException($"Cannot delete claim type \"{claimType}\" because it is the identity claim type of \"{SPTrust.Name}\"");
+            }
 
             bool result = false;
             for (int i = 0; i < innerCol.Count; i++)
@@ -542,7 +561,7 @@ namespace ldapcp
 
         public ClaimTypeConfig GetByClaimType(string claimType)
         {
-            if (String.IsNullOrEmpty(claimType)) throw new ArgumentNullException("claimType");
+            if (String.IsNullOrEmpty(claimType)) { throw new ArgumentNullException(nameof(claimType)); }
             ClaimTypeConfig ctConfig = innerCol.FirstOrDefault(x => String.Equals(claimType, x.ClaimType, StringComparison.InvariantCultureIgnoreCase));
             return ctConfig;
         }
@@ -580,21 +599,25 @@ namespace ldapcp
 
         public void Reset() { curIndex = -1; }
 
-        void IDisposable.Dispose() { }
+        void IDisposable.Dispose()
+        {
+            // Not implemented
+        }
 
         public ClaimTypeConfig Current
         {
             get { return curBox; }
         }
 
-
         object IEnumerator.Current
         {
             get { return Current; }
         }
-
     }
 
+    /// <summary>
+    /// Ensure that properties ClaimType, DirectoryObjectProperty and EntityType are unique
+    /// </summary>
     public class ClaimTypeConfigSameConfig : EqualityComparer<ClaimTypeConfig>
     {
         public override bool Equals(ClaimTypeConfig existingCTConfig, ClaimTypeConfig newCTConfig)
@@ -618,6 +641,9 @@ namespace ldapcp
         }
     }
 
+    /// <summary>
+    /// Ensure that property ClaimType is unique
+    /// </summary>
     public class ClaimTypeConfigSameClaimType : EqualityComparer<ClaimTypeConfig>
     {
         public override bool Equals(ClaimTypeConfig existingCTConfig, ClaimTypeConfig newCTConfig)
@@ -640,6 +666,9 @@ namespace ldapcp
         }
     }
 
+    /// <summary>
+    /// Ensure that property EntityDataKey is unique for the EntityType
+    /// </summary>
     public class ClaimTypeConfigSamePermissionMetadata : EqualityComparer<ClaimTypeConfig>
     {
         public override bool Equals(ClaimTypeConfig existingCTConfig, ClaimTypeConfig newCTConfig)

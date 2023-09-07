@@ -76,31 +76,18 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="ADMIN\LDAPCP\ClaimTypesConfig.ascx.cs">
-      <DependentUpon>ClaimTypesConfig.ascx</DependentUpon>
-      <SubType>ASPXCodeBehind</SubType>
-    </Compile>
-    <Compile Include="ADMIN\LDAPCP\ClaimTypesConfig.ascx.designer.cs">
-      <DependentUpon>ClaimTypesConfig.ascx.cs</DependentUpon>
-    </Compile>
-    <Compile Include="ADMIN\LDAPCP\GlobalSettings.ascx.cs">
-      <DependentUpon>GlobalSettings.ascx</DependentUpon>
-      <SubType>ASPXCodeBehind</SubType>
-    </Compile>
-    <Compile Include="ADMIN\LDAPCP\GlobalSettings.ascx.designer.cs">
-      <DependentUpon>GlobalSettings.ascx.cs</DependentUpon>
-    </Compile>
-    <Compile Include="ClaimTypeConfig.cs" />
-    <Compile Include="LdapcpLoggingService.cs" />
     <Compile Include="Features\LDAPCPSE\LDAPCPSE.EventReceiver.cs">
       <DependentUpon>LDAPCPSE.feature</DependentUpon>
     </Compile>
-    <Compile Include="LDAPCP.cs" />
-    <Compile Include="LDAPCPConfig.cs" />
-    <Compile Include="LdapcpUserControl.cs">
-      <SubType>ASPXCodeBehind</SubType>
-    </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Yvand\Config\ClaimsProviderConstants.cs" />
+    <Compile Include="Yvand\Config\ClaimTypeConfig.cs" />
+    <Compile Include="Yvand\Config\LDAP\LDAPConnection.cs" />
+    <Compile Include="Yvand\Config\LDAP\LDAPEntityProviderConfig.cs" />
+    <Compile Include="Yvand\EntityProviderBase.cs" />
+    <Compile Include="Yvand\EntityProviderConfig.cs" />
+    <Compile Include="Yvand\LDAPCP.cs" />
+    <Compile Include="Yvand\Logger.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="ADMIN\SharePointProjectItem.spdata">
@@ -126,14 +113,8 @@
       <DependentUpon>Package.package</DependentUpon>
     </None>
   </ItemGroup>
+  <ItemGroup />
   <ItemGroup>
-    <Folder Include="Yvand\" />
-  </ItemGroup>
-  <ItemGroup>
-    <Content Include="ADMIN\LDAPCP\ClaimTypesConfig.aspx" />
-    <Content Include="ADMIN\LDAPCP\LdapcpSettings.aspx" />
-    <Content Include="ADMIN\LDAPCP\ClaimTypesConfig.ascx" />
-    <Content Include="ADMIN\LDAPCP\GlobalSettings.ascx" />
     <Content Include="Features\LDAPCPSE.Administration\LDAPCPSE.Administration.Template.xml">
       <DependentUpon>LDAPCPSE.Administration.feature</DependentUpon>
     </Content>
