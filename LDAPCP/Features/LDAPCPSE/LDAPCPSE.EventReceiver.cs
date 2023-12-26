@@ -5,7 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 
-namespace ldapcp
+namespace Yvand.LdapClaimsProvider
 {
     /// <summary>
     /// This class handles events raised during feature activation, deactivation, installation, uninstallation, and upgrade.
@@ -16,13 +16,13 @@ namespace ldapcp
     [Guid("91e8e631-b3be-4d05-84c4-8653bddac278")]
     public class LDAPCPEventReceiver : SPClaimProviderFeatureReceiver
     {
-        public override string ClaimProviderAssembly => typeof(LDAPCP).Assembly.FullName;
+        public override string ClaimProviderAssembly => typeof(LDAPCPSE).Assembly.FullName;
 
-        public override string ClaimProviderDescription => LDAPCP._ProviderInternalName;
+        public override string ClaimProviderDescription => LDAPCPSE.ClaimsProviderName;
 
-        public override string ClaimProviderDisplayName => LDAPCP._ProviderInternalName;
+        public override string ClaimProviderDisplayName => LDAPCPSE.ClaimsProviderName;
 
-        public override string ClaimProviderType => typeof(LDAPCP).FullName;
+        public override string ClaimProviderType => typeof(LDAPCPSE).FullName;
 
         public override void FeatureActivated(SPFeatureReceiverProperties properties)
         {
@@ -38,21 +38,21 @@ namespace ldapcp
             {
                 try
                 {
-                    ClaimsProviderLogging svc = ClaimsProviderLogging.Local;
-                    ClaimsProviderLogging.Log($"[{LDAPCP._ProviderInternalName}] Activating farm-scoped feature for claims provider \"{LDAPCP._ProviderInternalName}\"", TraceSeverity.High, EventSeverity.Information, ClaimsProviderLogging.TraceCategory.Configuration);
-                    LDAPCPConfig existingConfig = LDAPCPConfig.GetConfiguration(ClaimsProviderConstants.CONFIG_NAME);
-                    if (existingConfig == null)
-                    {
-                        LDAPCPConfig.CreateDefaultConfiguration();
-                    }
-                    else
-                    {
-                        ClaimsProviderLogging.Log($"[{LDAPCP._ProviderInternalName}] Use configuration \"{existingConfig.Name}\" found in the configuration database", TraceSeverity.High, EventSeverity.Information, ClaimsProviderLogging.TraceCategory.Configuration);
-                    }
+                    Logger svc = Logger.Local;
+                    Logger.Log($"[{LDAPCPSE.ClaimsProviderName}] Activating farm-scoped feature for claims provider \"{LDAPCPSE.ClaimsProviderName}\"", TraceSeverity.High, EventSeverity.Information, TraceCategory.Configuration);
+                    //LDAPCPConfig existingConfig = LDAPCPConfig.GetConfiguration(ClaimsProviderConstants.CONFIG_NAME);
+                    //if (existingConfig == null)
+                    //{
+                    //    LDAPCPConfig.CreateDefaultConfiguration();
+                    //}
+                    //else
+                    //{
+                    //    Logger.Log($"[{LDAPCPSE.ClaimsProviderName}] Use configuration \"{existingConfig.Name}\" found in the configuration database", TraceSeverity.High, EventSeverity.Information, TraceCategory.Configuration);
+                    //}
                 }
                 catch (Exception ex)
                 {
-                    ClaimsProviderLogging.LogException(LDAPCP._ProviderInternalName, $"activating farm-scoped feature for {LDAPCP._ProviderInternalName}", ClaimsProviderLogging.TraceCategory.Configuration, ex);
+                    Logger.LogException((string)LDAPCPSE.ClaimsProviderName, $"activating farm-scoped feature for claims provider \"{LDAPCPSE.ClaimsProviderName}\"", TraceCategory.Configuration, ex);
                 }
             });
         }
@@ -63,13 +63,13 @@ namespace ldapcp
             {
                 try
                 {
-                    ClaimsProviderLogging.Log($"[{LDAPCP._ProviderInternalName}] Uninstalling farm-scoped feature for claims provider \"{LDAPCP._ProviderInternalName}\": Deleting configuration from the farm", TraceSeverity.High, EventSeverity.Information, ClaimsProviderLogging.TraceCategory.Configuration);
-                    LDAPCPConfig.DeleteConfiguration(ClaimsProviderConstants.CONFIG_NAME);
-                    ClaimsProviderLogging.Unregister();
+                    Logger.Log($"[{LDAPCPSE.ClaimsProviderName}] Uninstalling farm-scoped feature for claims provider \"{LDAPCPSE.ClaimsProviderName}\": Deleting configuration from the farm", TraceSeverity.High, EventSeverity.Information, TraceCategory.Configuration);
+                    //LDAPCPConfig.DeleteConfiguration(ClaimsProviderConstants.CONFIG_NAME);
+                    Logger.Unregister();
                 }
                 catch (Exception ex)
                 {
-                    ClaimsProviderLogging.LogException(LDAPCP._ProviderInternalName, $"deactivating farm-scoped feature for claims provider \"{LDAPCP._ProviderInternalName}\"", ClaimsProviderLogging.TraceCategory.Configuration, ex);
+                    Logger.LogException(LDAPCPSE.ClaimsProviderName, $"deactivating farm-scoped feature for claims provider \"{LDAPCPSE.ClaimsProviderName}\"", TraceCategory.Configuration, ex);
                 }
             });
         }
@@ -80,12 +80,12 @@ namespace ldapcp
             {
                 try
                 {
-                    ClaimsProviderLogging.Log($"[{LDAPCP._ProviderInternalName}] Deactivating farm-scoped feature for claims provider \"{LDAPCP._ProviderInternalName}\": Removing claims provider from the farm (but not its configuration)", TraceSeverity.High, EventSeverity.Information, ClaimsProviderLogging.TraceCategory.Configuration);
-                    base.RemoveClaimProvider(LDAPCP._ProviderInternalName);
+                    Logger.Log($"[{LDAPCPSE.ClaimsProviderName}] Deactivating farm-scoped feature for claims provider \"{LDAPCPSE.ClaimsProviderName}\": Removing claims provider from the farm (but not its configuration)", TraceSeverity.High, EventSeverity.Information, TraceCategory.Configuration);
+                    base.RemoveClaimProvider(LDAPCPSE.ClaimsProviderName);
                 }
                 catch (Exception ex)
                 {
-                    ClaimsProviderLogging.LogException(LDAPCP._ProviderInternalName, $"deactivating farm-scoped feature for claims provider \"{LDAPCP._ProviderInternalName}\"", ClaimsProviderLogging.TraceCategory.Configuration, ex);
+                    Logger.LogException(LDAPCPSE.ClaimsProviderName, $"deactivating farm-scoped feature for claims provider \"{LDAPCPSE.ClaimsProviderName}\"", TraceCategory.Configuration, ex);
                 }
             });
         }

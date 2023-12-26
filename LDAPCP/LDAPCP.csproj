@@ -8,8 +8,8 @@
     <Authors>Yvan Duhamel</Authors>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Yvand</RootNamespace>
-    <AssemblyName>Yvand.LDAPCP</AssemblyName>
+    <RootNamespace>Yvand.LdapClaimsProvider</RootNamespace>
+    <AssemblyName>Yvand.LDAPCPSE</AssemblyName>
     <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
     <LangVersion>8.0</LangVersion>
     <TargetOfficeVersion>19.0</TargetOfficeVersion>
@@ -61,6 +61,10 @@
   </ItemGroup>
   <!-- Project references -->
   <ItemGroup>
+    <Reference Include="Microsoft.SharePoint, Version=16.0.0.0, Culture=neutral, PublicKeyToken=71e9bce111e9429c, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>references\SPSE\Microsoft.SharePoint.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Data" />
@@ -70,37 +74,27 @@
     <Reference Include="System.Web" />
     <Reference Include="System.Xml" />
     <Reference Include="System.Xml.Linq" />
-    <Reference Include="Microsoft.SharePoint">
-      <HintPath>references\SPS2013\Microsoft.SharePoint.dll</HintPath>
-      <Private>False</Private>
-    </Reference>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Features\LDAPCPSE\LDAPCPSE.EventReceiver.cs">
       <DependentUpon>LDAPCPSE.feature</DependentUpon>
     </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Yvand\Config\ClaimsProviderConstants.cs" />
-    <Compile Include="Yvand\Config\ClaimTypeConfig.cs" />
-    <Compile Include="Yvand\Config\LDAP\LDAPConnection.cs" />
-    <Compile Include="Yvand\Config\LDAP\LDAPEntityProviderConfig.cs" />
-    <Compile Include="Yvand\EntityProviderBase.cs" />
-    <Compile Include="Yvand\EntityProviderConfig.cs" />
-    <Compile Include="Yvand\LDAPCP.cs" />
-    <Compile Include="Yvand\Logger.cs" />
+    <Compile Include="Yvand.LdapClaimsProvider\Configuration\ClaimsProviderConstants.cs" />
+    <Compile Include="Yvand.LdapClaimsProvider\Configuration\ClaimTypeConfig.cs" />
+    <Compile Include="Yvand.LdapClaimsProvider\Configuration\LDAPProviderConfiguration.cs" />
+    <Compile Include="Yvand.LdapClaimsProvider\Configuration\LdapConnection.cs" />
+    <Compile Include="Yvand.LdapClaimsProvider\EntityProviderBase.cs" />
+    <Compile Include="Yvand.LdapClaimsProvider\LDAPCPSE.cs" />
+    <Compile Include="Yvand.LdapClaimsProvider\Logger.cs" />
+    <Compile Include="Yvand.LdapClaimsProvider\Utils.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="ADMIN\SharePointProjectItem.spdata">
-      <SharePointProjectItemId>{f66ab842-cba9-4e8b-994a-082609fa04b9}</SharePointProjectItemId>
-    </None>
     <None Include="Features\LDAPCPSE.Administration\LDAPCPSE.Administration.feature">
       <FeatureId>{64451824-37fb-4ecb-8c3c-2501826bd17e}</FeatureId>
     </None>
     <None Include="Features\LDAPCPSE\LDAPCPSE.feature">
       <FeatureId>{44294c3e-7072-44ba-8a9e-4a2a2e6d3de8}</FeatureId>
-    </None>
-    <None Include="Layouts\SharePointProjectItem.spdata">
-      <SharePointProjectItemId>{6a2152a5-0941-4e3a-abee-d771c813bdce}</SharePointProjectItemId>
     </None>
     <None Include="LDAPCP.AdminLinks\SharePointProjectItem.spdata">
       <SharePointProjectItemId>{48070593-e687-4f19-8920-d28f17368f37}</SharePointProjectItemId>
@@ -112,8 +106,13 @@
     <None Include="Package\Package.Template.xml">
       <DependentUpon>Package.package</DependentUpon>
     </None>
+    <None Include="TEMPLATE\SharePointProjectItem.spdata">
+      <SharePointProjectItemId>{b58f5ced-5e00-4deb-a03e-295241a7c6ab}</SharePointProjectItemId>
+    </None>
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <Folder Include="TEMPLATE\ADMIN\LDAPCPSE\" />
+  </ItemGroup>
   <ItemGroup>
     <Content Include="Features\LDAPCPSE.Administration\LDAPCPSE.Administration.Template.xml">
       <DependentUpon>LDAPCPSE.Administration.feature</DependentUpon>
@@ -121,8 +120,8 @@
     <Content Include="Features\LDAPCPSE\LDAPCPSE.Template.xml">
       <DependentUpon>LDAPCPSE.feature</DependentUpon>
     </Content>
-    <Content Include="Layouts\ldapcp\jquery-1.9.1.min.js" />
-    <Content Include="Layouts\ldapcp\LDAPCP_logo_small.png" />
+    <Content Include="TEMPLATE\LAYOUTS\LDAPCPSE\jquery-1.9.1.min.js" />
+    <Content Include="TEMPLATE\LAYOUTS\LDAPCPSE\LDAPCP_logo_small.png" />
     <Content Include="LDAPCP.AdminLinks\Elements.xml">
       <SubType>Designer</SubType>
     </Content>
