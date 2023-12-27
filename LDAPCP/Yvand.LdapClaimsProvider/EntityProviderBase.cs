@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using Microsoft.SharePoint.Administration.Claims;
+using System.Collections.Generic;
 using System.DirectoryServices;
 using System.Threading.Tasks;
 using Yvand.LdapClaimsProvider.Configuration;
@@ -17,7 +18,7 @@ namespace Yvand.LdapClaimsProvider
         /// </summary>
         /// <param name="currentContext"></param>
         /// <returns></returns>
-        public abstract Task<List<SearchResultCollection>> SearchOrValidateEntitiesAsync(OperationContext currentContext);
+        public abstract List<SearchResultCollection> SearchOrValidateEntities(OperationContext currentContext);
 
         /// <summary>
         /// Returns the groups the user is member of
@@ -25,7 +26,7 @@ namespace Yvand.LdapClaimsProvider
         /// <param name="currentContext"></param>
         /// <param name="groupClaimTypeConfig"></param>
         /// <returns></returns>
-        public abstract Task<List<string>> GetEntityGroupsAsync(OperationContext currentContext, ClaimTypeConfig groupClaimTypeConfig);
+        public abstract List<SPClaim> GetEntityGroups(OperationContext currentContext, ClaimTypeConfig groupClaimTypeConfig);
 
         public EntityProviderBase(string claimsProviderName)
         {

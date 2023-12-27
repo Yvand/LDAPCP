@@ -1,7 +1,10 @@
 ﻿using Microsoft.SharePoint.Administration;
+using Microsoft.SharePoint.Utilities;
 using System;
 using System.Collections.Generic;
 using System.DirectoryServices;
+using System.DirectoryServices.Protocols;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
@@ -114,6 +117,8 @@ namespace Yvand.LdapClaimsProvider.Configuration
         /// </summary>
         public string Filter { get; private set; }
 
+        public bool InitializationSuccessful { get; private set; } = false;
+
         /// <summary>
         /// Domain name, for example "contoso"
         /// </summary>
@@ -127,10 +132,66 @@ namespace Yvand.LdapClaimsProvider.Configuration
         /// <summary>
         /// Root container to connect to, for example "DC=contoso,DC=local"
         /// </summary>
-        public string RootContainer { get; private set; }
+        //public string RootContainer { get; private set; }
+
+        /// <summary>
+        /// Root container to connect to, for example "DC=contoso,DC=local"
+        /// </summary>
+        public string DomaindistinguishedName { get; private set; }
 
         public LdapConnection()
         {
+        }
+
+        public bool Initialize()
+        {
+            if (InitializationSuccessful)
+            {
+                return InitializationSuccessful;
+            }
+
+            // This block does LDAP operations
+            using (new SPMonitoredScope($"[{LDAPCPSE.ClaimsProviderName}] Get domain names / root container information about LDAP server \"{this.DirectoryConnection.Path}\"", 2000))
+            {
+                try
+                {
+#if DEBUG
+                    this.AuthenticationSettings = AuthenticationTypes.None;
+                    Logger.LogDebug($"Hardcoded property DirectoryEntry.AuthenticationType to {AuthenticationSettings} for \"{this.DirectoryConnection.Path}\"");
+#endif
+
+                    // Method PropertyCollection.Contains("distinguishedName") does a LDAP bind
+                    // In AD LDS: property "distinguishedName" = "CN=LDSInstance2,DC=ADLDS,DC=local", properties "name" and "cn" = "LDSInstance2"
+                    if (this.DirectoryConnection.Properties.Contains("distinguishedName"))
+                    {
+                        DomaindistinguishedName = this.DirectoryConnection.Properties["distinguishedName"].Value.ToString();
+                        string domainName;
+                        string domainFQDN;
+                        Utils.GetDomainInformation(DomaindistinguishedName, out domainName, out domainFQDN);
+                        this.DomainName = domainName;
+                        this.DomainFQDN = domainFQDN;
+                    }
+                    else if (this.DirectoryConnection.Properties.Contains("name"))
+                    {
+                        DomainName = this.DirectoryConnection.Properties["name"].Value.ToString();
+                    }
+                    else if (this.DirectoryConnection.Properties.Contains("cn"))
+                    {
+                        // Tivoli stores domain name in property "cn" (properties "distinguishedName" and "name" don't exist)
+                        DomainName = this.DirectoryConnection.Properties["cn"].Value.ToString();
+                    }
+                    InitializationSuccessful = true;
+                }
+                catch (DirectoryServicesCOMException ex)
+                {
+                    Logger.LogException("", $"while getting domain names information for LDAP connection {this.DirectoryConnection.Path} (DirectoryServicesCOMException)", TraceCategory.Configuration, ex);
+                }
+                catch (Exception ex)
+                {
+                    Logger.LogException("", $"while getting domain names information for LDAP connection {this.DirectoryConnection.Path} (Exception)", TraceCategory.Configuration, ex);
+                }
+            }
+            return InitializationSuccessful;
         }
 
         /// <summary>

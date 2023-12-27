@@ -8,6 +8,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Yvand.LdapClaimsProvider.Configuration;
+using WIF4_5 = System.Security.Claims;
 
 namespace Yvand.LdapClaimsProvider
 {
@@ -303,48 +304,26 @@ namespace Yvand.LdapClaimsProvider
             // Initialize Graph client on each tenant
             foreach (var tenant in settings.LdapConnections)
             {
-                //tenant.InitializeAuthentication();
+                tenant.Initialize();
             }
             this.Settings = settings;
             return true;
         }
 
+        #region Augmentation
         protected override void FillClaimsForEntity(Uri context, SPClaim entity, List<SPClaim> claims)
         {
             throw new NotImplementedException();
         }
 
-        protected override void FillClaimTypes(List<string> claimTypes)
+        protected override void FillClaimsForEntity(Uri context, SPClaim entity, SPClaimProviderContext claimProviderContext, List<SPClaim> claims)
         {
             throw new NotImplementedException();
         }
+        #endregion
 
-        protected override void FillClaimValueTypes(List<string> claimValueTypes)
-        {
-            throw new NotImplementedException();
-        }
-
-        protected override void FillEntityTypes(List<string> entityTypes)
-        {
-            throw new NotImplementedException();
-        }
-
-        protected override void FillHierarchy(Uri context, string[] entityTypes, string hierarchyNodeID, int numberOfLevels, SPProviderHierarchyTree hierarchy)
-        {
-            throw new NotImplementedException();
-        }
-
+        #region Search
         protected override void FillResolve(Uri context, string[] entityTypes, string resolveInput, List<PickerEntity> resolved)
-        {
-            throw new NotImplementedException();
-        }
-
-        protected override void FillResolve(Uri context, string[] entityTypes, SPClaim resolveInput, List<PickerEntity> resolved)
-        {
-            throw new NotImplementedException();
-        }
-
-        protected override void FillSchema(SPProviderSchema schema)
         {
             throw new NotImplementedException();
         }
@@ -353,5 +332,152 @@ namespace Yvand.LdapClaimsProvider
         {
             throw new NotImplementedException();
         }
+        #endregion
+
+        #region Validation
+        protected override void FillResolve(Uri context, string[] entityTypes, SPClaim resolveInput, List<PickerEntity> resolved)
+        {
+            throw new NotImplementedException();
+        }
+        #endregion
+
+        /// <summary>
+        /// Return the identity claim type
+        /// </summary>
+        /// <returns></returns>
+        public override string GetClaimTypeForUserKey()
+        {
+            try
+            {
+                return this.SPTrust != null ? this.SPTrust.IdentityClaimTypeInformation.MappedClaimType : String.Empty;
+            }
+            catch (Exception ex)
+            {
+                Logger.LogException(Name, "in GetClaimTypeForUserKey", TraceCategory.Rehydration, ex);
+            }
+            return String.Empty;
+        }
+
+        /// <summary>
+        /// Return the user key (SPClaim with identity claim type) from the incoming entity
+        /// </summary>
+        /// <param name="entity"></param>
+        /// <returns></returns>
+        protected override SPClaim GetUserKeyForEntity(SPClaim entity)
+        {
+            try
+            {
+                if (this.SPTrust == null)
+                {
+                    return entity;
+                }
+
+                // There are 2 scenarios:
+                // 1: OriginalIssuer is "SecurityTokenService": Value looks like "05.t|contoso.local|yvand@contoso.local", claim type is "http://schemas.microsoft.com/sharepoint/2009/08/claims/userid" and it must be decoded properly
+                // 2: OriginalIssuer is "TrustedProvider:contoso.local": The incoming entity is fine and returned as is
+                if (String.Equals(entity.OriginalIssuer, this.OriginalIssuerName, StringComparison.InvariantCultureIgnoreCase))
+                {
+                    return entity;
+                }
+
+                // SPClaimProviderManager.IsUserIdentifierClaim tests if:
+                // ClaimType == SPClaimTypes.UserIdentifier ("http://schemas.microsoft.com/sharepoint/2009/08/claims/userid")
+                // OriginalIssuer type == SPOriginalIssuerType.SecurityTokenService
+                if (!SPClaimProviderManager.IsUserIdentifierClaim(entity))
+                {
+                    // return entity if not true, otherwise SPClaimProviderManager.DecodeUserIdentifierClaim(entity) throws an ArgumentException
+                    return entity;
+                }
+
+                // Since SPClaimProviderManager.IsUserIdentifierClaim() returned true, SPClaimProviderManager.DecodeUserIdentifierClaim() will work
+                SPClaim curUser = SPClaimProviderManager.DecodeUserIdentifierClaim(entity);
+                Logger.Log($"[{Name}] Returning user key for '{entity.Value}'",
+                    TraceSeverity.VerboseEx, EventSeverity.Information, TraceCategory.Rehydration);
+                return CreateClaim(this.SPTrust.IdentityClaimTypeInformation.MappedClaimType, curUser.Value, curUser.ValueType);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogException(Name, "in GetUserKeyForEntity", TraceCategory.Rehydration, ex);
+            }
+            return null;
+        }
+
+        protected override void FillClaimTypes(List<string> claimTypes)
+        {
+            if (claimTypes == null) { return; }
+            bool configIsValid = ValidateSettings(null);
+            if (configIsValid)
+            {
+                this.Lock_LocalConfigurationRefresh.EnterReadLock();
+                try
+                {
+
+                    foreach (var claimTypeSettings in this.Settings.RuntimeClaimTypesList)
+                    {
+                        claimTypes.Add(claimTypeSettings.ClaimType);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Logger.LogException(Name, "in FillClaimTypes", TraceCategory.Core, ex);
+                }
+                finally
+                {
+                    this.Lock_LocalConfigurationRefresh.ExitReadLock();
+                }
+            }
+        }
+
+        protected override void FillClaimValueTypes(List<string> claimValueTypes)
+        {
+            claimValueTypes.Add(WIF4_5.ClaimValueTypes.String);
+        }
+
+        protected override void FillEntityTypes(List<string> entityTypes)
+        {
+            entityTypes.Add(SPClaimEntityTypes.User);
+            entityTypes.Add(ClaimsProviderConstants.GroupClaimEntityType);
+        }
+
+        protected override void FillHierarchy(Uri context, string[] entityTypes, string hierarchyNodeID, int numberOfLevels, SPProviderHierarchyTree hierarchy)
+        {
+            List<DirectoryObjectType> aadEntityTypes = new List<DirectoryObjectType>();
+            if (entityTypes.Contains(SPClaimEntityTypes.User)) { aadEntityTypes.Add(DirectoryObjectType.User); }
+            if (entityTypes.Contains(ClaimsProviderConstants.GroupClaimEntityType)) { aadEntityTypes.Add(DirectoryObjectType.Group); }
+
+            if (!ValidateSettings(context)) { return; }
+
+            this.Lock_LocalConfigurationRefresh.EnterReadLock();
+            try
+            {
+                if (hierarchyNodeID == null)
+                {
+                    // Root level
+                    foreach (var azureObject in this.Settings.RuntimeClaimTypesList.FindAll(x => !x.UseMainClaimTypeOfDirectoryObject && aadEntityTypes.Contains(x.EntityType)))
+                    {
+                        hierarchy.AddChild(
+                            new Microsoft.SharePoint.WebControls.SPProviderHierarchyNode(
+                                Name,
+                                azureObject.ClaimTypeDisplayName,
+                                azureObject.ClaimType,
+                                true));
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogException(Name, "in FillHierarchy", TraceCategory.Claims_Picking, ex);
+            }
+            finally
+            {
+                this.Lock_LocalConfigurationRefresh.ExitReadLock();
+            }
+        }
+
+        protected override void FillSchema(SPProviderSchema schema)
+        {
+            schema.AddSchemaElement(new SPSchemaElement(PeopleEditorEntityDataKeys.DisplayName, "Display Name", SPSchemaElementType.Both));
+        }
+
     }
 }

@@ -14,7 +14,7 @@ namespace Yvand.LdapClaimsProvider
     /// The GUID attached to this class may be used during packaging and should not be modified.
     /// </remarks>
     [Guid("91e8e631-b3be-4d05-84c4-8653bddac278")]
-    public class LDAPCPEventReceiver : SPClaimProviderFeatureReceiver
+    public class LDAPCPSEEventReceiver : SPClaimProviderFeatureReceiver
     {
         public override string ClaimProviderAssembly => typeof(LDAPCPSE).Assembly.FullName;
 
@@ -69,7 +69,7 @@ namespace Yvand.LdapClaimsProvider
                 }
                 catch (Exception ex)
                 {
-                    Logger.LogException(LDAPCPSE.ClaimsProviderName, $"deactivating farm-scoped feature for claims provider \"{LDAPCPSE.ClaimsProviderName}\"", TraceCategory.Configuration, ex);
+                    Logger.LogException(LDAPCPSE.ClaimsProviderName, $"uninstalling farm-scoped feature for claims provider \"{LDAPCPSE.ClaimsProviderName}\"", TraceCategory.Configuration, ex);
                 }
             });
         }
