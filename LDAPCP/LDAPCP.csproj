@@ -86,6 +86,7 @@
     <Compile Include="Yvand.LdapClaimsProvider\Configuration\LdapConnection.cs" />
     <Compile Include="Yvand.LdapClaimsProvider\EntityProviderBase.cs" />
     <Compile Include="Yvand.LdapClaimsProvider\LDAPCPSE.cs" />
+    <Compile Include="Yvand.LdapClaimsProvider\LdapEntityProvider.cs" />
     <Compile Include="Yvand.LdapClaimsProvider\Logger.cs" />
     <Compile Include="Yvand.LdapClaimsProvider\Utils.cs" />
   </ItemGroup>

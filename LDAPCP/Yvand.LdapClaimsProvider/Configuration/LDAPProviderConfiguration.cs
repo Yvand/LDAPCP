@@ -177,7 +177,7 @@ namespace Yvand.LdapClaimsProvider.Configuration
         }
     }
 
-    public class EntraIDProviderConfiguration : SPPersistedObject, ILdapProviderSettings
+    public class LdapProviderConfiguration : SPPersistedObject, ILdapProviderSettings
     {
         public string LocalAssemblyVersion => ClaimsProviderConstants.ClaimsProviderVersion;
         /// <summary>
@@ -310,8 +310,8 @@ namespace Yvand.LdapClaimsProvider.Configuration
         }
         #endregion
 
-        public EntraIDProviderConfiguration() { }
-        public EntraIDProviderConfiguration(string persistedObjectName, SPPersistedObject parent, string claimsProviderName) : base(persistedObjectName, parent)
+        public LdapProviderConfiguration() { }
+        public LdapProviderConfiguration(string persistedObjectName, SPPersistedObject parent, string claimsProviderName) : base(persistedObjectName, parent)
         {
             this.ClaimsProviderName = claimsProviderName;
             this.Initialize();
@@ -485,9 +485,9 @@ namespace Yvand.LdapClaimsProvider.Configuration
         /// Generate and return default configuration
         /// </summary>
         /// <returns></returns>
-        public static EntraIDProviderConfiguration ReturnDefaultConfiguration(string claimsProviderName)
+        public static LdapProviderConfiguration ReturnDefaultConfiguration(string claimsProviderName)
         {
-            EntraIDProviderConfiguration defaultConfig = new EntraIDProviderConfiguration();
+            LdapProviderConfiguration defaultConfig = new LdapProviderConfiguration();
             defaultConfig.ClaimsProviderName = claimsProviderName;
             defaultConfig.ClaimTypes = LdapProviderSettings.ReturnDefaultClaimTypesConfig(claimsProviderName);
             return defaultConfig;
@@ -512,12 +512,12 @@ namespace Yvand.LdapClaimsProvider.Configuration
         /// <param name="configurationId">The ID of the configuration</param>
         /// <param name="initializeLocalSettings">Set to true to initialize the property <see cref="Settings"/></param>
         /// <returns></returns>
-        public static EntraIDProviderConfiguration GetGlobalConfiguration(Guid configurationId, bool initializeLocalSettings = false)
+        public static LdapProviderConfiguration GetGlobalConfiguration(Guid configurationId, bool initializeLocalSettings = false)
         {
             SPFarm parent = SPFarm.Local;
             try
             {
-                EntraIDProviderConfiguration configuration = (EntraIDProviderConfiguration)parent.GetObject(configurationId);
+                LdapProviderConfiguration configuration = (LdapProviderConfiguration)parent.GetObject(configurationId);
                 //if (configuration != null && initializeLocalSettings == true)
                 //{
                 //    configuration.RefreshSettingsIfNeeded();
@@ -533,7 +533,7 @@ namespace Yvand.LdapClaimsProvider.Configuration
 
         public static void DeleteGlobalConfiguration(Guid configurationId)
         {
-            EntraIDProviderConfiguration configuration = GetGlobalConfiguration(configurationId);
+            LdapProviderConfiguration configuration = GetGlobalConfiguration(configurationId);
             if (configuration == null)
             {
                 Logger.Log($"Configuration ID '{configurationId}' was not found in configuration database", TraceSeverity.Medium, EventSeverity.Error, TraceCategory.Core);
@@ -552,7 +552,7 @@ namespace Yvand.LdapClaimsProvider.Configuration
         /// <param name="T">Type of the new configuration</param>
         /// <returns></returns>
         /// <exception cref="ArgumentNullException"></exception>
-        public static EntraIDProviderConfiguration CreateGlobalConfiguration(Guid configurationID, string configurationName, string claimsProviderName)
+        public static LdapProviderConfiguration CreateGlobalConfiguration(Guid configurationID, string configurationName, string claimsProviderName)
         {
             if (String.IsNullOrWhiteSpace(claimsProviderName))
             {
@@ -565,14 +565,14 @@ namespace Yvand.LdapClaimsProvider.Configuration
             }
 
             // Ensure it doesn't already exists and delete it if so
-            EntraIDProviderConfiguration existingConfig = GetGlobalConfiguration(configurationID);
+            LdapProviderConfiguration existingConfig = GetGlobalConfiguration(configurationID);
             if (existingConfig != null)
             {
                 DeleteGlobalConfiguration(configurationID);
             }
 
             Logger.Log($"Creating configuration '{configurationName}' with Id {configurationID}...", TraceSeverity.VerboseEx, EventSeverity.Error, TraceCategory.Core);
-            EntraIDProviderConfiguration globalConfiguration = new EntraIDProviderConfiguration(configurationName, SPFarm.Local, claimsProviderName);
+            LdapProviderConfiguration globalConfiguration = new LdapProviderConfiguration(configurationName, SPFarm.Local, claimsProviderName);
             ILdapProviderSettings defaultSettings = globalConfiguration.GetDefaultSettings();
             globalConfiguration.ApplySettings(defaultSettings, false);
             globalConfiguration.Id = configurationID;

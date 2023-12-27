@@ -111,6 +111,14 @@ namespace Yvand.LdapClaimsProvider.Configuration
             return target;
         }
 
+        /// <summary>
+        /// Copy the value of all the public properties in object source, which can be set, even if the setter is private, to object target.
+        /// Only the properties declared in the type T are considered, inherited types are ignored.
+        /// </summary>
+        /// <param name="T">Type of the source and target objects</param>
+        /// <param name="source">Object to copy from</param>
+        /// <param name="target">Object to copy to</param>
+        /// <returns></returns>
         public static object CopyPublicProperties(Type T, object source, object target)
         {
             PropertyInfo[] propertiesToCopy = T.GetProperties(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly);
@@ -131,7 +139,7 @@ namespace Yvand.LdapClaimsProvider.Configuration
 
         public static object CopyAllProperties(Type T, object source, object target)
         {
-            PropertyInfo[] propertiesToCopy = T.GetProperties(BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly);
+            PropertyInfo[] propertiesToCopy = T.GetProperties(BindingFlags.NonPublic | BindingFlags.Instance);
 
             foreach (PropertyInfo property in propertiesToCopy)
             {
