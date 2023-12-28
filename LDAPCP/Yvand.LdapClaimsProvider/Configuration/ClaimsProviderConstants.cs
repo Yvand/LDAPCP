@@ -97,7 +97,7 @@ namespace Yvand.LdapClaimsProvider.Configuration
     /// </summary>
     public class OperationContext
     {
-        public ILdapProviderSettings Settings { get; private set; }
+        public ILDAPCPSettings Settings { get; private set; }
         /// <summary>
         /// Indicates what kind of operation SharePoint is requesting
         /// </summary>

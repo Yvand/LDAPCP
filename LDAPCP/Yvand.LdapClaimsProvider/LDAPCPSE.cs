@@ -3,6 +3,7 @@ using Microsoft.SharePoint.Administration.Claims;
 using Microsoft.SharePoint.WebControls;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -44,7 +45,7 @@ namespace Yvand.LdapClaimsProvider
         public ClaimTypeConfig MainGroupClaimTypeConfig { get; set; }
     }
 
-    internal class LDAPCPSE : SPClaimProvider
+    public class LDAPCPSE : SPClaimProvider
     {
         public static string ClaimsProviderName => "LDAPCPSE";
         public override string Name => ClaimsProviderName;
@@ -313,31 +314,115 @@ namespace Yvand.LdapClaimsProvider
         #region Augmentation
         protected override void FillClaimsForEntity(Uri context, SPClaim entity, List<SPClaim> claims)
         {
-            throw new NotImplementedException();
+            AugmentEntity(context, entity, null, claims);
         }
-
         protected override void FillClaimsForEntity(Uri context, SPClaim entity, SPClaimProviderContext claimProviderContext, List<SPClaim> claims)
         {
-            throw new NotImplementedException();
+            AugmentEntity(context, entity, claimProviderContext, claims);
+        }
+
+        /// <summary>
+        /// Gets the group membership of the <paramref name="entity"/> and add it to the list of <paramref name="claims"/>
+        /// </summary>
+        /// <param name="context"></param>
+        /// <param name="entity">entity to augment</param>
+        /// <param name="claimProviderContext">Can be null</param>
+        /// <param name="claims"></param>
+        protected void AugmentEntity(Uri context, SPClaim entity, SPClaimProviderContext claimProviderContext, List<SPClaim> claims)
+        {
+            SPClaim decodedEntity;
+            if (SPClaimProviderManager.IsUserIdentifierClaim(entity))
+            {
+                decodedEntity = SPClaimProviderManager.DecodeUserIdentifierClaim(entity);
+            }
+            else
+            {
+                if (SPClaimProviderManager.IsEncodedClaim(entity.Value))
+                {
+                    decodedEntity = SPClaimProviderManager.Local.DecodeClaim(entity.Value);
+                }
+                else
+                {
+                    decodedEntity = entity;
+                }
+            }
+
+            SPOriginalIssuerType loginType = SPOriginalIssuers.GetIssuerType(decodedEntity.OriginalIssuer);
+            if (loginType != SPOriginalIssuerType.TrustedProvider && loginType != SPOriginalIssuerType.ClaimProvider)
+            {
+                Logger.Log($"[{Name}] Not trying to augment '{decodedEntity.Value}' because his OriginalIssuer is '{decodedEntity.OriginalIssuer}'.",
+                    TraceSeverity.VerboseEx, EventSeverity.Information, TraceCategory.Augmentation);
+                return;
+            }
+
+            if (!ValidateSettings(context)) { return; }
+
+            this.Lock_LocalConfigurationRefresh.EnterReadLock();
+            try
+            {
+                // There can be multiple TrustedProvider on the farm, but EntraCP should only do augmentation if current entity is from TrustedProvider it is associated with
+                if (!String.Equals(decodedEntity.OriginalIssuer, this.OriginalIssuerName, StringComparison.InvariantCultureIgnoreCase)) { return; }
+
+                if (!this.Settings.EnableAugmentation) { return; }
+
+                Logger.Log($"[{Name}] Starting augmentation for user '{decodedEntity.Value}'.", TraceSeverity.Verbose, EventSeverity.Information, TraceCategory.Augmentation);
+                ClaimTypeConfig groupClaimTypeSettings = this.Settings.RuntimeClaimTypesList.FirstOrDefault(x => x.EntityType == DirectoryObjectType.Group);
+                if (groupClaimTypeSettings == null)
+                {
+                    Logger.Log($"[{Name}] No claim type with EntityType 'Group' was found, please check claims mapping table.",
+                        TraceSeverity.High, EventSeverity.Error, TraceCategory.Augmentation);
+                    return;
+                }
+
+                OperationContext currentContext = new OperationContext(this.Settings, OperationType.Augmentation, null, decodedEntity, context, null, null, Int32.MaxValue);
+                Stopwatch timer = new Stopwatch();
+                timer.Start();
+                List<string> groups = this.EntityProvider.GetEntityGroups(currentContext, groupClaimTypeSettings);                
+                timer.Stop();
+                if (groups?.Count > 0)
+                {
+                    foreach (string group in groups)
+                    {
+                        claims.Add(CreateClaim(groupClaimTypeSettings.ClaimType, group, groupClaimTypeSettings.ClaimValueType));
+                        Logger.Log($"[{Name}] Added group '{group}' to user '{currentContext.IncomingEntity.Value}'",
+                            TraceSeverity.Verbose, EventSeverity.Information, TraceCategory.Augmentation);
+                    }
+                    Logger.Log($"[{Name}] Augmented user '{currentContext.IncomingEntity.Value}' with {groups.Count} groups in {timer.ElapsedMilliseconds} ms",
+                        TraceSeverity.Medium, EventSeverity.Information, TraceCategory.Augmentation);
+                }
+                else
+                {
+                    Logger.Log($"[{Name}] Got no group in {timer.ElapsedMilliseconds} ms for user '{currentContext.IncomingEntity.Value}'",
+                        TraceSeverity.Medium, EventSeverity.Information, TraceCategory.Augmentation);
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogException(Name, "in AugmentEntity", TraceCategory.Augmentation, ex);
+            }
+            finally
+            {
+                this.Lock_LocalConfigurationRefresh.ExitReadLock();
+            }
         }
         #endregion
 
         #region Search
         protected override void FillResolve(Uri context, string[] entityTypes, string resolveInput, List<PickerEntity> resolved)
         {
-            throw new NotImplementedException();
+            return;
         }
 
         protected override void FillSearch(Uri context, string[] entityTypes, string searchPattern, string hierarchyNodeID, int maxCount, SPProviderHierarchyTree searchTree)
         {
-            throw new NotImplementedException();
+            return;
         }
         #endregion
 
         #region Validation
         protected override void FillResolve(Uri context, string[] entityTypes, SPClaim resolveInput, List<PickerEntity> resolved)
         {
-            throw new NotImplementedException();
+            return;
         }
         #endregion
 
