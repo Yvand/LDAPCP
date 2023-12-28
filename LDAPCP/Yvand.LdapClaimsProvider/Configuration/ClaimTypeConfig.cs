@@ -39,11 +39,33 @@ namespace Yvand.LdapClaimsProvider.Configuration
 
         public DirectoryObjectType EntityType
         {
-            get { return (DirectoryObjectType)Enum.ToObject(typeof(DirectoryObjectType), _DirectoryObjectType); }
-            set { _DirectoryObjectType = (int)value; }
+            get
+            {
+                return String.IsNullOrWhiteSpace(_EntityType) ?
+                    DirectoryObjectType.User :  // Default is User
+                    (DirectoryObjectType)Enum.Parse(typeof(DirectoryObjectType), _EntityType);
+            }
+            set { _EntityType = value.ToString(); }
         }
         [Persisted]
-        private int _DirectoryObjectType;
+        private string _EntityType;
+
+        /// <summary>
+        /// Gets or sets this property to define if the entity created is a User (SPClaimEntityTypes.User) or a Group (SPClaimEntityTypes.FormsRole). Accepted values are "User" or "FormsRole"
+        /// </summary>
+        public string SharePointEntityType
+        {
+            get { return _SharePointEntityType; }
+            set
+            {
+                if (String.Equals(value, "User", StringComparison.CurrentCultureIgnoreCase) || String.Equals(value, ClaimsProviderConstants.GroupClaimEntityType, StringComparison.CurrentCultureIgnoreCase))
+                {
+                    _SharePointEntityType = value;
+                }
+            }
+        }
+        [Persisted]
+        private string _SharePointEntityType;
 
         public string ClaimType
         {

@@ -24,7 +24,7 @@ namespace Yvand.LdapClaimsProvider
         /// <param name="currentContext"></param>
         /// <param name="groupClaimTypeConfig"></param>
         /// <returns></returns>
-        public abstract List<string> GetEntityGroups(OperationContext currentContext, ClaimTypeConfig groupClaimTypeConfig);
+        public abstract List<string> GetEntityGroups(OperationContext currentContext);
 
         public EntityProviderBase(string claimsProviderName)
         {

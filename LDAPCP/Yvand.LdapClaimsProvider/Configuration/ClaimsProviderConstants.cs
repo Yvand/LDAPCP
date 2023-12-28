@@ -15,7 +15,7 @@ namespace Yvand.LdapClaimsProvider.Configuration
         public static string CONFIGURATION_ID => "F2D006C9-C536-46DA-845D-D5E88CBD15E6";
         public static string CONFIGURATION_NAME => "LDAPCPSEConfig";
         public static string GroupClaimEntityType { get; set; } = SPClaimEntityTypes.FormsRole;
-        public static bool EnforceOnly1ClaimTypeForGroup => false;    // In LDAPCP, multiple claim types can be used to create group permissions
+        public static bool EnforceOnly1ClaimTypeForGroup => true;
         public static string DefaultMainGroupClaimType => WIF4_5.ClaimTypes.Role;
         public static string PUBLICSITEURL => "https://ldapcp.com";
         public static string LDAPCPCONFIG_TOKENDOMAINNAME => "{domain}";

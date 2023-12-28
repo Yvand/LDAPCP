@@ -20,7 +20,7 @@ namespace Yvand.LdapClaimsProvider
     {
         public LdapEntityProvider(string claimsProviderName) : base(claimsProviderName) { }
 
-        public override List<string> GetEntityGroups(OperationContext currentContext, ClaimTypeConfig groupClaimTypeConfig)
+        public override List<string> GetEntityGroups(OperationContext currentContext)
         {
             Stopwatch timer = new Stopwatch();
             timer.Start();
@@ -30,10 +30,10 @@ namespace Yvand.LdapClaimsProvider
             // Creates 1 synchronous action per LdapConnection
             Parallel.ForEach(currentContext.LdapConnections, ldapConnection =>
             {
-                List<string> directoryGroups;
+                List<string> directoryGroups = new List<string>();
                 if (ldapConnection.GetGroupMembershipUsingDotNetHelpers)
                 {
-                    directoryGroups = GetGroupsFromActiveDirectory(ldapConnection, currentContext, groupClaimTypeConfig);
+                    directoryGroups = GetGroupsFromActiveDirectory(ldapConnection, currentContext);
                     //directoryGroups.AddRange(GetGroupsFromLDAPDirectory(ldapConnection, currentContext, allGroupsCTConfig.Where(x => !SPClaimTypes.Equals(x.ClaimType, this.CurrentConfiguration.MainGroupClaimType))));
                 }
                 else
@@ -43,6 +43,7 @@ namespace Yvand.LdapClaimsProvider
 
                 lock (lockResults)
                 {
+                    groups.AddRange(directoryGroups);
                 }
             });
             return groups;
@@ -56,26 +57,26 @@ namespace Yvand.LdapClaimsProvider
         /// <param name="currentContext"></param>
         /// <param name="groupCTConfig"></param>
         /// <returns></returns>
-        protected virtual List<string> GetGroupsFromActiveDirectory(Configuration.LdapConnection ldapConnection, OperationContext currentContext, ClaimTypeConfig groupCTConfig)
+        protected virtual List<string> GetGroupsFromActiveDirectory(Configuration.LdapConnection ldapConnection, OperationContext currentContext)
         {
             // Convert AuthenticationTypes to ContextOptions, slightly inspired by https://stackoverflow.com/questions/17451277/what-equivalent-of-authenticationtypes-secure-in-principalcontexts-contextoptio
             // AuthenticationTypes Enum: https://learn.microsoft.com/en-us/dotnet/api/system.directoryservices.authenticationtypes?view=netframework-4.8.1
             // ContextOptions Enum: https://learn.microsoft.com/en-us/dotnet/api/system.directoryservices.accountmanagement.contextoptions?view=netframework-4.8.1
             ContextOptions contextOptions = new ContextOptions();
-            if (ldapConnection.AuthenticationSettings == AuthenticationTypes.None)
+            if (ldapConnection.AuthenticationType == AuthenticationTypes.None)
             {
                 contextOptions |= ContextOptions.SimpleBind;
             }
             else
             {
-                if ((ldapConnection.AuthenticationSettings & AuthenticationTypes.Sealing) == AuthenticationTypes.Sealing) { contextOptions |= ContextOptions.Sealing; }
+                if ((ldapConnection.AuthenticationType & AuthenticationTypes.Sealing) == AuthenticationTypes.Sealing) { contextOptions |= ContextOptions.Sealing; }
                 if (
-                    (ldapConnection.AuthenticationSettings & AuthenticationTypes.Encryption) == AuthenticationTypes.Encryption ||
-                    (ldapConnection.AuthenticationSettings & AuthenticationTypes.SecureSocketsLayer) == AuthenticationTypes.SecureSocketsLayer
+                    (ldapConnection.AuthenticationType & AuthenticationTypes.Encryption) == AuthenticationTypes.Encryption ||
+                    (ldapConnection.AuthenticationType & AuthenticationTypes.SecureSocketsLayer) == AuthenticationTypes.SecureSocketsLayer
                 ) { contextOptions |= ContextOptions.SecureSocketLayer; }
-                if ((ldapConnection.AuthenticationSettings & AuthenticationTypes.ServerBind) == AuthenticationTypes.ServerBind) { contextOptions |= ContextOptions.ServerBind; }
-                if ((ldapConnection.AuthenticationSettings & AuthenticationTypes.Signing) == AuthenticationTypes.Signing) { contextOptions |= ContextOptions.Signing; }
-                if ((ldapConnection.AuthenticationSettings & AuthenticationTypes.Secure) == AuthenticationTypes.Secure) { contextOptions |= ContextOptions.Negotiate; }
+                if ((ldapConnection.AuthenticationType & AuthenticationTypes.ServerBind) == AuthenticationTypes.ServerBind) { contextOptions |= ContextOptions.ServerBind; }
+                if ((ldapConnection.AuthenticationType & AuthenticationTypes.Signing) == AuthenticationTypes.Signing) { contextOptions |= ContextOptions.Signing; }
+                if ((ldapConnection.AuthenticationType & AuthenticationTypes.Secure) == AuthenticationTypes.Secure) { contextOptions |= ContextOptions.Negotiate; }
             }
 
             List<string> groups = new List<string>();
@@ -146,7 +147,7 @@ namespace Yvand.LdapClaimsProvider
                             // https://github.com/Yvand/LDAPCP/issues/148 - the group property used for the group value should be based on the LDAPCP configuration
                             // By default it should be the SamAccountName, since it's also the default attribute set in LDAPCP configuration
                             string claimValue = adGroup.SamAccountName;
-                            switch (groupCTConfig.LDAPAttribute.ToLower())
+                            switch (currentContext.Settings.MainGroupClaimTypeConfig.LDAPAttribute.ToLower())
                             {
                                 case "name":
                                     claimValue = adGroup.Name;
@@ -161,20 +162,20 @@ namespace Yvand.LdapClaimsProvider
                                     break;
                             }
 
-                            if (!String.IsNullOrEmpty(groupCTConfig.ClaimValuePrefix))
+                            if (!String.IsNullOrEmpty(currentContext.Settings.MainGroupClaimTypeConfig.ClaimValuePrefix))
                             {
                                 // Principal.DistinguishedName is used to build the domain name / FQDN of the current group. Example of value: CN=group1,CN=Users,DC=contoso,DC=local
                                 string groupDN = adGroup.DistinguishedName;
                                 if (String.IsNullOrEmpty(groupDN)) { continue; }
 
                                 Utils.GetDomainInformation(groupDN, out groupDomainName, out groupDomainFqdn);
-                                if (groupCTConfig.ClaimValuePrefix.Contains(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINNAME))
+                                if (currentContext.Settings.MainGroupClaimTypeConfig.ClaimValuePrefix.Contains(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINNAME))
                                 {
-                                    claimValue = groupCTConfig.ClaimValuePrefix.Replace(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINNAME, groupDomainName) + claimValue;
+                                    claimValue = currentContext.Settings.MainGroupClaimTypeConfig.ClaimValuePrefix.Replace(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINNAME, groupDomainName) + claimValue;
                                 }
-                                else if (groupCTConfig.ClaimValuePrefix.Contains(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINFQDN))
+                                else if (currentContext.Settings.MainGroupClaimTypeConfig.ClaimValuePrefix.Contains(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINFQDN))
                                 {
-                                    claimValue = groupCTConfig.ClaimValuePrefix.Replace(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINFQDN, groupDomainFqdn) + claimValue;
+                                    claimValue = currentContext.Settings.MainGroupClaimTypeConfig.ClaimValuePrefix.Replace(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINFQDN, groupDomainFqdn) + claimValue;
                                 }
                             }
                             //SPClaim claim = CreateClaim(groupCTConfig.ClaimType, claimValue, groupCTConfig.ClaimValueType, false);
@@ -216,10 +217,10 @@ namespace Yvand.LdapClaimsProvider
         /// <param name="currentContext">Information about current context and operation</param>
         /// <param name="groupsCTConfig"></param>
         /// <returns></returns>
-        protected virtual List<string> GetGroupsFromLDAPDirectory(Configuration.LdapConnection ldapConnection, OperationContext currentContext, IEnumerable<ClaimTypeConfig> groupsCTConfig)
+        protected virtual List<string> GetGroupsFromLDAPDirectory(Configuration.LdapConnection ldapConnection, OperationContext currentContext)
         {
             List<SPClaim> groups = new List<SPClaim>();
-            if (groupsCTConfig == null || groupsCTConfig.Count() == 0) { return new List<string>(); }
+            //if (groupsCTConfig == null || groupsCTConfig.Count() == 0) { return new List<string>(); }
             string ldapFilter = string.Format("(&(ObjectClass={0}) ({1}={2}){3})", currentContext.Settings.IdentityClaimTypeConfig.LDAPClass, currentContext.Settings.IdentityClaimTypeConfig.LDAPAttribute, currentContext.IncomingEntity.Value, currentContext.Settings.IdentityClaimTypeConfig.AdditionalLDAPFilter);
             string logMessageCredentials = String.IsNullOrWhiteSpace(ldapConnection.DirectoryConnection.Username) ? "process identity" : ldapConnection.DirectoryConnection.Username;
             string directoryDetails = $"from LDAP server \"{ldapConnection.DirectoryConnection.Path}\" with LDAP filter \"{ldapFilter}\" (authenticate as \"{logMessageCredentials}\" with AuthenticationType \"{ldapConnection.DirectoryConnection.AuthenticationType}\").";
@@ -238,10 +239,10 @@ namespace Yvand.LdapClaimsProvider
                         {
                             searcher.PropertiesToLoad.Add(memberOfPropertyName);
                         }
-                        foreach (ClaimTypeConfig groupCTConfig in groupsCTConfig)
-                        {
-                            searcher.PropertiesToLoad.Add(groupCTConfig.LDAPAttribute);
-                        }
+                        //foreach (ClaimTypeConfig groupCTConfig in groupsCTConfig)
+                        //{
+                        //    searcher.PropertiesToLoad.Add(groupCTConfig.LDAPAttribute);
+                        //}
 
                         SearchResult result;
                         using (new SPMonitoredScope($"[{ClaimsProviderName}] Get group membership of user \"{currentContext.IncomingEntity.Value}\" {directoryDetails}", 1000))
@@ -257,66 +258,69 @@ namespace Yvand.LdapClaimsProvider
 
                         using (new SPMonitoredScope($"[{ClaimsProviderName}] Process LDAP groups of user \"{currentContext.IncomingEntity.Value}\" returned {directoryDetails}", 1000))
                         {
-                            foreach (ClaimTypeConfig groupCTConfig in groupsCTConfig)
+                            //foreach (ClaimTypeConfig groupCTConfig in groupsCTConfig)
+                            //{
+                            ClaimTypeConfig groupCTConfig = currentContext.Settings.MainGroupClaimTypeConfig;
+                            int propertyCount = 0;
+                            ResultPropertyValueCollection groupValues = null;
+                            bool valueIsDistinguishedNameFormat;
+                            
+                            //if (groupCTConfig.ClaimType == currentContext.Settings.MainGroupClaimTypeConfig.ClaimType)
+                            //{
+                            valueIsDistinguishedNameFormat = true;
+                            foreach (string groupMembershipAttributes in ldapConnection.GroupMembershipLdapAttributes)
                             {
-                                int propertyCount = 0;
-                                ResultPropertyValueCollection groupValues = null;
-                                bool valueIsDistinguishedNameFormat;
-                                if (groupCTConfig.ClaimType == currentContext.Settings.MainGroupClaimTypeConfig.ClaimType)
+                                if (result.Properties.Contains(groupMembershipAttributes))
                                 {
-                                    valueIsDistinguishedNameFormat = true;
-                                    foreach (string groupMembershipAttributes in ldapConnection.GroupMembershipLdapAttributes)
+                                    propertyCount = result.Properties[groupMembershipAttributes].Count;
+                                    groupValues = result.Properties[groupMembershipAttributes];
+                                    break;
+                                }
+                            }
+                            //}
+                            //else
+                            //{
+                            //    valueIsDistinguishedNameFormat = false;
+                            //    if (result.Properties.Contains(groupCTConfig.LDAPAttribute))
+                            //    {
+                            //        propertyCount = result.Properties[groupCTConfig.LDAPAttribute].Count;
+                            //        groupValues = result.Properties[groupCTConfig.LDAPAttribute];
+                            //    }
+                            //}
+                            //if (groupValues == null) { continue; }
+                            if (groupValues == null) { return new List<string>(); }
+
+                            string value;
+                            for (int propertyCounter = 0; propertyCounter < propertyCount; propertyCounter++)
+                            {
+                                value = groupValues[propertyCounter].ToString();
+                                string claimValue;
+                                if (valueIsDistinguishedNameFormat)
+                                {
+                                    claimValue = Utils.GetValueFromDistinguishedName(value);
+                                    if (String.IsNullOrEmpty(claimValue)) { continue; }
+
+                                    string groupDomainName, groupDomainFqdn;
+                                    Utils.GetDomainInformation(value, out groupDomainName, out groupDomainFqdn);
+                                    if (!String.IsNullOrEmpty(groupCTConfig.ClaimValuePrefix) && groupCTConfig.ClaimValuePrefix.Contains(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINNAME))
                                     {
-                                        if (result.Properties.Contains(groupMembershipAttributes))
-                                        {
-                                            propertyCount = result.Properties[groupMembershipAttributes].Count;
-                                            groupValues = result.Properties[groupMembershipAttributes];
-                                            break;
-                                        }
+                                        claimValue = groupCTConfig.ClaimValuePrefix.Replace(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINNAME, groupDomainName) + claimValue;
+                                    }
+                                    else if (!String.IsNullOrEmpty(groupCTConfig.ClaimValuePrefix) && groupCTConfig.ClaimValuePrefix.Contains(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINFQDN))
+                                    {
+                                        claimValue = groupCTConfig.ClaimValuePrefix.Replace(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINFQDN, groupDomainFqdn) + claimValue;
                                     }
                                 }
                                 else
                                 {
-                                    valueIsDistinguishedNameFormat = false;
-                                    if (result.Properties.Contains(groupCTConfig.LDAPAttribute))
-                                    {
-                                        propertyCount = result.Properties[groupCTConfig.LDAPAttribute].Count;
-                                        groupValues = result.Properties[groupCTConfig.LDAPAttribute];
-                                    }
+                                    claimValue = value;
                                 }
 
-                                if (groupValues == null) { continue; }
-                                string value;
-                                for (int propertyCounter = 0; propertyCounter < propertyCount; propertyCounter++)
-                                {
-                                    value = groupValues[propertyCounter].ToString();
-                                    string claimValue;
-                                    if (valueIsDistinguishedNameFormat)
-                                    {
-                                        claimValue = Utils.GetValueFromDistinguishedName(value);
-                                        if (String.IsNullOrEmpty(claimValue)) { continue; }
-
-                                        string groupDomainName, groupDomainFqdn;
-                                        Utils.GetDomainInformation(value, out groupDomainName, out groupDomainFqdn);
-                                        if (!String.IsNullOrEmpty(groupCTConfig.ClaimValuePrefix) && groupCTConfig.ClaimValuePrefix.Contains(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINNAME))
-                                        {
-                                            claimValue = groupCTConfig.ClaimValuePrefix.Replace(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINNAME, groupDomainName) + claimValue;
-                                        }
-                                        else if (!String.IsNullOrEmpty(groupCTConfig.ClaimValuePrefix) && groupCTConfig.ClaimValuePrefix.Contains(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINFQDN))
-                                        {
-                                            claimValue = groupCTConfig.ClaimValuePrefix.Replace(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINFQDN, groupDomainFqdn) + claimValue;
-                                        }
-                                    }
-                                    else
-                                    {
-                                        claimValue = value;
-                                    }
-
-                                    //SPClaim claim = CreateClaim(groupCTConfig.ClaimType, claimValue, groupCTConfig.ClaimValueType, false);
-                                    SPClaim claim = new SPClaim(groupCTConfig.ClaimType, claimValue, groupCTConfig.ClaimValueType, String.Empty);
-                                    groups.Add(claim);
-                                }
+                                //SPClaim claim = CreateClaim(groupCTConfig.ClaimType, claimValue, groupCTConfig.ClaimValueType, false);
+                                SPClaim claim = new SPClaim(groupCTConfig.ClaimType, claimValue, groupCTConfig.ClaimValueType, String.Empty);
+                                groups.Add(claim);
                             }
+                            //}
                         }
                     }
                 }

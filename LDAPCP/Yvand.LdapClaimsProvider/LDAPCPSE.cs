@@ -358,6 +358,7 @@ namespace Yvand.LdapClaimsProvider
             if (!ValidateSettings(context)) { return; }
 
             this.Lock_LocalConfigurationRefresh.EnterReadLock();
+            OperationContext currentContext = null;
             try
             {
                 // There can be multiple TrustedProvider on the farm, but EntraCP should only do augmentation if current entity is from TrustedProvider it is associated with
@@ -366,24 +367,24 @@ namespace Yvand.LdapClaimsProvider
                 if (!this.Settings.EnableAugmentation) { return; }
 
                 Logger.Log($"[{Name}] Starting augmentation for user '{decodedEntity.Value}'.", TraceSeverity.Verbose, EventSeverity.Information, TraceCategory.Augmentation);
-                ClaimTypeConfig groupClaimTypeSettings = this.Settings.RuntimeClaimTypesList.FirstOrDefault(x => x.EntityType == DirectoryObjectType.Group);
-                if (groupClaimTypeSettings == null)
-                {
-                    Logger.Log($"[{Name}] No claim type with EntityType 'Group' was found, please check claims mapping table.",
-                        TraceSeverity.High, EventSeverity.Error, TraceCategory.Augmentation);
-                    return;
-                }
+                //ClaimTypeConfig groupClaimTypeSettings = this.Settings.RuntimeClaimTypesList.FirstOrDefault(x => x.EntityType == DirectoryObjectType.Group);
+                //if (groupClaimTypeSettings == null)
+                //{
+                //    Logger.Log($"[{Name}] No claim type with EntityType 'Group' was found, please check claims mapping table.",
+                //        TraceSeverity.High, EventSeverity.Error, TraceCategory.Augmentation);
+                //    return;
+                //}
 
-                OperationContext currentContext = new OperationContext(this.Settings, OperationType.Augmentation, null, decodedEntity, context, null, null, Int32.MaxValue);
+                currentContext = new OperationContext(this.Settings, OperationType.Augmentation, null, decodedEntity, context, null, null, Int32.MaxValue);
                 Stopwatch timer = new Stopwatch();
                 timer.Start();
-                List<string> groups = this.EntityProvider.GetEntityGroups(currentContext, groupClaimTypeSettings);                
+                List<string> groups = this.EntityProvider.GetEntityGroups(currentContext);
                 timer.Stop();
                 if (groups?.Count > 0)
                 {
                     foreach (string group in groups)
                     {
-                        claims.Add(CreateClaim(groupClaimTypeSettings.ClaimType, group, groupClaimTypeSettings.ClaimValueType));
+                        claims.Add(CreateClaim(currentContext.Settings.MainGroupClaimTypeConfig.ClaimType, group, currentContext.Settings.MainGroupClaimTypeConfig.ClaimValueType));
                         Logger.Log($"[{Name}] Added group '{group}' to user '{currentContext.IncomingEntity.Value}'",
                             TraceSeverity.Verbose, EventSeverity.Information, TraceCategory.Augmentation);
                     }
@@ -403,6 +404,16 @@ namespace Yvand.LdapClaimsProvider
             finally
             {
                 this.Lock_LocalConfigurationRefresh.ExitReadLock();
+                if (currentContext != null)
+                {
+                    foreach (LdapConnection ldapConnection in currentContext.LdapConnections)
+                    {
+                        if (ldapConnection.DirectoryConnection != null)
+                        {
+                            ldapConnection.DirectoryConnection.Dispose();
+                        }
+                    }
+                }
             }
         }
         #endregion
