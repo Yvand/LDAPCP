@@ -4,6 +4,7 @@ using Microsoft.SharePoint.WebControls;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.DirectoryServices;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -434,6 +435,164 @@ namespace Yvand.LdapClaimsProvider
         protected override void FillResolve(Uri context, string[] entityTypes, SPClaim resolveInput, List<PickerEntity> resolved)
         {
             return;
+        }
+
+
+
+
+        protected virtual LdapSearchResultCollection ProcessLdapResults(OperationContext currentContext, List<LdapSearchResult> LDAPSearchResults)
+        {
+            LdapSearchResultCollection results = new LdapSearchResultCollection();
+            ResultPropertyCollection LDAPResultProperties;
+            IEnumerable<ClaimTypeConfig> ctConfigs = currentContext.CurrentClaimTypeConfigList;
+            if (currentContext.ExactSearch)
+            {
+                ctConfigs = currentContext.CurrentClaimTypeConfigList.Where(x => !x.UseMainClaimTypeOfDirectoryObject);
+            }
+
+            foreach (LdapSearchResult LDAPResult in LDAPSearchResults)
+            {
+                LDAPResultProperties = LDAPResult.LdapEntityProperties;
+                // objectclass attribute should never be missing because it is explicitely requested in LDAP query
+                if (!LDAPResultProperties.Contains("objectclass"))
+                {
+                    Logger.Log($"[{Name}] Property \"objectclass\" is missing in LDAP result, this may be due to insufficient entities of the account connecting to LDAP server '{LDAPResult.AuthorityMatch.DomainFQDN}'. Skipping result.", TraceSeverity.Unexpected, EventSeverity.Error, TraceCategory.GraphRequests);
+                    continue;
+                }
+
+                // Cast collection to be able to use StringComparer.InvariantCultureIgnoreCase for case insensitive search of ldap properties
+                IEnumerable<string> LDAPResultPropertyNames = LDAPResultProperties.PropertyNames.Cast<string>();
+
+                // Issue https://github.com/Yvand/LDAPCP/issues/16: If current result is a user, ensure LDAP attribute of identity ClaimTypeConfig exists in current LDAP result
+                bool isUserWithNoIdentityAttribute = false;
+                if (LDAPResultProperties["objectclass"].Cast<string>().Contains(currentContext.Settings.IdentityClaimTypeConfig.LDAPClass, StringComparer.InvariantCultureIgnoreCase))
+                {
+                    // This is a user: check if his identity LDAP attribute (e.g. mail or sAMAccountName) is present
+                    if (!LDAPResultPropertyNames.Contains(currentContext.Settings.IdentityClaimTypeConfig.LDAPAttribute, StringComparer.InvariantCultureIgnoreCase))
+                    {
+                        // This may match a result like PrimaryGroupID, which has EntityType "Group", but LDAPClass "User"
+                        // So it cannot be ruled out immediately, but needs be tested against each ClaimTypeConfig
+                        //Logger.Log($"[{Name}] Ignoring a user because he doesn't have the LDAP attribute '{IdentityClaimTypeConfig.LDAPAttribute}'", TraceSeverity.VerboseEx, EventSeverity.Information, TraceCategory.LDAP_Lookup);
+                        //continue;
+                        isUserWithNoIdentityAttribute = true;
+                    }
+                }
+
+                foreach (ClaimTypeConfig ctConfig in ctConfigs)
+                {
+                    // Skip if: current config is for users AND LDAP result is a user AND LDAP result doesn't have identity attribute set
+                    if (ctConfig.EntityType == DirectoryObjectType.User && isUserWithNoIdentityAttribute)
+                    {
+                        continue;
+                    }
+
+                    // Skip if: LDAPClass of current config does not match objectclass of LDAP result
+                    if (!LDAPResultProperties["objectclass"].Cast<string>().Contains(ctConfig.LDAPClass, StringComparer.InvariantCultureIgnoreCase))
+                    {
+                        continue;
+                    }
+
+                    // Skip if: LDAPAttribute of current config is not found in LDAP result
+                    if (!LDAPResultPropertyNames.Contains(ctConfig.LDAPAttribute, StringComparer.InvariantCultureIgnoreCase))
+                    {
+                        continue;
+                    }
+
+                    // Get value with of current LDAP attribute
+                    // TODO: investigate https://github.com/Yvand/LDAPCP/issues/43
+                    string directoryObjectPropertyValue = LDAPResultProperties[LDAPResultPropertyNames.First(x => String.Equals(x, ctConfig.LDAPAttribute, StringComparison.InvariantCultureIgnoreCase))][0].ToString();
+
+                    // Check if current LDAP attribute value matches the input
+                    if (currentContext.ExactSearch)
+                    {
+                        if (!String.Equals(directoryObjectPropertyValue, currentContext.Input, StringComparison.InvariantCultureIgnoreCase))
+                        {
+                            continue;
+                        }
+                    }
+                    else
+                    {
+                        if (currentContext.Settings.AddWildcardAsPrefixOfInput)
+                        {
+                            if (directoryObjectPropertyValue.IndexOf(currentContext.Input, StringComparison.InvariantCultureIgnoreCase) != -1)
+                            {
+                                continue;
+                            }
+                        }
+                        else
+                        {
+                            if (!directoryObjectPropertyValue.StartsWith(currentContext.Input, StringComparison.InvariantCultureIgnoreCase))
+                            {
+                                continue;
+                            }
+                        }
+                    }
+
+                    // Check if current result (association of LDAP result + ClaimTypeConfig) is not already in results list
+                    // Get ClaimTypeConfig to use to check if result is already present in the results list
+                    ClaimTypeConfig ctConfigToUseForDuplicateCheck = ctConfig;
+                    if (ctConfig.UseMainClaimTypeOfDirectoryObject)
+                    {
+                        if (ctConfig.EntityType == DirectoryObjectType.User)
+                        {
+                            if (String.Equals(ctConfig.LDAPClass, currentContext.Settings.IdentityClaimTypeConfig.LDAPClass, StringComparison.InvariantCultureIgnoreCase))
+                            {
+                                ctConfigToUseForDuplicateCheck = currentContext.Settings.IdentityClaimTypeConfig;
+                            }
+                            else
+                            {
+                                continue;  // Current ClaimTypeConfig is a user but current LDAP result is not, skip
+                            }
+                        }
+                        else
+                        {
+                            if (currentContext.Settings.MainGroupClaimTypeConfig != null && String.Equals(ctConfig.LDAPClass, currentContext.Settings.MainGroupClaimTypeConfig.LDAPClass, StringComparison.InvariantCultureIgnoreCase))
+                            {
+                                ctConfigToUseForDuplicateCheck = currentContext.Settings.MainGroupClaimTypeConfig;
+                            }
+                            else
+                            {
+                                continue;  // Current ClaimTypeConfig is a group but current LDAP result is not, skip
+                            }
+                        }
+                    }
+
+                    // When token domain is present, then ensure we do compare with the actual domain name
+                    bool compareWithDomain = Utils.HasPrefixToken(ctConfig.ClaimValuePrefix, ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINNAME);// ? true : currentContext.Settings.CompareResultsWithDomainNameProp;
+                    if (!compareWithDomain)
+                    {
+                        compareWithDomain = Utils.HasPrefixToken(ctConfig.ClaimValuePrefix, ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINFQDN);// ? true : currentContext.Settings.CompareResultsWithDomainNameProp;
+                    }
+                    if (results.Contains(LDAPResult, ctConfigToUseForDuplicateCheck, compareWithDomain))
+                    {
+                        continue;
+                    }
+
+                    LDAPResult.ClaimTypeConfigMatch = ctConfig;
+                    LDAPResult.ValueMatch = directoryObjectPropertyValue;
+                    //LDAPResult.PickerEntity = CreatePickerEntityHelper(LDAPResult);;
+                    results.Add(LDAPResult);
+
+                    //results.Add(
+                    //    new ConsolidatedResult
+                    //    {
+                    //        ClaimTypeConfig = ctConfig,
+                    //        LDAPResults = LDAPResultProperties,
+                    //        Value = directoryObjectPropertyValue,
+                    //        DomainName = LDAPResult.DomainName,
+                    //        DomainFQDN = LDAPResult.DomainFQDN,
+                    //        //DEBUG = String.Format("LDAPAttribute: {0}, LDAPAttributeValue: {1}, AlwaysResolveAgainstIdentityClaim: {2}", attr.LDAPAttribute, LDAPResultProperties[attr.LDAPAttribute][0].ToString(), attr.AlwaysResolveAgainstIdentityClaim.ToString())
+                    //    });
+                }
+            }
+            Logger.Log(String.Format("[{0}] {1} entity(ies) to create after filtering", Name, results.Count), TraceSeverity.Medium, EventSeverity.Information, TraceCategory.GraphRequests);
+            foreach (var result in results)
+            {
+                //PickerEntity pe = CreatePickerEntityHelper(result);
+                //// Add it to the return list of picker entries.
+                //result.PickerEntity = pe;
+            }
+            return results;
         }
         #endregion
 

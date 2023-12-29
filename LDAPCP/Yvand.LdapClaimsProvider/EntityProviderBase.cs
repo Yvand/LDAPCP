@@ -16,7 +16,7 @@ namespace Yvand.LdapClaimsProvider
         /// </summary>
         /// <param name="currentContext"></param>
         /// <returns></returns>
-        public abstract List<SearchResultCollection> SearchOrValidateEntities(OperationContext currentContext);
+        public abstract List<LdapSearchResult> SearchOrValidateEntities(OperationContext currentContext);
 
         /// <summary>
         /// Returns the groups the user is member of

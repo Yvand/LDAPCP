@@ -60,6 +60,9 @@ namespace Yvand.LdapClaimsProvider.Configuration
         /// Gets the list of Azure tenants to use to get entities
         /// </summary>
         List<LdapConnection> LdapConnections { get; }
+        bool FilterEnabledUsersOnly { get; }
+        bool FilterSecurityGroupsOnly { get; }
+        bool AddWildcardAsPrefixOfInput { get; }
         #endregion
     }
 
@@ -78,6 +81,10 @@ namespace Yvand.LdapClaimsProvider.Configuration
 
         #region EntraID specific settings
         public List<LdapConnection> LdapConnections { get; set; } = new List<LdapConnection>();
+        public bool FilterEnabledUsersOnly { get; set; } = true;
+        public bool FilterSecurityGroupsOnly { get; set; } = true;
+        public bool AddWildcardAsPrefixOfInput { get; set; } = false;
+
         #endregion
 
         public LdapProviderSettings() { }
@@ -278,7 +285,31 @@ namespace Yvand.LdapClaimsProvider.Configuration
             private set => _LdapServers = value;
         }
         [Persisted]
-        private List<LdapConnection> _LdapServers = new List<LdapConnection>();
+        private List<LdapConnection> _LdapServers;// = new List<LdapConnection>();
+
+        public bool FilterEnabledUsersOnly
+        {
+            get => _FilterEnabledUsersOnly;
+            private set => _FilterEnabledUsersOnly = value;
+        }
+        [Persisted]
+        private bool _FilterEnabledUsersOnly;
+
+        public bool FilterSecurityGroupsOnly
+        {
+            get => _FilterSecurityGroupsOnly;
+            private set => _FilterSecurityGroupsOnly = value;
+        }
+        [Persisted]
+        private bool _FilterSecurityGroupsOnly;
+
+        public bool AddWildcardAsPrefixOfInput
+        {
+            get => _AddWildcardAsPrefixOfInput;
+            private set => _AddWildcardAsPrefixOfInput = value;
+        }
+        [Persisted]
+        private bool _AddWildcardAsPrefixOfInput;
         #endregion
 
         #region "Other properties"

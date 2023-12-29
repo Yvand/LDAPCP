@@ -328,5 +328,20 @@ namespace Yvand.LdapClaimsProvider.Configuration
             }
             return result;
         }
+
+        //public static string UnescapeSpecialCharacters(string stringWithEscapedChars)
+        //{
+        //    string result = stringWithEscapedChars;
+        //    foreach (KeyValuePair<string, string> kvp in ClaimsProviderConstants.SpecialCharacters)
+        //    {
+        //        result = result.Replace(kvp.Value, kvp.Key);
+        //    }
+        //    return result;
+        //}
+
+        public static bool HasPrefixToken(string prefix, string tokenToSearch)
+        {
+            return prefix != null && prefix.Contains(tokenToSearch);
+        }
     }
 }

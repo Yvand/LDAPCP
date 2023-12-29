@@ -2,7 +2,9 @@
 using Microsoft.SharePoint.Administration.Claims;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Diagnostics;
+using System.DirectoryServices;
 using System.Linq;
 using System.Reflection;
 using System.Web;
@@ -23,6 +25,9 @@ namespace Yvand.LdapClaimsProvider.Configuration
         private static object Lock_SetClaimsProviderVersion = new object();
         public static string RegexDomainFromFullAccountName => "(.*)\\\\.*";
         public static string RegexFullDomainFromEmail => ".*@(.*)";
+        public static string LDAPFilter => "(&(objectclass={2})({0}={1}){3}) ";
+        public static string LDAPFilterEnabledUsersOnly => "(&(!(userAccountControl:1.2.840.113556.1.4.803:=2))";
+        public static string LDAPFilterADSecurityGroupsOnly => "(groupType:1.2.840.113556.1.4.803:=2147483648)";
         private static string _ClaimsProviderVersion;
         public static string ClaimsProviderVersion
         {
@@ -92,6 +97,54 @@ namespace Yvand.LdapClaimsProvider.Configuration
         Augmentation,
     }
 
+    public class LdapSearchResult
+    {
+        public ResultPropertyCollection LdapEntityProperties;
+        public LdapConnection AuthorityMatch;
+        public ClaimTypeConfig ClaimTypeConfigMatch;
+        public string ValueMatch;
+    }
+
+    public class LdapSearchResultCollection : Collection<LdapSearchResult>
+    {
+        /// <summary>
+        /// Compare 2 results to not add duplicates
+        /// they are identical if they have the same claim type and same value
+        /// </summary>
+        /// <param name="result">LDAP result to compare</param>
+        /// <param name="attribute">AttributeHelper that matches result</param>
+        /// <param name="compareWithDomain">if true, don't consider 2 results as identical if they don't are in same domain.</param>
+        /// <returns></returns>
+        public bool Contains(LdapSearchResult result, ClaimTypeConfig attribute, bool compareWithDomain)
+        {
+            foreach (var item in base.Items)
+            {
+                if (item.ClaimTypeConfigMatch.ClaimType != attribute.ClaimType) { continue; }
+
+                if (!item.LdapEntityProperties.Contains(attribute.LDAPAttribute)) { continue; }
+
+                // if compareWithDomain is true, don't consider 2 results as identical if they don't are in same domain
+                // Using same bool to compare both DomainName and DomainFQDN causes scenario below to potentially generate duplicates:
+                // result.DomainName == item.DomainName BUT result.DomainFQDN != item.DomainFQDN AND value of claim is created with DomainName token
+                // If so, compareWithDomain will be true and test below will be true so duplicates won't be check, even though it would be possible. 
+                // But this would be so unlikely that this scenario can be ignored
+                if (compareWithDomain && (
+                    !String.Equals(item.AuthorityMatch.DomainName, result.AuthorityMatch.DomainName, StringComparison.InvariantCultureIgnoreCase) ||
+                    !String.Equals(item.AuthorityMatch.DomainFQDN, result.AuthorityMatch.DomainFQDN, StringComparison.InvariantCultureIgnoreCase)
+                                         ))
+                {
+                    continue;   // They don't are in same domain, so not identical, jump to next item
+                }
+
+                if (String.Equals(item.LdapEntityProperties[attribute.LDAPAttribute][0].ToString(), result.LdapEntityProperties[attribute.LDAPAttribute][0].ToString(), StringComparison.InvariantCultureIgnoreCase))
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+    }
+
     /// <summary>
     /// Contains information about current operation
     /// </summary>
@@ -154,7 +207,7 @@ namespace Yvand.LdapClaimsProvider.Configuration
         {
             this.Settings = settings;
             this.OperationType = currentRequestType;
-            this.Input = input;
+            this.Input = Utils.EscapeSpecialCharacters(input);
             this.IncomingEntity = incomingEntity;
             this.UriContext = context;
             this.HierarchyNodeID = hierarchyNodeID;

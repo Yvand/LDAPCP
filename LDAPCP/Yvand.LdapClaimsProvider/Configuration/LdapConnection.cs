@@ -169,7 +169,7 @@ namespace Yvand.LdapClaimsProvider.Configuration
         /// <summary>
         /// LDAP filter
         /// </summary>
-        public string Filter { get; private set; }
+        //public string Filter { get; private set; }
 
         public bool InitializationSuccessful { get; private set; } = false;
 

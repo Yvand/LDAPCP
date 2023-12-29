@@ -34,7 +34,7 @@ namespace Yvand.LdapClaimsProvider
                 if (ldapConnection.GetGroupMembershipUsingDotNetHelpers)
                 {
                     directoryGroups = GetGroupsFromActiveDirectory(ldapConnection, currentContext);
-                    //directoryGroups.AddRange(GetGroupsFromLDAPDirectory(ldapConnection, currentContext, allGroupsCTConfig.Where(x => !SPClaimTypes.Equals(x.ClaimType, this.CurrentConfiguration.MainGroupClaimType))));
+                    //directoryGroups.AddRange(GetGroupsFromLDAPDirectory(ldapConnection, currentContext, allGroupsCTConfig.Where(x => !SPClaimTypes.Equals(x.ClaimType, currentContext.Settings.MainGroupClaimType))));
                 }
                 else
                 {
@@ -191,7 +191,7 @@ namespace Yvand.LdapClaimsProvider
                 }
                 catch (PrincipalServerDownException ex)
                 {
-                    Logger.LogException(ClaimsProviderName, $"while getting AD groups of user \"{currentContext.IncomingEntity.Value}\" using UserPrincipal.GetAuthorizationGroups() {directoryDetails} Is this server an Active Directory server?", TraceCategory.Augmentation, ex);
+                    Logger.LogException(ClaimsProviderName, $"while getting AD groups of user \"{currentContext.IncomingEntity.Value}\" using UserPrincipal.GetAuthorizationGroups() {directoryDetails} Is this server an Active DirectoryConnection server?", TraceCategory.Augmentation, ex);
                 }
                 catch (Exception ex)
                 {
@@ -343,9 +343,156 @@ namespace Yvand.LdapClaimsProvider
             return groups.Select(x => x.Value).ToList();
         }
 
-        public override List<SearchResultCollection> SearchOrValidateEntities(OperationContext currentContext)
+        public override List<LdapSearchResult> SearchOrValidateEntities(OperationContext currentContext)
         {
-            throw new NotImplementedException();
+            string ldapFilter = this.BuildFilter(currentContext);
+            return this.QueryLDAPServers(currentContext, ldapFilter);
+        }
+
+        protected string BuildFilter(OperationContext currentContext)
+        {
+            // Build LDAP filter as documented in http://technet.microsoft.com/fr-fr/library/aa996205(v=EXCHG.65).aspx
+            StringBuilder filter = new StringBuilder();
+            if (currentContext.Settings.FilterEnabledUsersOnly)
+            {
+                filter.Append(ClaimsProviderConstants.LDAPFilterEnabledUsersOnly);
+            }
+            filter.Append("(| ");   // START OR
+
+            string preferredFilterPattern;
+            // Fix bug https://github.com/Yvand/LDAPCP/issues/53 by escaping special characters with their hex representation as documented in https://ldap.com/ldap-filters/
+            string input = currentContext.Input; // Utils.EscapeSpecialCharacters(currentContext.Input);
+            if (currentContext.ExactSearch)
+            {
+                preferredFilterPattern = input;
+            }
+            else
+            {
+                preferredFilterPattern = currentContext.Settings.AddWildcardAsPrefixOfInput ? "*" + input + "*" : input + "*";
+            }
+
+            foreach (var ctConfig in currentContext.CurrentClaimTypeConfigList)
+            {
+                if (ctConfig.SupportsWildcard)
+                {
+                    filter.Append(AddAttributeToFilter(currentContext, ctConfig, preferredFilterPattern));
+                }
+                else
+                {
+                    filter.Append(AddAttributeToFilter(currentContext, ctConfig, input));
+                }
+            }
+
+            if (currentContext.Settings.FilterEnabledUsersOnly)
+            {
+                filter.Append(")");
+            }
+            filter.Append(")");     // END OR
+
+            return filter.ToString();
+        }
+
+        protected string AddAttributeToFilter(OperationContext currentContext, ClaimTypeConfig attribute, string searchPattern)
+        {
+            string filter = String.Empty;
+            string additionalFilter = String.Empty;
+
+            if (currentContext.Settings.FilterSecurityGroupsOnly && String.Equals(attribute.LDAPClass, "group", StringComparison.OrdinalIgnoreCase))
+            {
+                additionalFilter = ClaimsProviderConstants.LDAPFilterADSecurityGroupsOnly;
+            }
+
+            if (!String.IsNullOrEmpty(attribute.AdditionalLDAPFilter))
+            {
+                additionalFilter += attribute.AdditionalLDAPFilter;
+            }
+
+            filter = String.Format(ClaimsProviderConstants.LDAPFilter, attribute.LDAPAttribute, searchPattern, attribute.LDAPClass, additionalFilter);
+            return filter;
+        }
+
+        protected List<LdapSearchResult> QueryLDAPServers(OperationContext currentContext, string ldapFilter)
+        {
+            if (currentContext.Settings.LdapConnections == null || currentContext.Settings.LdapConnections.Count == 0) { return null; }
+            object lockResults = new object();
+            List<LdapSearchResult> results = new List<LdapSearchResult>();
+            Stopwatch globalStopWatch = new Stopwatch();
+            globalStopWatch.Start();
+
+            Parallel.ForEach(currentContext.Settings.LdapConnections.Where(x => x.DirectoryConnection != null), ldapConnection =>
+            {
+                Debug.WriteLine($"ldapConnection: Path: {ldapConnection.DirectoryConnection.Path}, UseDefaultADConnection: {ldapConnection.UseDefaultADConnection}");
+                Logger.LogDebug($"ldapConnection: Path: {ldapConnection.DirectoryConnection.Path}, UseDefaultADConnection: {ldapConnection.UseDefaultADConnection}");
+                DirectoryEntry directory = ldapConnection.DirectoryConnection;
+                using (DirectorySearcher ds = new DirectorySearcher(ldapFilter))
+                {
+                    ds.SearchRoot = directory;
+                    ds.SizeLimit = currentContext.MaxCount;
+                    ds.ClientTimeout = new TimeSpan(0, 0, currentContext.Settings.Timeout); // Set the timeout of the query
+                    ds.PropertiesToLoad.Add("objectclass");
+                    ds.PropertiesToLoad.Add("nETBIOSName");
+                    foreach (var ldapAttribute in currentContext.Settings.RuntimeClaimTypesList.Where(x => !String.IsNullOrWhiteSpace(x.LDAPAttribute)))
+                    {
+                        ds.PropertiesToLoad.Add(ldapAttribute.LDAPAttribute);
+                        if (!String.IsNullOrEmpty(ldapAttribute.LDAPAttributeToShowAsDisplayText))
+                        {
+                            ds.PropertiesToLoad.Add(ldapAttribute.LDAPAttributeToShowAsDisplayText);
+                        }
+                    }
+                    // Populate additional attributes that are not part of the filter but are requested in the result
+                    foreach (var metadataAttribute in currentContext.Settings.RuntimeMetadataConfig)
+                    {
+                        if (!ds.PropertiesToLoad.Contains(metadataAttribute.LDAPAttribute))
+                        {
+                            ds.PropertiesToLoad.Add(metadataAttribute.LDAPAttribute);
+                        }
+                    }
+
+                    string loggMessage = $"[{ClaimsProviderName}] Connecting to \"{ldapConnection.DirectoryConnection.Path}\" with AuthenticationType \"{ldapConnection.DirectoryConnection.AuthenticationType}\", authenticating ";
+                    loggMessage += String.IsNullOrWhiteSpace(ldapConnection.DirectoryConnection.Username) ? "as process identity" : $"with credentials \"{ldapConnection.DirectoryConnection.Username}\"";
+                    loggMessage += $" and sending a query with filter \"{ds.Filter}\"...";
+                    using (new SPMonitoredScope(loggMessage, 3000)) // threshold of 3 seconds before it's considered too much. If exceeded it is recorded in a higher logging level
+                    {
+                        try
+                        {
+                            Logger.Log(loggMessage, TraceSeverity.Verbose, EventSeverity.Information, TraceCategory.GraphRequests);
+                            Stopwatch stopWatch = new Stopwatch();
+                            stopWatch.Start();
+                            using (SearchResultCollection directoryResults = ds.FindAll())
+                            {
+                                stopWatch.Stop();
+                                if (directoryResults != null && directoryResults.Count > 0)
+                                {
+                                    Logger.Log($"[{ClaimsProviderName}] Got {directoryResults.Count.ToString()} result(s) in {stopWatch.ElapsedMilliseconds.ToString()}ms from '{directory.Path}' with filter '{ds.Filter}'", TraceSeverity.Medium, EventSeverity.Information, TraceCategory.GraphRequests);
+                                    lock (lockResults)
+                                    {
+                                        foreach (SearchResult item in directoryResults)
+                                        {
+                                            results.Add(new LdapSearchResult()
+                                            {
+                                                LdapEntityProperties = item.Properties,
+                                                AuthorityMatch = ldapConnection,
+                                            });
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Logger.LogException(ClaimsProviderName, "while connecting to LDAP server " + directory.Path, TraceCategory.GraphRequests, ex);
+                        }
+                        finally
+                        {
+                            directory.Dispose();
+                        }
+                    }
+                }
+            });
+
+            globalStopWatch.Stop();
+            Logger.Log(String.Format("[{0}] Got {1} result(s) in {2}ms from all servers with query \"{3}\"", ClaimsProviderName, results.Count, globalStopWatch.ElapsedMilliseconds.ToString(), ldapFilter), TraceSeverity.Verbose, EventSeverity.Information, TraceCategory.GraphRequests);
+            return results;
         }
     }
 }
