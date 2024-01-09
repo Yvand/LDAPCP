@@ -1,5 +1,6 @@
 ﻿using Microsoft.SharePoint.Administration;
 using Microsoft.SharePoint.Administration.Claims;
+using Microsoft.SharePoint.WebControls;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -103,6 +104,7 @@ namespace Yvand.LdapClaimsProvider.Configuration
         public LdapConnection AuthorityMatch;
         public ClaimTypeConfig ClaimTypeConfigMatch;
         public string ValueMatch;
+        public PickerEntity PickerEntity;
     }
 
     public class LdapSearchResultCollection : Collection<LdapSearchResult>
