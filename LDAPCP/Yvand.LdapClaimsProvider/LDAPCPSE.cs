@@ -58,7 +58,7 @@ namespace Yvand.LdapClaimsProvider
         public LdapEntityProvider EntityProvider { get; private set; }
         private ReaderWriterLockSlim Lock_LocalConfigurationRefresh = new ReaderWriterLockSlim();
         protected virtual string PickerEntityDisplayText => "({0}) {1}";
-        protected virtual string PickerEntityOnMouseOver => "{0}={1}";
+        protected virtual string PickerEntityOnMouseOver => "{0}: {1}";
 
         /// <summary>
         /// Gets the settings that contain the configuration for EntraCP
@@ -667,13 +667,13 @@ namespace Yvand.LdapClaimsProvider
 
             pe.Claim = claim;
             pe.IsResolved = true;
-            pe.EntityGroupName = this.CurrentConfiguration.PickerEntityGroupNameProp;
+            //pe.EntityGroupName = "";
             pe.Description = String.Format(
-                EntityOnMouseOver,
+                PickerEntityOnMouseOver,
                 result.ClaimTypeConfigMatch.LDAPAttribute,
                 result.ValueMatch);
 
-            pe.DisplayText = FormatPermissionDisplayText(pe, isIdentityClaimType, result);
+            pe.DisplayText = FormatPermissionDisplayText(currentContext, pe, isIdentityClaimType, result);
 
             Logger.Log($"[{Name}] Created entity: display text: '{pe.DisplayText}', value: '{pe.Claim.Value}', claim type: '{pe.Claim.ClaimType}', and filled with {nbMetadata.ToString()} metadata.", TraceSeverity.VerboseEx, EventSeverity.Information, TraceCategory.Claims_Picking);
             return pe;
@@ -695,6 +695,88 @@ namespace Yvand.LdapClaimsProvider
             }
 
             return value;
+        }
+
+        protected virtual string FormatPermissionDisplayText(OperationContext currentContext, PickerEntity entity, bool isIdentityClaimType, LdapSearchResult result)
+        {
+            string entityDisplayText = currentContext.Settings.EntityDisplayTextPrefix;
+            string claimValue = entity.Claim.Value;
+            string valueDisplayedInPermission = String.Empty;
+            bool displayLdapMatchForIdentityClaimType = false;
+            string prefixToAdd = string.Empty;
+
+            if (result.LdapEntityProperties == null)
+            {
+                // Result does not come from a LDAP server, it was created manually
+                if (isIdentityClaimType)
+                {
+                    entityDisplayText += claimValue;
+                }
+                else
+                {
+                    entityDisplayText += String.Format(PickerEntityDisplayText, result.ClaimTypeConfigMatch.ClaimTypeDisplayName, claimValue);
+                }
+            }
+            else
+            {
+                if (Utils.HasPrefixToken(result.ClaimTypeConfigMatch.ClaimValuePrefix, ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINNAME))
+                {
+                    prefixToAdd = string.Format("{0}", result.ClaimTypeConfigMatch.ClaimValuePrefix.Replace(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINNAME, result.AuthorityMatch.DomainName));
+                }
+
+                if (Utils.HasPrefixToken(result.ClaimTypeConfigMatch.ClaimValuePrefix, ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINFQDN))
+                {
+                    prefixToAdd = string.Format("{0}", result.ClaimTypeConfigMatch.ClaimValuePrefix.Replace(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINFQDN, result.AuthorityMatch.DomainFQDN));
+                }
+
+                if (isIdentityClaimType)
+                {
+                    displayLdapMatchForIdentityClaimType = true; // this.CurrentConfiguration.DisplayLdapMatchForIdentityClaimTypeProp;
+                }
+
+                if (!String.IsNullOrEmpty(result.ClaimTypeConfigMatch.LDAPAttributeToShowAsDisplayText) && result.LdapEntityProperties.Contains(result.ClaimTypeConfigMatch.LDAPAttributeToShowAsDisplayText))
+                {   // AttributeHelper is set to use a specific LDAP attribute as display text of entity
+                    if (!isIdentityClaimType && result.ClaimTypeConfigMatch.ShowClaimNameInDisplayText)
+                    {
+                        entityDisplayText += "(" + result.ClaimTypeConfigMatch.ClaimTypeDisplayName + ") ";
+                    }
+                    entityDisplayText += prefixToAdd;
+                    valueDisplayedInPermission = result.LdapEntityProperties[result.ClaimTypeConfigMatch.LDAPAttributeToShowAsDisplayText][0].ToString();
+                    entityDisplayText += valueDisplayedInPermission;
+                }
+                else
+                {   // AttributeHelper is set to use its actual LDAP attribute as display text of entity
+                    if (!isIdentityClaimType)
+                    {
+                        valueDisplayedInPermission = claimValue.StartsWith(prefixToAdd) ? claimValue : prefixToAdd + claimValue;
+                        if (result.ClaimTypeConfigMatch.ShowClaimNameInDisplayText)
+                        {
+                            entityDisplayText += String.Format(
+                                PickerEntityDisplayText,
+                                result.ClaimTypeConfigMatch.ClaimTypeDisplayName,
+                                valueDisplayedInPermission);
+                        }
+                        else
+                        {
+                            entityDisplayText = valueDisplayedInPermission;
+                        }
+                    }
+                    else
+                    {   // Always specifically use LDAP attribute of identity claim type
+                        entityDisplayText += prefixToAdd;
+                        valueDisplayedInPermission = result.LdapEntityProperties[currentContext.Settings.IdentityClaimTypeConfig.LDAPAttribute][0].ToString();
+                        entityDisplayText += valueDisplayedInPermission;
+                    }
+                }
+
+                // Check if LDAP value that actually resolved this result should be included in the display text of the entity
+                if (displayLdapMatchForIdentityClaimType && result.LdapEntityProperties.Contains(result.ClaimTypeConfigMatch.LDAPAttribute)
+                    && !String.Equals(valueDisplayedInPermission, claimValue, StringComparison.InvariantCultureIgnoreCase))
+                {
+                    entityDisplayText += String.Format(" ({0})", claimValue);
+                }
+            }
+            return entityDisplayText;
         }
         #endregion
 

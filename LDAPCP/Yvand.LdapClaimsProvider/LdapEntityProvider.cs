@@ -264,7 +264,7 @@ namespace Yvand.LdapClaimsProvider
                             int propertyCount = 0;
                             ResultPropertyValueCollection groupValues = null;
                             bool valueIsDistinguishedNameFormat;
-                            
+
                             //if (groupCTConfig.ClaimType == currentContext.Settings.MainGroupClaimTypeConfig.ClaimType)
                             //{
                             valueIsDistinguishedNameFormat = true;
@@ -484,6 +484,7 @@ namespace Yvand.LdapClaimsProvider
                         }
                         finally
                         {
+                            if (ds != null) { ds.Dispose(); }
                             directory.Dispose();
                         }
                     }
