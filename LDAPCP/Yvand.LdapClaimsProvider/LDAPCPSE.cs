@@ -1,5 +1,6 @@
 ﻿using Microsoft.SharePoint.Administration;
 using Microsoft.SharePoint.Administration.Claims;
+using Microsoft.SharePoint.Utilities;
 using Microsoft.SharePoint.WebControls;
 using System;
 using System.Collections.Generic;
@@ -107,6 +108,7 @@ namespace Yvand.LdapClaimsProvider
             this.CustomSettings = customSettings;
         }
 
+        #region ManageConfiguration
         public static LdapProviderConfiguration GetConfiguration(bool initializeLocalConfiguration = false)
         {
             LdapProviderConfiguration configuration = LdapProviderConfiguration.GetGlobalConfiguration(new Guid(ClaimsProviderConstants.CONFIGURATION_ID), initializeLocalConfiguration);
@@ -134,7 +136,9 @@ namespace Yvand.LdapClaimsProvider
                 configuration.Delete();
             }
         }
+        #endregion
 
+        #region Initialization
         /// <summary>
         /// Verifies if claims provider can run in the specified <paramref name="context"/>, and if it has valid and up to date <see cref="Settings"/>.
         /// </summary>
@@ -311,6 +315,7 @@ namespace Yvand.LdapClaimsProvider
             this.Settings = settings;
             return true;
         }
+        #endregion
 
         #region Augmentation
         protected override void FillClaimsForEntity(Uri context, SPClaim entity, List<SPClaim> claims)
@@ -436,9 +441,98 @@ namespace Yvand.LdapClaimsProvider
         {
             return;
         }
+        #endregion
 
+        #region ProcessSearchOrValidation
+        protected List<PickerEntity> SearchOrValidate(OperationContext currentContext)
+        {
+            List<LdapSearchResult> ldapSearchResults = null;
+            LdapSearchResultCollection processedLdapResults;
+            List<PickerEntity> pickerEntityList = new List<PickerEntity>();
+            try
+            {
+                if (currentContext.Settings.AlwaysResolveUserInput)
+                {
+                    // Completely bypass query to LDAP servers
+                    pickerEntityList = CreatePickerEntityForSpecificClaimTypes(
+                        currentContext.Input,
+                        currentContext.CurrentClaimTypeConfigList.FindAll(x => !x.UseMainClaimTypeOfDirectoryObject));
+                    Logger.Log($"[{Name}] Created {pickerEntityList.Count} entity(ies) without contacting LDAP server(s) because property AlwaysResolveUserInput is set to true.",
+                        TraceSeverity.Medium, EventSeverity.Information, TraceCategory.Claims_Picking);
+                    return pickerEntityList;
+                }
 
+                // It is either a search or a validation
+                using (new SPMonitoredScope($"[{Name}] Total time spent to query LDAP server(s)", 1000))
+                {
+                    ldapSearchResults = this.EntityProvider.SearchOrValidateEntities(currentContext);
+                }
+                if (currentContext.OperationType == OperationType.Search)
+                {
+                    processedLdapResults = this.ProcessLdapResults(currentContext, ldapSearchResults);
+                    pickerEntityList = processedLdapResults.Select(x => x.PickerEntity).ToList();
+                    // Check if input starts with a prefix configured on a ClaimTypeConfig. If so an entity should be returned using ClaimTypeConfig found
+                    // ClaimTypeConfigEnsureUniquePrefixToBypassLookup ensures that collection cannot contain duplicates
+                    ClaimTypeConfig ctConfigWithInputPrefixMatch = currentContext.CurrentClaimTypeConfigList.FirstOrDefault(x =>
+                        !String.IsNullOrEmpty(x.PrefixToBypassLookup) &&
+                        currentContext.Input.StartsWith(x.PrefixToBypassLookup, StringComparison.InvariantCultureIgnoreCase));
+                    if (ctConfigWithInputPrefixMatch != null)
+                    {
+                        string inputWithoutPrefix = currentContext.Input.Substring(ctConfigWithInputPrefixMatch.PrefixToBypassLookup.Length);
+                        if (String.IsNullOrEmpty(inputWithoutPrefix))
+                        {
+                            // No value in the input after the prefix, return
+                            return pickerEntityList;
+                        }
+                        PickerEntity entity = CreatePickerEntityForSpecificClaimType(
+                            inputWithoutPrefix,
+                            ctConfigWithInputPrefixMatch);
+                        if (entity != null)
+                        {
+                            if (pickerEntityList == null) { pickerEntityList = new List<PickerEntity>(); }
+                            pickerEntityList.Add(entity);
+                            Logger.Log($"[{Name}] Created entity without contacting Microsoft Entra ID tenant(s) because input started with prefix '{ctConfigWithInputPrefixMatch.PrefixToBypassLookup}', which is configured for claim type '{ctConfigWithInputPrefixMatch.ClaimType}'. Claim value: '{entity.Claim.Value}', claim type: '{entity.Claim.ClaimType}'",
+                                TraceSeverity.VerboseEx, EventSeverity.Information, TraceCategory.Claims_Picking);
+                        }
+                    }
+                }
+                else if (currentContext.OperationType == OperationType.Validation)
+                {
+                    if (ldapSearchResults?.Count == 1)
+                    {
+                        // Got the expected count (1 DirectoryObject)
+                        processedLdapResults = this.ProcessLdapResults(currentContext, ldapSearchResults);
+                        pickerEntityList = processedLdapResults.Select(x => x.PickerEntity).ToList();
+                    }
 
+                    if (!String.IsNullOrWhiteSpace(currentContext.IncomingEntityClaimTypeConfig.PrefixToBypassLookup))
+                    {
+                        // At this stage, it is impossible to know if entity was originally created with the keyword that bypass query to Microsoft Entra ID
+                        // But it should be always validated since property PrefixToBypassLookup is set for current ClaimTypeConfig, so create entity manually
+                        PickerEntity entity = CreatePickerEntityForSpecificClaimType(
+                            currentContext.IncomingEntity.Value,
+                            currentContext.IncomingEntityClaimTypeConfig);
+                        if (entity != null)
+                        {
+                            pickerEntityList = new List<PickerEntity>(1) { entity };
+                            Logger.Log($"[{Name}] Validated entity without contacting Microsoft Entra ID tenant(s) because its claim type ('{currentContext.IncomingEntityClaimTypeConfig.ClaimType}') has property 'PrefixToBypassLookup' set in EntraCPConfig.ClaimTypes. Claim value: '{entity.Claim.Value}', claim type: '{entity.Claim.ClaimType}'",
+                                TraceSeverity.VerboseEx, EventSeverity.Information, TraceCategory.Claims_Picking);
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogException(Name, "in SearchOrValidate", TraceCategory.Claims_Picking, ex);
+            }
+            pickerEntityList = this.InspectEntitiesFound(currentContext, pickerEntityList);
+            return pickerEntityList;
+        }
+
+        protected virtual List<PickerEntity> InspectEntitiesFound(OperationContext currentContext, List<PickerEntity> entities)
+        {
+            return entities;
+        }
 
         protected virtual LdapSearchResultCollection ProcessLdapResults(OperationContext currentContext, List<LdapSearchResult> LDAPSearchResults)
         {
@@ -677,6 +771,47 @@ namespace Yvand.LdapClaimsProvider
 
             Logger.Log($"[{Name}] Created entity: display text: '{pe.DisplayText}', value: '{pe.Claim.Value}', claim type: '{pe.Claim.ClaimType}', and filled with {nbMetadata.ToString()} metadata.", TraceSeverity.VerboseEx, EventSeverity.Information, TraceCategory.Claims_Picking);
             return pe;
+        }
+
+        private PickerEntity CreatePickerEntityForSpecificClaimType(string value, ClaimTypeConfig ctConfig)
+        {
+            List<PickerEntity> entities = CreatePickerEntityForSpecificClaimTypes(
+                value,
+                new List<ClaimTypeConfig>() { ctConfig });
+            return entities == null ? null : entities.First();
+        }
+
+        private List<PickerEntity> CreatePickerEntityForSpecificClaimTypes(string value, List<ClaimTypeConfig> ctConfigs)
+        {
+            List<PickerEntity> entities = new List<PickerEntity>();
+            foreach (var ctConfig in ctConfigs)
+            {
+                SPClaim claim = CreateClaim(ctConfig.ClaimType, value, ctConfig.ClaimValueType);
+                PickerEntity entity = CreatePickerEntity();
+                entity.Claim = claim;
+                entity.IsResolved = true;
+                entity.EntityType = ctConfig.SharePointEntityType;
+                if (String.IsNullOrEmpty(entity.EntityType))
+                {
+                    entity.EntityType = ctConfig.EntityType == DirectoryObjectType.User ? SPClaimEntityTypes.User : ClaimsProviderConstants.GroupClaimEntityType;
+                }
+                //entity.EntityGroupName = "";
+                entity.Description = String.Format(PickerEntityOnMouseOver, ctConfig.LDAPAttribute, value);
+
+                if (!String.IsNullOrEmpty(ctConfig.EntityDataKey))
+                {
+                    entity.EntityData[ctConfig.EntityDataKey] = entity.Claim.Value;
+                    Logger.Log($"[{Name}] Added metadata '{ctConfig.EntityDataKey}' with value '{entity.EntityData[ctConfig.EntityDataKey]}' to new entity", TraceSeverity.VerboseEx, EventSeverity.Information, TraceCategory.Claims_Picking);
+                }
+
+                ClaimsProviderEntityResult result = new ClaimsProviderEntityResult(null, ctConfig, value, value);
+                bool isIdentityClaimType = String.Equals(claim.ClaimType, this.Settings.IdentityClaimTypeConfig.ClaimType, StringComparison.InvariantCultureIgnoreCase);
+                entity.DisplayText = FormatPermissionDisplayText(entity, isIdentityClaimType, result);
+
+                entities.Add(entity);
+                Logger.Log($"[{Name}] Created entity: display text: '{entity.DisplayText}', value: '{entity.Claim.Value}', claim type: '{entity.Claim.ClaimType}'.", TraceSeverity.VerboseEx, EventSeverity.Information, TraceCategory.Claims_Picking);
+            }
+            return entities.Count > 0 ? entities : null;
         }
 
         protected virtual string FormatPermissionValue(OperationContext currentContext, string claimType, string claimValue/*, string domainName, string domainFQDN*/, bool isIdentityClaimType, LdapSearchResult result)
