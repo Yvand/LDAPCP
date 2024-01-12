@@ -462,8 +462,18 @@ namespace Yvand.LdapClaimsProvider
                         TraceSeverity.Medium, EventSeverity.Information, TraceCategory.Claims_Picking);
                     return pickerEntityList;
                 }
-                
-                if (currentContext.OperationType == OperationType.Search)
+
+                // Create a task to query Entra ID, but run it later only if needed
+                Func<Task> queryEntraIDFunc = () =>
+                {
+                    using (new SPMonitoredScope($"[{Name}] Total time spent to query LDAP server(s)", 1000))
+                    {
+                        ldapSearchResults = this.EntityProvider.SearchOrValidateEntities(currentContext);
+                    }
+                    return null;
+                };
+
+            if (currentContext.OperationType == OperationType.Search)
                 {
                     // Between 0 to many PickerEntity is expected by SharePoint
 
@@ -493,10 +503,11 @@ namespace Yvand.LdapClaimsProvider
                     }
                     else
                     {
-                        using (new SPMonitoredScope($"[{Name}] Total time spent to query LDAP server(s)", 1000))
-                        {
-                            ldapSearchResults = this.EntityProvider.SearchOrValidateEntities(currentContext);
-                        }
+                        //using (new SPMonitoredScope($"[{Name}] Total time spent to query LDAP server(s)", 1000))
+                        //{
+                        //    ldapSearchResults = this.EntityProvider.SearchOrValidateEntities(currentContext);
+                        //}
+                        Task.Run(queryEntraIDFunc).Wait();
                         processedLdapResults = this.ProcessLdapResults(currentContext, ldapSearchResults);
                         pickerEntityList = processedLdapResults.Select(x => x.PickerEntity).ToList();
                     }
@@ -523,10 +534,11 @@ namespace Yvand.LdapClaimsProvider
                     }
                     else
                     {
-                        using (new SPMonitoredScope($"[{Name}] Total time spent to query LDAP server(s)", 1000))
-                        {
-                            ldapSearchResults = this.EntityProvider.SearchOrValidateEntities(currentContext);
-                        }
+                        //using (new SPMonitoredScope($"[{Name}] Total time spent to query LDAP server(s)", 1000))
+                        //{
+                        //    ldapSearchResults = this.EntityProvider.SearchOrValidateEntities(currentContext);
+                        //}
+                        Task.Run(queryEntraIDFunc).Wait();
                         if (ldapSearchResults?.Count == 1)
                         {
                             processedLdapResults = this.ProcessLdapResults(currentContext, ldapSearchResults);
