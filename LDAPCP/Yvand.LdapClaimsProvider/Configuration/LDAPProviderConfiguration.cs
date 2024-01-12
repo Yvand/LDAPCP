@@ -177,8 +177,8 @@ namespace Yvand.LdapClaimsProvider.Configuration
             // Group
             newCTConfigCollection.Add(new ClaimTypeConfig { EntityType = DirectoryObjectType.Group, LDAPClass = "group", LDAPAttribute = "sAMAccountName", ClaimType = ClaimsProviderConstants.DefaultMainGroupClaimType, ClaimValuePrefix = @"{fqdn}\" });
             newCTConfigCollection.Add(new ClaimTypeConfig { EntityType = DirectoryObjectType.Group, LDAPClass = "group", LDAPAttribute = "displayName", UseMainClaimTypeOfDirectoryObject = true, EntityDataKey = PeopleEditorEntityDataKeys.DisplayName });
-            newCTConfigCollection.Add(new ClaimTypeConfig { EntityType = DirectoryObjectType.Group, LDAPClass = "user", LDAPAttribute = "primaryGroupID", ClaimType = WIF4_5.ClaimTypes.PrimaryGroupSid, SupportsWildcard = false });
             newCTConfigCollection.Add(new ClaimTypeConfig { EntityType = DirectoryObjectType.Group, LDAPClass = "group", LDAPAttribute = "mail", EntityDataKey = PeopleEditorEntityDataKeys.Email });
+            newCTConfigCollection.Add(new ClaimTypeConfig { EntityType = DirectoryObjectType.User, LDAPClass = "user", SharePointEntityType = ClaimsProviderConstants.GroupClaimEntityType, LDAPAttribute = "primaryGroupID", ClaimType = WIF4_5.ClaimTypes.PrimaryGroupSid, SupportsWildcard = false });
             
             return newCTConfigCollection;
         }

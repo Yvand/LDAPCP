@@ -427,19 +427,111 @@ namespace Yvand.LdapClaimsProvider
         #region Search
         protected override void FillResolve(Uri context, string[] entityTypes, string resolveInput, List<PickerEntity> resolved)
         {
-            return;
+            if (!ValidateSettings(context)) { return; }
+
+            this.Lock_LocalConfigurationRefresh.EnterReadLock();
+            try
+            {
+                OperationContext currentContext = new OperationContext(this.Settings, OperationType.Search, resolveInput, null, context, entityTypes, null, 30);
+                List<PickerEntity> entities = SearchOrValidate(currentContext);
+                if (entities == null || entities.Count == 0) { return; }
+                foreach (PickerEntity entity in entities)
+                {
+                    resolved.Add(entity);
+                    Logger.Log($"[{Name}] Added entity: display text: '{entity.DisplayText}', claim value: '{entity.Claim.Value}', claim type: '{entity.Claim.ClaimType}'",
+                        TraceSeverity.Verbose, EventSeverity.Information, TraceCategory.Claims_Picking);
+                }
+                Logger.Log($"[{Name}] Returned {entities.Count} entities with value '{currentContext.Input}'", TraceSeverity.Medium, EventSeverity.Information, TraceCategory.Claims_Picking);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogException(Name, "in FillResolve(string)", TraceCategory.Claims_Picking, ex);
+            }
+            finally
+            {
+                this.Lock_LocalConfigurationRefresh.ExitReadLock();
+            }
         }
 
         protected override void FillSearch(Uri context, string[] entityTypes, string searchPattern, string hierarchyNodeID, int maxCount, SPProviderHierarchyTree searchTree)
         {
-            return;
+            if (!ValidateSettings(context)) { return; }
+
+            this.Lock_LocalConfigurationRefresh.EnterReadLock();
+            try
+            {
+                OperationContext currentContext = new OperationContext(this.Settings, OperationType.Search, searchPattern, null, context, entityTypes, hierarchyNodeID, maxCount);
+                List<PickerEntity> entities = this.SearchOrValidate(currentContext);
+                if (entities == null || entities.Count == 0) { return; }
+                SPProviderHierarchyNode matchNode = null;
+                foreach (PickerEntity entity in entities)
+                {
+                    // Add current PickerEntity to the corresponding ClaimType in the hierarchy
+                    if (searchTree.HasChild(entity.Claim.ClaimType))
+                    {
+                        matchNode = searchTree.Children.First(x => x.HierarchyNodeID == entity.Claim.ClaimType);
+                    }
+                    else
+                    {
+                        ClaimTypeConfig ctConfig = this.Settings.RuntimeClaimTypesList.FirstOrDefault(x =>
+                            !x.UseMainClaimTypeOfDirectoryObject &&
+                            String.Equals(x.ClaimType, entity.Claim.ClaimType, StringComparison.InvariantCultureIgnoreCase));
+
+                        string nodeName = ctConfig != null ? ctConfig.ClaimTypeDisplayName : entity.Claim.ClaimType;
+                        matchNode = new SPProviderHierarchyNode(Name, nodeName, entity.Claim.ClaimType, true);
+                        searchTree.AddChild(matchNode);
+                    }
+                    matchNode.AddEntity(entity);
+                    Logger.Log($"[{Name}] Added entity: display text: '{entity.DisplayText}', claim value: '{entity.Claim.Value}', claim type: '{entity.Claim.ClaimType}'",
+                        TraceSeverity.Verbose, EventSeverity.Information, TraceCategory.Claims_Picking);
+                }
+                Logger.Log($"[{Name}] Returned {entities.Count} entities from value '{currentContext.Input}'",
+                    TraceSeverity.Medium, EventSeverity.Information, TraceCategory.Claims_Picking);
+            }
+            catch (Exception ex)
+            {
+            }
+            finally
+            {
+                this.Lock_LocalConfigurationRefresh.ExitReadLock();
+            }
         }
         #endregion
 
         #region Validation
         protected override void FillResolve(Uri context, string[] entityTypes, SPClaim resolveInput, List<PickerEntity> resolved)
         {
-            return;
+            if (!ValidateSettings(context)) { return; }
+
+            this.Lock_LocalConfigurationRefresh.EnterReadLock();
+            try
+            {
+                // Ensure incoming claim should be validated by EntraCP
+                // Must be made after call to Initialize because SPTrustedLoginProvider name must be known
+                if (!String.Equals(resolveInput.OriginalIssuer, this.OriginalIssuerName, StringComparison.InvariantCultureIgnoreCase)) { return; }
+
+                OperationContext currentContext = new OperationContext(this.Settings, OperationType.Validation, resolveInput.Value, resolveInput, context, entityTypes, null, 1);
+                List<PickerEntity> entities = this.SearchOrValidate(currentContext);
+                if (entities?.Count == 1)
+                {
+                    resolved.Add(entities[0]);
+                    Logger.Log($"[{Name}] Validated entity: display text: '{entities[0].DisplayText}', claim value: '{entities[0].Claim.Value}', claim type: '{entities[0].Claim.ClaimType}'",
+                        TraceSeverity.High, EventSeverity.Information, TraceCategory.Claims_Picking);
+                }
+                else
+                {
+                    int entityCount = entities == null ? 0 : entities.Count;
+                    Logger.Log($"[{Name}] Validation failed: found {entityCount.ToString()} entities instead of 1 for incoming claim with value '{currentContext.IncomingEntity.Value}' and type '{currentContext.IncomingEntity.ClaimType}'", TraceSeverity.Unexpected, EventSeverity.Error, TraceCategory.Claims_Picking);
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogException(Name, "in FillResolve(SPClaim)", TraceCategory.Claims_Picking, ex);
+            }
+            finally
+            {
+                this.Lock_LocalConfigurationRefresh.ExitReadLock();
+            }
         }
         #endregion
 
@@ -463,17 +555,16 @@ namespace Yvand.LdapClaimsProvider
                     return pickerEntityList;
                 }
 
-                // Create a task to query Entra ID, but run it later only if needed
-                Func<Task> queryEntraIDFunc = () =>
+                // Create a delegate to query LDAP, so it is called only if needed
+                Action SearchOrValidateInLdap = () =>
                 {
                     using (new SPMonitoredScope($"[{Name}] Total time spent to query LDAP server(s)", 1000))
                     {
                         ldapSearchResults = this.EntityProvider.SearchOrValidateEntities(currentContext);
                     }
-                    return null;
                 };
 
-            if (currentContext.OperationType == OperationType.Search)
+                if (currentContext.OperationType == OperationType.Search)
                 {
                     // Between 0 to many PickerEntity is expected by SharePoint
 
@@ -503,11 +594,7 @@ namespace Yvand.LdapClaimsProvider
                     }
                     else
                     {
-                        //using (new SPMonitoredScope($"[{Name}] Total time spent to query LDAP server(s)", 1000))
-                        //{
-                        //    ldapSearchResults = this.EntityProvider.SearchOrValidateEntities(currentContext);
-                        //}
-                        Task.Run(queryEntraIDFunc).Wait();
+                        SearchOrValidateInLdap();
                         processedLdapResults = this.ProcessLdapResults(currentContext, ldapSearchResults);
                         pickerEntityList = processedLdapResults.Select(x => x.PickerEntity).ToList();
                     }
@@ -534,11 +621,7 @@ namespace Yvand.LdapClaimsProvider
                     }
                     else
                     {
-                        //using (new SPMonitoredScope($"[{Name}] Total time spent to query LDAP server(s)", 1000))
-                        //{
-                        //    ldapSearchResults = this.EntityProvider.SearchOrValidateEntities(currentContext);
-                        //}
-                        Task.Run(queryEntraIDFunc).Wait();
+                        SearchOrValidateInLdap();
                         if (ldapSearchResults?.Count == 1)
                         {
                             processedLdapResults = this.ProcessLdapResults(currentContext, ldapSearchResults);
