@@ -99,12 +99,12 @@ namespace Yvand.LdapClaimsProvider
 
         public LDAPCPSE(string displayName) : base(displayName)
         {
-            this.EntityProvider = new LdapEntityProvider(Name);
+            //this.EntityProvider = new LdapEntityProvider(Name);
         }
 
         public LDAPCPSE(string displayName, ILDAPCPSettings customSettings) : base(displayName)
         {
-            this.EntityProvider = new LdapEntityProvider(Name);
+            //this.EntityProvider = new LdapEntityProvider(Name);
             this.CustomSettings = customSettings;
         }
 
@@ -182,6 +182,7 @@ namespace Yvand.LdapClaimsProvider
 #if !DEBUGx
                     this.SettingsVersion = this.Settings.Version;
 #endif
+                    this.EntityProvider = new LdapEntityProvider(Name, this.Settings);
                 }
             }
             catch (Exception ex)
@@ -381,7 +382,7 @@ namespace Yvand.LdapClaimsProvider
                 //    return;
                 //}
 
-                currentContext = new OperationContext(this.Settings, OperationType.Augmentation, null, decodedEntity, context, null, null, Int32.MaxValue);
+                currentContext = new OperationContext(this.Settings, OperationType.Augmentation, String.Empty, decodedEntity, context, null, null, Int32.MaxValue);
                 Stopwatch timer = new Stopwatch();
                 timer.Start();
                 List<string> groups = this.EntityProvider.GetEntityGroups(currentContext);
@@ -390,7 +391,7 @@ namespace Yvand.LdapClaimsProvider
                 {
                     foreach (string group in groups)
                     {
-                        claims.Add(CreateClaim(currentContext.Settings.MainGroupClaimTypeConfig.ClaimType, group, currentContext.Settings.MainGroupClaimTypeConfig.ClaimValueType));
+                        claims.Add(CreateClaim(this.Settings.MainGroupClaimTypeConfig.ClaimType, group, this.Settings.MainGroupClaimTypeConfig.ClaimValueType));
                         Logger.Log($"[{Name}] Added group '{group}' to user '{currentContext.IncomingEntity.Value}'",
                             TraceSeverity.Verbose, EventSeverity.Information, TraceCategory.Augmentation);
                     }
@@ -543,7 +544,7 @@ namespace Yvand.LdapClaimsProvider
             List<PickerEntity> pickerEntityList = new List<PickerEntity>();
             try
             {
-                if (currentContext.Settings.AlwaysResolveUserInput)
+                if (this.Settings.AlwaysResolveUserInput)
                 {
                     // Completely bypass query to LDAP servers
                     pickerEntityList = CreatePickerEntityForSpecificClaimTypes(
@@ -668,10 +669,10 @@ namespace Yvand.LdapClaimsProvider
 
                 // Issue https://github.com/Yvand/LDAPCP/issues/16: If current result is a user, ensure LDAP attribute of identity ClaimTypeConfig exists in current LDAP result
                 bool isUserWithNoIdentityAttribute = false;
-                if (LDAPResultProperties["objectclass"].Cast<string>().Contains(currentContext.Settings.IdentityClaimTypeConfig.LDAPClass, StringComparer.InvariantCultureIgnoreCase))
+                if (LDAPResultProperties["objectclass"].Cast<string>().Contains(this.Settings.IdentityClaimTypeConfig.LDAPClass, StringComparer.InvariantCultureIgnoreCase))
                 {
                     // This is a user: check if his identity LDAP attribute (e.g. mail or sAMAccountName) is present
-                    if (!LDAPResultPropertyNames.Contains(currentContext.Settings.IdentityClaimTypeConfig.LDAPAttribute, StringComparer.InvariantCultureIgnoreCase))
+                    if (!LDAPResultPropertyNames.Contains(this.Settings.IdentityClaimTypeConfig.LDAPAttribute, StringComparer.InvariantCultureIgnoreCase))
                     {
                         // This may match a result like PrimaryGroupID, which has EntityType "Group", but LDAPClass "User"
                         // So it cannot be ruled out immediately, but needs be tested against each ClaimTypeConfig
@@ -715,7 +716,7 @@ namespace Yvand.LdapClaimsProvider
                     }
                     else
                     {
-                        if (currentContext.Settings.AddWildcardAsPrefixOfInput)
+                        if (this.Settings.AddWildcardAsPrefixOfInput)
                         {
                             if (directoryObjectPropertyValue.IndexOf(currentContext.Input, StringComparison.InvariantCultureIgnoreCase) != -1)
                             {
@@ -738,9 +739,9 @@ namespace Yvand.LdapClaimsProvider
                     {
                         if (ctConfig.EntityType == DirectoryObjectType.User)
                         {
-                            if (String.Equals(ctConfig.LDAPClass, currentContext.Settings.IdentityClaimTypeConfig.LDAPClass, StringComparison.InvariantCultureIgnoreCase))
+                            if (String.Equals(ctConfig.LDAPClass, this.Settings.IdentityClaimTypeConfig.LDAPClass, StringComparison.InvariantCultureIgnoreCase))
                             {
-                                ctConfigToUseForDuplicateCheck = currentContext.Settings.IdentityClaimTypeConfig;
+                                ctConfigToUseForDuplicateCheck = this.Settings.IdentityClaimTypeConfig;
                             }
                             else
                             {
@@ -749,9 +750,9 @@ namespace Yvand.LdapClaimsProvider
                         }
                         else
                         {
-                            if (currentContext.Settings.MainGroupClaimTypeConfig != null && String.Equals(ctConfig.LDAPClass, currentContext.Settings.MainGroupClaimTypeConfig.LDAPClass, StringComparison.InvariantCultureIgnoreCase))
+                            if (this.Settings.MainGroupClaimTypeConfig != null && String.Equals(ctConfig.LDAPClass, this.Settings.MainGroupClaimTypeConfig.LDAPClass, StringComparison.InvariantCultureIgnoreCase))
                             {
-                                ctConfigToUseForDuplicateCheck = currentContext.Settings.MainGroupClaimTypeConfig;
+                                ctConfigToUseForDuplicateCheck = this.Settings.MainGroupClaimTypeConfig;
                             }
                             else
                             {
@@ -761,10 +762,10 @@ namespace Yvand.LdapClaimsProvider
                     }
 
                     // When token domain is present, then ensure we do compare with the actual domain name
-                    bool compareWithDomain = Utils.HasPrefixToken(ctConfig.ClaimValuePrefix, ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINNAME);// ? true : currentContext.Settings.CompareResultsWithDomainNameProp;
+                    bool compareWithDomain = Utils.HasPrefixToken(ctConfig.ClaimValuePrefix, ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINNAME);// ? true : this.Settings.CompareResultsWithDomainNameProp;
                     if (!compareWithDomain)
                     {
-                        compareWithDomain = Utils.HasPrefixToken(ctConfig.ClaimValuePrefix, ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINFQDN);// ? true : currentContext.Settings.CompareResultsWithDomainNameProp;
+                        compareWithDomain = Utils.HasPrefixToken(ctConfig.ClaimValuePrefix, ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINFQDN);// ? true : this.Settings.CompareResultsWithDomainNameProp;
                     }
                     if (results.Contains(LDAPResult, ctConfigToUseForDuplicateCheck, compareWithDomain))
                     {
@@ -809,15 +810,15 @@ namespace Yvand.LdapClaimsProvider
             bool isIdentityClaimType = false;
 
             if ((SPClaimTypes.Equals(permissionClaimType, SPTrust.IdentityClaimTypeInformation.MappedClaimType)
-                || result.ClaimTypeConfigMatch.UseMainClaimTypeOfDirectoryObject) && result.ClaimTypeConfigMatch.LDAPClass == currentContext.Settings.IdentityClaimTypeConfig.LDAPClass)
+                || result.ClaimTypeConfigMatch.UseMainClaimTypeOfDirectoryObject) && result.ClaimTypeConfigMatch.LDAPClass == this.Settings.IdentityClaimTypeConfig.LDAPClass)
             {
                 isIdentityClaimType = true;
             }
 
-            if (result.ClaimTypeConfigMatch.UseMainClaimTypeOfDirectoryObject && result.ClaimTypeConfigMatch.LDAPClass != currentContext.Settings.IdentityClaimTypeConfig.LDAPClass)
+            if (result.ClaimTypeConfigMatch.UseMainClaimTypeOfDirectoryObject && result.ClaimTypeConfigMatch.LDAPClass != this.Settings.IdentityClaimTypeConfig.LDAPClass)
             {
                 // Get reference attribute to use to create actual entity (claim type and its LDAPAttribute) from current result
-                ClaimTypeConfig attribute = currentContext.Settings.RuntimeClaimTypesList.FirstOrDefault(x => !x.UseMainClaimTypeOfDirectoryObject && x.LDAPClass == result.ClaimTypeConfigMatch.LDAPClass);
+                ClaimTypeConfig attribute = this.Settings.RuntimeClaimTypesList.FirstOrDefault(x => !x.UseMainClaimTypeOfDirectoryObject && x.LDAPClass == result.ClaimTypeConfigMatch.LDAPClass);
                 if (attribute != null)
                 {
                     permissionClaimType = attribute.ClaimType;
@@ -831,17 +832,17 @@ namespace Yvand.LdapClaimsProvider
                 }
             }
 
-            if (result.ClaimTypeConfigMatch.UseMainClaimTypeOfDirectoryObject && result.ClaimTypeConfigMatch.LDAPClass == currentContext.Settings.IdentityClaimTypeConfig.LDAPClass)
+            if (result.ClaimTypeConfigMatch.UseMainClaimTypeOfDirectoryObject && result.ClaimTypeConfigMatch.LDAPClass == this.Settings.IdentityClaimTypeConfig.LDAPClass)
             {
                 // This attribute is not directly linked to a claim type, so entity is created with identity claim type
-                permissionClaimType = currentContext.Settings.IdentityClaimTypeConfig.ClaimType;
-                permissionValue = FormatPermissionValue(currentContext, permissionClaimType, result.LdapEntityProperties[currentContext.Settings.IdentityClaimTypeConfig.LDAPAttribute][0].ToString(), isIdentityClaimType, result);
+                permissionClaimType = this.Settings.IdentityClaimTypeConfig.ClaimType;
+                permissionValue = FormatPermissionValue(currentContext, permissionClaimType, result.LdapEntityProperties[this.Settings.IdentityClaimTypeConfig.LDAPAttribute][0].ToString(), isIdentityClaimType, result);
                 claim = CreateClaim(
                     permissionClaimType,
                     permissionValue,
-                    currentContext.Settings.IdentityClaimTypeConfig.ClaimValueType/*,
+                    this.Settings.IdentityClaimTypeConfig.ClaimValueType/*,
                     false*/);
-                pe.EntityType = currentContext.Settings.IdentityClaimTypeConfig.EntityType == DirectoryObjectType.User ? SPClaimEntityTypes.User : ClaimsProviderConstants.GroupClaimEntityType;
+                pe.EntityType = this.Settings.IdentityClaimTypeConfig.EntityType == DirectoryObjectType.User ? SPClaimEntityTypes.User : ClaimsProviderConstants.GroupClaimEntityType;
             }
             else
             {
@@ -857,7 +858,7 @@ namespace Yvand.LdapClaimsProvider
             int nbMetadata = 0;
             // Populate metadata of new PickerEntity
             // Change condition to fix bug http://ldapcp.codeplex.com/discussions/653087: only rely on the LDAP class
-            foreach (ClaimTypeConfig ctConfig in currentContext.Settings.RuntimeMetadataConfig.Where(x => String.Equals(x.LDAPClass, result.ClaimTypeConfigMatch.LDAPClass, StringComparison.InvariantCultureIgnoreCase)))
+            foreach (ClaimTypeConfig ctConfig in this.Settings.RuntimeMetadataConfig.Where(x => String.Equals(x.LDAPClass, result.ClaimTypeConfigMatch.LDAPClass, StringComparison.InvariantCultureIgnoreCase)))
             {
                 // if there is actally a value in the LDAP result, then it can be set
                 if (result.LdapEntityProperties.Contains(ctConfig.LDAPAttribute) && result.LdapEntityProperties[ctConfig.LDAPAttribute].Count > 0)
@@ -926,7 +927,7 @@ namespace Yvand.LdapClaimsProvider
         {
             string value = claimValue;
 
-            var attr = currentContext.Settings.RuntimeClaimTypesList.FirstOrDefault(x => SPClaimTypes.Equals(x.ClaimType, claimType));
+            var attr = this.Settings.RuntimeClaimTypesList.FirstOrDefault(x => SPClaimTypes.Equals(x.ClaimType, claimType));
             if (Utils.HasPrefixToken(attr.ClaimValuePrefix, ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINNAME))
             {
                 value = string.Format("{0}{1}", attr.ClaimValuePrefix.Replace(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINNAME, result.AuthorityMatch.DomainName), value);
@@ -942,8 +943,8 @@ namespace Yvand.LdapClaimsProvider
 
         protected virtual string FormatPermissionDisplayText(OperationContext currentContext, LdapSearchResult result)
         {
-            bool isIdentityClaimType = String.Equals(result.ClaimTypeConfigMatch.ClaimType, currentContext.Settings.IdentityClaimTypeConfig.ClaimType, StringComparison.InvariantCultureIgnoreCase);
-            string entityDisplayText = currentContext.Settings.EntityDisplayTextPrefix;
+            bool isIdentityClaimType = String.Equals(result.ClaimTypeConfigMatch.ClaimType, this.Settings.IdentityClaimTypeConfig.ClaimType, StringComparison.InvariantCultureIgnoreCase);
+            string entityDisplayText = this.Settings.EntityDisplayTextPrefix;
             string claimValue = result.PickerEntity.Claim.Value;
             string valueDisplayedInPermission = String.Empty;
             bool displayLdapMatchForIdentityClaimType = false;
@@ -1008,7 +1009,7 @@ namespace Yvand.LdapClaimsProvider
                     else
                     {   // Always specifically use LDAP attribute of identity claim type
                         entityDisplayText += prefixToAdd;
-                        valueDisplayedInPermission = result.LdapEntityProperties[currentContext.Settings.IdentityClaimTypeConfig.LDAPAttribute][0].ToString();
+                        valueDisplayedInPermission = result.LdapEntityProperties[this.Settings.IdentityClaimTypeConfig.LDAPAttribute][0].ToString();
                         entityDisplayText += valueDisplayedInPermission;
                     }
                 }

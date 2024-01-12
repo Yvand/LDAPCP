@@ -321,6 +321,10 @@ namespace Yvand.LdapClaimsProvider.Configuration
 
         public static string EscapeSpecialCharacters(string stringWithSpecialChars)
         {
+            if (String.IsNullOrWhiteSpace(stringWithSpecialChars))
+            {
+                return String.Empty;
+            }
             string result = stringWithSpecialChars;
             foreach (KeyValuePair<string, string> kvp in ClaimsProviderConstants.SpecialCharacters)
             {

@@ -18,7 +18,11 @@ namespace Yvand.LdapClaimsProvider
 {
     public class LdapEntityProvider : EntityProviderBase
     {
-        public LdapEntityProvider(string claimsProviderName) : base(claimsProviderName) { }
+        private ILDAPCPSettings Settings { get; }
+        public LdapEntityProvider(string claimsProviderName, ILDAPCPSettings settings) : base(claimsProviderName) 
+        {
+            this.Settings = settings;
+        }
 
         public override List<string> GetEntityGroups(OperationContext currentContext)
         {
@@ -34,7 +38,7 @@ namespace Yvand.LdapClaimsProvider
                 if (ldapConnection.GetGroupMembershipUsingDotNetHelpers)
                 {
                     directoryGroups = GetGroupsFromActiveDirectory(ldapConnection, currentContext);
-                    //directoryGroups.AddRange(GetGroupsFromLDAPDirectory(ldapConnection, currentContext, allGroupsCTConfig.Where(x => !SPClaimTypes.Equals(x.ClaimType, currentContext.Settings.MainGroupClaimType))));
+                    //directoryGroups.AddRange(GetGroupsFromLDAPDirectory(ldapConnection, currentContext, allGroupsCTConfig.Where(x => !SPClaimTypes.Equals(x.ClaimType, this.Settings.MainGroupClaimType))));
                 }
                 else
                 {
@@ -147,7 +151,7 @@ namespace Yvand.LdapClaimsProvider
                             // https://github.com/Yvand/LDAPCP/issues/148 - the group property used for the group value should be based on the LDAPCP configuration
                             // By default it should be the SamAccountName, since it's also the default attribute set in LDAPCP configuration
                             string claimValue = adGroup.SamAccountName;
-                            switch (currentContext.Settings.MainGroupClaimTypeConfig.LDAPAttribute.ToLower())
+                            switch (this.Settings.MainGroupClaimTypeConfig.LDAPAttribute.ToLower())
                             {
                                 case "name":
                                     claimValue = adGroup.Name;
@@ -162,20 +166,20 @@ namespace Yvand.LdapClaimsProvider
                                     break;
                             }
 
-                            if (!String.IsNullOrEmpty(currentContext.Settings.MainGroupClaimTypeConfig.ClaimValuePrefix))
+                            if (!String.IsNullOrEmpty(this.Settings.MainGroupClaimTypeConfig.ClaimValuePrefix))
                             {
                                 // Principal.DistinguishedName is used to build the domain name / FQDN of the current group. Example of value: CN=group1,CN=Users,DC=contoso,DC=local
                                 string groupDN = adGroup.DistinguishedName;
                                 if (String.IsNullOrEmpty(groupDN)) { continue; }
 
                                 Utils.GetDomainInformation(groupDN, out groupDomainName, out groupDomainFqdn);
-                                if (currentContext.Settings.MainGroupClaimTypeConfig.ClaimValuePrefix.Contains(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINNAME))
+                                if (this.Settings.MainGroupClaimTypeConfig.ClaimValuePrefix.Contains(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINNAME))
                                 {
-                                    claimValue = currentContext.Settings.MainGroupClaimTypeConfig.ClaimValuePrefix.Replace(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINNAME, groupDomainName) + claimValue;
+                                    claimValue = this.Settings.MainGroupClaimTypeConfig.ClaimValuePrefix.Replace(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINNAME, groupDomainName) + claimValue;
                                 }
-                                else if (currentContext.Settings.MainGroupClaimTypeConfig.ClaimValuePrefix.Contains(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINFQDN))
+                                else if (this.Settings.MainGroupClaimTypeConfig.ClaimValuePrefix.Contains(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINFQDN))
                                 {
-                                    claimValue = currentContext.Settings.MainGroupClaimTypeConfig.ClaimValuePrefix.Replace(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINFQDN, groupDomainFqdn) + claimValue;
+                                    claimValue = this.Settings.MainGroupClaimTypeConfig.ClaimValuePrefix.Replace(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINFQDN, groupDomainFqdn) + claimValue;
                                 }
                             }
                             //SPClaim claim = CreateClaim(groupCTConfig.ClaimType, claimValue, groupCTConfig.ClaimValueType, false);
@@ -221,7 +225,7 @@ namespace Yvand.LdapClaimsProvider
         {
             List<SPClaim> groups = new List<SPClaim>();
             //if (groupsCTConfig == null || groupsCTConfig.Count() == 0) { return new List<string>(); }
-            string ldapFilter = string.Format("(&(ObjectClass={0}) ({1}={2}){3})", currentContext.Settings.IdentityClaimTypeConfig.LDAPClass, currentContext.Settings.IdentityClaimTypeConfig.LDAPAttribute, currentContext.IncomingEntity.Value, currentContext.Settings.IdentityClaimTypeConfig.AdditionalLDAPFilter);
+            string ldapFilter = string.Format("(&(ObjectClass={0}) ({1}={2}){3})", this.Settings.IdentityClaimTypeConfig.LDAPClass, this.Settings.IdentityClaimTypeConfig.LDAPAttribute, currentContext.IncomingEntity.Value, this.Settings.IdentityClaimTypeConfig.AdditionalLDAPFilter);
             string logMessageCredentials = String.IsNullOrWhiteSpace(ldapConnection.DirectoryConnection.Username) ? "process identity" : ldapConnection.DirectoryConnection.Username;
             string directoryDetails = $"from LDAP server \"{ldapConnection.DirectoryConnection.Path}\" with LDAP filter \"{ldapFilter}\" (authenticate as \"{logMessageCredentials}\" with AuthenticationType \"{ldapConnection.DirectoryConnection.AuthenticationType}\").";
             Logger.Log($"[{ClaimsProviderName}] Getting LDAP groups of user \"{currentContext.IncomingEntity.Value}\" {directoryDetails}", TraceSeverity.Verbose, EventSeverity.Information, TraceCategory.Augmentation);
@@ -233,7 +237,7 @@ namespace Yvand.LdapClaimsProvider
                 {
                     using (DirectorySearcher searcher = new DirectorySearcher(ldapConnection.DirectoryConnection))
                     {
-                        searcher.ClientTimeout = new TimeSpan(0, 0, currentContext.Settings.Timeout);
+                        searcher.ClientTimeout = new TimeSpan(0, 0, this.Settings.Timeout);
                         searcher.Filter = ldapFilter;
                         foreach (string memberOfPropertyName in ldapConnection.GroupMembershipLdapAttributes)
                         {
@@ -260,12 +264,12 @@ namespace Yvand.LdapClaimsProvider
                         {
                             //foreach (ClaimTypeConfig groupCTConfig in groupsCTConfig)
                             //{
-                            ClaimTypeConfig groupCTConfig = currentContext.Settings.MainGroupClaimTypeConfig;
+                            ClaimTypeConfig groupCTConfig = this.Settings.MainGroupClaimTypeConfig;
                             int propertyCount = 0;
                             ResultPropertyValueCollection groupValues = null;
                             bool valueIsDistinguishedNameFormat;
 
-                            //if (groupCTConfig.ClaimType == currentContext.Settings.MainGroupClaimTypeConfig.ClaimType)
+                            //if (groupCTConfig.ClaimType == this.Settings.MainGroupClaimTypeConfig.ClaimType)
                             //{
                             valueIsDistinguishedNameFormat = true;
                             foreach (string groupMembershipAttributes in ldapConnection.GroupMembershipLdapAttributes)
@@ -353,7 +357,7 @@ namespace Yvand.LdapClaimsProvider
         {
             // Build LDAP filter as documented in http://technet.microsoft.com/fr-fr/library/aa996205(v=EXCHG.65).aspx
             StringBuilder filter = new StringBuilder();
-            if (currentContext.Settings.FilterEnabledUsersOnly)
+            if (this.Settings.FilterEnabledUsersOnly)
             {
                 filter.Append(ClaimsProviderConstants.LDAPFilterEnabledUsersOnly);
             }
@@ -368,7 +372,7 @@ namespace Yvand.LdapClaimsProvider
             }
             else
             {
-                preferredFilterPattern = currentContext.Settings.AddWildcardAsPrefixOfInput ? "*" + input + "*" : input + "*";
+                preferredFilterPattern = this.Settings.AddWildcardAsPrefixOfInput ? "*" + input + "*" : input + "*";
             }
 
             foreach (var ctConfig in currentContext.CurrentClaimTypeConfigList)
@@ -383,7 +387,7 @@ namespace Yvand.LdapClaimsProvider
                 }
             }
 
-            if (currentContext.Settings.FilterEnabledUsersOnly)
+            if (this.Settings.FilterEnabledUsersOnly)
             {
                 filter.Append(")");
             }
@@ -397,7 +401,7 @@ namespace Yvand.LdapClaimsProvider
             string filter = String.Empty;
             string additionalFilter = String.Empty;
 
-            if (currentContext.Settings.FilterSecurityGroupsOnly && String.Equals(attribute.LDAPClass, "group", StringComparison.OrdinalIgnoreCase))
+            if (this.Settings.FilterSecurityGroupsOnly && String.Equals(attribute.LDAPClass, "group", StringComparison.OrdinalIgnoreCase))
             {
                 additionalFilter = ClaimsProviderConstants.LDAPFilterADSecurityGroupsOnly;
             }
@@ -413,13 +417,13 @@ namespace Yvand.LdapClaimsProvider
 
         protected List<LdapSearchResult> QueryLDAPServers(OperationContext currentContext, string ldapFilter)
         {
-            if (currentContext.Settings.LdapConnections == null || currentContext.Settings.LdapConnections.Count == 0) { return null; }
+            if (this.Settings.LdapConnections == null || this.Settings.LdapConnections.Count == 0) { return null; }
             object lockResults = new object();
             List<LdapSearchResult> results = new List<LdapSearchResult>();
             Stopwatch globalStopWatch = new Stopwatch();
             globalStopWatch.Start();
 
-            Parallel.ForEach(currentContext.Settings.LdapConnections.Where(x => x.DirectoryConnection != null), ldapConnection =>
+            Parallel.ForEach(this.Settings.LdapConnections.Where(x => x.DirectoryConnection != null), ldapConnection =>
             {
                 Debug.WriteLine($"ldapConnection: Path: {ldapConnection.DirectoryConnection.Path}, UseDefaultADConnection: {ldapConnection.UseDefaultADConnection}");
                 Logger.LogDebug($"ldapConnection: Path: {ldapConnection.DirectoryConnection.Path}, UseDefaultADConnection: {ldapConnection.UseDefaultADConnection}");
@@ -428,10 +432,10 @@ namespace Yvand.LdapClaimsProvider
                 {
                     ds.SearchRoot = directory;
                     ds.SizeLimit = currentContext.MaxCount;
-                    ds.ClientTimeout = new TimeSpan(0, 0, currentContext.Settings.Timeout); // Set the timeout of the query
+                    ds.ClientTimeout = new TimeSpan(0, 0, this.Settings.Timeout); // Set the timeout of the query
                     ds.PropertiesToLoad.Add("objectclass");
                     ds.PropertiesToLoad.Add("nETBIOSName");
-                    foreach (var ldapAttribute in currentContext.Settings.RuntimeClaimTypesList.Where(x => !String.IsNullOrWhiteSpace(x.LDAPAttribute)))
+                    foreach (var ldapAttribute in this.Settings.RuntimeClaimTypesList.Where(x => !String.IsNullOrWhiteSpace(x.LDAPAttribute)))
                     {
                         ds.PropertiesToLoad.Add(ldapAttribute.LDAPAttribute);
                         if (!String.IsNullOrEmpty(ldapAttribute.LDAPAttributeToShowAsDisplayText))
@@ -440,7 +444,7 @@ namespace Yvand.LdapClaimsProvider
                         }
                     }
                     // Populate additional attributes that are not part of the filter but are requested in the result
-                    foreach (var metadataAttribute in currentContext.Settings.RuntimeMetadataConfig)
+                    foreach (var metadataAttribute in this.Settings.RuntimeMetadataConfig)
                     {
                         if (!ds.PropertiesToLoad.Contains(metadataAttribute.LDAPAttribute))
                         {

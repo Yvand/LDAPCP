@@ -152,7 +152,7 @@ namespace Yvand.LdapClaimsProvider.Configuration
     /// </summary>
     public class OperationContext
     {
-        public ILDAPCPSettings Settings { get; private set; }
+        //public ILDAPCPSettings Settings { get; private set; }
         /// <summary>
         /// Indicates what kind of operation SharePoint is requesting
         /// </summary>
@@ -207,7 +207,7 @@ namespace Yvand.LdapClaimsProvider.Configuration
 
         public OperationContext(ILDAPCPSettings settings, OperationType currentRequestType, string input, SPClaim incomingEntity, Uri context, string[] entityTypes, string hierarchyNodeID, int maxCount)
         {
-            this.Settings = settings;
+            //this.Settings = settings;
             this.OperationType = currentRequestType;
             this.Input = Utils.EscapeSpecialCharacters(input);
             this.IncomingEntity = incomingEntity;
