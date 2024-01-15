@@ -8,25 +8,23 @@ using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using System.Text;
+using System.Security.Principal;
 
 namespace Yvand.LdapClaimsProvider.Configuration
 {
     public static class Utils
     {
         /// <summary>
-        /// Gets the first SharePoint TrustedLoginProvider that has its property ClaimProviderName equals to <paramref name="claimProviderName"/>
+        /// Gets the first SharePoint TrustedLoginProvider that has its property ClaimProviderName equals to <paramref name="claimsProviderName"/>
         /// LIMITATION: The same claims provider (uniquely identified by its name) cannot be associated to multiple TrustedLoginProvider because at runtime there is no way to determine what TrustedLoginProvider is currently calling
         /// </summary>
-        /// <param name="claimProviderName"></param>
+        /// <param name="claimsProviderName"></param>
         /// <returns></returns>
-        public static SPTrustedLoginProvider GetSPTrustAssociatedWithClaimsProvider(string claimProviderName)
+        public static SPTrustedLoginProvider GetSPTrustAssociatedWithClaimsProvider(string claimsProviderName)
         {
-            if (String.IsNullOrWhiteSpace(claimProviderName))
-            {
-                return null;
-            }
+            if (String.IsNullOrWhiteSpace(claimsProviderName)) { throw new ArgumentNullException(nameof(claimsProviderName)); }
 
-            var lp = SPSecurityTokenServiceManager.Local.TrustedLoginProviders.Where(x => String.Equals(x.ClaimProviderName, claimProviderName, StringComparison.OrdinalIgnoreCase));
+            var lp = SPSecurityTokenServiceManager.Local.TrustedLoginProviders.Where(x => String.Equals(x.ClaimProviderName, claimsProviderName, StringComparison.OrdinalIgnoreCase));
 
             if (lp != null && lp.Count() == 1)
             {
@@ -35,9 +33,9 @@ namespace Yvand.LdapClaimsProvider.Configuration
 
             if (lp != null && lp.Count() > 1)
             {
-                Logger.Log($"[{claimProviderName}] Cannot continue because '{claimProviderName}' is set with multiple SPTrustedIdentityTokenIssuer", TraceSeverity.Unexpected, EventSeverity.Error, TraceCategory.Core);
+                Logger.Log($"[{claimsProviderName}] Cannot continue because '{claimsProviderName}' is set with multiple SPTrustedIdentityTokenIssuer", TraceSeverity.Unexpected, EventSeverity.Error, TraceCategory.Core);
             }
-            Logger.Log($"[{claimProviderName}] Cannot continue because '{claimProviderName}' is not set with any SPTrustedIdentityTokenIssuer.\r\nVisit {ClaimsProviderConstants.PUBLICSITEURL} for more information.", TraceSeverity.High, EventSeverity.Warning, TraceCategory.Core);
+            Logger.Log($"[{claimsProviderName}] Cannot continue because '{claimsProviderName}' is not set with any SPTrustedIdentityTokenIssuer.\r\nVisit {ClaimsProviderConstants.PUBLICSITEURL} for more information.", TraceSeverity.High, EventSeverity.Warning, TraceCategory.Core);
             return null;
         }
 
@@ -49,6 +47,7 @@ namespace Yvand.LdapClaimsProvider.Configuration
         /// <returns></returns>
         public static bool IsClaimsProviderUsedInCurrentContext(Uri context, string claimsProviderName)
         {
+            if (String.IsNullOrWhiteSpace(claimsProviderName)) { throw new ArgumentNullException(nameof(claimsProviderName)); }
             if (context == null) { return true; }
             var webApp = SPWebApplication.Lookup(context);
             if (webApp == null) { return false; }
@@ -80,6 +79,23 @@ namespace Yvand.LdapClaimsProvider.Configuration
                 }
             }
             return false;
+        }
+
+        public static IEnumerable<string> GetNonWellKnownUserClaimTypes(string claimsProviderName)
+        {
+            if (String.IsNullOrWhiteSpace(claimsProviderName)) { throw new ArgumentNullException(nameof(claimsProviderName)); }
+
+            SPTrustedLoginProvider trust = GetSPTrustAssociatedWithClaimsProvider(claimsProviderName);
+            if (trust == null)
+            {
+                return null;
+            }
+
+            // Return all claim types registered in the SPTrustedLoginProvider that do not match a known user claim type
+            IEnumerable<string> nonWellKnownUserClaimTypes = trust.ClaimTypeInformation
+                .Where(x => !ClaimsProviderConstants.DefaultSettingsPerUserClaimType.ContainsKey(x.MappedClaimType))
+                .Select(x => x.MappedClaimType);
+            return nonWellKnownUserClaimTypes;
         }
 
         public static ClaimTypeConfig IdentifyIdentityClaimTypeConfigFromClaimTypeConfigCollection(ClaimTypeConfigCollection claimTypeConfigCollection, string identityClaimType)
@@ -342,6 +358,35 @@ namespace Yvand.LdapClaimsProvider.Configuration
         //    }
         //    return result;
         //}
+
+        public static string ConvertSidBinaryToString(byte[] sidBinary)
+        {
+            string sidString;
+            try
+            {
+                SecurityIdentifier sid = new SecurityIdentifier(sidBinary, 0);
+                sidString = sid.ToString();
+            }
+            catch (Exception e)
+            {
+                sidString = Encoding.UTF8.GetString(sidBinary);
+            }
+            return sidString;
+        }
+
+        public static byte[] ConvertSidStringToBinary(string sidString)
+        {
+            byte[] sidBinary = new byte[85];
+            try
+            {
+                SecurityIdentifier sid = new SecurityIdentifier(sidString);
+                sid.GetBinaryForm(sidBinary, 0);
+            }
+            catch (Exception e)
+            {
+            }
+            return sidBinary;
+        }
 
         public static bool HasPrefixToken(string prefix, string tokenToSearch)
         {

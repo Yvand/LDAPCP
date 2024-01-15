@@ -14,7 +14,7 @@
       Location="Microsoft.SharePoint.Administration.Security"
       Title="Global configuration"
       Sequence="10">
-    <UrlAction Url="/_admin/LDAPCPSE/LdapcpSettings.aspx" />
+    <UrlAction Url="/_admin/LDAPCPSE/GlobalSettings.aspx" />
   </CustomAction>
 
   <CustomAction

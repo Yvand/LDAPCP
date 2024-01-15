@@ -9,6 +9,7 @@ using System.DirectoryServices;
 using System.Linq;
 using System.Reflection;
 using System.Web;
+using Yvand.LdapClaimsProvider.Configuration;
 using WIF4_5 = System.Security.Claims;
 
 namespace Yvand.LdapClaimsProvider.Configuration
@@ -82,6 +83,37 @@ namespace Yvand.LdapClaimsProvider.Configuration
             { "*", @"\2A" },
             { "(", @"\28" },
             { ")", @"\29" },
+        };
+
+        public static Dictionary<string, ClaimTypeConfig> DefaultSettingsPerUserClaimType = new Dictionary<string, ClaimTypeConfig>()
+        {
+            {
+                WIF4_5.ClaimTypes.Upn,
+                new ClaimTypeConfig
+                {
+                    EntityType = DirectoryObjectType.User,
+                    LDAPClass = "user",
+                    LDAPAttribute = "userPrincipalName"
+                }
+            },
+            {
+                WIF4_5.ClaimTypes.Email,
+                new ClaimTypeConfig
+                {
+                    EntityType = DirectoryObjectType.User,
+                    LDAPClass = "user",
+                    LDAPAttribute = "mail"
+                }
+            },
+            {
+                WIF4_5.ClaimTypes.WindowsAccountName,
+                new ClaimTypeConfig
+                {
+                    EntityType = DirectoryObjectType.User,
+                    LDAPClass = "user",
+                    LDAPAttribute = "sAMAccountName"
+                }
+            },
         };
     }
 

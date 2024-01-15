@@ -80,6 +80,16 @@
       <DependentUpon>Yvand.LDAPCPSE.feature</DependentUpon>
     </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="TEMPLATE\ADMIN\LDAPCPSE\GlobalSettings.ascx.cs">
+      <DependentUpon>GlobalSettings.ascx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="TEMPLATE\ADMIN\LDAPCPSE\GlobalSettings.ascx.designer.cs">
+      <DependentUpon>GlobalSettings.ascx.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Yvand.LdapClaimsProvider\Administration\LDAPCPSEUserControl.cs">
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
     <Compile Include="Yvand.LdapClaimsProvider\Configuration\ClaimsProviderConstants.cs" />
     <Compile Include="Yvand.LdapClaimsProvider\Configuration\ClaimTypeConfig.cs" />
     <Compile Include="Yvand.LdapClaimsProvider\Configuration\LDAPProviderConfiguration.cs" />
@@ -111,9 +121,7 @@
       <SharePointProjectItemId>{b58f5ced-5e00-4deb-a03e-295241a7c6ab}</SharePointProjectItemId>
     </None>
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="TEMPLATE\ADMIN\LDAPCPSE\" />
-  </ItemGroup>
+  <ItemGroup />
   <ItemGroup>
     <Content Include="Features\Yvand.LDAPCPSE.Administration\Yvand.LDAPCPSE.Administration.Template.xml">
       <DependentUpon>Yvand.LDAPCPSE.Administration.feature</DependentUpon>
@@ -121,6 +129,8 @@
     <Content Include="Features\Yvand.LDAPCPSE\Yvand.LDAPCPSE.Template.xml">
       <DependentUpon>Yvand.LDAPCPSE.feature</DependentUpon>
     </Content>
+    <Content Include="TEMPLATE\ADMIN\LDAPCPSE\GlobalSettings.ascx" />
+    <Content Include="TEMPLATE\ADMIN\LDAPCPSE\GlobalSettings.aspx" />
     <Content Include="TEMPLATE\LAYOUTS\LDAPCPSE\jquery-1.9.1.min.js" />
     <Content Include="TEMPLATE\LAYOUTS\LDAPCPSE\LDAPCP_logo_small.png" />
     <Content Include="LDAPCPSE.Administration.Links\Elements.xml">

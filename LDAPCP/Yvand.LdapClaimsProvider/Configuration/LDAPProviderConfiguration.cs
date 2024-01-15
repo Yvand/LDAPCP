@@ -119,31 +119,11 @@ namespace Yvand.LdapClaimsProvider.Configuration
             // Add only the identity claim type for user claim type.
             // Then add the rest of user details as mapped to the identity claim type
             // Then add the group claim type
-            Dictionary<string, ClaimTypeConfig> defaultSettingsPerUserClaimType = new Dictionary<string, ClaimTypeConfig>(5);
-            defaultSettingsPerUserClaimType.Add(WIF4_5.ClaimTypes.Upn, new ClaimTypeConfig
-            {
-                EntityType = DirectoryObjectType.User,
-                LDAPClass = "user",
-                LDAPAttribute = "userPrincipalName"
-            });
-            defaultSettingsPerUserClaimType.Add(WIF4_5.ClaimTypes.Email, new ClaimTypeConfig
-            {
-                EntityType = DirectoryObjectType.User,
-                LDAPClass = "user",
-                LDAPAttribute = "mail"
-            });
-            defaultSettingsPerUserClaimType.Add(WIF4_5.ClaimTypes.WindowsAccountName, new ClaimTypeConfig
-            {
-                EntityType = DirectoryObjectType.User,
-                LDAPClass = "user",
-                LDAPAttribute = "sAMAccountName"
-            });
-
             ClaimTypeConfigCollection newCTConfigCollection = new ClaimTypeConfigCollection(spTrust);
-            if (defaultSettingsPerUserClaimType.ContainsKey(spTrust.IdentityClaimTypeInformation.MappedClaimType))
+            if (ClaimsProviderConstants.DefaultSettingsPerUserClaimType.ContainsKey(spTrust.IdentityClaimTypeInformation.MappedClaimType))
             {
                 // identity claim type is well-known
-                ClaimTypeConfig ctConfig = defaultSettingsPerUserClaimType[spTrust.IdentityClaimTypeInformation.MappedClaimType];
+                ClaimTypeConfig ctConfig = ClaimsProviderConstants.DefaultSettingsPerUserClaimType[spTrust.IdentityClaimTypeInformation.MappedClaimType];
                 ctConfig.ClaimType = spTrust.IdentityClaimTypeInformation.MappedClaimType;
                 newCTConfigCollection.Add(ctConfig);
             }
@@ -154,7 +134,7 @@ namespace Yvand.LdapClaimsProvider.Configuration
                 newCTConfigCollection.Add(ctConfig);
             }
 
-            var nonIdentityClaimTypes = defaultSettingsPerUserClaimType.Where(x => x.Key != spTrust.IdentityClaimTypeInformation.MappedClaimType);
+            var nonIdentityClaimTypes = ClaimsProviderConstants.DefaultSettingsPerUserClaimType.Where(x => x.Key != spTrust.IdentityClaimTypeInformation.MappedClaimType);
             foreach(var nonIdentityClaimType in nonIdentityClaimTypes)
             {
                 ClaimTypeConfig ctConfig = nonIdentityClaimType.Value;
