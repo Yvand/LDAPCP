@@ -7,7 +7,7 @@
 <%@ Register TagPrefix="wssuc" TagName="ButtonSection" Src="~/_controltemplates/ButtonSection.ascx" %>
 <%@ Register TagPrefix="wssawc" Namespace="Microsoft.SharePoint.WebControls" Assembly="Microsoft.SharePoint, Version=15.0.0.0, Culture=neutral, PublicKeyToken=71e9bce111e9429c" %>
 
-<script type="text/javascript" src="/_layouts/15/entracp/jquery-1.9.1.min.js"></script>
+<script type="text/javascript" src="/_layouts/15/ldapcpse/jquery-1.9.1.min.js"></script>
 <style>
     /* Maximaze space available for description text */
     .ms-inputformdescription {
@@ -293,19 +293,49 @@
         </template_inputformcontrols>
     </wssuc:inputformsection>
 
-    <wssuc:inputformsection ID="AugmentationSection" runat="server" title="Augmentation" description="Enable augmentation to let LDAPCP get all the groups that the user is a member of.<br/><br/>If not enabled, permissions granted to federated groups may not work correctly.">
+    <wssuc:inputformsection ID="AugmentationSection" runat="server" title="Configuration for the groups" description="Enable augmentation to let LDAPCP get all the groups that the user is a member of.<br/><br/>If not enabled, permissions granted to federated groups may not work correctly.">
         <template_inputformcontrols>
             <p class="ms-error">
-                <asp:Label ID="Label1" runat="server" EnableViewState="False" /></p>
-            <asp:CheckBox Checked="false" runat="server" Name="ChkEnableAugmentation" ID="ChkEnableAugmentation" OnClick="window.Ldapcp.AdminGlobalSettingsControl.InitAugmentationControls();" Text="Enable augmentation" />
-            <div id="AugmentationControls" style="padding: 15px;">
-                <wssawc:EncodedLiteral runat="server" Text="Select what claim type LDAPCP will use to create claims with the group membership of users:" EncodeMethod='HtmlEncodeAllowSimpleTextFormatting' />
-                <br />
-                <asp:DropDownList ID="DdlClaimTypes" runat="server">
-                    <asp:ListItem Selected="True" Value="None"></asp:ListItem>
-                </asp:DropDownList>
+                <asp:Label ID="Label1" runat="server" EnableViewState="False" />
+            </p>
+            <div id="AugmentationControls">
                 <tr>
                     <td>
+                        <div id="divGroupClaimTypeConfiguration">
+                            <fieldset>
+                                <legend>Configuration for the group claim type</legend>
+                                <ol>
+                                    <li>
+                                        <wssawc:EncodedLiteral runat="server" Text="Select the claim type to use for the groups:" EncodeMethod='HtmlEncodeAllowSimpleTextFormatting' />
+                                        <br />
+                                        <asp:DropDownList ID="DdlGroupClaimType" runat="server">
+                                            <asp:ListItem Selected="True" Value="None"></asp:ListItem>
+                                        </asp:DropDownList>
+                                    </li>
+                                    <li>
+                                        <label for="<%= TxtGroupLdapClass.ClientID %>">LDAP object class: <em>*</em></label>
+                                        <wssawc:InputFormTextBox title="LDAP object class" class="ms-input" ID="TxtGroupLdapClass" Columns="50" runat="server" MaxLength="255" />
+                                    </li>
+                                    <li>
+                                        <label for="<%= TxtGroupLdapAttribute.ClientID %>">LDAP object attribute: <em>*</em></label>
+                                        <wssawc:InputFormTextBox title="LDAP object attribute" class="ms-input" ID="TxtGroupLdapAttribute" Columns="50" runat="server" MaxLength="255" />
+                                    </li>
+                                    <li>
+                                        <label for="<%= TxtGroupAdditionalLdapAttributes.ClientID %>">Additional LDAP attributes to search a group (values separated by a ','):</label>
+                                        <wssawc:InputFormTextBox title="Additional LDAP attributes" class="ms-input" ID="TxtGroupAdditionalLdapAttributes" Columns="50" runat="server" MaxLength="255" />
+                                    </li>
+                                    <li>
+                                        <label for="<%= TxtGroupLeadingToken.ClientID %>">Leading token added to the value returned by LDAP: <em>*</em></label>
+                                        <wssawc:InputFormTextBox title="LDAP object attribute" class="ms-input" ID="TxtGroupLeadingToken" Columns="50" runat="server" MaxLength="255" />
+                                    </li>
+                                </ol>
+                            </fieldset>
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <asp:CheckBox Checked="false" runat="server" Name="ChkEnableAugmentation" ID="ChkEnableAugmentation" OnClick="window.Ldapcp.AdminGlobalSettingsControl.InitAugmentationControls();" Text="Enable augmentation" />
                         <wssawc:EncodedLiteral runat="server" Text="<p>Augmentation can be activated/deactivated per connection.<br />If connecting to Active Directory, you may check option &quot;Use <a href='https://docs.microsoft.com/en-us/dotnet/api/system.directoryservices.accountmanagement.userprincipal.getauthorizationgroups' target='_blank'>.NET helper</a>&quot;.<br />Otherwise, LDAPCP gets groups by reading the LDAP attribute memberOf/uniquememberof of the user.</p>" EncodeMethod='NoEncode' />
                         <div id="AugmentationControlsGrid">
                             <wssawc:SPGridView ID="GridLdapConnections" runat="server" AutoGenerateColumns="False" ShowHeader="false">
@@ -414,9 +444,11 @@
             <label for="<%= TxtAdditionalUserLdapFilter.ClientID %>">Additional LDAP filter for entries with <a href='http://msdn.microsoft.com/en-us/library/office/microsoft.sharepoint.administration.claims.spclaimentitytypes_members(v=office.15).aspx' target='_blank'>SPClaimEntityTypes</a> set to &quot;User&quot; (leave blank to remove):</label><br />
             <wssawc:InputFormTextBox title="Additional LDAP filter" class="ms-input" ID="TxtAdditionalUserLdapFilter" Columns="50" runat="server" />
             <p>
-                <asp:Button runat="server" ID="BtnUpdateAdditionalUserLdapFilter" Text="Apply to all user attributes" OnClick="BtnUpdateAdditionalUserLdapFilter_Click" CssClass="ms-ButtonHeightWidth" OnClientClick="return confirm('This will apply LDAP filter to all user attributes, do you want to continue?');" /></p>
+                <asp:Button runat="server" ID="BtnUpdateAdditionalUserLdapFilter" Text="Apply to all user attributes" OnClick="BtnUpdateAdditionalUserLdapFilter_Click" CssClass="ms-ButtonHeightWidth" OnClientClick="return confirm('This will apply LDAP filter to all user attributes, do you want to continue?');" />
+            </p>
             <p class="ldapcp-success">
-                <asp:Label ID="LabelUpdateAdditionalLdapFilterOk" runat="server" EnableViewState="False" /></p>
+                <asp:Label ID="LabelUpdateAdditionalLdapFilterOk" runat="server" EnableViewState="False" />
+            </p>
         </template_inputformcontrols>
     </wssuc:InputFormSection>
 

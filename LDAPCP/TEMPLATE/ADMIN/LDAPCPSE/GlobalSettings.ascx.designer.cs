@@ -213,6 +213,51 @@ namespace Yvand.LdapClaimsProvider.Administration
         protected global::System.Web.UI.WebControls.Label Label1;
 
         /// <summary>
+        /// DdlGroupClaimType control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.DropDownList DdlGroupClaimType;
+
+        /// <summary>
+        /// TxtGroupLdapClass control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::Microsoft.SharePoint.WebControls.InputFormTextBox TxtGroupLdapClass;
+
+        /// <summary>
+        /// TxtGroupLdapAttribute control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::Microsoft.SharePoint.WebControls.InputFormTextBox TxtGroupLdapAttribute;
+
+        /// <summary>
+        /// TxtGroupAdditionalLdapAttributes control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::Microsoft.SharePoint.WebControls.InputFormTextBox TxtGroupAdditionalLdapAttributes;
+
+        /// <summary>
+        /// TxtGroupLeadingToken control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::Microsoft.SharePoint.WebControls.InputFormTextBox TxtGroupLeadingToken;
+
+        /// <summary>
         /// ChkEnableAugmentation control.
         /// </summary>
         /// <remarks>
@@ -220,15 +265,6 @@ namespace Yvand.LdapClaimsProvider.Administration
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
         protected global::System.Web.UI.WebControls.CheckBox ChkEnableAugmentation;
-
-        /// <summary>
-        /// DdlClaimTypes control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.DropDownList DdlClaimTypes;
 
         /// <summary>
         /// GridLdapConnections control.

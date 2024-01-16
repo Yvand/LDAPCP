@@ -7,6 +7,8 @@ using System.DirectoryServices;
 using System.Linq;
 using System.Web.UI.WebControls;
 using Yvand.LdapClaimsProvider.Configuration;
+using static Microsoft.SharePoint.MobileMessage.SPMobileMessageServiceProvider;
+using AuthenticationTypes = System.DirectoryServices.AuthenticationTypes;
 using LdapConnection = Yvand.LdapClaimsProvider.Configuration.LdapConnection;
 
 namespace Yvand.LdapClaimsProvider.Administration
@@ -114,27 +116,6 @@ namespace Yvand.LdapClaimsProvider.Administration
             return list;
         }
 
-        /// <summary>
-        /// Parse checkbox list CblAuthenticationTypes to find authentication modes selected
-        /// </summary>
-        /// <returns></returns>
-        AuthenticationTypes GetSelectedAuthenticationTypes(bool ClearSelection)
-        {
-            AuthenticationTypes authNTypes = 0;
-            foreach (ListItem item in this.CblAuthenticationTypes.Items)
-            {
-                if (!item.Selected) { continue; }
-                int selectedType;
-                if (!Int32.TryParse(item.Value, out selectedType)) { continue; }
-                authNTypes += selectedType;
-                if (ClearSelection)
-                {
-                    item.Selected = false;
-                }
-            }
-            return authNTypes;
-        }
-
         private void PopulateFields()
         {
             this.ChkIdentityShowAdditionalAttribute.Checked = true; // Settings.DisplayLdapMatchForIdentityClaimTypeProp;
@@ -158,6 +139,45 @@ namespace Yvand.LdapClaimsProvider.Administration
             // Deprecated options that are not shown anymore in LDAPCP configuration page
             //this.ChkAddWildcardInFront.Checked = Settings.AddWildcardInFrontOfQueryProp;
             //this.TxtPickerEntityGroupName.Text = Settings.PickerEntityGroupNameProp;
+
+            // Init controls for group configuration
+            ClaimTypeConfig groupCtc = Utils.GetMainGroupClaimTypeConfig(Settings.ClaimTypes);
+            var groupClaimTypeCandidates = Utils.GetNonWellKnownUserClaimTypes(base.ClaimsProviderName);
+            foreach (string groupClaimTypeCandidate in groupClaimTypeCandidates)
+            {
+                ListItem groupClaimTypeCandidateItem = new ListItem(groupClaimTypeCandidate);
+                DdlGroupClaimType.Items.Add(groupClaimTypeCandidateItem);
+            }
+
+            DdlGroupClaimType.SelectedValue = groupCtc?.ClaimType; // "blablabla";
+            if (groupCtc != null)
+            {
+                TxtGroupLdapClass.Text = groupCtc.LDAPClass;
+                TxtGroupLdapAttribute .Text = groupCtc.LDAPAttribute;
+                TxtGroupAdditionalLdapAttributes.Text = String.Join(",", Utils.GetAdditionalLdapAttributes(Settings.ClaimTypes, DirectoryObjectType.Group));
+                TxtGroupLeadingToken.Text = groupCtc.PrefixToBypassLookup;
+            }
+        }
+
+        /// <summary>
+        /// Parse checkbox list CblAuthenticationTypes to find authentication modes selected
+        /// </summary>
+        /// <returns></returns>
+        AuthenticationTypes GetSelectedAuthenticationTypes(bool ClearSelection)
+        {
+            AuthenticationTypes authNTypes = 0;
+            foreach (ListItem item in this.CblAuthenticationTypes.Items)
+            {
+                if (!item.Selected) { continue; }
+                int selectedType;
+                if (!Int32.TryParse(item.Value, out selectedType)) { continue; }
+                authNTypes += selectedType;
+                if (ClearSelection)
+                {
+                    item.Selected = false;
+                }
+            }
+            return authNTypes;
         }
 
         protected void grdLDAPConnections_RowDeleting(object sender, GridViewDeleteEventArgs e)

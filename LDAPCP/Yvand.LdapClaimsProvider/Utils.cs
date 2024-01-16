@@ -98,6 +98,22 @@ namespace Yvand.LdapClaimsProvider.Configuration
             return nonWellKnownUserClaimTypes;
         }
 
+        public static ClaimTypeConfig GetMainGroupClaimTypeConfig(ClaimTypeConfigCollection claimTypeConfigCollection)
+        {
+            return claimTypeConfigCollection.FirstOrDefault(x =>
+                x.EntityType == DirectoryObjectType.Group &&
+                x.UseMainClaimTypeOfDirectoryObject == false
+            );
+        }
+
+        public static IEnumerable<string> GetAdditionalLdapAttributes(ClaimTypeConfigCollection claimTypeConfigCollection, DirectoryObjectType entityType)
+        {
+            return claimTypeConfigCollection
+                .Where(x => x.EntityType == entityType && x.UseMainClaimTypeOfDirectoryObject == true)
+                .Select(x => x.LDAPAttribute);
+        }
+
+
         public static ClaimTypeConfig IdentifyIdentityClaimTypeConfigFromClaimTypeConfigCollection(ClaimTypeConfigCollection claimTypeConfigCollection, string identityClaimType)
         {
             ClaimTypeConfig claimTypeConfig = claimTypeConfigCollection.FirstOrDefault(x =>
@@ -120,7 +136,7 @@ namespace Yvand.LdapClaimsProvider.Configuration
             .Where(field => field.GetCustomAttributes(typeof(PersistedAttribute), inherit: false).Any())
             .ToList();
 
-            foreach(FieldInfo field in persistedFields) 
+            foreach (FieldInfo field in persistedFields)
             {
                 field.SetValue(target, field.GetValue(source));
             }
