@@ -82,14 +82,36 @@
 </style>
 
 <script type="text/javascript">
+    // IE does not support string.includes, so it is implemented here - https://stackoverflow.com/questions/31221341/ie-does-not-support-array-includes-or-string-includes-methods
+    if (!String.prototype.includes) {
+        String.prototype.includes = function (search, start) {
+            'use strict';
+            if (typeof start !== 'number') {
+                start = 0;
+            }
+
+            if (start + search.length > this.length) {
+                return false;
+            } else {
+                return this.indexOf(search, start) !== -1;
+            }
+        };
+    }
+
     // Builds unique namespace
     window.Ldapcp = window.Ldapcp || {};
     window.Ldapcp.AdminGlobalSettingsControl = window.Ldapcp.AdminGlobalSettingsControl || {};
+    window.Ldapcp.AdminGlobalSettingsControl = {};
 
     _spBodyOnLoadFunctionNames.push("window.Ldapcp.AdminGlobalSettingsControl.Init");
     window.Ldapcp.AdminGlobalSettingsControl.Init = function () {
         window.Ldapcp.AdminGlobalSettingsControl.InitLdapControls();
         window.Ldapcp.AdminGlobalSettingsControl.InitAugmentationControls();
+        window.Ldapcp.AdminGlobalSettingsControl.UpdateGroupValuePreview();
+
+        $('#<%= TxtGroupLeadingToken.ClientID %>').on('input', function () {
+            window.Ldapcp.AdminGlobalSettingsControl.UpdateGroupValuePreview();
+        });
     }
 
     window.Ldapcp.AdminGlobalSettingsControl.InitLdapControls = function () {
@@ -123,12 +145,12 @@
     window.Ldapcp.AdminGlobalSettingsControl.InitAugmentationControls = function () {
         var enableAugmentationControls = $('#<%= ChkEnableAugmentation.ClientID %>').is(":checked");
         if (enableAugmentationControls) {
-            $("#AugmentationControls").children().prop('disabled', false);
+            $("#divGroupClaimTypeConfiguration").children().prop('disabled', false);
             $("#AugmentationControlsGrid").children().removeAttr('disabled');
             $("#AugmentationControlsGrid").children().prop('disabled', null);
         }
         else {
-            $("#AugmentationControls").children().prop('disabled', true);
+            $("#divGroupClaimTypeConfiguration").children().prop('disabled', true);
             $("#AugmentationControlsGrid").children().attr('disabled', '');
             $("#AugmentationControlsGrid").children().prop('disabled');
         }
@@ -155,6 +177,49 @@
         if (control != null) {
             control.checked = true;
         }
+    }
+
+    // Set the label control to preview a group's value
+    window.Ldapcp.AdminGlobalSettingsControl.UpdateGroupValuePreview = function () {
+        // Get leading token value TxtGroupLeadingToken
+        var leadingTokenInput = $("#<%= TxtGroupLeadingToken.ClientID %>").val();
+
+        /* 
+        // This does not work in IE:
+        var dynamicTokens = {};
+        dynamicTokens["{domain}"] = "contoso";
+        dynamicTokens["{fqdn}"] = "contoso.local";		
+        for (const [key, value] of Object.entries(dynamicTokens)) {
+          console.log(key, value);
+        }
+        */
+
+        var dynamicTokens = [];
+        dynamicTokens.push({
+            key: "{domain}",
+            value: "contoso"
+        });
+        dynamicTokens.push({
+            key: "{fqdn}",
+            value: "contoso.local"
+        });
+
+        var leadingTokenValue = leadingTokenInput;
+        //var keyFound = false;
+        Object.keys(dynamicTokens).forEach(function (keyIndex) {
+            keyValue = dynamicTokens[keyIndex].key
+            if (leadingTokenInput.includes(keyValue)) {
+                leadingTokenValue = leadingTokenInput.replace(keyValue, dynamicTokens[keyIndex].value)
+                //keyFound = true;
+            }
+        });
+
+        // Get the TxtGroupLdapAttribute value
+        var groupValue = $("#<%= TxtGroupLdapAttribute.ClientID %>").val();
+
+        // Set the label control to preview a group's value
+        var groupValuePreview = leadingTokenValue + groupValue;
+        $("#lblGroupValuePreview").text(groupValuePreview);
     }
 </script>
 
@@ -298,39 +363,45 @@
             <p class="ms-error">
                 <asp:Label ID="Label1" runat="server" EnableViewState="False" />
             </p>
-            <div id="AugmentationControls">
+            <div id="divGroupClaimTypeConfiguration">
                 <tr>
                     <td>
-                        <div id="divGroupClaimTypeConfiguration">
-                            <fieldset>
-                                <legend>Configuration for the group claim type</legend>
-                                <ol>
-                                    <li>
-                                        <wssawc:EncodedLiteral runat="server" Text="Select the claim type to use for the groups:" EncodeMethod='HtmlEncodeAllowSimpleTextFormatting' />
-                                        <br />
-                                        <asp:DropDownList ID="DdlGroupClaimType" runat="server">
-                                            <asp:ListItem Selected="True" Value="None"></asp:ListItem>
-                                        </asp:DropDownList>
-                                    </li>
-                                    <li>
-                                        <label for="<%= TxtGroupLdapClass.ClientID %>">LDAP object class: <em>*</em></label>
-                                        <wssawc:InputFormTextBox title="LDAP object class" class="ms-input" ID="TxtGroupLdapClass" Columns="50" runat="server" MaxLength="255" />
-                                    </li>
-                                    <li>
-                                        <label for="<%= TxtGroupLdapAttribute.ClientID %>">LDAP object attribute: <em>*</em></label>
-                                        <wssawc:InputFormTextBox title="LDAP object attribute" class="ms-input" ID="TxtGroupLdapAttribute" Columns="50" runat="server" MaxLength="255" />
-                                    </li>
-                                    <li>
-                                        <label for="<%= TxtGroupAdditionalLdapAttributes.ClientID %>">Additional LDAP attributes to search a group (values separated by a ','):</label>
-                                        <wssawc:InputFormTextBox title="Additional LDAP attributes" class="ms-input" ID="TxtGroupAdditionalLdapAttributes" Columns="50" runat="server" MaxLength="255" />
-                                    </li>
-                                    <li>
-                                        <label for="<%= TxtGroupLeadingToken.ClientID %>">Leading token added to the value returned by LDAP: <em>*</em></label>
-                                        <wssawc:InputFormTextBox title="LDAP object attribute" class="ms-input" ID="TxtGroupLeadingToken" Columns="50" runat="server" MaxLength="255" />
-                                    </li>
-                                </ol>
-                            </fieldset>
-                        </div>
+                        <!-- <div id="divGroupClaimTypeConfiguration"> -->
+                        <fieldset>
+                            <legend>Configuration for the group claim type</legend>
+                            <ol>
+                                <li>
+                                    <wssawc:EncodedLiteral runat="server" Text="Select the claim type to use for the groups (this list is based on the claim types registered in your trust):" EncodeMethod='HtmlEncodeAllowSimpleTextFormatting' />
+                                    <br />
+                                    <asp:DropDownList ID="DdlGroupClaimType" runat="server">
+                                        <asp:ListItem Selected="True" Value="None"></asp:ListItem>
+                                    </asp:DropDownList>
+                                </li>
+                                <li>
+                                    <label for="<%= TxtGroupLdapClass.ClientID %>">LDAP object class: <em>*</em></label>
+                                    <wssawc:InputFormTextBox title="LDAP object class" class="ms-input" ID="TxtGroupLdapClass" Columns="50" runat="server" MaxLength="255" />
+                                </li>
+                                <li>
+                                    <label for="<%= TxtGroupLdapAttribute.ClientID %>">LDAP object attribute: <em>*</em></label>
+                                    <wssawc:InputFormTextBox title="LDAP object attribute" class="ms-input" ID="TxtGroupLdapAttribute" Columns="50" runat="server" MaxLength="255" />
+                                </li>
+                                <li>
+                                    <label for="<%= TxtGroupAdditionalLdapAttributes.ClientID %>">Additional LDAP attributes to search a group (values separated by a ','):</label>
+                                    <wssawc:InputFormTextBox title="Additional LDAP attributes" class="ms-input" ID="TxtGroupAdditionalLdapAttributes" Columns="50" runat="server" MaxLength="255" />
+                                </li>
+                                <li>
+                                    <label for="<%= TxtGroupLeadingToken.ClientID %>">Leading token added to the value returned by LDAP: <em>*</em></label>
+                                    <wssawc:InputFormTextBox title="LDAP object attribute" class="ms-input" ID="TxtGroupLeadingToken" Columns="50" runat="server" MaxLength="255" />
+                                </li>
+                                <li>
+                                    <label>Preview of a group permission's value returned by LDAPCP, based on current settings:</label>
+                                    <br />
+                                    <!-- <label id="lblGroupValuePreview">"contoso.local\sAMAccountName"</label> -->
+                                    <label id="lblGroupValuePreview"></label>
+                                </li>
+                            </ol>
+                        </fieldset>
+                        <!-- </div> -->
                     </td>
                 </tr>
                 <tr>
