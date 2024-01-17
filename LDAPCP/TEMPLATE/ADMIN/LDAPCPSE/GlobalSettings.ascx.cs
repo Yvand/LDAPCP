@@ -118,18 +118,16 @@ namespace Yvand.LdapClaimsProvider.Administration
 
         private void PopulateFields()
         {
-            this.ChkIdentityShowAdditionalAttribute.Checked = true; // Settings.DisplayLdapMatchForIdentityClaimTypeProp;
+            //this.ChkIdentityShowAdditionalAttribute.Checked = true; // Settings.DisplayLdapMatchForIdentityClaimTypeProp;
             if (String.IsNullOrEmpty(IdentityCTConfig.LDAPAttributeToShowAsDisplayText))
             {
-                this.RbIdentityDefault.Checked = true;
+                this.RbUserIdDisplayValueDefault.Checked = true;
             }
             else
             {
-                this.RbIdentityCustomLDAP.Checked = true;
-                this.TxtLdapAttributeToDisplay.Text = IdentityCTConfig.LDAPAttributeToShowAsDisplayText;
+                this.RbUserIdDisplayValueCustom.Checked = true;
+                this.TxtUserIdDisplayValueCustom.Text = IdentityCTConfig.LDAPAttributeToShowAsDisplayText;
             }
-            this.TxtUserIdentifierLDAPClass.Text = IdentityCTConfig.LDAPClass;
-            this.TxtUserIdentifierLDAPAttribute.Text = IdentityCTConfig.LDAPAttribute;
 
             this.ChkAlwaysResolveUserInput.Checked = Settings.AlwaysResolveUserInput;
             this.ChkFilterEnabledUsersOnly.Checked = Settings.FilterEnabledUsersOnly;
@@ -211,18 +209,18 @@ namespace Yvand.LdapClaimsProvider.Administration
 
             // Handle identity claim type
             //PersistedObject.DisplayLdapMatchForIdentityClaimTypeProp = this.ChkIdentityShowAdditionalAttribute.Checked;
-            if (this.RbIdentityCustomLDAP.Checked)
+            if (this.RbUserIdDisplayValueCustom.Checked)
             {
-                IdentityCTConfig.LDAPAttributeToShowAsDisplayText = this.TxtLdapAttributeToDisplay.Text;
+                IdentityCTConfig.LDAPAttributeToShowAsDisplayText = this.TxtUserIdDisplayValueCustom.Text;
             }
             else
             {
                 IdentityCTConfig.LDAPAttributeToShowAsDisplayText = String.Empty;
             }
 
-            if (!String.IsNullOrWhiteSpace(TxtUserIdentifierLDAPClass.Text) && !String.IsNullOrWhiteSpace(TxtUserIdentifierLDAPAttribute.Text))
+            if (!String.IsNullOrWhiteSpace(TxtUserIdLdapClass.Text) && !String.IsNullOrWhiteSpace(TxtUserIdLdapAttribute.Text))
             {
-                Settings.ClaimTypes.UpdateUserIdentifier(TxtUserIdentifierLDAPClass.Text, TxtUserIdentifierLDAPAttribute.Text);
+                Settings.ClaimTypes.UpdateUserIdentifier(TxtUserIdLdapClass.Text, TxtUserIdLdapAttribute.Text);
             }
 
             Settings.AlwaysResolveUserInput = this.ChkAlwaysResolveUserInput.Checked;

@@ -186,6 +186,33 @@ namespace Yvand.LdapClaimsProvider.Administration
         protected global::Microsoft.SharePoint.WebControls.InputFormTextBox TxtUserIdLdapAttribute;
 
         /// <summary>
+        /// RbUserIdDisplayValueDefault control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::Microsoft.SharePoint.WebControls.InputFormRadioButton RbUserIdDisplayValueDefault;
+
+        /// <summary>
+        /// RbUserIdDisplayValueCustom control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::Microsoft.SharePoint.WebControls.InputFormRadioButton RbUserIdDisplayValueCustom;
+
+        /// <summary>
+        /// TxtUserIdDisplayValueCustom control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.TextBox TxtUserIdDisplayValueCustom;
+
+        /// <summary>
         /// TxtUserIdAdditionalLdapAttributes control.
         /// </summary>
         /// <remarks>
@@ -202,33 +229,6 @@ namespace Yvand.LdapClaimsProvider.Administration
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
         protected global::Microsoft.SharePoint.WebControls.InputFormTextBox TxtUserIdLeadingToken;
-
-        /// <summary>
-        /// RbIdentityDefault control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::Microsoft.SharePoint.WebControls.InputFormRadioButton RbIdentityDefault;
-
-        /// <summary>
-        /// RbIdentityCustomGraphProperty control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::Microsoft.SharePoint.WebControls.InputFormRadioButton RbIdentityCustomGraphProperty;
-
-        /// <summary>
-        /// DDLGraphPropertyToDisplay control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.DropDownList DDLGraphPropertyToDisplay;
 
         /// <summary>
         /// AugmentationSection control.
@@ -319,60 +319,6 @@ namespace Yvand.LdapClaimsProvider.Administration
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
         protected global::Microsoft.SharePoint.WebControls.InputFormTextBox txtTimeout;
-
-        /// <summary>
-        /// TxtUserIdentifierLDAPClass control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.TextBox TxtUserIdentifierLDAPClass;
-
-        /// <summary>
-        /// TxtUserIdentifierLDAPAttribute control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.TextBox TxtUserIdentifierLDAPAttribute;
-
-        /// <summary>
-        /// InputFormRadioButton1 control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::Microsoft.SharePoint.WebControls.InputFormRadioButton InputFormRadioButton1;
-
-        /// <summary>
-        /// RbIdentityCustomLDAP control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::Microsoft.SharePoint.WebControls.InputFormRadioButton RbIdentityCustomLDAP;
-
-        /// <summary>
-        /// TxtLdapAttributeToDisplay control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::Microsoft.SharePoint.WebControls.InputFormTextBox TxtLdapAttributeToDisplay;
-
-        /// <summary>
-        /// ChkIdentityShowAdditionalAttribute control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.CheckBox ChkIdentityShowAdditionalAttribute;
 
         /// <summary>
         /// ChkAlwaysResolveUserInput control.

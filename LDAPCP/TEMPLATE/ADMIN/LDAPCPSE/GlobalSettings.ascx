@@ -36,12 +36,12 @@
         vertical-align: middle;
     }
 
-    .Ldapcpse-success {
+    .ldapcp-success {
         color: green;
         font-weight: bold;
     }
 
-    .Ldapcpse-HideCol {
+    .ldapcp-HideCol {
         display: none;
     }
 
@@ -58,7 +58,7 @@
     }
 
     fieldset {
-        border: 1;
+        border: 1px lightgray solid;
         margin: 0;
         padding: 0;
     }
@@ -192,7 +192,7 @@
 
         // Identity permission section
         CheckRbIdentityCustomLDAP: function () {
-            var control = (document.getElementById("<%= RbIdentityCustomLDAP.ClientID %>"));
+            var control = (document.getElementById("<%= RbUserIdDisplayValueCustom.ClientID %>"));
             if (control != null) {
                 control.checked = true;
             }
@@ -341,13 +341,8 @@
                 <tr>
                     <td colspan="2">
                         <fieldset>
-                            <legend>Configuration for the user identifier claim type</legend>
+                            <legend>Specify how the users are uniquely identified in LDAP</legend>
                             <ol>
-                                <li>
-                                    <wssawc:EncodedLiteral runat="server" Text="Select the claim type to use for the groups (this list is based on the claim types registered in your trust):" EncodeMethod='HtmlEncodeAllowSimpleTextFormatting' />
-                                    <br />
-                                    <label id="lblUserIdentifierClaimType"></label>
-                                </li>
                                 <li>
                                     <label for="<%= TxtUserIdLdapClass.ClientID %>">LDAP object class: <em>*</em></label>
                                     <wssawc:InputFormTextBox title="LDAP object class" class="ms-input" ID="TxtUserIdLdapClass" Columns="50" runat="server" MaxLength="255" />
@@ -356,43 +351,44 @@
                                     <label for="<%= TxtUserIdLdapAttribute.ClientID %>">LDAP object attribute: <em>*</em></label>
                                     <wssawc:InputFormTextBox title="LDAP object attribute" class="ms-input" ID="TxtUserIdLdapAttribute" Columns="50" runat="server" MaxLength="255" />
                                 </li>
+                            </ol>
+                        </fieldset>
+                        <fieldset>
+                            <legend>Additional settings</legend>
+                            <ol>
+                                <li>
+                                    <div class="text-nowrap">LDAP object attribute used as display text in the people picker:</div>
+                                    <table>
+                                        <wssawc:InputFormRadioButton ID="RbUserIdDisplayValueDefault"
+                                            LabelText="Show the LDAP object attribute set above"
+                                            Checked="true"
+                                            GroupName="RbUserIdDisplayValue"
+                                            CausesValidation="false"
+                                            runat="server">
+                                        </wssawc:InputFormRadioButton>
+                                        <wssawc:InputFormRadioButton ID="RbUserIdDisplayValueCustom"
+                                            LabelText="Show a different LDAP attribute:"
+                                            GroupName="RbUserIdDisplayValue"
+                                            CausesValidation="false"
+                                            runat="server">
+                                            <wssuc:InputFormControl LabelText="InputFormControlLabelText">
+                                                <template_control>
+                                                    <asp:TextBox runat="server" ID="TxtUserIdDisplayValueCustom" title="LDAP object attribute" class="ms-input" Columns="50" MaxLength="255" />
+                                                </template_control>
+                                            </wssuc:InputFormControl>
+                                        </wssawc:InputFormRadioButton>
+                                    </table>
+                                </li>
                                 <li>
                                     <label for="<%= TxtUserIdAdditionalLdapAttributes.ClientID %>">Additional LDAP attributes to search a user (values separated by a ','):</label>
                                     <wssawc:InputFormTextBox title="Additional LDAP attributes" class="ms-input" ID="TxtUserIdAdditionalLdapAttributes" Columns="50" runat="server" MaxLength="255" />
                                 </li>
                                 <li>
-                                    <label for="<%= TxtGroupLeadingToken.ClientID %>">Leading token added to the value returned by LDAP: <em>*</em></label>
+                                    <label for="<%= TxtGroupLeadingToken.ClientID %>">Leading token added to the value returned by LDAP:</label>
                                     <wssawc:InputFormTextBox title="LDAP object attribute" class="ms-input" ID="TxtUserIdLeadingToken" Columns="50" runat="server" MaxLength="255" />
-                                </li>
-                                <li>
-                                    <label>Preview of a user identifier permission's value returned by LDAPCP, based on settings above:</label>
-                                    <br />
-                                    <label id="lblUserIdValuePreview"></label>
                                 </li>
                             </ol>
                         </fieldset>
-                    </td>
-                </tr>
-                <tr>
-                    <td>
-                        <wssawc:InputFormRadioButton ID="RbIdentityDefault"
-                            LabelText="Show the user identifier value"
-                            Checked="true"
-                            GroupName="RbIdentityDisplay"
-                            CausesValidation="false"
-                            runat="server">
-                        </wssawc:InputFormRadioButton>
-                        <wssawc:InputFormRadioButton ID="RbIdentityCustomGraphProperty"
-                            LabelText="Show the value of another property, e.g the display name:"
-                            GroupName="RbIdentityDisplay"
-                            CausesValidation="false"
-                            runat="server">
-                            <wssuc:InputFormControl LabelText="InputFormControlLabelText">
-                                <template_control>
-                                    <asp:DropDownList runat="server" ID="DDLGraphPropertyToDisplay" onclick="window.Ldapcpse.EntracpSettingsPage.CheckRbIdentityCustomGraphProperty()" class="ms-input" />
-                                </template_control>
-                            </wssuc:InputFormControl>
-                        </wssawc:InputFormRadioButton>
                     </td>
                 </tr>
             </div>
@@ -408,7 +404,7 @@
                 <tr>
                     <td>
                         <fieldset>
-                            <legend>Configuration for the group claim type</legend>
+                            <legend>Specify the group claim type, and how groups are uniquely identified in LDAP</legend>
                             <ol>
                                 <li>
                                     <wssawc:EncodedLiteral runat="server" Text="Select the claim type to use for the groups (this list is based on the claim types registered in your trust):" EncodeMethod='HtmlEncodeAllowSimpleTextFormatting' />
@@ -425,6 +421,11 @@
                                     <label for="<%= TxtGroupLdapAttribute.ClientID %>">LDAP object attribute: <em>*</em></label>
                                     <wssawc:InputFormTextBox title="LDAP object attribute" class="ms-input" ID="TxtGroupLdapAttribute" Columns="50" runat="server" MaxLength="255" />
                                 </li>
+                            </ol>
+                        </fieldset>
+                        <fieldset>
+                            <legend>Additional settings</legend>
+                            <ol>
                                 <li>
                                     <label for="<%= TxtGroupAdditionalLdapAttributes.ClientID %>">Additional LDAP attributes to search a group (values separated by a ','):</label>
                                     <wssawc:InputFormTextBox title="Additional LDAP attributes" class="ms-input" ID="TxtGroupAdditionalLdapAttributes" Columns="50" runat="server" MaxLength="255" />
@@ -433,13 +434,11 @@
                                     <label for="<%= TxtGroupLeadingToken.ClientID %>">Leading token added to the value returned by LDAP: <em>*</em></label>
                                     <wssawc:InputFormTextBox title="LDAP object attribute" class="ms-input" ID="TxtGroupLeadingToken" Columns="50" runat="server" MaxLength="255" />
                                 </li>
-                                <li>
-                                    <label>Preview of a group permission's value returned by LDAPCP, based on settings above:</label>
-                                    <br />
-                                    <label id="lblGroupValuePreview"></label>
-                                </li>
                             </ol>
                         </fieldset>
+                        <label>Preview of a group permission's value returned by LDAPCP, based on the settings above:</label>
+                        <br />
+                        "<label id="lblGroupValuePreview"></label>"
                     </td>
                 </tr>
                 <tr>
@@ -475,49 +474,6 @@
         </template_inputformcontrols>
     </wssuc:InputFormSection>
 
-    <wssuc:inputformsection runat="server" title="User identifier properties" description="Set the LDAP class and attribute that identify users in AD / LDAP.">
-        <template_inputformcontrols>
-            <div id="divUserIdentifiers">
-                <label>LDAP class:</label>
-                <asp:TextBox runat="server" ID="TxtUserIdentifierLDAPClass" class="ms-input">
-                </asp:TextBox>
-                <br />
-                <label>LDAP attribute:</label>
-                <asp:TextBox runat="server" ID="TxtUserIdentifierLDAPAttribute" class="ms-input">
-                </asp:TextBox>
-            </div>
-        </template_inputformcontrols>
-    </wssuc:inputformsection>
-
-    <wssuc:InputFormSection runat="server" Title="Display of user identifier results" description="Configure how entities created with the identity claim type appear in the people picker.<br/>It does not affect the actual value of the entity, which is always set with the user identifier attribute.">
-        <template_inputformcontrols>
-            <wssawc:InputFormRadioButton ID="InputFormRadioButton1"
-                LabelText="Show the user identifier value"
-                Checked="true"
-                GroupName="RbIdentityDisplay"
-                CausesValidation="false"
-                runat="server">
-            </wssawc:InputFormRadioButton>
-            <wssawc:InputFormRadioButton ID="RbIdentityCustomLDAP"
-                LabelText="Show the value of another LDAP attribute, e.g. displayName:"
-                GroupName="RbIdentityDisplay"
-                CausesValidation="false"
-                runat="server">
-                <wssuc:InputFormControl LabelText="InputFormControlLabelText">
-                    <template_control>
-                        <wssawc:InputFormTextBox onclick="window.Ldapcp.AdminGlobalSettingsControl.CheckRbIdentityCustomLDAP()" title="LDAP attribute to display" class="ms-input" ID="TxtLdapAttributeToDisplay" Columns="50" Runat="server" MaxLength="255" />
-                    </template_control>
-                </wssuc:InputFormControl>
-            </wssawc:InputFormRadioButton>
-            <tr>
-                <td colspan="2">
-                    <br />
-                    <asp:CheckBox runat="server" Name="ChkIdentityShowAdditionalAttribute" ID="ChkIdentityShowAdditionalAttribute" Text="If input matches an attribute linked to identity claim (typically the displayName), show its value in parenthesis." />
-                </td>
-            </tr>
-        </template_inputformcontrols>
-    </wssuc:InputFormSection>
-
     <wssuc:InputFormSection runat="server" Title="Bypass LDAP lookup" Description="Skip LDAP lookup and consider any input as valid.<br/><br/>This can be useful to keep people picker working even if connectivity with LDAP server is lost.">
         <template_inputformcontrols>
             <asp:CheckBox Checked="false" runat="server" Name="ChkAlwaysResolveUserInput" ID="ChkAlwaysResolveUserInput" Text="Bypass LDAP lookup" />
@@ -532,16 +488,7 @@
             <asp:CheckBox Checked="false" runat="server" Name="ChkFilterSecurityGroupsOnly" ID="ChkFilterSecurityGroupsOnly" Text="Exclude distribution lists" />
         </template_inputformcontrols>
     </wssuc:InputFormSection>
-    <%--<wssuc:InputFormSection runat="server" Title="Use wildcard in beginning of query" Description="In most cases, LDAP lookup is significantly faster when query does not start with a wildcard (for example searching 'joe*' instead of '*joe*').">
-    <template_inputformcontrols>
-        <asp:Checkbox Checked="false" Runat="server" Name="ChkAddWildcardInFront" ID="ChkAddWildcardInFront" Text="Use wildcard in beginning of query" />
-	</template_inputformcontrols>
-</wssuc:InputFormSection>
-<wssuc:InputFormSection runat="server" Title="People picker display text" Description="This text is displayed in the header of the results list in the people picker control">
-    <template_inputformcontrols>
-		<wssawc:InputFormTextBox title="Text to display" class="ms-input" ID="TxtPickerEntityGroupName" Columns="50" Runat="server" MaxLength=255 />
-	</template_inputformcontrols>
-</wssuc:InputFormSection> --%>
+
     <wssuc:InputFormSection runat="server" Title="Require exact match" Description="Enable this to return only results that match exactly the user input (case-insensitive). ">
         <template_inputformcontrols>
             <asp:CheckBox Checked="false" runat="server" Name="ChkFilterExactMatchOnly" ID="ChkFilterExactMatchOnly" Text="Require exact match" />
