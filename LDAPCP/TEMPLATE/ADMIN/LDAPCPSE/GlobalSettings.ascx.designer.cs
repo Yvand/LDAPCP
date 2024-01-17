@@ -168,6 +168,42 @@ namespace Yvand.LdapClaimsProvider.Administration
         protected global::System.Web.UI.WebControls.Label LabelTestLdapConnectionOK;
 
         /// <summary>
+        /// TxtUserIdLdapClass control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::Microsoft.SharePoint.WebControls.InputFormTextBox TxtUserIdLdapClass;
+
+        /// <summary>
+        /// TxtUserIdLdapAttribute control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::Microsoft.SharePoint.WebControls.InputFormTextBox TxtUserIdLdapAttribute;
+
+        /// <summary>
+        /// TxtUserIdAdditionalLdapAttributes control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::Microsoft.SharePoint.WebControls.InputFormTextBox TxtUserIdAdditionalLdapAttributes;
+
+        /// <summary>
+        /// TxtUserIdLeadingToken control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::Microsoft.SharePoint.WebControls.InputFormTextBox TxtUserIdLeadingToken;
+
+        /// <summary>
         /// RbIdentityDefault control.
         /// </summary>
         /// <remarks>

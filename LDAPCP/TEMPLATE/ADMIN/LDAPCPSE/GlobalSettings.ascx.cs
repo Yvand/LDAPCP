@@ -140,6 +140,12 @@ namespace Yvand.LdapClaimsProvider.Administration
             //this.ChkAddWildcardInFront.Checked = Settings.AddWildcardInFrontOfQueryProp;
             //this.TxtPickerEntityGroupName.Text = Settings.PickerEntityGroupNameProp;
 
+            // Init controls for user identifier configuration
+            this.TxtUserIdLdapClass.Text = IdentityCTConfig.LDAPClass;
+            this.TxtUserIdLdapAttribute.Text = IdentityCTConfig.LDAPAttribute;
+            this.TxtUserIdAdditionalLdapAttributes.Text = String.Join(",", Utils.GetAdditionalLdapAttributes(Settings.ClaimTypes, DirectoryObjectType.User));
+            this.TxtUserIdLeadingToken.Text = IdentityCTConfig.ClaimValuePrefix;
+
             // Init controls for group configuration
             ClaimTypeConfig groupCtc = Utils.GetMainGroupClaimTypeConfig(Settings.ClaimTypes);
             var groupClaimTypeCandidates = Utils.GetNonWellKnownUserClaimTypes(base.ClaimsProviderName);
@@ -149,13 +155,13 @@ namespace Yvand.LdapClaimsProvider.Administration
                 DdlGroupClaimType.Items.Add(groupClaimTypeCandidateItem);
             }
 
-            DdlGroupClaimType.SelectedValue = groupCtc?.ClaimType; // "blablabla";
+            DdlGroupClaimType.SelectedValue = groupCtc?.ClaimType;
             if (groupCtc != null)
             {
                 TxtGroupLdapClass.Text = groupCtc.LDAPClass;
                 TxtGroupLdapAttribute .Text = groupCtc.LDAPAttribute;
                 TxtGroupAdditionalLdapAttributes.Text = String.Join(",", Utils.GetAdditionalLdapAttributes(Settings.ClaimTypes, DirectoryObjectType.Group));
-                TxtGroupLeadingToken.Text = groupCtc.PrefixToBypassLookup;
+                TxtGroupLeadingToken.Text = groupCtc.ClaimValuePrefix;
             }
         }
 
