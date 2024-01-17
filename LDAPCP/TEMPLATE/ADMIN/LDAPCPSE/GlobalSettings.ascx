@@ -100,127 +100,129 @@
 
     // Builds unique namespace
     window.Ldapcp = window.Ldapcp || {};
-    window.Ldapcp.AdminGlobalSettingsControl = window.Ldapcp.AdminGlobalSettingsControl || {};
-    window.Ldapcp.AdminGlobalSettingsControl = {};
+    window.Ldapcp.AdminGlobalSettingsControl = window.Ldapcp.AdminGlobalSettingsControl || {
+        dynamicTokens: [],
 
-    _spBodyOnLoadFunctionNames.push("window.Ldapcp.AdminGlobalSettingsControl.Init");
-    window.Ldapcp.AdminGlobalSettingsControl.Init = function () {
-        window.Ldapcp.AdminGlobalSettingsControl.InitLdapControls();
-        window.Ldapcp.AdminGlobalSettingsControl.InitAugmentationControls();
-        window.Ldapcp.AdminGlobalSettingsControl.UpdateGroupValuePreview();
+        Init: function () {
+            this.InitLdapControls();
+            this.InitAugmentationControls();
+            this.UpdateGroupValuePreview();
 
-        $('#<%= TxtGroupLeadingToken.ClientID %>').on('input', function () {
-            window.Ldapcp.AdminGlobalSettingsControl.UpdateGroupValuePreview();
-        });
-    }
-
-    window.Ldapcp.AdminGlobalSettingsControl.InitLdapControls = function () {
-        // Variables initialized from server side code
-        IsDefaultADConnectionCreated = <%= ViewState["IsDefaultADConnectionCreated"].ToString().ToLower() %>;
-        ForceCheckCustomLdapConnection = <%= ViewState["ForceCheckCustomLdapConnection"].ToString().ToLower() %>;
-
-        if (IsDefaultADConnectionCreated) {
-            // Disable radio button to create default connection and select other one.
-            $('#<%= RbUseServerDomain.ClientID %>').prop('disabled', true);
-            $('#<%= RbUseCustomConnection.ClientID %>').prop('checked', true);
-            // Needed to trigger the click to display the button that tests connection
-            $('#<%= RbUseCustomConnection.ClientID %>').trigger('click');
-        }
-        else {
-            // No default connection, give possibility to create one.
-            $('#<%= RbUseServerDomain.ClientID %>').prop('enabled', true);
-            $('#<%= RbUseServerDomain.ClientID %>').prop('checked', true);
-            // Hide asterisk in custom LDAP connection fields
-            $('#divNewLdapConnection').find('em').hide();
-        }
-
-        if (ForceCheckCustomLdapConnection) {
-            $('#<%= RbUseCustomConnection.ClientID %>').prop('checked', true);
-            // Needed to trigger the click to display the button that tests connection
-            $('#<%= RbUseCustomConnection.ClientID %>').trigger('click');
-        }
-    }
-
-    // Enable or disable controls for augmentation section
-    window.Ldapcp.AdminGlobalSettingsControl.InitAugmentationControls = function () {
-        var enableAugmentationControls = $('#<%= ChkEnableAugmentation.ClientID %>').is(":checked");
-        if (enableAugmentationControls) {
-            $("#divGroupClaimTypeConfiguration").children().prop('disabled', false);
-            $("#AugmentationControlsGrid").children().removeAttr('disabled');
-            $("#AugmentationControlsGrid").children().prop('disabled', null);
-        }
-        else {
-            $("#divGroupClaimTypeConfiguration").children().prop('disabled', true);
-            $("#AugmentationControlsGrid").children().attr('disabled', '');
-            $("#AugmentationControlsGrid").children().prop('disabled');
-        }
-    }
-
-    // New LDAP connection section
-    window.Ldapcp.AdminGlobalSettingsControl.CheckCustomLdapRB = function () {
-        var CbUserQuota = (document.getElementById("<%= RbUseCustomConnection.ClientID %>"));
-        if (CbUserQuota != null) {
-            CbUserQuota.checked = true;
-        }
-        $('#<%= BtnTestLdapConnection.ClientID %>').show('fast');
-        $('#divNewLdapConnection').find('em').show();
-    }
-
-    window.Ldapcp.AdminGlobalSettingsControl.CheckDefaultADConnection = function () {
-        $('#divNewLdapConnection').find('em').hide();
-        $('#<%= BtnTestLdapConnection.ClientID %>').hide('fast');
-    }
-
-    // Identity permission section
-    window.Ldapcp.AdminGlobalSettingsControl.CheckRbIdentityCustomLDAP = function () {
-        var control = (document.getElementById("<%= RbIdentityCustomLDAP.ClientID %>"));
-        if (control != null) {
-            control.checked = true;
-        }
-    }
-
-    // Set the label control to preview a group's value
-    window.Ldapcp.AdminGlobalSettingsControl.UpdateGroupValuePreview = function () {
-        // Get leading token value TxtGroupLeadingToken
-        var leadingTokenInput = $("#<%= TxtGroupLeadingToken.ClientID %>").val();
-
-        /* 
-        // This does not work in IE:
-        var dynamicTokens = {};
-        dynamicTokens["{domain}"] = "contoso";
-        dynamicTokens["{fqdn}"] = "contoso.local";		
-        for (const [key, value] of Object.entries(dynamicTokens)) {
-          console.log(key, value);
-        }
-        */
-
-        var dynamicTokens = [];
-        dynamicTokens.push({
-            key: "{domain}",
-            value: "contoso"
-        });
-        dynamicTokens.push({
-            key: "{fqdn}",
-            value: "contoso.local"
-        });
-
-        var leadingTokenValue = leadingTokenInput;
-        //var keyFound = false;
-        Object.keys(dynamicTokens).forEach(function (keyIndex) {
-            keyValue = dynamicTokens[keyIndex].key
-            if (leadingTokenInput.includes(keyValue)) {
-                leadingTokenValue = leadingTokenInput.replace(keyValue, dynamicTokens[keyIndex].value)
-                //keyFound = true;
+            // Initialize dynamic tokens
+            /* 
+            // This does not work in IE:
+            var dynamicTokens = {};
+            dynamicTokens["{domain}"] = "contoso";
+            dynamicTokens["{fqdn}"] = "contoso.local";		
+            for (const [key, value] of Object.entries(dynamicTokens)) {
+              console.log(key, value);
             }
-        });
+            */
+            this.dynamicTokens.push({
+                key: "{domain}",
+                value: "contoso"
+            });
+            this.dynamicTokens.push({
+                key: "{fqdn}",
+                value: "contoso.local"
+            });
 
-        // Get the TxtGroupLdapAttribute value
-        var groupValue = $("#<%= TxtGroupLdapAttribute.ClientID %>").val();
+            // Add event handler to update the group value when TxtGroupLeadingToken changes
+            $('#<%= TxtGroupLeadingToken.ClientID %>').on('input', function () {
+                window.Ldapcp.AdminGlobalSettingsControl.UpdateGroupValuePreview();
+            });
+        },
+
+        InitLdapControls: function () {
+            // Variables initialized from server side code
+            IsDefaultADConnectionCreated = <%= ViewState["IsDefaultADConnectionCreated"].ToString().ToLower() %>;
+            ForceCheckCustomLdapConnection = <%= ViewState["ForceCheckCustomLdapConnection"].ToString().ToLower() %>;
+
+            if (IsDefaultADConnectionCreated) {
+                // Disable radio button to create default connection and select other one.
+                $('#<%= RbUseServerDomain.ClientID %>').prop('disabled', true);
+                $('#<%= RbUseCustomConnection.ClientID %>').prop('checked', true);
+                // Needed to trigger the click to display the button that tests connection
+                $('#<%= RbUseCustomConnection.ClientID %>').trigger('click');
+            }
+            else {
+                // No default connection, give possibility to create one.
+                $('#<%= RbUseServerDomain.ClientID %>').prop('enabled', true);
+                $('#<%= RbUseServerDomain.ClientID %>').prop('checked', true);
+                // Hide asterisk in custom LDAP connection fields
+                $('#divNewLdapConnection').find('em').hide();
+            }
+
+            if (ForceCheckCustomLdapConnection) {
+                $('#<%= RbUseCustomConnection.ClientID %>').prop('checked', true);
+                // Needed to trigger the click to display the button that tests connection
+                $('#<%= RbUseCustomConnection.ClientID %>').trigger('click');
+            }
+        },
+
+        // Enable or disable controls for augmentation section
+        InitAugmentationControls: function () {
+            var enableAugmentationControls = $('#<%= ChkEnableAugmentation.ClientID %>').is(":checked");
+            if (enableAugmentationControls) {
+                $("#divGroupClaimTypeConfiguration").children().prop('disabled', false);
+                $("#AugmentationControlsGrid").children().removeAttr('disabled');
+                $("#AugmentationControlsGrid").children().prop('disabled', null);
+            }
+            else {
+                $("#divGroupClaimTypeConfiguration").children().prop('disabled', true);
+                $("#AugmentationControlsGrid").children().attr('disabled', '');
+                $("#AugmentationControlsGrid").children().prop('disabled');
+            }
+        },
+
+        // New LDAP connection section
+        CheckCustomLdapRB: function () {
+            var CbUserQuota = (document.getElementById("<%= RbUseCustomConnection.ClientID %>"));
+            if (CbUserQuota != null) {
+                CbUserQuota.checked = true;
+            }
+            $('#<%= BtnTestLdapConnection.ClientID %>').show('fast');
+            $('#divNewLdapConnection').find('em').show();
+        },
+
+        CheckDefaultADConnection: function () {
+            $('#divNewLdapConnection').find('em').hide();
+            $('#<%= BtnTestLdapConnection.ClientID %>').hide('fast');
+        },
+
+        // Identity permission section
+        CheckRbIdentityCustomLDAP: function () {
+            var control = (document.getElementById("<%= RbIdentityCustomLDAP.ClientID %>"));
+            if (control != null) {
+                control.checked = true;
+            }
+        },
 
         // Set the label control to preview a group's value
-        var groupValuePreview = leadingTokenValue + groupValue;
-        $("#lblGroupValuePreview").text(groupValuePreview);
-    }
+        UpdateGroupValuePreview: function () {
+            // Get leading token value TxtGroupLeadingToken
+            var leadingTokenInput = $("#<%= TxtGroupLeadingToken.ClientID %>").val();
+
+            // Determine the actual leading token value
+            var leadingTokenValue = leadingTokenInput;
+            var localDynamicTokens = this.dynamicTokens;
+            Object.keys(localDynamicTokens).forEach(function (keyIndex) {
+                keyValue = localDynamicTokens[keyIndex].key
+                if (leadingTokenInput.includes(keyValue)) {
+                    leadingTokenValue = leadingTokenInput.replace(keyValue, localDynamicTokens[keyIndex].value);
+                }
+            });
+
+            // Get the TxtGroupLdapAttribute value
+            var groupValue = $("#<%= TxtGroupLdapAttribute.ClientID %>").val();
+
+            // Set the label control to preview a group's value
+            var groupValuePreview = leadingTokenValue + groupValue;
+            $("#lblGroupValuePreview").text(groupValuePreview);
+        }
+    };
+
+    _spBodyOnLoadFunctionNames.push("window.Ldapcp.AdminGlobalSettingsControl.Init");
 </script>
 
 <table width="100%" class="propertysheet" cellspacing="0" cellpadding="0" border="0">
