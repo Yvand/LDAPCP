@@ -118,6 +118,7 @@ namespace Yvand.LdapClaimsProvider.Administration
 
         private void PopulateFields()
         {
+            this.lblUserIdClaimType.Text = IdentityCTConfig.ClaimType;
             //this.ChkIdentityShowAdditionalAttribute.Checked = true; // Settings.DisplayLdapMatchForIdentityClaimTypeProp;
             if (String.IsNullOrEmpty(IdentityCTConfig.LDAPAttributeToShowAsDisplayText))
             {
