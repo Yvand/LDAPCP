@@ -58,18 +58,18 @@ namespace Yvand.LdapClaimsProvider.Administration
         /// Gets or sets the settings used by EntraCP to run
         /// </summary>
         protected LdapProviderSettings Settings { get; set; }
-        private ClaimTypeConfig _IdentityCTConfig;
-        protected ClaimTypeConfig IdentityCTConfig
-        {
-            get
-            {
-                if (_IdentityCTConfig == null)
-                {
-                    _IdentityCTConfig = Utils.IdentifyIdentityClaimTypeConfigFromClaimTypeConfigCollection(Settings.ClaimTypes, SPTrust.IdentityClaimTypeInformation.MappedClaimType);
-                }
-                return _IdentityCTConfig;
-            }
-        }
+        //private ClaimTypeConfig _IdentityCTConfig;
+        //protected ClaimTypeConfig IdentityCTConfig
+        //{
+        //    get
+        //    {
+        //        if (_IdentityCTConfig == null)
+        //        {
+        //            _IdentityCTConfig = Utils.IdentifyIdentityClaimTypeConfigFromClaimTypeConfigCollection(Settings.ClaimTypes, SPTrust.IdentityClaimTypeInformation.MappedClaimType);
+        //        }
+        //        return _IdentityCTConfig;
+        //    }
+        //}
         protected ConfigStatus Status;
 
         protected long ConfigurationVersion
@@ -215,7 +215,7 @@ namespace Yvand.LdapClaimsProvider.Administration
                 return Status;
             }
 
-            if (IdentityCTConfig == null)
+            if (Settings.ClaimTypes.IdentityClaim == null)
             {
                 Status |= ConfigStatus.NoIdentityClaimType;
             }

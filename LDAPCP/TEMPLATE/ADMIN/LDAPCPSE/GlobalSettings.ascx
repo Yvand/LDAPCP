@@ -99,15 +99,13 @@
 
         Init: function () {
             // Initialize dynamic tokens
-            /* 
-            // This does not work in IE:
+            /* // for loop below does not work in IE:
             var dynamicTokens = {};
             dynamicTokens["{domain}"] = "contoso";
             dynamicTokens["{fqdn}"] = "contoso.local";		
             for (const [key, value] of Object.entries(dynamicTokens)) {
               console.log(key, value);
-            }
-            */
+            }*/
             this.dynamicTokens.push({
                 key: "{domain}",
                 value: "contoso"
@@ -117,14 +115,26 @@
                 value: "contoso.local"
             });
 
-            // Add event handler to update the group value when TxtGroupLeadingToken changes
+            // Add event handlers to preview the permission's value for both entity types, based on current settings
+            // users
+            $('#<%= TxtUserIdLdapAttribute.ClientID %>').on('input', function () {
+                window.Ldapcp.AdminGlobalSettingsControl.UpdatePermissionValuePreview("<%= TxtUserIdLdapAttribute.ClientID %>", "<%= TxtUserIdLeadingToken.ClientID %>", "lblUserPermissionValuePreview");
+            });
+            $('#<%= TxtUserIdLeadingToken.ClientID %>').on('input', function () {
+                window.Ldapcp.AdminGlobalSettingsControl.UpdatePermissionValuePreview("<%= TxtUserIdLdapAttribute.ClientID %>", "<%= TxtUserIdLeadingToken.ClientID %>", "lblUserPermissionValuePreview");
+            });
+            // groups
+            $('#<%= TxtGroupLdapAttribute.ClientID %>').on('input', function () {
+                window.Ldapcp.AdminGlobalSettingsControl.UpdatePermissionValuePreview("<%= TxtGroupLdapAttribute.ClientID %>", "<%= TxtGroupLeadingToken.ClientID %>", "lblGroupPermissionValuePreview");
+            });
             $('#<%= TxtGroupLeadingToken.ClientID %>').on('input', function () {
-                window.Ldapcp.AdminGlobalSettingsControl.UpdateGroupValuePreview();
+                window.Ldapcp.AdminGlobalSettingsControl.UpdatePermissionValuePreview("<%= TxtGroupLdapAttribute.ClientID %>", "<%= TxtGroupLeadingToken.ClientID %>", "lblGroupPermissionValuePreview");
             });
 
             this.InitLdapControls();
             this.InitAugmentationControls();
-            this.UpdateGroupValuePreview();
+            this.UpdatePermissionValuePreview("<%= TxtUserIdLdapAttribute.ClientID %>", "<%= TxtUserIdLeadingToken.ClientID %>", "lblUserPermissionValuePreview");
+            this.UpdatePermissionValuePreview("<%= TxtGroupLdapAttribute.ClientID %>", "<%= TxtGroupLeadingToken.ClientID %>", "lblGroupPermissionValuePreview");
         },
 
         InitLdapControls: function () {
@@ -184,18 +194,18 @@
             $('#<%= BtnTestLdapConnection.ClientID %>').hide('fast');
         },
 
-        // Identity permission section
+        <%--// Identity permission section
         CheckRbIdentityCustomLDAP: function () {
             var control = (document.getElementById("<%= RbUserIdDisplayValueCustom.ClientID %>"));
             if (control != null) {
                 control.checked = true;
             }
-        },
+        },--%>
 
-        // Set the label control to preview a group's value
-        UpdateGroupValuePreview: function () {
+        // Preview the permission's value, based on given entity type's settings
+        UpdatePermissionValuePreview: function (inputIdentifierAttributeId, inputTokenAttributeId, lblResultId) {
             // Get leading token value TxtGroupLeadingToken
-            var leadingTokenInput = $("#<%= TxtGroupLeadingToken.ClientID %>").val();
+            var leadingTokenInput = $("#" + inputTokenAttributeId).val();
 
             // Determine the actual leading token value
             var leadingTokenValue = leadingTokenInput;
@@ -208,11 +218,11 @@
             });
 
             // Get the TxtGroupLdapAttribute value
-            var groupValue = $("#<%= TxtGroupLdapAttribute.ClientID %>").val();
+            var groupValue = $("#" + inputIdentifierAttributeId).val();
 
             // Set the label control to preview a group's value
-            var groupValuePreview = leadingTokenValue + groupValue;
-            $("#lblGroupValuePreview").text(groupValuePreview);
+            var groupValuePreview = "\"" + leadingTokenValue + "<" + groupValue + ">\"";
+            $("#" + lblResultId).text(groupValuePreview);
         }
     };
 
@@ -292,15 +302,15 @@
                                     <legend>Settings for new LDAP connection</legend>
                                     <ol>
                                         <li>
-                                            <label for="<%= TxtLdapConnectionString.ClientID %>">LDAP <a href="http://msdn.microsoft.com/en-us/library/system.directoryservices.directoryentry.path(v=vs.110).aspx" target="_blank">path</a>: <em>*</em></label>
+                                            <label for="<%= TxtLdapConnectionString.ClientID %>">LDAP <a href="http://msdn.microsoft.com/en-us/library/system.directoryservices.directoryentry.path(v=vs.110).aspx" target="_blank">path</a> <em>*</em></label>
                                             <wssawc:InputFormTextBox onclick="window.Ldapcp.AdminGlobalSettingsControl.CheckCustomLdapRB()" title="LDAP connection string" class="ms-input" ID="TxtLdapConnectionString" Columns="50" runat="server" MaxLength="255" Text="LDAP://" />
                                         </li>
                                         <li>
-                                            <label for="<%= TxtLdapUsername.ClientID %>">Username: <em>*</em></label>
+                                            <label for="<%= TxtLdapUsername.ClientID %>">Username <em>*</em></label>
                                             <wssawc:InputFormTextBox onclick="window.Ldapcp.AdminGlobalSettingsControl.CheckCustomLdapRB()" title="Username" class="ms-input" ID="TxtLdapUsername" Columns="50" runat="server" MaxLength="255" />
                                         </li>
                                         <li>
-                                            <label for="<%= TxtLdapPassword.ClientID %>">Password: <em>*</em></label>
+                                            <label for="<%= TxtLdapPassword.ClientID %>">Password <em>*</em></label>
                                             <wssawc:InputFormTextBox onclick="window.Ldapcp.AdminGlobalSettingsControl.CheckCustomLdapRB()" title="Password" class="ms-input" ID="TxtLdapPassword" Columns="50" runat="server" MaxLength="255" TextMode="Password" />
                                         </li>
                                         <li>
@@ -338,16 +348,16 @@
                             <legend>Settings that uniquely identify a user</legend>
                             <ol>
                                 <li>
-                                    <label>Claim type:</label>
+                                    <label>Claim type</label>
                                     <label>
                                         <wssawc:EncodedLiteral runat="server" ID="lblUserIdClaimType" EncodeMethod='HtmlEncodeAllowSimpleTextFormatting' /></label>
                                 </li>
                                 <li>
-                                    <label for="<%= TxtUserIdLdapClass.ClientID %>">LDAP object class: <em>*</em></label>
+                                    <label for="<%= TxtUserIdLdapClass.ClientID %>">LDAP object class <em>*</em></label>
                                     <wssawc:InputFormTextBox title="LDAP object class" class="ms-input" ID="TxtUserIdLdapClass" Columns="50" runat="server" MaxLength="255" />
                                 </li>
                                 <li>
-                                    <label for="<%= TxtUserIdLdapAttribute.ClientID %>">LDAP object attribute: <em>*</em></label>
+                                    <label for="<%= TxtUserIdLdapAttribute.ClientID %>">LDAP object attribute <em>*</em></label>
                                     <wssawc:InputFormTextBox title="LDAP object attribute" class="ms-input" ID="TxtUserIdLdapAttribute" Columns="50" runat="server" MaxLength="255" />
                                 </li>
                             </ol>
@@ -355,8 +365,8 @@
                         <fieldset>
                             <legend>Additional settings</legend>
                             <ol>
-                                <li>
-                                    <label class="text-nowrap" style="display: inline;">LDAP object attribute used as display text in the people picker:</label>
+                                <%--<li>
+                                    <label class="text-nowrap" style="display: inline;">LDAP object attribute used as display text in the people picker</label>
                                     <table style="white-space: nowrap;">
                                         <wssawc:InputFormRadioButton ID="RbUserIdDisplayValueDefault"
                                             LabelText="Same as the LDAP object attribute"
@@ -373,17 +383,26 @@
                                             <asp:TextBox runat="server" ID="TxtUserIdDisplayValueCustom" title="LDAP object attribute as display text" class="ms-input" Columns="50" MaxLength="255" onclick="window.Ldapcp.AdminGlobalSettingsControl.CheckRbIdentityCustomLDAP()" />
                                         </wssawc:InputFormRadioButton>
                                     </table>
+                                </li>--%>
+                                <li>
+                                    <label for="<%= TxtUserIdDisplayTextAttribute.ClientID %>" title="Attribute displayed in the results list in the people picker (leave blank to use the user identifier attribute)">LDAP attribute as display text &#9432;</label>
+                                    <wssawc:InputFormTextBox title="" class="ms-input" ID="TxtUserIdDisplayTextAttribute" Columns="50" runat="server" MaxLength="255" />
                                 </li>
                                 <li>
-                                    <label for="<%= TxtUserIdAdditionalLdapAttributes.ClientID %>" title="LDAP attributes added to the LDAP query to find groups in the people picker (comma-separated values)">Additional search attributes:</label>
-                                    <wssawc:InputFormTextBox title="Additional LDAP attributes" class="ms-input" ID="TxtUserIdAdditionalLdapAttributes" Columns="50" runat="server" MaxLength="255" />
+                                    <label for="<%= TxtUserIdAdditionalLdapAttributes.ClientID %>" title="LDAP attributes added to the LDAP query when searching users in the people picker (comma-separated values)">Additional search attributes &#9432;</label>
+                                    <wssawc:InputFormTextBox title="" class="ms-input" ID="TxtUserIdAdditionalLdapAttributes" Columns="50" runat="server" MaxLength="255" />
                                 </li>
                                 <li>
-                                    <label for="<%= TxtGroupLeadingToken.ClientID %>" title="Static or dynnamic token that LDAPCP will include in the value returned by LDAP">Leading token:</label>
-                                    <wssawc:InputFormTextBox title="LDAP object attribute" class="ms-input" ID="TxtUserIdLeadingToken" Columns="50" runat="server" MaxLength="255" />
+                                    <label for="<%= TxtUserIdLeadingToken.ClientID %>" title="Static or dynnamic token that LDAPCP will include in the value returned by LDAP">Leading token &#9432;</label>
+                                    <wssawc:InputFormTextBox title="" class="ms-input" ID="TxtUserIdLeadingToken" Columns="50" runat="server" MaxLength="255" />
                                 </li>
                             </ol>
                         </fieldset>
+                        <div style="white-space: nowrap;">
+                            <label>Preview of a user permission's value returned by LDAPCP, based on the settings above:</label>
+                            <br />
+                            <label id="lblUserPermissionValuePreview"></label>
+                        </div>
                     </div>
                 </td>
             </tr>
@@ -403,19 +422,19 @@
                                 <legend>Settings that uniquely identify a group</legend>
                                 <ol>
                                     <li>
-                                        <label>
-                                            <wssawc:EncodedLiteral runat="server" Text="Claim type: " EncodeMethod='HtmlEncodeAllowSimpleTextFormatting' /><em>*</em></label>
+                                        <label title="This liste is based on the claim types registered in your SharePoint trust">
+                                            <wssawc:EncodedLiteral runat="server" Text="Claim type &#9432;" EncodeMethod='HtmlEncodeAllowSimpleTextFormatting' /><em>*</em></label>
                                         <asp:DropDownList ID="DdlGroupClaimType" runat="server">
                                             <asp:ListItem Selected="True" Value="None"></asp:ListItem>
                                         </asp:DropDownList>
                                     </li>
                                     <li>
-                                        <label for="<%= TxtGroupLdapClass.ClientID %>">LDAP object class: <em>*</em></label>
-                                        <wssawc:InputFormTextBox title="LDAP object class" class="ms-input" ID="TxtGroupLdapClass" Columns="50" runat="server" MaxLength="255" />
+                                        <label for="<%= TxtGroupLdapClass.ClientID %>">LDAP object class <em>*</em></label>
+                                        <wssawc:InputFormTextBox title="" class="ms-input" ID="TxtGroupLdapClass" Columns="50" runat="server" MaxLength="255" />
                                     </li>
                                     <li>
-                                        <label for="<%= TxtGroupLdapAttribute.ClientID %>">LDAP object attribute: <em>*</em></label>
-                                        <wssawc:InputFormTextBox title="LDAP object attribute" class="ms-input" ID="TxtGroupLdapAttribute" Columns="50" runat="server" MaxLength="255" />
+                                        <label for="<%= TxtGroupLdapAttribute.ClientID %>">LDAP object attribute <em>*</em></label>
+                                        <wssawc:InputFormTextBox title="" class="ms-input" ID="TxtGroupLdapAttribute" Columns="50" runat="server" MaxLength="255" />
                                     </li>
                                 </ol>
                             </fieldset>
@@ -423,18 +442,24 @@
                                 <legend>Additional settings</legend>
                                 <ol>
                                     <li>
-                                        <label for="<%= TxtGroupAdditionalLdapAttributes.ClientID %>" title="LDAP attributes added to the LDAP query to find groups in the people picker (comma-separated values)">Additional search attributes:</label>
-                                        <wssawc:InputFormTextBox title="Additional LDAP attributes" class="ms-input" ID="TxtGroupAdditionalLdapAttributes" Columns="50" runat="server" MaxLength="255" />
+                                        <label for="<%= TxtGroupDisplayTextAttribute.ClientID %>" title="Attribute displayed in the results list in the people picker (leave blank to use the group identifier attribute)">LDAP attribute as display text &#9432;</label>
+                                        <wssawc:InputFormTextBox title="" class="ms-input" ID="TxtGroupDisplayTextAttribute" Columns="50" runat="server" MaxLength="255" />
                                     </li>
                                     <li>
-                                        <label for="<%= TxtGroupLeadingToken.ClientID %>" title="Static or dynnamic token that LDAPCP will include in the value returned by LDAP">Leading token:</label>
-                                        <wssawc:InputFormTextBox title="LDAP object attribute" class="ms-input" ID="TxtGroupLeadingToken" Columns="50" runat="server" MaxLength="255" />
+                                        <label for="<%= TxtGroupAdditionalLdapAttributes.ClientID %>" title="LDAP attributes added to the LDAP query when searching users in the people picker (comma-separated values)">Additional search attributes &#9432;</label>
+                                        <wssawc:InputFormTextBox title="" class="ms-input" ID="TxtGroupAdditionalLdapAttributes" Columns="50" runat="server" MaxLength="255" />
+                                    </li>
+                                    <li>
+                                        <label for="<%= TxtGroupLeadingToken.ClientID %>" title="Static or dynnamic token that LDAPCP will include in the value returned by LDAP">Leading token &#9432;</label>
+                                        <wssawc:InputFormTextBox title="" class="ms-input" ID="TxtGroupLeadingToken" Columns="50" runat="server" MaxLength="255" />
                                     </li>
                                 </ol>
                             </fieldset>
-                            <label>Preview of a group permission's value returned by LDAPCP, based on the settings above:</label>
-                            <br />
-                            "<label id="lblGroupValuePreview"></label>"
+                            <div style="white-space: nowrap;">
+                                <label>Preview of a group permission's value returned by LDAPCP, based on the settings above:</label>
+                                <br />
+                                <label id="lblGroupPermissionValuePreview"></label>
+                            </div>
                         </div>
                     </td>
                 </tr>

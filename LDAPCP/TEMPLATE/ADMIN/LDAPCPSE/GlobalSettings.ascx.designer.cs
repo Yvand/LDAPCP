@@ -195,31 +195,13 @@ namespace Yvand.LdapClaimsProvider.Administration
         protected global::Microsoft.SharePoint.WebControls.InputFormTextBox TxtUserIdLdapAttribute;
 
         /// <summary>
-        /// RbUserIdDisplayValueDefault control.
+        /// TxtUserIdDisplayTextAttribute control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
-        protected global::Microsoft.SharePoint.WebControls.InputFormRadioButton RbUserIdDisplayValueDefault;
-
-        /// <summary>
-        /// RbUserIdDisplayValueCustom control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::Microsoft.SharePoint.WebControls.InputFormRadioButton RbUserIdDisplayValueCustom;
-
-        /// <summary>
-        /// TxtUserIdDisplayValueCustom control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.TextBox TxtUserIdDisplayValueCustom;
+        protected global::Microsoft.SharePoint.WebControls.InputFormTextBox TxtUserIdDisplayTextAttribute;
 
         /// <summary>
         /// TxtUserIdAdditionalLdapAttributes control.
@@ -283,6 +265,15 @@ namespace Yvand.LdapClaimsProvider.Administration
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
         protected global::Microsoft.SharePoint.WebControls.InputFormTextBox TxtGroupLdapAttribute;
+
+        /// <summary>
+        /// TxtGroupDisplayTextAttribute control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::Microsoft.SharePoint.WebControls.InputFormTextBox TxtGroupDisplayTextAttribute;
 
         /// <summary>
         /// TxtGroupAdditionalLdapAttributes control.

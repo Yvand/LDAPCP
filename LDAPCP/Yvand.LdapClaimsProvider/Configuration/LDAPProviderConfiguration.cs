@@ -191,7 +191,7 @@ namespace Yvand.LdapClaimsProvider.Configuration
             {
                 if (_ClaimTypes == null)
                 {
-                    _ClaimTypes = new ClaimTypeConfigCollection(ref this._ClaimTypesCollection);
+                    _ClaimTypes = new ClaimTypeConfigCollection(ref this._ClaimTypesCollection, this.SPTrust);
                 }
                 return _ClaimTypes;
             }

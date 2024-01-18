@@ -118,17 +118,18 @@ namespace Yvand.LdapClaimsProvider.Administration
 
         private void PopulateFields()
         {
-            this.lblUserIdClaimType.Text = IdentityCTConfig.ClaimType;
+            this.lblUserIdClaimType.Text = Settings.ClaimTypes.IdentityClaim.ClaimType;
+            this.TxtUserIdDisplayTextAttribute.Text = Settings.ClaimTypes.IdentityClaim.LDAPAttributeToShowAsDisplayText;
             //this.ChkIdentityShowAdditionalAttribute.Checked = true; // Settings.DisplayLdapMatchForIdentityClaimTypeProp;
-            if (String.IsNullOrEmpty(IdentityCTConfig.LDAPAttributeToShowAsDisplayText))
-            {
-                this.RbUserIdDisplayValueDefault.Checked = true;
-            }
-            else
-            {
-                this.RbUserIdDisplayValueCustom.Checked = true;
-                this.TxtUserIdDisplayValueCustom.Text = IdentityCTConfig.LDAPAttributeToShowAsDisplayText;
-            }
+            //if (String.IsNullOrEmpty(IdentityCTConfig.LDAPAttributeToShowAsDisplayText))
+            //{
+            //    this.RbUserIdDisplayValueDefault.Checked = true;
+            //}
+            //else
+            //{
+            //    this.RbUserIdDisplayValueCustom.Checked = true;
+            //    this.TxtUserIdDisplayValueCustom.Text = IdentityCTConfig.LDAPAttributeToShowAsDisplayText;
+            //}
 
             this.ChkAlwaysResolveUserInput.Checked = Settings.AlwaysResolveUserInput;
             this.ChkFilterEnabledUsersOnly.Checked = Settings.FilterEnabledUsersOnly;
@@ -140,14 +141,15 @@ namespace Yvand.LdapClaimsProvider.Administration
             //this.TxtPickerEntityGroupName.Text = Settings.PickerEntityGroupNameProp;
 
             // Init controls for user identifier configuration
-            this.TxtUserIdLdapClass.Text = IdentityCTConfig.LDAPClass;
-            this.TxtUserIdLdapAttribute.Text = IdentityCTConfig.LDAPAttribute;
-            this.TxtUserIdAdditionalLdapAttributes.Text = String.Join(",", Utils.GetAdditionalLdapAttributes(Settings.ClaimTypes, DirectoryObjectType.User));
-            this.TxtUserIdLeadingToken.Text = IdentityCTConfig.ClaimValuePrefix;
+            this.TxtUserIdLdapClass.Text = Settings.ClaimTypes.IdentityClaim.LDAPClass;
+            this.TxtUserIdLdapAttribute.Text = Settings.ClaimTypes.IdentityClaim.LDAPAttribute;
+            //this.TxtUserIdAdditionalLdapAttributes.Text = String.Join(",", Utils.GetAdditionalLdapAttributes(Settings.ClaimTypes, DirectoryObjectType.User));
+            this.TxtUserIdAdditionalLdapAttributes.Text = String.Join(",", Settings.ClaimTypes.GetAdditionalSearchAttributesForEntity(DirectoryObjectType.User));
+            this.TxtUserIdLeadingToken.Text = Settings.ClaimTypes.IdentityClaim.ClaimValuePrefix;
 
             // Init controls for group configuration
             ClaimTypeConfig groupCtc = Utils.GetMainGroupClaimTypeConfig(Settings.ClaimTypes);
-            var groupClaimTypeCandidates = Utils.GetNonWellKnownUserClaimTypes(base.ClaimsProviderName);
+            var groupClaimTypeCandidates = Utils.GetNonWellKnownUserClaimTypesFromTrust(base.ClaimsProviderName);
             foreach (string groupClaimTypeCandidate in groupClaimTypeCandidates)
             {
                 ListItem groupClaimTypeCandidateItem = new ListItem(groupClaimTypeCandidate);
@@ -159,7 +161,8 @@ namespace Yvand.LdapClaimsProvider.Administration
             {
                 TxtGroupLdapClass.Text = groupCtc.LDAPClass;
                 TxtGroupLdapAttribute .Text = groupCtc.LDAPAttribute;
-                TxtGroupAdditionalLdapAttributes.Text = String.Join(",", Utils.GetAdditionalLdapAttributes(Settings.ClaimTypes, DirectoryObjectType.Group));
+                //TxtGroupAdditionalLdapAttributes.Text = String.Join(",", Utils.GetAdditionalLdapAttributes(Settings.ClaimTypes, DirectoryObjectType.Group));
+                TxtGroupAdditionalLdapAttributes.Text = String.Join(",", Settings.ClaimTypes.GetAdditionalSearchAttributesForEntity(DirectoryObjectType.Group));
                 TxtGroupLeadingToken.Text = groupCtc.ClaimValuePrefix;
             }
         }
@@ -207,21 +210,18 @@ namespace Yvand.LdapClaimsProvider.Administration
         {
             if (ValidatePrerequisite() != ConfigStatus.AllGood) { return false; }
 
-
-            // Handle identity claim type
-            //PersistedObject.DisplayLdapMatchForIdentityClaimTypeProp = this.ChkIdentityShowAdditionalAttribute.Checked;
-            if (this.RbUserIdDisplayValueCustom.Checked)
+            // Configuration for the user identifier claim type
+            //if (!String.IsNullOrWhiteSpace(TxtUserIdLdapClass.Text) && !String.IsNullOrWhiteSpace(TxtUserIdLdapAttribute.Text))
+            //{
+            //    Settings.ClaimTypes.UpdateUserIdentifier(TxtUserIdLdapClass.Text, TxtUserIdLdapAttribute.Text);
+            //}
+            Settings.ClaimTypes.IdentityClaim.LDAPClass = TxtUserIdLdapClass.Text;
+            Settings.ClaimTypes.IdentityClaim.LDAPAttribute = TxtUserIdLdapAttribute.Text;
+            Settings.ClaimTypes.IdentityClaim.LDAPAttributeToShowAsDisplayText = TxtUserIdDisplayTextAttribute.Text;
+            Settings.ClaimTypes.IdentityClaim.ClaimValuePrefix = TxtUserIdLeadingToken.Text;
+            if (!String.IsNullOrWhiteSpace(TxtUserIdAdditionalLdapAttributes.Text))
             {
-                IdentityCTConfig.LDAPAttributeToShowAsDisplayText = this.TxtUserIdDisplayValueCustom.Text;
-            }
-            else
-            {
-                IdentityCTConfig.LDAPAttributeToShowAsDisplayText = String.Empty;
-            }
-
-            if (!String.IsNullOrWhiteSpace(TxtUserIdLdapClass.Text) && !String.IsNullOrWhiteSpace(TxtUserIdLdapAttribute.Text))
-            {
-                Settings.ClaimTypes.UpdateUserIdentifier(TxtUserIdLdapClass.Text, TxtUserIdLdapAttribute.Text);
+                Settings.ClaimTypes.SetAdditionalSearchAttributesForEntity(TxtUserIdAdditionalLdapAttributes.Text.Split(','), Settings.ClaimTypes.IdentityClaim.LDAPClass, DirectoryObjectType.User);
             }
 
             Settings.AlwaysResolveUserInput = this.ChkAlwaysResolveUserInput.Checked;
