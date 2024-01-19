@@ -456,13 +456,13 @@ namespace Yvand.LdapClaimsProvider.Configuration
         /// <summary>
         /// Update the LDAPClass and LDAPAttribute of the identity ClaimTypeConfig. If new values duplicate an existing item, it will be removed from the collection
         /// </summary>
-        /// <param name="newLDAPClass">new LDAPClass</param>
-        /// <param name="newLDAPAttribute">new newLDAPAttribute</param>
+        /// <param name="newDirectoryObjectClass">new LDAPClass</param>
+        /// <param name="newDirectoryObjectAttribute">new newDirectoryObjectAttribute</param>
         /// <returns>True if the identity ClaimTypeConfig was successfully updated</returns>
-        public bool UpdateUserIdentifier(string newLDAPClass, string newLDAPAttribute)
+        public bool UpdateUserIdentifier(string newDirectoryObjectClass, string newDirectoryObjectAttribute)
         {
-            if (String.IsNullOrEmpty(newLDAPClass)) throw new ArgumentNullException("newLDAPClass");
-            if (String.IsNullOrEmpty(newLDAPAttribute)) throw new ArgumentNullException("newLDAPAttribute");
+            if (String.IsNullOrEmpty(newDirectoryObjectClass)) throw new ArgumentNullException(nameof(newDirectoryObjectClass));
+            if (String.IsNullOrEmpty(newDirectoryObjectAttribute)) throw new ArgumentNullException(nameof(newDirectoryObjectAttribute));
 
             bool identifierUpdated = false;
             if (SPTrust == null) { return identifierUpdated; }
@@ -471,8 +471,8 @@ namespace Yvand.LdapClaimsProvider.Configuration
             if (identityClaimType == null)
                 return identifierUpdated;
 
-            if (String.Equals(identityClaimType.LDAPClass, newLDAPClass, StringComparison.InvariantCultureIgnoreCase) &&
-                String.Equals(identityClaimType.LDAPAttribute, newLDAPAttribute, StringComparison.InvariantCultureIgnoreCase))
+            if (String.Equals(identityClaimType.LDAPClass, newDirectoryObjectClass, StringComparison.InvariantCultureIgnoreCase) &&
+                String.Equals(identityClaimType.LDAPAttribute, newDirectoryObjectAttribute, StringComparison.InvariantCultureIgnoreCase))
             { return identifierUpdated; }
 
             // Check if the new LDAPAttribute / LDAPClass duplicates an existing item, and delete it if so
@@ -480,16 +480,16 @@ namespace Yvand.LdapClaimsProvider.Configuration
             {
                 ClaimTypeConfig curCT = (ClaimTypeConfig)innerCol[i];
                 if (curCT.EntityType == DirectoryObjectType.User &&
-                    String.Equals(curCT.LDAPAttribute, newLDAPAttribute, StringComparison.InvariantCultureIgnoreCase) &&
-                    String.Equals(curCT.LDAPClass, newLDAPClass, StringComparison.InvariantCultureIgnoreCase))
+                    String.Equals(curCT.LDAPAttribute, newDirectoryObjectAttribute, StringComparison.InvariantCultureIgnoreCase) &&
+                    String.Equals(curCT.LDAPClass, newDirectoryObjectClass, StringComparison.InvariantCultureIgnoreCase))
                 {
                     innerCol.RemoveAt(i);
                     break;  // There can be only 1 potential duplicate
                 }
             }
 
-            identityClaimType.LDAPClass = newLDAPClass;
-            identityClaimType.LDAPAttribute = newLDAPAttribute;
+            identityClaimType.LDAPClass = newDirectoryObjectClass;
+            identityClaimType.LDAPAttribute = newDirectoryObjectAttribute;
             identifierUpdated = true;
             return identifierUpdated;
         }
