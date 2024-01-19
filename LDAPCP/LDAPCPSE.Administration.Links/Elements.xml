@@ -4,7 +4,7 @@
     Id = "LDAPCPSE"
     Location = "Microsoft.SharePoint.Administration.Security"
     Sequence = "500"
-    Title = "LDAPCP SE - Claims provider for LDAP and Active Directory"
+    Title = "LDAPCP Second Edition - Claims provider for LDAP and Active Directory"
     ImageUrl="/_layouts/15/LDAPCPSE/LDAPCP_logo_small.png">
   </CustomActionGroup>
 
