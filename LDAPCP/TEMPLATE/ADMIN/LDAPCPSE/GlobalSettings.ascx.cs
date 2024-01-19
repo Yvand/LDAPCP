@@ -118,53 +118,39 @@ namespace Yvand.LdapClaimsProvider.Administration
 
         private void PopulateFields()
         {
+            // User identifier settings
             this.lblUserIdClaimType.Text = Settings.ClaimTypes.IdentityClaim.ClaimType;
+            this.TxtUserIdLdapClass.Text = Settings.ClaimTypes.IdentityClaim.LDAPClass;
+            this.TxtUserIdLdapAttribute.Text = Settings.ClaimTypes.IdentityClaim.LDAPAttribute;
             this.TxtUserIdDisplayTextAttribute.Text = Settings.ClaimTypes.IdentityClaim.LDAPAttributeToShowAsDisplayText;
-            //this.ChkIdentityShowAdditionalAttribute.Checked = true; // Settings.DisplayLdapMatchForIdentityClaimTypeProp;
-            //if (String.IsNullOrEmpty(IdentityCTConfig.LDAPAttributeToShowAsDisplayText))
-            //{
-            //    this.RbUserIdDisplayValueDefault.Checked = true;
-            //}
-            //else
-            //{
-            //    this.RbUserIdDisplayValueCustom.Checked = true;
-            //    this.TxtUserIdDisplayValueCustom.Text = IdentityCTConfig.LDAPAttributeToShowAsDisplayText;
-            //}
+            this.TxtUserIdAdditionalLdapAttributes.Text = String.Join(",", Settings.ClaimTypes.GetSearchAttributesForEntity(DirectoryObjectType.User));
+            this.TxtUserIdLeadingToken.Text = Settings.ClaimTypes.IdentityClaim.ClaimValuePrefix;
 
+            // Group identifier settings
+            var possibleGroupClaimTypes = Utils.GetNonWellKnownUserClaimTypesFromTrust(base.ClaimsProviderName);
+            foreach (string possibleGroupClaimType in possibleGroupClaimTypes)
+            {
+                ListItem possibleGroupClaimTypeItem = new ListItem(possibleGroupClaimType);
+                this.DdlGroupClaimType.Items.Add(possibleGroupClaimTypeItem);
+            }
+
+            ClaimTypeConfig groupCtc = Settings.ClaimTypes.GetMainConfigurationForDirectoryObjectType(DirectoryObjectType.Group);// Utils.GetMainGroupClaimTypeConfig(Settings.ClaimTypes);
+            if (groupCtc != null)
+            {
+                this.DdlGroupClaimType.SelectedValue = groupCtc.ClaimType;
+                this.TxtGroupLdapClass.Text = groupCtc.LDAPClass;
+                this.TxtGroupLdapAttribute.Text = groupCtc.LDAPAttribute;
+                this.TxtGroupDisplayTextAttribute.Text = groupCtc.LDAPAttributeToShowAsDisplayText;
+                this.TxtGroupAdditionalLdapAttributes.Text = String.Join(",", Settings.ClaimTypes.GetSearchAttributesForEntity(DirectoryObjectType.Group));
+                this.TxtGroupLeadingToken.Text = groupCtc.ClaimValuePrefix;
+            }
+
+            // Other settings
             this.ChkAlwaysResolveUserInput.Checked = Settings.AlwaysResolveUserInput;
             this.ChkFilterEnabledUsersOnly.Checked = Settings.FilterEnabledUsersOnly;
             this.ChkFilterSecurityGroupsOnly.Checked = Settings.FilterSecurityGroupsOnly;
             this.ChkFilterExactMatchOnly.Checked = Settings.FilterExactMatchOnly;
             this.txtTimeout.Text = Settings.Timeout.ToString();
-            // Deprecated options that are not shown anymore in LDAPCP configuration page
-            //this.ChkAddWildcardInFront.Checked = Settings.AddWildcardInFrontOfQueryProp;
-            //this.TxtPickerEntityGroupName.Text = Settings.PickerEntityGroupNameProp;
-
-            // Init controls for user identifier configuration
-            this.TxtUserIdLdapClass.Text = Settings.ClaimTypes.IdentityClaim.LDAPClass;
-            this.TxtUserIdLdapAttribute.Text = Settings.ClaimTypes.IdentityClaim.LDAPAttribute;
-            //this.TxtUserIdAdditionalLdapAttributes.Text = String.Join(",", Utils.GetAdditionalLdapAttributes(Settings.ClaimTypes, DirectoryObjectType.User));
-            this.TxtUserIdAdditionalLdapAttributes.Text = String.Join(",", Settings.ClaimTypes.GetAdditionalSearchAttributesForEntity(DirectoryObjectType.User));
-            this.TxtUserIdLeadingToken.Text = Settings.ClaimTypes.IdentityClaim.ClaimValuePrefix;
-
-            // Init controls for group configuration
-            ClaimTypeConfig groupCtc = Utils.GetMainGroupClaimTypeConfig(Settings.ClaimTypes);
-            var groupClaimTypeCandidates = Utils.GetNonWellKnownUserClaimTypesFromTrust(base.ClaimsProviderName);
-            foreach (string groupClaimTypeCandidate in groupClaimTypeCandidates)
-            {
-                ListItem groupClaimTypeCandidateItem = new ListItem(groupClaimTypeCandidate);
-                DdlGroupClaimType.Items.Add(groupClaimTypeCandidateItem);
-            }
-
-            DdlGroupClaimType.SelectedValue = groupCtc?.ClaimType;
-            if (groupCtc != null)
-            {
-                TxtGroupLdapClass.Text = groupCtc.LDAPClass;
-                TxtGroupLdapAttribute .Text = groupCtc.LDAPAttribute;
-                //TxtGroupAdditionalLdapAttributes.Text = String.Join(",", Utils.GetAdditionalLdapAttributes(Settings.ClaimTypes, DirectoryObjectType.Group));
-                TxtGroupAdditionalLdapAttributes.Text = String.Join(",", Settings.ClaimTypes.GetAdditionalSearchAttributesForEntity(DirectoryObjectType.Group));
-                TxtGroupLeadingToken.Text = groupCtc.ClaimValuePrefix;
-            }
         }
 
         /// <summary>
@@ -210,18 +196,36 @@ namespace Yvand.LdapClaimsProvider.Administration
         {
             if (ValidatePrerequisite() != ConfigStatus.AllGood) { return false; }
 
-            // Configuration for the user identifier claim type
-            //if (!String.IsNullOrWhiteSpace(TxtUserIdLdapClass.Text) && !String.IsNullOrWhiteSpace(TxtUserIdLdapAttribute.Text))
-            //{
-            //    Settings.ClaimTypes.UpdateUserIdentifier(TxtUserIdLdapClass.Text, TxtUserIdLdapAttribute.Text);
-            //}
-            Settings.ClaimTypes.IdentityClaim.LDAPClass = TxtUserIdLdapClass.Text;
-            Settings.ClaimTypes.IdentityClaim.LDAPAttribute = TxtUserIdLdapAttribute.Text;
-            Settings.ClaimTypes.IdentityClaim.LDAPAttributeToShowAsDisplayText = TxtUserIdDisplayTextAttribute.Text;
-            Settings.ClaimTypes.IdentityClaim.ClaimValuePrefix = TxtUserIdLeadingToken.Text;
-            if (!String.IsNullOrWhiteSpace(TxtUserIdAdditionalLdapAttributes.Text))
+            // User identifier settings            
+            Settings.ClaimTypes.IdentityClaim.LDAPClass = this.TxtUserIdLdapClass.Text;
+            Settings.ClaimTypes.IdentityClaim.LDAPAttribute = this.TxtUserIdLdapAttribute.Text;
+            Settings.ClaimTypes.IdentityClaim.LDAPAttributeToShowAsDisplayText = this.TxtUserIdDisplayTextAttribute.Text;
+            if (!String.IsNullOrWhiteSpace(this.TxtUserIdAdditionalLdapAttributes.Text))
             {
-                Settings.ClaimTypes.SetAdditionalSearchAttributesForEntity(TxtUserIdAdditionalLdapAttributes.Text.Split(','), Settings.ClaimTypes.IdentityClaim.LDAPClass, DirectoryObjectType.User);
+                Settings.ClaimTypes.SetSearchAttributesForEntity(this.TxtUserIdAdditionalLdapAttributes.Text.Split(','), Settings.ClaimTypes.IdentityClaim.LDAPClass, DirectoryObjectType.User);
+            }
+            Settings.ClaimTypes.IdentityClaim.ClaimValuePrefix = this.TxtUserIdLeadingToken.Text;
+
+            // Group identifier settings
+            ClaimTypeConfig groupConfig = Settings.ClaimTypes.GetMainConfigurationForDirectoryObjectType(DirectoryObjectType.Group);// Utils.GetMainGroupClaimTypeConfig(Settings.ClaimTypes);
+            bool newGroupConfigObject = false;
+            if (groupConfig == null)
+            {
+                groupConfig = new ClaimTypeConfig { EntityType = DirectoryObjectType.Group };
+                newGroupConfigObject = true;
+            }
+            groupConfig.ClaimType = this.DdlGroupClaimType.SelectedValue;
+            groupConfig.LDAPClass = this.TxtGroupLdapClass.Text;
+            groupConfig.LDAPAttribute = this.TxtGroupLdapAttribute.Text;
+            groupConfig.LDAPAttributeToShowAsDisplayText = this.TxtGroupDisplayTextAttribute.Text;
+            if (!String.IsNullOrWhiteSpace(this.TxtGroupAdditionalLdapAttributes.Text))
+            {
+                Settings.ClaimTypes.SetSearchAttributesForEntity(this.TxtGroupAdditionalLdapAttributes.Text.Split(','), groupConfig.LDAPClass, DirectoryObjectType.Group);
+            }
+            groupConfig.ClaimValuePrefix = this.TxtGroupLeadingToken.Text;
+            if (newGroupConfigObject)
+            {
+                Settings.ClaimTypes.Add(groupConfig);
             }
 
             Settings.AlwaysResolveUserInput = this.ChkAlwaysResolveUserInput.Checked;

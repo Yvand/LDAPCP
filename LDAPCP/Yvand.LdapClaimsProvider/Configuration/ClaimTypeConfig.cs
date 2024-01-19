@@ -6,18 +6,17 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Reflection;
-using System.Security.Claims;
 using WIF4_5 = System.Security.Claims;
 
 namespace Yvand.LdapClaimsProvider.Configuration
 {
     /// <summary>
-    /// Stores configuration associated to a claim type, and its mapping with the Azure AD attribute (GraphProperty)
+    /// Stores configuration associated to a claim type, and its mapping with the Azure AD newAttribute (GraphProperty)
     /// </summary>
     public class ClaimTypeConfig : SPAutoSerializingObject, IEquatable<ClaimTypeConfig>
     {
         /// <summary>
-        /// Name of the attribute in LDAP
+        /// Name of the newAttribute in LDAP
         /// </summary>
         public string LDAPAttribute
         {
@@ -28,7 +27,7 @@ namespace Yvand.LdapClaimsProvider.Configuration
         private string _LDAPAttribute;
 
         /// <summary>
-        /// Class of the attribute in LDAP, typically 'user' or 'group'
+        /// Class of the newAttribute in LDAP, typically 'user' or 'group'
         /// </summary>
         public string LDAPClass
         {
@@ -163,7 +162,7 @@ namespace Yvand.LdapClaimsProvider.Configuration
         private string _PrefixToBypassLookup;
 
         /// <summary>
-        /// Set this property to customize display text of the permission with a specific LDAP attribute (different than LDAPAttributeName, that is the actual value of the permission)
+        /// Set this property to customize display text of the permission with a specific LDAP newAttribute (different than LDAPAttributeName, that is the actual value of the permission)
         /// </summary>
         public string LDAPAttributeToShowAsDisplayText
         {
@@ -283,12 +282,14 @@ namespace Yvand.LdapClaimsProvider.Configuration
         {
             get
             {
-                ClaimTypeConfig ctConfig = Utils.IdentifyIdentityClaimTypeConfigFromClaimTypeConfigCollection(innerCol, SPTrust.IdentityClaimTypeInformation.MappedClaimType);
+                //ClaimTypeConfig ctConfig = Utils.IdentifyIdentityClaimTypeConfigFromClaimTypeConfigCollection(innerCol, SPTrust.IdentityClaimTypeInformation.MappedClaimType);
+                ClaimTypeConfig ctConfig = GetMainConfigurationForDirectoryObjectType(DirectoryObjectType.User);
                 return ctConfig;
             }
             set
             {
-                ClaimTypeConfig ctConfig = Utils.IdentifyIdentityClaimTypeConfigFromClaimTypeConfigCollection(innerCol, SPTrust.IdentityClaimTypeInformation.MappedClaimType);
+                //ClaimTypeConfig ctConfig = Utils.IdentifyIdentityClaimTypeConfigFromClaimTypeConfigCollection(innerCol, SPTrust.IdentityClaimTypeInformation.MappedClaimType);
+                ClaimTypeConfig ctConfig = GetMainConfigurationForDirectoryObjectType(DirectoryObjectType.User);
                 ctConfig = value;
             }
         }
@@ -354,13 +355,13 @@ namespace Yvand.LdapClaimsProvider.Configuration
 
             if (Contains(item, new ClaimTypeConfigSameDirectoryConfiguration()))
             {
-                throw new InvalidOperationException($"An item with LDAP attribute '{item.LDAPAttribute}' and LDAP class '{item.LDAPClass}' already exists for the object type '{item.EntityType}'");
+                throw new InvalidOperationException($"An item with LDAP newAttribute '{item.LDAPAttribute}' and LDAP class '{item.LDAPClass}' already exists for the object type '{item.EntityType}'");
             }
 
             if (Contains(item))
             {
                 if (String.IsNullOrEmpty(item.ClaimType))
-                    throw new InvalidOperationException($"This configuration with LDAP attribute '{item.LDAPAttribute}' and class '{item.LDAPClass}' already exists in the collection");
+                    throw new InvalidOperationException($"This configuration with LDAP newAttribute '{item.LDAPAttribute}' and class '{item.LDAPClass}' already exists in the collection");
                 else
                     throw new InvalidOperationException($"This configuration with claim type '{item.ClaimType}' already exists in the collection");
             }
@@ -464,17 +465,15 @@ namespace Yvand.LdapClaimsProvider.Configuration
             if (String.IsNullOrEmpty(newLDAPAttribute)) throw new ArgumentNullException("newLDAPAttribute");
 
             bool identifierUpdated = false;
-            if (SPTrust == null)
-                return identifierUpdated;
+            if (SPTrust == null) { return identifierUpdated; }
 
-            //ClaimTypeConfig identityClaimType = innerCol.FirstOrDefault(x => String.Equals(x.ClaimType, SPTrust.IdentityClaimTypeInformation.MappedClaimType, StringComparison.InvariantCultureIgnoreCase));
-            ClaimTypeConfig identityClaimType = Utils.IdentifyIdentityClaimTypeConfigFromClaimTypeConfigCollection(innerCol, SPTrust.IdentityClaimTypeInformation.MappedClaimType);
+            ClaimTypeConfig identityClaimType = IdentityClaim;
             if (identityClaimType == null)
                 return identifierUpdated;
 
             if (String.Equals(identityClaimType.LDAPClass, newLDAPClass, StringComparison.InvariantCultureIgnoreCase) &&
                 String.Equals(identityClaimType.LDAPAttribute, newLDAPAttribute, StringComparison.InvariantCultureIgnoreCase))
-                return identifierUpdated;
+            { return identifierUpdated; }
 
             // Check if the new LDAPAttribute / LDAPClass duplicates an existing item, and delete it if so
             for (int i = 0; i < innerCol.Count; i++)
@@ -545,7 +544,8 @@ namespace Yvand.LdapClaimsProvider.Configuration
 
         public void RemoveAll(IEnumerable<ClaimTypeConfig> elementsToRemove)
         {
-            foreach (ClaimTypeConfig ct in elementsToRemove)
+            // ToList() creates a copy and avoids exception "Collection was modified; enumeration operation may not execute"
+            foreach (ClaimTypeConfig ct in elementsToRemove.ToList())
             {
                 Remove(ct);
             }
@@ -562,7 +562,7 @@ namespace Yvand.LdapClaimsProvider.Configuration
             for (int i = 0; i < innerCol.Count; i++)
             {
                 ClaimTypeConfig curCT = (ClaimTypeConfig)innerCol[i];
-                if (new ClaimTypeConfigSameConfig().Equals(curCT, item))
+                if (curCT.Equals(item))
                 {
                     innerCol.RemoveAt(i);
                     result = true;
@@ -606,6 +606,14 @@ namespace Yvand.LdapClaimsProvider.Configuration
             return new ClaimTypeConfigEnumerator(this);
         }
 
+        public ClaimTypeConfig GetMainConfigurationForDirectoryObjectType(DirectoryObjectType objectType)
+        {
+            return innerCol
+                .FirstOrDefault(x =>
+                    x.EntityType == objectType &&
+                    x.UseMainClaimTypeOfDirectoryObject == false);
+        }
+
         public ClaimTypeConfig GetByClaimType(string claimType)
         {
             if (String.IsNullOrEmpty(claimType)) { throw new ArgumentNullException(nameof(claimType)); }
@@ -618,51 +626,48 @@ namespace Yvand.LdapClaimsProvider.Configuration
             return innerCol
                 .Where(x =>
                     x.EntityType == entityType &&
-                    //String.IsNullOrWhiteSpace(x.ClaimType) && 
                     x.UseMainClaimTypeOfDirectoryObject == true);
         }
 
-        public IEnumerable<string> GetAdditionalSearchAttributesForEntity(DirectoryObjectType entityType)
+        public IEnumerable<string> GetSearchAttributesForEntity(DirectoryObjectType entityType)
         {
             var existingAdditionalUserConfigs = GetAdditionalConfigurationsForEntity(entityType);
             return existingAdditionalUserConfigs.Select(x => x.LDAPAttribute);
         }
 
-        public void SetAdditionalSearchAttributesForEntity(string[] updatedAdditionalSearchAttributes, string ldapClass, DirectoryObjectType entityType)
+        public void SetSearchAttributesForEntity(string[] newSearchAttributes, string ldapClass, DirectoryObjectType entityType)
         {
-            //var existingAdditionalUserConfigs = GetAdditionalConfigurationsForEntity(DirectoryObjectType.User);
-            var existingAdditionalUserConfigs = GetAdditionalSearchAttributesForEntity(DirectoryObjectType.User);
-            //foreach (ClaimTypeConfig additionalConfig in existingAdditionalUserConfigs)
-            //{
-            //    updatedAdditionalUserSearchAttributes.Contains(additionalConfig)
-            //}
-            //Settings.ClaimTypes.RemoveAll(Settings.ClaimTypes.Where(x => x.EntityType == DirectoryObjectType.User && String.IsNullOrWhiteSpace(x.ClaimType) && x.UseMainClaimTypeOfDirectoryObject == true));
+            ClaimTypeConfig mainConfig = GetMainConfigurationForDirectoryObjectType(entityType);
+            var existingSearchAttributes = GetSearchAttributesForEntity(entityType);
 
-            // Step 1: Add new LDAP attributes
-            foreach (string attribute in updatedAdditionalSearchAttributes)
+            // Step 1: Add new search attributes
+            foreach (string newAttribute in newSearchAttributes)
             {
-                if (existingAdditionalUserConfigs.Contains(attribute) == false)
+                if (String.Equals(newAttribute, mainConfig.LDAPAttribute, StringComparison.InvariantCultureIgnoreCase))
                 {
-                    var ct = new ClaimTypeConfig
+                    continue;
+                }
+                if (existingSearchAttributes.Contains(newAttribute) == false)
+                {
+                    var newSearchAttributeConfig = new ClaimTypeConfig
                     {
                         ClaimType = String.Empty,
                         UseMainClaimTypeOfDirectoryObject = true,
                         EntityType = entityType,
-                        LDAPAttribute = attribute,
+                        LDAPAttribute = newAttribute,
                         LDAPClass = ldapClass,
                     };
-                    Add(ct);
+                    Add(newSearchAttributeConfig);
                 }
             }
 
-            // Step 2: Remove those that are missing in updatedAdditionalSearchAttributes
-            var configObjectsToRemove = innerCol
+            // Step 2: Remove existing search attributes that are missing in newSearchAttributes
+            var existingSearchAttributesToRemove = innerCol
                 .Where(x =>
                     x.EntityType == entityType &&
-                    //String.IsNullOrWhiteSpace(x.ClaimType) &&
                     x.UseMainClaimTypeOfDirectoryObject == true &&
-                    updatedAdditionalSearchAttributes.Contains(x.LDAPAttribute) == false);
-            RemoveAll(configObjectsToRemove);
+                    newSearchAttributes.Contains(x.LDAPAttribute) == false);
+            RemoveAll(existingSearchAttributesToRemove);
         }
     }
 

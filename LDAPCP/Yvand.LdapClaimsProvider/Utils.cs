@@ -2,14 +2,12 @@
 using Microsoft.SharePoint.Administration.Claims;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics.Tracing;
 using System.DirectoryServices;
 using System.Linq;
 using System.Reflection;
-using System.Text.RegularExpressions;
-using System.Text;
 using System.Security.Principal;
-using System.Collections.ObjectModel;
+using System.Text;
+using System.Text.RegularExpressions;
 
 namespace Yvand.LdapClaimsProvider.Configuration
 {
@@ -97,38 +95,6 @@ namespace Yvand.LdapClaimsProvider.Configuration
                 .Where(x => !ClaimsProviderConstants.DefaultSettingsPerUserClaimType.ContainsKey(x.MappedClaimType))
                 .Select(x => x.MappedClaimType);
             return nonWellKnownUserClaimTypes;
-        }
-
-        public static ClaimTypeConfig GetMainGroupClaimTypeConfig(ClaimTypeConfigCollection claimTypeConfigCollection)
-        {
-            return claimTypeConfigCollection.FirstOrDefault(x =>
-                x.EntityType == DirectoryObjectType.Group &&
-                x.UseMainClaimTypeOfDirectoryObject == false
-            );
-        }
-
-        //public static IEnumerable<string> GetAdditionalLdapAttributes(ClaimTypeConfigCollection claimTypeConfigCollection, DirectoryObjectType entityType)
-        //{
-        //    return claimTypeConfigCollection
-        //        .Where(x => x.EntityType == entityType && x.UseMainClaimTypeOfDirectoryObject == true)
-        //        .Select(x => x.LDAPAttribute);
-        //}
-
-
-        public static ClaimTypeConfig IdentifyIdentityClaimTypeConfigFromClaimTypeConfigCollection(ClaimTypeConfigCollection claimTypeConfigCollection, string identityClaimType)
-        {
-            ClaimTypeConfig claimTypeConfig = claimTypeConfigCollection.FirstOrDefault(x =>
-                String.Equals(x.ClaimType, identityClaimType, StringComparison.InvariantCultureIgnoreCase) &&
-                !x.UseMainClaimTypeOfDirectoryObject);
-            return claimTypeConfig;
-        }
-
-        public static ClaimTypeConfig IdentifyIdentityClaimTypeConfigFromClaimTypeConfigCollection(Collection<ClaimTypeConfig> claimTypeConfigCollection, string identityClaimType)
-        {
-            ClaimTypeConfig claimTypeConfig = claimTypeConfigCollection.FirstOrDefault(x =>
-                String.Equals(x.ClaimType, identityClaimType, StringComparison.InvariantCultureIgnoreCase) &&
-                !x.UseMainClaimTypeOfDirectoryObject);
-            return claimTypeConfig;
         }
 
         /// <summary>
