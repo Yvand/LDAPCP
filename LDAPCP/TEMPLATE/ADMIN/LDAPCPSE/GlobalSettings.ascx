@@ -476,11 +476,11 @@
 
     <wssuc:InputFormSection runat="server" Title="Augmentation">
         <template_description>
-            <sharepoint:encodedliteral runat="server" text="If the augmentation is enabled, LDAPCP will return the group membership of the trusted users to SharePoint." encodemethod='HtmlEncodeAllowSimpleTextFormatting' />
+            <sharepoint:encodedliteral runat="server" text="When enabled, LDAPCP returns the group membership of the trusted users to SharePoint." encodemethod='HtmlEncodeAllowSimpleTextFormatting' />
             <sharepoint:encodedliteral runat="server" text="It is required for some features to work correctly, like the &quot;check permissions&quot; dialog." encodemethod='HtmlEncodeAllowSimpleTextFormatting' />
             <br />
             <br />
-            <wssawc:EncodedLiteral runat="server" Text="Augmentation can be activated/deactivated per connection.<br />If possible, you should get the groups using the <a href='https://docs.microsoft.com/en-us/dotnet/api/system.directoryservices.accountmanagement.userprincipal.getauthorizationgroups' target='_blank'>.NET helper</a>.<br />Otherwise, LDAPCP only gets the groups the user is directly member of, not the nested groups." EncodeMethod='NoEncode' />
+            <wssawc:EncodedLiteral runat="server" Text="Augmentation can be controlled per LDAP connection.<br />If possible, you should use the <a href='https://docs.microsoft.com/en-us/dotnet/api/system.directoryservices.accountmanagement.userprincipal.getauthorizationgroups' target='_blank'>.NET helper</a>, otherwise LDAPCP only gets the groups the user is directly member of, not the nested groups." EncodeMethod='NoEncode' />
         </template_description>
         <template_inputformcontrols>
             <div id="divAugmentationConfiguration">
@@ -509,9 +509,9 @@
         </template_inputformcontrols>
     </wssuc:InputFormSection>
 
-    <wssuc:InputFormSection runat="server" Title="LDAP query timeout" Description="Set the timeout value for LDAP queries.">
+    <wssuc:InputFormSection runat="server" Title="LDAP requests timeout" Description="Specify the timeout for the requests to the LDAP servers, in seconds.">
         <template_inputformcontrols>
-            <wssawc:InputFormTextBox title="Set the timeout in seconds." class="ms-input" ID="txtTimeout" Columns="5" runat="server" MaxLength="3" />
+            <wssawc:InputFormTextBox title="Set the timeout value in seconds." class="ms-input" ID="txtTimeout" Columns="5" runat="server" MaxLength="3" />
             <wssawc:EncodedLiteral runat="server" Text="&nbsp;second(s)" EncodeMethod='HtmlEncodeAllowSimpleTextFormatting' />
         </template_inputformcontrols>
     </wssuc:InputFormSection>
