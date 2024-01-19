@@ -51,6 +51,7 @@ namespace Yvand.LdapClaimsProvider.Administration
             {
                 PopulateCblAuthenticationTypes();
                 PopulateFields();
+                InitializeAugmentation();
             }
 
             // Handle password storage in ViewState
@@ -63,6 +64,22 @@ namespace Yvand.LdapClaimsProvider.Administration
             {
                 ViewState["LDAPpwd"] = TxtLdapPassword.Text;
             }
+        }
+
+        private void InitializeAugmentation()
+        {
+            ChkEnableAugmentation.Checked = Settings.EnableAugmentation;
+
+            // Initialize grid for LDAP connections
+            var spDomainCoco = Settings.LdapConnections.FirstOrDefault(x => x.UseDefaultADConnection);
+            if (spDomainCoco != null)
+            {
+                spDomainCoco.LdapPath = TextSharePointDomain;
+            }
+
+            GridLdapConnections.DataSource = Settings.LdapConnections;
+            GridLdapConnections.DataKeyNames = new string[] { "Identifier" };
+            GridLdapConnections.DataBind();
         }
 
         void PopulateConnectionsGrid()
@@ -228,6 +245,18 @@ namespace Yvand.LdapClaimsProvider.Administration
                 Settings.ClaimTypes.Add(groupConfig);
             }
 
+            // Augmentation settings
+            foreach (GridViewRow item in GridLdapConnections.Rows)
+            {
+                CheckBox chkAugEn = (CheckBox)item.FindControl("ChkAugmentationEnableOnCoco");
+                CheckBox chkIsADDomain = (CheckBox)item.FindControl("ChkGetGroupMembershipAsADDomain");
+                TextBox txtId = (TextBox)item.FindControl("IdPropHidden");
+
+                LdapConnection ldapConnection = Settings.LdapConnections.First(x => x.Identifier == new Guid(txtId.Text));
+                ldapConnection.EnableAugmentation = chkAugEn.Checked;
+                ldapConnection.GetGroupMembershipUsingDotNetHelpers = chkIsADDomain.Checked;
+            }
+
             Settings.AlwaysResolveUserInput = this.ChkAlwaysResolveUserInput.Checked;
             Settings.FilterEnabledUsersOnly = this.ChkFilterEnabledUsersOnly.Checked;
             Settings.FilterSecurityGroupsOnly = this.ChkFilterSecurityGroupsOnly.Checked;
@@ -240,18 +269,6 @@ namespace Yvand.LdapClaimsProvider.Administration
                 timeOut = ClaimsProviderConstants.DEFAULT_TIMEOUT; //set to default if unable to parse
             }
             Settings.Timeout = timeOut;
-
-            //UpdateAugmentationSettings()
-            //foreach (GridViewRow item in GridLdapConnections.Rows)
-            //{
-            //    CheckBox chkAugEn = (CheckBox)item.FindControl("ChkAugmentationEnableOnCoco");
-            //    CheckBox chkIsADDomain = (CheckBox)item.FindControl("ChkGetGroupMembershipAsADDomain");
-            //    TextBox txtId = (TextBox)item.FindControl("IdPropHidden");
-
-            //    var coco = PersistedObject.LDAPConnectionsProp.First(x => x.Identifier == new Guid(txtId.Text));
-            //    coco.EnableAugmentation = chkAugEn.Checked;
-            //    coco.GetGroupMembershipUsingDotNetHelpers = chkIsADDomain.Checked;
-            //}
 
             if (commitChanges) { CommitChanges(); }
             return true;

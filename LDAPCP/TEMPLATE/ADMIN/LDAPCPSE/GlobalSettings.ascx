@@ -168,12 +168,12 @@
         InitAugmentationControls: function () {
             var enableAugmentationControls = $('#<%= ChkEnableAugmentation.ClientID %>').is(":checked");
             if (enableAugmentationControls) {
-                $("#divGroupClaimTypeConfiguration").children().prop('disabled', false);
+                $("#divAugmentationConfiguration").children().prop('disabled', false);
                 $("#AugmentationControlsGrid").children().removeAttr('disabled');
                 $("#AugmentationControlsGrid").children().prop('disabled', null);
             }
             else {
-                $("#divGroupClaimTypeConfiguration").children().prop('disabled', true);
+                $("#divAugmentationConfiguration").children().prop('disabled', true);
                 $("#AugmentationControlsGrid").children().attr('disabled', '');
                 $("#AugmentationControlsGrid").children().prop('disabled');
             }
@@ -194,13 +194,13 @@
             $('#<%= BtnTestLdapConnection.ClientID %>').hide('fast');
         },
 
-        <%--// Identity permission section
-        CheckRbIdentityCustomLDAP: function () {
-            var control = (document.getElementById("<%= RbUserIdDisplayValueCustom.ClientID %>"));
-            if (control != null) {
-                control.checked = true;
-            }
-        },--%>
+        //<%--// Identity permission section
+        //CheckRbIdentityCustomLDAP: function () {
+            //var control = (document.getElementById("<%= RbUserIdDisplayValueCustom.ClientID %>"));
+            //if (control != null) {
+                //control.checked = true;
+            //}
+        //},--%>
 
         // Preview the permission's value, based on given entity type's settings
         UpdatePermissionValuePreview: function (inputIdentifierAttributeId, inputTokenAttributeId, lblResultId) {
@@ -221,7 +221,7 @@
             var groupValue = $("#" + inputIdentifierAttributeId).val();
 
             // Set the label control to preview a group's value
-            var groupValuePreview = "\"" + leadingTokenValue + "<" + groupValue + ">\"";
+            var groupValuePreview = "\"" + leadingTokenValue + "<" + groupValue + "_value>\"";
             $("#" + lblResultId).text(groupValuePreview);
         }
     };
@@ -302,7 +302,7 @@
                                     <legend>Settings for new LDAP connection</legend>
                                     <ol>
                                         <li>
-                                            <label for="<%= TxtLdapConnectionString.ClientID %>">LDAP <a href="http://msdn.microsoft.com/en-us/library/system.directoryservices.directoryentry.path(v=vs.110).aspx" target="_blank">path</a> <em>*</em></label>
+                                            <label for="<%= TxtLdapConnectionString.ClientID %>">LDAP <a href="https://learn.microsoft.com/en-us/dotnet/api/system.directoryservices.directoryentry.path?view=netframework-4.8.1" target="_blank">path</a> <em>*</em></label>
                                             <wssawc:InputFormTextBox onclick="window.Ldapcp.AdminGlobalSettingsControl.CheckCustomLdapRB()" title="LDAP connection string" class="ms-input" ID="TxtLdapConnectionString" Columns="50" runat="server" MaxLength="255" Text="LDAP://" />
                                         </li>
                                         <li>
@@ -314,7 +314,7 @@
                                             <wssawc:InputFormTextBox onclick="window.Ldapcp.AdminGlobalSettingsControl.CheckCustomLdapRB()" title="Password" class="ms-input" ID="TxtLdapPassword" Columns="50" runat="server" MaxLength="255" TextMode="Password" />
                                         </li>
                                         <li>
-                                            <div class="text-nowrap">Select the <a href="http://msdn.microsoft.com/en-us/library/system.directoryservices.authenticationtypes(v=vs.110).aspx" target="_blank">authentication type</a> to use (optional):</div>
+                                            <div class="text-nowrap">Select the <a href="https://learn.microsoft.com/en-us/dotnet/api/system.directoryservices.authenticationtypes?view=netframework-4.8.1" target="_blank">authentication type</a> to use (optional):</div>
                                             <wssawc:InputFormCheckBoxList
                                                 ID="CblAuthenticationTypes"
                                                 runat="server"
@@ -339,7 +339,15 @@
         </template_inputformcontrols>
     </wssuc:InputFormSection>
 
-    <wssuc:inputformsection runat="server" title="Configuration for the user identifier claim type" description="Configure how entities created with the identity claim type appear in the people picker.<br/>It does not affect the actual value of the entity, which is always set with the user identifier property.">
+    <wssuc:inputformsection runat="server" Title="Configuration for the user identifier claim type">
+        <template_description>
+            <sharepoint:encodedliteral runat="server" text="Specify the settings to search, create and display the permissions for users." encodemethod='HtmlEncodeAllowSimpleTextFormatting' />
+            <br />
+            <br />
+            <sharepoint:encodedliteral runat="server" text="Preview of a user permission's value returned by LDAPCP, based on current settings:" encodemethod='HtmlEncodeAllowSimpleTextFormatting' />
+            <br />
+            <label id="lblUserPermissionValuePreview"></label>
+        </template_description>
         <template_inputformcontrols>
             <tr>
                 <td colspan="2">
@@ -398,18 +406,22 @@
                                 </li>
                             </ol>
                         </fieldset>
-                        <div style="white-space: nowrap;">
-                            <label>Preview of a user permission's value returned by LDAPCP, based on the settings above:</label>
-                            <br />
-                            <label id="lblUserPermissionValuePreview"></label>
-                        </div>
+
                     </div>
                 </td>
             </tr>
         </template_inputformcontrols>
     </wssuc:inputformsection>
 
-    <wssuc:inputformsection ID="AugmentationSection" runat="server" title="Configuration for the group claim type" description="Enable augmentation to let LDAPCP get all the groups that the user is a member of.<br/><br/>If not enabled, permissions granted to federated groups may not work correctly.">
+    <wssuc:inputformsection ID="AugmentationSection" runat="server" title="Configuration for the group claim type">
+        <template_description>
+            <sharepoint:encodedliteral runat="server" text="Specify the settings to search, create and display the permissions for groups." encodemethod='HtmlEncodeAllowSimpleTextFormatting' />
+            <br />
+            <br />
+            <sharepoint:encodedliteral runat="server" text="Preview of a group permission's value returned by LDAPCP, based on current settings:" encodemethod='HtmlEncodeAllowSimpleTextFormatting' />
+            <br />
+            <label id="lblGroupPermissionValuePreview"></label>
+        </template_description>
         <template_inputformcontrols>
             <p class="ms-error">
                 <asp:Label ID="Label1" runat="server" EnableViewState="False" />
@@ -455,18 +467,26 @@
                                     </li>
                                 </ol>
                             </fieldset>
-                            <div style="white-space: nowrap;">
-                                <label>Preview of a group permission's value returned by LDAPCP, based on the settings above:</label>
-                                <br />
-                                <label id="lblGroupPermissionValuePreview"></label>
-                            </div>
                         </div>
                     </td>
                 </tr>
+            </div>
+        </template_inputformcontrols>
+    </wssuc:inputformsection>
+
+    <wssuc:InputFormSection runat="server" Title="Augmentation">
+        <template_description>
+            <sharepoint:encodedliteral runat="server" text="If the augmentation is enabled, LDAPCP will return the group membership of the trusted users to SharePoint." encodemethod='HtmlEncodeAllowSimpleTextFormatting' />
+            <sharepoint:encodedliteral runat="server" text="It is required for some features to work correctly, like the &quot;check permissions&quot; dialog." encodemethod='HtmlEncodeAllowSimpleTextFormatting' />
+            <br />
+            <br />
+            <wssawc:EncodedLiteral runat="server" Text="Augmentation can be activated/deactivated per connection.<br />If possible, you should get the groups using the <a href='https://docs.microsoft.com/en-us/dotnet/api/system.directoryservices.accountmanagement.userprincipal.getauthorizationgroups' target='_blank'>.NET helper</a>.<br />Otherwise, LDAPCP only gets the groups the user is directly member of, not the nested groups." EncodeMethod='NoEncode' />
+        </template_description>
+        <template_inputformcontrols>
+            <div id="divAugmentationConfiguration">
                 <tr>
                     <td>
                         <asp:CheckBox Checked="false" runat="server" Name="ChkEnableAugmentation" ID="ChkEnableAugmentation" OnClick="window.Ldapcp.AdminGlobalSettingsControl.InitAugmentationControls();" Text="Enable augmentation" />
-                        <wssawc:EncodedLiteral runat="server" Text="<p>Augmentation can be activated/deactivated per connection.<br />If connecting to Active Directory, you may check option &quot;Use <a href='https://docs.microsoft.com/en-us/dotnet/api/system.directoryservices.accountmanagement.userprincipal.getauthorizationgroups' target='_blank'>.NET helper</a>&quot;.<br />Otherwise, LDAPCP gets groups by reading the LDAP attribute memberOf/uniquememberof of the user.</p>" EncodeMethod='NoEncode' />
                         <div id="AugmentationControlsGrid">
                             <wssawc:SPGridView ID="GridLdapConnections" runat="server" AutoGenerateColumns="False" ShowHeader="false">
                                 <Columns>
@@ -474,9 +494,9 @@
                                         <ItemTemplate>
                                             <fieldset>
                                                 <asp:TextBox ID="IdPropHidden" runat="server" Text='<%# Bind("Identifier") %>' Visible="false" />
-                                                <legend><span>LDAP Server "<asp:Label ID="TextPath" runat="server" Text='<%# Bind("LDAPPath") %>' />":</span></legend>
-                                                <asp:CheckBox ID="ChkAugmentationEnableOnCoco" runat="server" Checked='<%# Bind("EnableAugmentation") %>' Text="Query this server" />
-                                                <asp:CheckBox ID="ChkGetGroupMembershipAsADDomain" runat="server" Checked='<%# Bind("GetGroupMembershipUsingDotNetHelpers") %>' Text="Use <a href='https://docs.microsoft.com/en-us/dotnet/api/system.directoryservices.accountmanagement.userprincipal.getauthorizationgroups' target='_blank'>.NET helper</a> (for Active Directory only)" />
+                                                <legend><span>LDAP Server "<asp:Label ID="TextPath" runat="server" Text='<%# Bind("LdapPath") %>' />":</span></legend>
+                                                <asp:CheckBox ID="ChkAugmentationEnableOnCoco" runat="server" Checked='<%# Bind("EnableAugmentation") %>' Text="Use for augmentation" />
+                                                <asp:CheckBox ID="ChkGetGroupMembershipAsADDomain" runat="server" Checked='<%# Bind("GetGroupMembershipUsingDotNetHelpers") %>' Text="Get groups using the <a href='https://docs.microsoft.com/en-us/dotnet/api/system.directoryservices.accountmanagement.userprincipal.getauthorizationgroups' target='_blank'>.NET helper</a> (for Active Directory only)" />
                                             </fieldset>
                                         </ItemTemplate>
                                     </asp:TemplateField>
@@ -487,7 +507,7 @@
                 </tr>
             </div>
         </template_inputformcontrols>
-    </wssuc:inputformsection>
+    </wssuc:InputFormSection>
 
     <wssuc:InputFormSection runat="server" Title="LDAP query timeout" Description="Set the timeout value for LDAP queries.">
         <template_inputformcontrols>
@@ -519,7 +539,7 @@
 
     <wssuc:InputFormSection runat="server" Title="Additional LDAP filter for user attributes" Description="Specify a custom LDAP filter that will be applied to all user attributes.<br/>By default this filter is set to exclude computer accounts: (!(objectClass=computer))<br/><br/>As an example, this filter excludes computer accounts and includes only users that are member of a specific security group:<br/> (!(objectClass=computer)) (memberof=CN=group1,CN=Users,DC=YvanHost,DC=local)<br/><br/>Important notes:<br/>If the filter is incorrect, every user resolution may break.<br/>This filter only applies to entries with &quot;SPClaimEntityTypes&quot; set to &quot;User&quot;.">
         <template_inputformcontrols>
-            <label for="<%= TxtAdditionalUserLdapFilter.ClientID %>">Additional LDAP filter for entries with <a href='http://msdn.microsoft.com/en-us/library/office/microsoft.sharepoint.administration.claims.spclaimentitytypes_members(v=office.15).aspx' target='_blank'>SPClaimEntityTypes</a> set to &quot;User&quot; (leave blank to remove):</label><br />
+            <label for="<%= TxtAdditionalUserLdapFilter.ClientID %>">Additional LDAP filter for entries with <a href='https://learn.microsoft.com/en-us/previous-versions/office/sharepoint-server/ee547058(v=office.15)' target='_blank'>SPClaimEntityTypes</a> set to &quot;User&quot; (leave blank to remove):</label><br />
             <wssawc:InputFormTextBox title="Additional LDAP filter" class="ms-input" ID="TxtAdditionalUserLdapFilter" Columns="50" runat="server" />
             <p>
                 <asp:Button runat="server" ID="BtnUpdateAdditionalUserLdapFilter" Text="Apply to all user attributes" OnClick="BtnUpdateAdditionalUserLdapFilter_Click" CssClass="ms-ButtonHeightWidth" OnClientClick="return confirm('This will apply LDAP filter to all user attributes, do you want to continue?');" />
