@@ -1,4 +1,5 @@
-﻿using Microsoft.SharePoint.Administration;
+﻿using Microsoft.SharePoint;
+using Microsoft.SharePoint.Administration;
 using Microsoft.SharePoint.Administration.Claims;
 using Microsoft.SharePoint.Utilities;
 using System;
@@ -19,7 +20,7 @@ namespace Yvand.LdapClaimsProvider
     public class LdapEntityProvider : EntityProviderBase
     {
         private ILDAPCPSettings Settings { get; }
-        public LdapEntityProvider(string claimsProviderName, ILDAPCPSettings settings) : base(claimsProviderName) 
+        public LdapEntityProvider(string claimsProviderName, ILDAPCPSettings settings) : base(claimsProviderName)
         {
             this.Settings = settings;
         }
@@ -95,97 +96,108 @@ namespace Yvand.LdapClaimsProvider
                 PrincipalContext principalContext = null;
                 try
                 {
-                    using (new SPMonitoredScope($"[{ClaimsProviderName}] Get AD Principal of user {currentContext.IncomingEntity.Value} " + directoryDetails, 1000))
+                    // Fix https://github.com/Yvand/LDAPCP/issues/34 : GetAuthorizationGroups() must be encapsulated in RunWithElevatedPrivileges to avoid PrincipalOperationException: While trying to retrieve the authorization groups, an error (5) occurred.
+                    // It also fixes this access denied in the constructor of PrincipalContext(ContextType, String): DirectoryServicesCOMException (0x80072020): An operations error occurred.
+                    SPSecurity.RunWithElevatedPrivileges(delegate ()
                     {
-                        // Constructor of PrincipalContext does connect to LDAP server and may throw an exception if it fails, so it should be in try/catch
-                        // To use ContextOptions in constructor of PrincipalContext, "container" must also be set, but it can be null as per tests in https://stackoverflow.com/questions/2538064/active-directory-services-principalcontext-what-is-the-dn-of-a-container-o
-                        // Tests: if "container" is null, it always fails in PowerShell (tested only with AD) but somehow it works fine here
-                        if (ldapConnection.UseDefaultADConnection)
+                        using (new SPMonitoredScope($"[{ClaimsProviderName}] Get AD Principal of user {currentContext.IncomingEntity.Value} " + directoryDetails, 1000))
                         {
-                            principalContext = new PrincipalContext(ContextType.Domain, ldapConnection.DomainFQDN, ldapConnection.DomaindistinguishedName, contextOptions);
-                        }
-                        else
-                        {
-                            principalContext = new PrincipalContext(ContextType.Domain, ldapConnection.DomainFQDN, ldapConnection.DomaindistinguishedName, contextOptions, ldapConnection.Username, ldapConnection.Password);
-                        }
-
-                        // https://github.com/Yvand/LDAPCP/issues/22: UserPrincipal.FindByIdentity() doesn't support emails, so if IncomingEntity is an email, user needs to be retrieved in a different way
-                        if (SPClaimTypes.Equals(currentContext.IncomingEntity.ClaimType, WIF4_5.ClaimTypes.Email))
-                        {
-                            using (UserPrincipal userEmailPrincipal = new UserPrincipal(principalContext) { Enabled = true, EmailAddress = currentContext.IncomingEntity.Value })
+                            // Constructor of PrincipalContext does connect to LDAP server and may throw an exception if it fails, so it should be in try/catch
+                            // To use ContextOptions in constructor of PrincipalContext, "container" must also be set, but it can be null as per tests in https://stackoverflow.com/questions/2538064/active-directory-services-principalcontext-what-is-the-dn-of-a-container-o
+                            // Tests: if "container" is null, it always fails in PowerShell (tested only with AD) but somehow it works fine here
+                            if (ldapConnection.UseDefaultADConnection)
                             {
-                                using (PrincipalSearcher userEmailSearcher = new PrincipalSearcher(userEmailPrincipal))
-                                {
-                                    adUser = userEmailSearcher.FindOne() as UserPrincipal;
-                                }
+                                principalContext = new PrincipalContext(ContextType.Domain, ldapConnection.DomainFQDN, ldapConnection.DomaindistinguishedName, contextOptions);
                             }
-                        }
-                        else
-                        {
-                            adUser = UserPrincipal.FindByIdentity(principalContext, currentContext.IncomingEntity.Value);
-                        }
-                    }
-
-                    if (adUser == null)
-                    {
-                        stopWatch.Stop();
-                        return groups;
-                    }
-
-                    IEnumerable<Principal> adGroups;
-                    using (new SPMonitoredScope($"[{ClaimsProviderName}] Get group membership of \"{currentContext.IncomingEntity.Value}\" " + directoryDetails, 1000))
-                    {
-                        adGroups = adUser.GetAuthorizationGroups();
-                    }
-
-                    using (new SPMonitoredScope($"[{ClaimsProviderName}] Process {adGroups.Count()} AD groups returned for user \"{currentContext.IncomingEntity.Value}\" " + directoryDetails + " Eeach AD group triggers a specific LDAP operation.", 1000))
-                    {
-                        // https://docs.microsoft.com/en-us/dotnet/api/system.directoryservices.accountmanagement.userprincipal.getauthorizationgroups?view=netframework-4.7.1#System_DirectoryServices_AccountManagement_UserPrincipal_GetAuthorizationGroups
-                        // UserPrincipal.GetAuthorizationGroups() only returns security groups, and includes nested groups and special groups like "Domain Users".
-                        // The foreach calls AccountManagement.FindResultEnumerator`1.get_Current() that does LDAP binds (call to DirectoryEntry.Bind()) for each group
-                        // It may impact performance if there are many groups and/or if DC is slow
-                        foreach (Principal adGroup in adGroups)
-                        {
-                            string groupDomainName, groupDomainFqdn;
-
-                            // https://github.com/Yvand/LDAPCP/issues/148 - the group property used for the group value should be based on the LDAPCP configuration
-                            // By default it should be the SamAccountName, since it's also the default attribute set in LDAPCP configuration
-                            string claimValue = adGroup.SamAccountName;
-                            switch (this.Settings.MainGroupClaimTypeConfig.LDAPAttribute.ToLower())
+                            else
                             {
-                                case "name":
-                                    claimValue = adGroup.Name;
-                                    break;
-
-                                case "distinguishedname":
-                                    claimValue = adGroup.DistinguishedName;
-                                    break;
-
-                                case "samaccountname":
-                                    claimValue = adGroup.SamAccountName;
-                                    break;
+                                principalContext = new PrincipalContext(ContextType.Domain, ldapConnection.DomainFQDN, ldapConnection.DomaindistinguishedName, contextOptions, ldapConnection.Username, ldapConnection.Password);
                             }
 
-                            if (!String.IsNullOrEmpty(this.Settings.MainGroupClaimTypeConfig.ClaimValuePrefix))
+                            // https://github.com/Yvand/LDAPCP/issues/22: UserPrincipal.FindByIdentity() doesn't support emails, so if IncomingEntity is an email, user needs to be retrieved in a different way
+                            if (SPClaimTypes.Equals(currentContext.IncomingEntity.ClaimType, WIF4_5.ClaimTypes.Email))
                             {
-                                // Principal.DistinguishedName is used to build the domain name / FQDN of the current group. Example of value: CN=group1,CN=Users,DC=contoso,DC=local
-                                string groupDN = adGroup.DistinguishedName;
-                                if (String.IsNullOrEmpty(groupDN)) { continue; }
-
-                                Utils.GetDomainInformation(groupDN, out groupDomainName, out groupDomainFqdn);
-                                if (this.Settings.MainGroupClaimTypeConfig.ClaimValuePrefix.Contains(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINNAME))
+                                using (UserPrincipal userEmailPrincipal = new UserPrincipal(principalContext) { Enabled = true, EmailAddress = currentContext.IncomingEntity.Value })
                                 {
-                                    claimValue = this.Settings.MainGroupClaimTypeConfig.ClaimValuePrefix.Replace(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINNAME, groupDomainName) + claimValue;
-                                }
-                                else if (this.Settings.MainGroupClaimTypeConfig.ClaimValuePrefix.Contains(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINFQDN))
-                                {
-                                    claimValue = this.Settings.MainGroupClaimTypeConfig.ClaimValuePrefix.Replace(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINFQDN, groupDomainFqdn) + claimValue;
+                                    using (PrincipalSearcher userEmailSearcher = new PrincipalSearcher(userEmailPrincipal))
+                                    {
+                                        adUser = userEmailSearcher.FindOne() as UserPrincipal;
+                                    }
                                 }
                             }
-                            //SPClaim claim = CreateClaim(groupCTConfig.ClaimType, claimValue, groupCTConfig.ClaimValueType, false);
-                            groups.Add(claimValue);
+                            else
+                            {
+                                adUser = UserPrincipal.FindByIdentity(principalContext, currentContext.IncomingEntity.Value);
+                            }
                         }
-                    }
+
+                        if (adUser == null)
+                        {
+                            stopWatch.Stop();
+                            return;
+                        }
+
+                        IEnumerable<Principal> adGroups = null;
+                        using (new SPMonitoredScope($"[{ClaimsProviderName}] Get group membership of \"{currentContext.IncomingEntity.Value}\" " + directoryDetails, 1000))
+                        {
+                            adGroups = adUser.GetAuthorizationGroups();
+                        }
+
+                        if (adGroups == null)
+                        {
+                            stopWatch.Stop();
+                            return;
+                        }
+
+                        using (new SPMonitoredScope($"[{ClaimsProviderName}] Process {adGroups.Count()} AD groups returned for user \"{currentContext.IncomingEntity.Value}\" " + directoryDetails + " Eeach AD group triggers a specific LDAP operation.", 1000))
+                        {
+                            // https://docs.microsoft.com/en-us/dotnet/api/system.directoryservices.accountmanagement.userprincipal.getauthorizationgroups?view=netframework-4.7.1#System_DirectoryServices_AccountManagement_UserPrincipal_GetAuthorizationGroups
+                            // UserPrincipal.GetAuthorizationGroups() only returns security groups, and includes nested groups and special groups like "Domain Users".
+                            // The foreach calls AccountManagement.FindResultEnumerator`1.get_Current() that does LDAP binds (call to DirectoryEntry.Bind()) for each group
+                            // It may impact performance if there are many groups and/or if DC is slow
+                            foreach (Principal adGroup in adGroups)
+                            {
+                                string groupDomainName, groupDomainFqdn;
+
+                                // https://github.com/Yvand/LDAPCP/issues/148 - the group property used for the group value should be based on the LDAPCP configuration
+                                // By default it should be the SamAccountName, since it's also the default attribute set in LDAPCP configuration
+                                string claimValue = adGroup.SamAccountName;
+                                switch (this.Settings.MainGroupClaimTypeConfig.LDAPAttribute.ToLower())
+                                {
+                                    case "name":
+                                        claimValue = adGroup.Name;
+                                        break;
+
+                                    case "distinguishedname":
+                                        claimValue = adGroup.DistinguishedName;
+                                        break;
+
+                                    case "samaccountname":
+                                        claimValue = adGroup.SamAccountName;
+                                        break;
+                                }
+
+                                if (!String.IsNullOrEmpty(this.Settings.MainGroupClaimTypeConfig.ClaimValuePrefix))
+                                {
+                                    // Principal.DistinguishedName is used to build the domain name / FQDN of the current group. Example of value: CN=group1,CN=Users,DC=contoso,DC=local
+                                    string groupDN = adGroup.DistinguishedName;
+                                    if (String.IsNullOrEmpty(groupDN)) { continue; }
+
+                                    Utils.GetDomainInformation(groupDN, out groupDomainName, out groupDomainFqdn);
+                                    if (this.Settings.MainGroupClaimTypeConfig.ClaimValuePrefix.Contains(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINNAME))
+                                    {
+                                        claimValue = this.Settings.MainGroupClaimTypeConfig.ClaimValuePrefix.Replace(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINNAME, groupDomainName) + claimValue;
+                                    }
+                                    else if (this.Settings.MainGroupClaimTypeConfig.ClaimValuePrefix.Contains(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINFQDN))
+                                    {
+                                        claimValue = this.Settings.MainGroupClaimTypeConfig.ClaimValuePrefix.Replace(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINFQDN, groupDomainFqdn) + claimValue;
+                                    }
+                                }
+                                //SPClaim claim = CreateClaim(groupCTConfig.ClaimType, claimValue, groupCTConfig.ClaimValueType, false);
+                                groups.Add(claimValue);
+                            }
+                        }
+                    });
                 }
                 catch (PrincipalOperationException ex)
                 {
