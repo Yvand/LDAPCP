@@ -312,24 +312,6 @@ namespace Yvand.LdapClaimsProvider.Administration
         protected global::Microsoft.SharePoint.WebControls.SPGridView GridLdapConnections;
 
         /// <summary>
-        /// txtTimeout control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::Microsoft.SharePoint.WebControls.InputFormTextBox txtTimeout;
-
-        /// <summary>
-        /// ChkAlwaysResolveUserInput control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.CheckBox ChkAlwaysResolveUserInput;
-
-        /// <summary>
         /// ChkFilterEnabledUsersOnly control.
         /// </summary>
         /// <remarks>
@@ -346,6 +328,24 @@ namespace Yvand.LdapClaimsProvider.Administration
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
         protected global::System.Web.UI.WebControls.CheckBox ChkFilterSecurityGroupsOnly;
+
+        /// <summary>
+        /// txtTimeout control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::Microsoft.SharePoint.WebControls.InputFormTextBox txtTimeout;
+
+        /// <summary>
+        /// ChkAlwaysResolveUserInput control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.CheckBox ChkAlwaysResolveUserInput;
 
         /// <summary>
         /// ChkFilterExactMatchOnly control.

@@ -167,15 +167,16 @@
         // Enable or disable controls for augmentation section
         InitAugmentationControls: function () {
             var enableAugmentationControls = $('#<%= ChkEnableAugmentation.ClientID %>').is(":checked");
+            var nodes = document.getElementById("AugmentationControlsGrid").getElementsByTagName('*');
             if (enableAugmentationControls) {
-                $("#divAugmentationConfiguration").children().prop('disabled', false);
-                $("#AugmentationControlsGrid").children().removeAttr('disabled');
-                $("#AugmentationControlsGrid").children().prop('disabled', null);
+                for (var i = 0; i < nodes.length; i++) {
+                    nodes[i].disabled = false;
+                }
             }
             else {
-                $("#divAugmentationConfiguration").children().prop('disabled', true);
-                $("#AugmentationControlsGrid").children().attr('disabled', '');
-                $("#AugmentationControlsGrid").children().prop('disabled');
+                for (var i = 0; i < nodes.length; i++) {
+                    nodes[i].disabled = true;
+                }
             }
         },
 
@@ -483,29 +484,36 @@
             <wssawc:EncodedLiteral runat="server" Text="Augmentation can be controlled per LDAP connection.<br />If possible, you should use the <a href='https://docs.microsoft.com/en-us/dotnet/api/system.directoryservices.accountmanagement.userprincipal.getauthorizationgroups' target='_blank'>.NET helper</a>, otherwise LDAPCP only gets the groups the user is directly member of, not the nested groups." EncodeMethod='NoEncode' />
         </template_description>
         <template_inputformcontrols>
-            <div id="divAugmentationConfiguration">
-                <tr>
-                    <td>
-                        <asp:CheckBox Checked="false" runat="server" Name="ChkEnableAugmentation" ID="ChkEnableAugmentation" OnClick="window.Ldapcp.AdminGlobalSettingsControl.InitAugmentationControls();" Text="Enable augmentation" />
-                        <div id="AugmentationControlsGrid">
-                            <wssawc:SPGridView ID="GridLdapConnections" runat="server" AutoGenerateColumns="False" ShowHeader="false">
-                                <Columns>
-                                    <asp:TemplateField>
-                                        <ItemTemplate>
-                                            <fieldset>
-                                                <asp:TextBox ID="IdPropHidden" runat="server" Text='<%# Bind("Identifier") %>' Visible="false" />
-                                                <legend><span>LDAP Server "<asp:Label ID="TextPath" runat="server" Text='<%# Bind("LdapPath") %>' />":</span></legend>
-                                                <asp:CheckBox ID="ChkAugmentationEnableOnCoco" runat="server" Checked='<%# Bind("EnableAugmentation") %>' Text="Use for augmentation" />
-                                                <asp:CheckBox ID="ChkGetGroupMembershipAsADDomain" runat="server" Checked='<%# Bind("GetGroupMembershipUsingDotNetHelpers") %>' Text="Get groups using the <a href='https://docs.microsoft.com/en-us/dotnet/api/system.directoryservices.accountmanagement.userprincipal.getauthorizationgroups' target='_blank'>.NET helper</a> (for Active Directory only)" />
-                                            </fieldset>
-                                        </ItemTemplate>
-                                    </asp:TemplateField>
-                                </Columns>
-                            </wssawc:SPGridView>
-                        </div>
-                    </td>
-                </tr>
-            </div>
+            <tr>
+                <td>
+                    <asp:CheckBox Checked="false" runat="server" Name="ChkEnableAugmentation" ID="ChkEnableAugmentation" OnClick="window.Ldapcp.AdminGlobalSettingsControl.InitAugmentationControls();" Text="Enable augmentation" />
+                    <div id="AugmentationControlsGrid">
+                        <wssawc:SPGridView ID="GridLdapConnections" runat="server" AutoGenerateColumns="False" ShowHeader="false">
+                            <Columns>
+                                <asp:TemplateField>
+                                    <ItemTemplate>
+                                        <fieldset>
+                                            <asp:TextBox ID="IdPropHidden" runat="server" Text='<%# Bind("Identifier") %>' Visible="false" />
+                                            <legend><span>LDAP Server "<asp:Label ID="TextPath" runat="server" Text='<%# Bind("LdapPath") %>' />":</span></legend>
+                                            <asp:CheckBox ID="ChkAugmentationEnableOnCoco" runat="server" Checked='<%# Bind("EnableAugmentation") %>' Text="Use for augmentation" />
+                                            <asp:CheckBox ID="ChkGetGroupMembershipAsADDomain" runat="server" Checked='<%# Bind("GetGroupMembershipUsingDotNetHelpers") %>' Text="Get groups using the <a href='https://docs.microsoft.com/en-us/dotnet/api/system.directoryservices.accountmanagement.userprincipal.getauthorizationgroups' target='_blank'>.NET helper</a> (for Active Directory only)" />
+                                        </fieldset>
+                                    </ItemTemplate>
+                                </asp:TemplateField>
+                            </Columns>
+                        </wssawc:SPGridView>
+                    </div>
+                </td>
+            </tr>
+        </template_inputformcontrols>
+    </wssuc:InputFormSection>
+
+    <wssuc:InputFormSection runat="server" Title="Active Directory specific settings" Description="Enable or disable LDAP filters specific to Active Directory.">
+        <template_inputformcontrols>
+            <asp:CheckBox Checked="false" runat="server" Name="ChkFilterEnabledUsersOnly" ID="ChkFilterEnabledUsersOnly" Text="Exclude disabled users" />
+            <br />
+            <br />
+            <asp:CheckBox Checked="false" runat="server" Name="ChkFilterSecurityGroupsOnly" ID="ChkFilterSecurityGroupsOnly" Text="Exclude distribution lists" />
         </template_inputformcontrols>
     </wssuc:InputFormSection>
 
@@ -516,24 +524,27 @@
         </template_inputformcontrols>
     </wssuc:InputFormSection>
 
-    <wssuc:InputFormSection runat="server" Title="Bypass LDAP lookup" Description="Skip LDAP lookup and consider any input as valid.<br/><br/>This can be useful to keep people picker working even if connectivity with LDAP server is lost.">
+    <wssuc:InputFormSection runat="server" Title="Bypass requests to LDAP server(s)">
+        <template_description>
+            <sharepoint:encodedliteral runat="server" text="Bypass the LDAP server(s) and, depending on the context:" encodemethod='HtmlEncodeAllowSimpleTextFormatting' />
+            <br />
+            <sharepoint:encodedliteral runat="server" text="- Search: Use the input as the claim's value, and return 1 entity per claim type." encodemethod='HtmlEncodeAllowSimpleTextFormatting' />
+            <br />
+            <sharepoint:encodedliteral runat="server" text="- Validation: Validate the incoming entity, as if it matched an object in LDAP." encodemethod='HtmlEncodeAllowSimpleTextFormatting' />
+            <br />
+            <sharepoint:encodedliteral runat="server" text="This setting does not affect the augmentation." encodemethod='HtmlEncodeAllowSimpleTextFormatting' />
+        </template_description>
         <template_inputformcontrols>
-            <asp:CheckBox Checked="false" runat="server" Name="ChkAlwaysResolveUserInput" ID="ChkAlwaysResolveUserInput" Text="Bypass LDAP lookup" />
+            <asp:CheckBox Checked="false" runat="server" Name="ChkAlwaysResolveUserInput" ID="ChkAlwaysResolveUserInput" Text="Bypass requests to LDAP server(s)" />
         </template_inputformcontrols>
     </wssuc:InputFormSection>
 
-    <wssuc:InputFormSection runat="server" Title="Active Directory specific settings" Description="Customize LDAP lookup with settings specific to Active Directory.">
+    <wssuc:InputFormSection runat="server" Title="Require exact match when typing in the people picker">
+        <template_description>
+            <sharepoint:encodedliteral runat="server" text="Enable this to return results in the people picker, only if the user input matches exactly the value of the LDAP object attribute (case-insensitive)." encodemethod='HtmlEncodeAllowSimpleTextFormatting' />
+        </template_description>
         <template_inputformcontrols>
-            <asp:CheckBox Checked="false" runat="server" Name="ChkFilterEnabledUsersOnly" ID="ChkFilterEnabledUsersOnly" Text="Exclude disabled users" />
-            <br />
-            <br />
-            <asp:CheckBox Checked="false" runat="server" Name="ChkFilterSecurityGroupsOnly" ID="ChkFilterSecurityGroupsOnly" Text="Exclude distribution lists" />
-        </template_inputformcontrols>
-    </wssuc:InputFormSection>
-
-    <wssuc:InputFormSection runat="server" Title="Require exact match" Description="Enable this to return only results that match exactly the user input (case-insensitive). ">
-        <template_inputformcontrols>
-            <asp:CheckBox Checked="false" runat="server" Name="ChkFilterExactMatchOnly" ID="ChkFilterExactMatchOnly" Text="Require exact match" />
+            <asp:CheckBox Checked="false" runat="server" Name="ChkFilterExactMatchOnly" ID="ChkFilterExactMatchOnly" Text="Require exact match when typing in the people picker" />
         </template_inputformcontrols>
     </wssuc:InputFormSection>
 
