@@ -93,7 +93,8 @@ namespace Yvand.LdapClaimsProvider.Configuration
                 {
                     EntityType = DirectoryObjectType.User,
                     LDAPClass = "user",
-                    LDAPAttribute = "userPrincipalName"
+                    LDAPAttribute = "userPrincipalName",
+                    AdditionalLDAPFilter = "(!(objectClass=computer))"
                 }
             },
             {
@@ -102,7 +103,8 @@ namespace Yvand.LdapClaimsProvider.Configuration
                 {
                     EntityType = DirectoryObjectType.User,
                     LDAPClass = "user",
-                    LDAPAttribute = "mail"
+                    LDAPAttribute = "mail",
+                    AdditionalLDAPFilter = "(!(objectClass=computer))"
                 }
             },
             {
@@ -111,7 +113,8 @@ namespace Yvand.LdapClaimsProvider.Configuration
                 {
                     EntityType = DirectoryObjectType.User,
                     LDAPClass = "user",
-                    LDAPAttribute = "sAMAccountName"
+                    LDAPAttribute = "sAMAccountName",
+                    AdditionalLDAPFilter = "(!(objectClass=computer))"
                 }
             },
         };

@@ -222,6 +222,15 @@ namespace Yvand.LdapClaimsProvider.Administration
         protected global::Microsoft.SharePoint.WebControls.InputFormTextBox TxtUserIdLeadingToken;
 
         /// <summary>
+        /// TxtUserIdAdditionalLdapFilter control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::Microsoft.SharePoint.WebControls.InputFormTextBox TxtUserIdAdditionalLdapFilter;
+
+        /// <summary>
         /// AugmentationSection control.
         /// </summary>
         /// <remarks>
@@ -294,6 +303,15 @@ namespace Yvand.LdapClaimsProvider.Administration
         protected global::Microsoft.SharePoint.WebControls.InputFormTextBox TxtGroupLeadingToken;
 
         /// <summary>
+        /// TxtGroupAdditionalLdapFilter control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::Microsoft.SharePoint.WebControls.InputFormTextBox TxtGroupAdditionalLdapFilter;
+
+        /// <summary>
         /// ChkEnableAugmentation control.
         /// </summary>
         /// <remarks>
@@ -355,33 +373,6 @@ namespace Yvand.LdapClaimsProvider.Administration
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
         protected global::System.Web.UI.WebControls.CheckBox ChkFilterExactMatchOnly;
-
-        /// <summary>
-        /// TxtAdditionalUserLdapFilter control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::Microsoft.SharePoint.WebControls.InputFormTextBox TxtAdditionalUserLdapFilter;
-
-        /// <summary>
-        /// BtnUpdateAdditionalUserLdapFilter control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.Button BtnUpdateAdditionalUserLdapFilter;
-
-        /// <summary>
-        /// LabelUpdateAdditionalLdapFilterOk control.
-        /// </summary>
-        /// <remarks>
-        /// Auto-generated field.
-        /// To modify move field declaration from designer file to code-behind file.
-        /// </remarks>
-        protected global::System.Web.UI.WebControls.Label LabelUpdateAdditionalLdapFilterOk;
 
         /// <summary>
         /// BtnResetConfig control.

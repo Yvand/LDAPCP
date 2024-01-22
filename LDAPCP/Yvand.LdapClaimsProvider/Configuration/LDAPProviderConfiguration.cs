@@ -130,36 +130,38 @@ namespace Yvand.LdapClaimsProvider.Configuration
             else
             {
                 // Unknown identity claim type
-                ClaimTypeConfig ctConfig = new ClaimTypeConfig{ ClaimType = spTrust.IdentityClaimTypeInformation.MappedClaimType };
+                ClaimTypeConfig ctConfig = new ClaimTypeConfig { ClaimType = spTrust.IdentityClaimTypeInformation.MappedClaimType };
                 newCTConfigCollection.Add(ctConfig);
             }
 
-            var nonIdentityClaimTypes = ClaimsProviderConstants.DefaultSettingsPerUserClaimType.Where(x => x.Key != spTrust.IdentityClaimTypeInformation.MappedClaimType);
-            foreach(var nonIdentityClaimType in nonIdentityClaimTypes)
-            {
-                ClaimTypeConfig ctConfig = nonIdentityClaimType.Value;
-                ctConfig.UseMainClaimTypeOfDirectoryObject = true;
-                newCTConfigCollection.Add(ctConfig);
-            }
+            // Not adding those as additional attributes to avoid having too many LDAP attributes to search users in the LDAP filter
+            //var nonIdentityClaimTypes = ClaimsProviderConstants.DefaultSettingsPerUserClaimType.Where(x => x.Key != spTrust.IdentityClaimTypeInformation.MappedClaimType);
+            //foreach (var nonIdentityClaimType in nonIdentityClaimTypes)
+            //{
+            //    ClaimTypeConfig ctConfig = nonIdentityClaimType.Value;
+            //    ctConfig.ClaimType = String.Empty;
+            //    ctConfig.UseMainClaimTypeOfDirectoryObject = true;
+            //    newCTConfigCollection.Add(ctConfig);
+            //}
 
             // Additional properties to find user and create entity with the identity claim type (UseMainClaimTypeOfDirectoryObject=true)
-            newCTConfigCollection.Add(new ClaimTypeConfig { EntityType = DirectoryObjectType.User, LDAPClass = "user", LDAPAttribute = "displayName", UseMainClaimTypeOfDirectoryObject = true, EntityDataKey = PeopleEditorEntityDataKeys.DisplayName });
+            newCTConfigCollection.Add(new ClaimTypeConfig { EntityType = DirectoryObjectType.User, LDAPClass = "user", LDAPAttribute = "displayName", UseMainClaimTypeOfDirectoryObject = true, EntityDataKey = PeopleEditorEntityDataKeys.DisplayName, AdditionalLDAPFilter = "(!(objectClass=computer))" });
             newCTConfigCollection.Add(new ClaimTypeConfig { EntityType = DirectoryObjectType.User, LDAPClass = "user", LDAPAttribute = "cn", UseMainClaimTypeOfDirectoryObject = true, AdditionalLDAPFilter = "(!(objectClass=computer))" });
-            newCTConfigCollection.Add(new ClaimTypeConfig { EntityType = DirectoryObjectType.User, LDAPClass = "user", LDAPAttribute = "sn", UseMainClaimTypeOfDirectoryObject = true });
-            newCTConfigCollection.Add(new ClaimTypeConfig { EntityType = DirectoryObjectType.User, LDAPClass = "user", LDAPAttribute = "givenName", UseMainClaimTypeOfDirectoryObject = true });  // First name
+            newCTConfigCollection.Add(new ClaimTypeConfig { EntityType = DirectoryObjectType.User, LDAPClass = "user", LDAPAttribute = "sn", UseMainClaimTypeOfDirectoryObject = true, AdditionalLDAPFilter = "(!(objectClass=computer))" });
+            newCTConfigCollection.Add(new ClaimTypeConfig { EntityType = DirectoryObjectType.User, LDAPClass = "user", LDAPAttribute = "givenName", UseMainClaimTypeOfDirectoryObject = true, AdditionalLDAPFilter = "(!(objectClass=computer))" });  // First name
 
             // Additional properties to populate metadata of entity created: no claim type set, EntityDataKey is set and UseMainClaimTypeOfDirectoryObject = false (default value)
-            newCTConfigCollection.Add(new ClaimTypeConfig { EntityType = DirectoryObjectType.User, LDAPClass = "user", LDAPAttribute = "physicalDeliveryOfficeName", EntityDataKey = PeopleEditorEntityDataKeys.Location });
-            newCTConfigCollection.Add(new ClaimTypeConfig { EntityType = DirectoryObjectType.User, LDAPClass = "user", LDAPAttribute = "title", EntityDataKey = PeopleEditorEntityDataKeys.JobTitle });
-            newCTConfigCollection.Add(new ClaimTypeConfig { EntityType = DirectoryObjectType.User, LDAPClass = "user", LDAPAttribute = "msRTCSIP-PrimaryUserAddress", EntityDataKey = PeopleEditorEntityDataKeys.SIPAddress });
-            newCTConfigCollection.Add(new ClaimTypeConfig { EntityType = DirectoryObjectType.User, LDAPClass = "user", LDAPAttribute = "telephoneNumber", EntityDataKey = PeopleEditorEntityDataKeys.WorkPhone });
+            newCTConfigCollection.Add(new ClaimTypeConfig { EntityType = DirectoryObjectType.User, LDAPClass = "user", LDAPAttribute = "physicalDeliveryOfficeName", EntityDataKey = PeopleEditorEntityDataKeys.Location, AdditionalLDAPFilter = "(!(objectClass=computer))" });
+            newCTConfigCollection.Add(new ClaimTypeConfig { EntityType = DirectoryObjectType.User, LDAPClass = "user", LDAPAttribute = "title", EntityDataKey = PeopleEditorEntityDataKeys.JobTitle, AdditionalLDAPFilter = "(!(objectClass=computer))" });
+            newCTConfigCollection.Add(new ClaimTypeConfig { EntityType = DirectoryObjectType.User, LDAPClass = "user", LDAPAttribute = "msRTCSIP-PrimaryUserAddress", EntityDataKey = PeopleEditorEntityDataKeys.SIPAddress, AdditionalLDAPFilter = "(!(objectClass=computer))" });
+            newCTConfigCollection.Add(new ClaimTypeConfig { EntityType = DirectoryObjectType.User, LDAPClass = "user", LDAPAttribute = "telephoneNumber", EntityDataKey = PeopleEditorEntityDataKeys.WorkPhone, AdditionalLDAPFilter = "(!(objectClass=computer))" });
 
             // Group
             newCTConfigCollection.Add(new ClaimTypeConfig { EntityType = DirectoryObjectType.Group, LDAPClass = "group", LDAPAttribute = "sAMAccountName", ClaimType = ClaimsProviderConstants.DefaultMainGroupClaimType, ClaimValuePrefix = @"{fqdn}\" });
             newCTConfigCollection.Add(new ClaimTypeConfig { EntityType = DirectoryObjectType.Group, LDAPClass = "group", LDAPAttribute = "displayName", UseMainClaimTypeOfDirectoryObject = true, EntityDataKey = PeopleEditorEntityDataKeys.DisplayName });
             newCTConfigCollection.Add(new ClaimTypeConfig { EntityType = DirectoryObjectType.Group, LDAPClass = "group", LDAPAttribute = "mail", EntityDataKey = PeopleEditorEntityDataKeys.Email });
             newCTConfigCollection.Add(new ClaimTypeConfig { EntityType = DirectoryObjectType.User, LDAPClass = "user", SharePointEntityType = ClaimsProviderConstants.GroupClaimEntityType, LDAPAttribute = "primaryGroupID", ClaimType = WIF4_5.ClaimTypes.PrimaryGroupSid, SupportsWildcard = false });
-            
+
             return newCTConfigCollection;
         }
     }
@@ -414,19 +416,22 @@ namespace Yvand.LdapClaimsProvider.Configuration
                     throw new InvalidOperationException($"Configuration is not valid because a server is null in list {nameof(LdapConnections)}");
                 }
 
-                if (String.IsNullOrWhiteSpace(server.LdapPath))
+                if (server.UseDefaultADConnection == false)
                 {
-                    throw new InvalidOperationException($"Configuration is not valid because a server has its property {nameof(server.LdapPath)} not set in list {nameof(LdapConnections)}");
-                }
+                    if (String.IsNullOrWhiteSpace(server.LdapPath))
+                    {
+                        throw new InvalidOperationException($"Configuration is not valid because a server has its property {nameof(server.LdapPath)} not set in list {nameof(LdapConnections)}");
+                    }
 
-                if (String.IsNullOrWhiteSpace(server.Username))
-                {
-                    throw new InvalidOperationException($"Configuration is not valid because a server has its property {nameof(server.Username)} not set in list {nameof(LdapConnections)}");
-                }
+                    if (String.IsNullOrWhiteSpace(server.Username))
+                    {
+                        throw new InvalidOperationException($"Configuration is not valid because a server has its property {nameof(server.Username)} not set in list {nameof(LdapConnections)}");
+                    }
 
-                if (String.IsNullOrWhiteSpace(server.Password))
-                {
-                    throw new InvalidOperationException($"Configuration is not valid because a server has its property {nameof(server.Password)} not set in list {nameof(LdapConnections)}");
+                    if (String.IsNullOrWhiteSpace(server.Password))
+                    {
+                        throw new InvalidOperationException($"Configuration is not valid because a server has its property {nameof(server.Password)} not set in list {nameof(LdapConnections)}");
+                    }
                 }
             }
         }

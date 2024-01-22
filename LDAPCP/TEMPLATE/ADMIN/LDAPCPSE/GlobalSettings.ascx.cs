@@ -142,6 +142,7 @@ namespace Yvand.LdapClaimsProvider.Administration
             this.TxtUserIdDisplayTextAttribute.Text = Settings.ClaimTypes.IdentityClaim.LDAPAttributeToShowAsDisplayText;
             this.TxtUserIdAdditionalLdapAttributes.Text = String.Join(",", Settings.ClaimTypes.GetSearchAttributesForEntity(DirectoryObjectType.User));
             this.TxtUserIdLeadingToken.Text = Settings.ClaimTypes.IdentityClaim.ClaimValuePrefix;
+            this.TxtUserIdAdditionalLdapFilter.Text = Settings.ClaimTypes.IdentityClaim.AdditionalLDAPFilter;
 
             // Group identifier settings
             var possibleGroupClaimTypes = Utils.GetNonWellKnownUserClaimTypesFromTrust(base.ClaimsProviderName);
@@ -160,6 +161,7 @@ namespace Yvand.LdapClaimsProvider.Administration
                 this.TxtGroupDisplayTextAttribute.Text = groupCtc.LDAPAttributeToShowAsDisplayText;
                 this.TxtGroupAdditionalLdapAttributes.Text = String.Join(",", Settings.ClaimTypes.GetSearchAttributesForEntity(DirectoryObjectType.Group));
                 this.TxtGroupLeadingToken.Text = groupCtc.ClaimValuePrefix;
+                this.TxtGroupAdditionalLdapFilter.Text = groupCtc.AdditionalLDAPFilter;
             }
 
             // Other settings
@@ -206,6 +208,7 @@ namespace Yvand.LdapClaimsProvider.Administration
                 Logger.Log($"Microsoft Entra ID tenant '{tenantToRemove.LdapPath}' was successfully removed from configuration '{ConfigurationName}'", TraceSeverity.Medium, EventSeverity.Information, TraceCategory.Configuration);
                 LabelMessage.Text = String.Format(TextSummaryPersistedObjectInformation, Configuration.Name, Configuration.Version, Configuration.Id);
                 PopulateConnectionsGrid();
+                InitializeAugmentation();
             }
         }
 
@@ -217,14 +220,12 @@ namespace Yvand.LdapClaimsProvider.Administration
             Settings.ClaimTypes.IdentityClaim.LDAPClass = this.TxtUserIdLdapClass.Text;
             Settings.ClaimTypes.IdentityClaim.LDAPAttribute = this.TxtUserIdLdapAttribute.Text;
             Settings.ClaimTypes.IdentityClaim.LDAPAttributeToShowAsDisplayText = this.TxtUserIdDisplayTextAttribute.Text;
-            if (!String.IsNullOrWhiteSpace(this.TxtUserIdAdditionalLdapAttributes.Text))
-            {
-                Settings.ClaimTypes.SetSearchAttributesForEntity(this.TxtUserIdAdditionalLdapAttributes.Text.Split(','), Settings.ClaimTypes.IdentityClaim.LDAPClass, DirectoryObjectType.User);
-            }
+            Settings.ClaimTypes.SetSearchAttributesForEntity(this.TxtUserIdAdditionalLdapAttributes.Text, Settings.ClaimTypes.IdentityClaim.LDAPClass, DirectoryObjectType.User);
             Settings.ClaimTypes.IdentityClaim.ClaimValuePrefix = this.TxtUserIdLeadingToken.Text;
+            Settings.ClaimTypes.SetAdditionalLdapFilterForEntity(this.TxtUserIdAdditionalLdapAttributes.Text, DirectoryObjectType.User);
 
             // Group identifier settings
-            ClaimTypeConfig groupConfig = Settings.ClaimTypes.GetMainConfigurationForDirectoryObjectType(DirectoryObjectType.Group);// Utils.GetMainGroupClaimTypeConfig(Settings.ClaimTypes);
+            ClaimTypeConfig groupConfig = Settings.ClaimTypes.GetMainConfigurationForDirectoryObjectType(DirectoryObjectType.Group);
             bool newGroupConfigObject = false;
             if (groupConfig == null)
             {
@@ -235,11 +236,9 @@ namespace Yvand.LdapClaimsProvider.Administration
             groupConfig.LDAPClass = this.TxtGroupLdapClass.Text;
             groupConfig.LDAPAttribute = this.TxtGroupLdapAttribute.Text;
             groupConfig.LDAPAttributeToShowAsDisplayText = this.TxtGroupDisplayTextAttribute.Text;
-            if (!String.IsNullOrWhiteSpace(this.TxtGroupAdditionalLdapAttributes.Text))
-            {
-                Settings.ClaimTypes.SetSearchAttributesForEntity(this.TxtGroupAdditionalLdapAttributes.Text.Split(','), groupConfig.LDAPClass, DirectoryObjectType.Group);
-            }
+            Settings.ClaimTypes.SetSearchAttributesForEntity(this.TxtGroupAdditionalLdapAttributes.Text, groupConfig.LDAPClass, DirectoryObjectType.Group);
             groupConfig.ClaimValuePrefix = this.TxtGroupLeadingToken.Text;
+            Settings.ClaimTypes.SetAdditionalLdapFilterForEntity(this.TxtGroupAdditionalLdapAttributes.Text, DirectoryObjectType.Group);
             if (newGroupConfigObject)
             {
                 Settings.ClaimTypes.Add(groupConfig);
@@ -269,6 +268,11 @@ namespace Yvand.LdapClaimsProvider.Administration
                 timeOut = ClaimsProviderConstants.DEFAULT_TIMEOUT; //set to default if unable to parse
             }
             Settings.Timeout = timeOut;
+
+            foreach (var userAttr in this.Settings.ClaimTypes.Where(x => x.EntityType == DirectoryObjectType.User))
+            {
+                userAttr.AdditionalLDAPFilter = this.TxtUserIdAdditionalLdapFilter.Text;
+            }
 
             if (commitChanges) { CommitChanges(); }
             return true;
@@ -379,28 +383,12 @@ namespace Yvand.LdapClaimsProvider.Administration
             CommitChanges();
             Logger.Log($"LDAP server '{this.TxtLdapConnectionString.Text}' was successfully added to configuration '{ConfigurationName}'", TraceSeverity.Medium, EventSeverity.Information, TraceCategory.Configuration);
             PopulateConnectionsGrid();
-            //InitializeAugmentation();
+            InitializeAugmentation();
             ViewState["LDAPpwd"] = String.Empty;
             this.TxtLdapPassword.Attributes.Remove("value");
             this.TxtLdapConnectionString.Text = "LDAP://";
             this.TxtLdapUsername.Text = String.Empty;
             this.TxtLdapPassword.Text = String.Empty;
-        }
-
-        protected void BtnUpdateAdditionalUserLdapFilter_Click(Object sender, EventArgs e)
-        {
-            UpdateAdditionalUserLdapFilter();
-        }
-
-        void UpdateAdditionalUserLdapFilter()
-        {
-            if (ValidatePrerequisite() != ConfigStatus.AllGood) { return; }
-            foreach (var userAttr in this.Settings.ClaimTypes.Where(x => x.EntityType == DirectoryObjectType.User))
-            {
-                userAttr.AdditionalLDAPFilter = this.TxtAdditionalUserLdapFilter.Text;
-            }
-            this.CommitChanges();
-            LabelUpdateAdditionalLdapFilterOk.Text = this.TextUpdateAdditionalLdapFilterOk;
         }
     }
 

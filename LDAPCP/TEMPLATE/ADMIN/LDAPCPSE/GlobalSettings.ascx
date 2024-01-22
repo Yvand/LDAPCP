@@ -348,6 +348,13 @@
             <sharepoint:encodedliteral runat="server" text="Preview of a user permission's value returned by LDAPCP, based on current settings:" encodemethod='HtmlEncodeAllowSimpleTextFormatting' />
             <br />
             <label id="lblUserPermissionValuePreview"></label>
+            <br />
+            <br />
+            <sharepoint:encodedliteral runat="server" text="- &quot;Additional LDAP filter&quot;: Specify a custom LDAP filter to restrict the users that may be returned." encodemethod='HtmlEncodeAllowSimpleTextFormatting' />
+            <br />
+            <sharepoint:encodedliteral runat="server" text="This filter is applied by default: to exclude computer accounts: &quot;(!(objectClass=computer))&quot;." encodemethod='HtmlEncodeAllowSimpleTextFormatting' />
+            <br />
+            <sharepoint:encodedliteral runat="server" text="Be mindful that a wrong filter may break the search and validation of users." encodemethod='HtmlEncodeAllowSimpleTextFormatting' />
         </template_description>
         <template_inputformcontrols>
             <tr>
@@ -405,6 +412,10 @@
                                     <label for="<%= TxtUserIdLeadingToken.ClientID %>" title="Static or dynnamic token that LDAPCP will include in the value returned by LDAP">Leading token &#9432;</label>
                                     <wssawc:InputFormTextBox title="" class="ms-input" ID="TxtUserIdLeadingToken" Columns="50" runat="server" MaxLength="255" />
                                 </li>
+                                <li>
+                                    <label for="<%= TxtUserIdAdditionalLdapFilter.ClientID %>" title="Additional LDAP filter applied to all the user attributes">Additional LDAP filter &#9432;</label>
+                                    <wssawc:InputFormTextBox title="" class="ms-input" ID="TxtUserIdAdditionalLdapFilter" Columns="50" runat="server" MaxLength="255" />
+                                </li>
                             </ol>
                         </fieldset>
 
@@ -422,6 +433,11 @@
             <sharepoint:encodedliteral runat="server" text="Preview of a group permission's value returned by LDAPCP, based on current settings:" encodemethod='HtmlEncodeAllowSimpleTextFormatting' />
             <br />
             <label id="lblGroupPermissionValuePreview"></label>
+            <br />
+            <br />
+            <sharepoint:encodedliteral runat="server" text="- &quot;Additional LDAP filter&quot;: Specify a custom LDAP filter to restrict the groups that may be returned." encodemethod='HtmlEncodeAllowSimpleTextFormatting' />
+            <br />
+            <sharepoint:encodedliteral runat="server" text="Be mindful that a wrong filter may break the search and validation of groups." encodemethod='HtmlEncodeAllowSimpleTextFormatting' />
         </template_description>
         <template_inputformcontrols>
             <p class="ms-error">
@@ -465,6 +481,10 @@
                                     <li>
                                         <label for="<%= TxtGroupLeadingToken.ClientID %>" title="Static or dynnamic token that LDAPCP will include in the value returned by LDAP">Leading token &#9432;</label>
                                         <wssawc:InputFormTextBox title="" class="ms-input" ID="TxtGroupLeadingToken" Columns="50" runat="server" MaxLength="255" />
+                                    </li>
+                                    <li>
+                                        <label for="<%= TxtGroupAdditionalLdapFilter.ClientID %>" title="Additional LDAP filter applied to all the group attributes">Additional LDAP filter &#9432;</label>
+                                        <wssawc:InputFormTextBox title="" class="ms-input" ID="TxtGroupAdditionalLdapFilter" Columns="50" runat="server" MaxLength="255" />
                                     </li>
                                 </ol>
                             </fieldset>
@@ -545,19 +565,6 @@
         </template_description>
         <template_inputformcontrols>
             <asp:CheckBox Checked="false" runat="server" Name="ChkFilterExactMatchOnly" ID="ChkFilterExactMatchOnly" Text="Require exact match when typing in the people picker" />
-        </template_inputformcontrols>
-    </wssuc:InputFormSection>
-
-    <wssuc:InputFormSection runat="server" Title="Additional LDAP filter for user attributes" Description="Specify a custom LDAP filter that will be applied to all user attributes.<br/>By default this filter is set to exclude computer accounts: (!(objectClass=computer))<br/><br/>As an example, this filter excludes computer accounts and includes only users that are member of a specific security group:<br/> (!(objectClass=computer)) (memberof=CN=group1,CN=Users,DC=YvanHost,DC=local)<br/><br/>Important notes:<br/>If the filter is incorrect, every user resolution may break.<br/>This filter only applies to entries with &quot;SPClaimEntityTypes&quot; set to &quot;User&quot;.">
-        <template_inputformcontrols>
-            <label for="<%= TxtAdditionalUserLdapFilter.ClientID %>">Additional LDAP filter for entries with <a href='https://learn.microsoft.com/en-us/previous-versions/office/sharepoint-server/ee547058(v=office.15)' target='_blank'>SPClaimEntityTypes</a> set to &quot;User&quot; (leave blank to remove):</label><br />
-            <wssawc:InputFormTextBox title="Additional LDAP filter" class="ms-input" ID="TxtAdditionalUserLdapFilter" Columns="50" runat="server" />
-            <p>
-                <asp:Button runat="server" ID="BtnUpdateAdditionalUserLdapFilter" Text="Apply to all user attributes" OnClick="BtnUpdateAdditionalUserLdapFilter_Click" CssClass="ms-ButtonHeightWidth" OnClientClick="return confirm('This will apply LDAP filter to all user attributes, do you want to continue?');" />
-            </p>
-            <p class="ldapcp-success">
-                <asp:Label ID="LabelUpdateAdditionalLdapFilterOk" runat="server" EnableViewState="False" />
-            </p>
         </template_inputformcontrols>
     </wssuc:InputFormSection>
 

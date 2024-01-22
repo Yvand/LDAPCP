@@ -635,8 +635,9 @@ namespace Yvand.LdapClaimsProvider.Configuration
             return existingAdditionalUserConfigs.Select(x => x.LDAPAttribute);
         }
 
-        public void SetSearchAttributesForEntity(string[] newSearchAttributes, string ldapClass, DirectoryObjectType entityType)
+        public void SetSearchAttributesForEntity(string newSearchAttributesList, string ldapClass, DirectoryObjectType entityType)
         {
+            string[] newSearchAttributes = String.IsNullOrWhiteSpace(newSearchAttributesList) ? new string[] { } : newSearchAttributesList.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
             ClaimTypeConfig mainConfig = GetMainConfigurationForDirectoryObjectType(entityType);
             var existingSearchAttributes = GetSearchAttributesForEntity(entityType);
 
@@ -661,13 +662,24 @@ namespace Yvand.LdapClaimsProvider.Configuration
                 }
             }
 
-            // Step 2: Remove existing search attributes that are missing in newSearchAttributes
+            // Step 2: Remove existing search attributes that are missing in newAdditionalLdapFilter
             var existingSearchAttributesToRemove = innerCol
                 .Where(x =>
                     x.EntityType == entityType &&
                     x.UseMainClaimTypeOfDirectoryObject == true &&
                     newSearchAttributes.Contains(x.LDAPAttribute) == false);
             RemoveAll(existingSearchAttributesToRemove);
+        }
+
+        public void SetAdditionalLdapFilterForEntity(string newAdditionalLdapFilter, DirectoryObjectType entityType)
+        {
+            ClaimTypeConfig mainConfig = GetMainConfigurationForDirectoryObjectType(entityType);
+            mainConfig.AdditionalLDAPFilter = newAdditionalLdapFilter;
+            IEnumerable<ClaimTypeConfig> additionalConfigurations = GetAdditionalConfigurationsForEntity(entityType);
+            foreach (ClaimTypeConfig additionalConfiguration in additionalConfigurations)
+            {
+                additionalConfiguration.AdditionalLDAPFilter = newAdditionalLdapFilter;
+            }
         }
     }
 
