@@ -7,7 +7,6 @@ using System.DirectoryServices;
 using System.Linq;
 using System.Web.UI.WebControls;
 using Yvand.LdapClaimsProvider.Configuration;
-using static Microsoft.SharePoint.MobileMessage.SPMobileMessageServiceProvider;
 using AuthenticationTypes = System.DirectoryServices.AuthenticationTypes;
 using LdapConnection = Yvand.LdapClaimsProvider.Configuration.LdapConnection;
 
@@ -20,7 +19,6 @@ namespace Yvand.LdapClaimsProvider.Administration
         readonly string TextSharePointDomain = "Connect to SharePoint domain";
         readonly string TextErrorLDAPFieldsMissing = "Some mandatory fields are missing.";
         readonly string TextErrorTestLdapConnection = "Unable to connect to LDAP for following reason:<br/>{0}<br/>It may be expected if w3wp process of central admin has intentionally no access to LDAP server.";
-        readonly string TextUpdateAdditionalLdapFilterOk = "LDAP filter was successfully applied to all LDAP attributes of class 'user'.";
 
         protected void Page_Load(object sender, EventArgs e)
         {
@@ -238,7 +236,7 @@ namespace Yvand.LdapClaimsProvider.Administration
             groupConfig.LDAPAttributeToShowAsDisplayText = this.TxtGroupDisplayTextAttribute.Text;
             Settings.ClaimTypes.SetSearchAttributesForEntity(this.TxtGroupAdditionalLdapAttributes.Text, groupConfig.LDAPClass, DirectoryObjectType.Group);
             groupConfig.ClaimValuePrefix = this.TxtGroupLeadingToken.Text;
-            Settings.ClaimTypes.SetAdditionalLdapFilterForEntity(this.TxtGroupAdditionalLdapAttributes.Text, DirectoryObjectType.Group);
+            Settings.ClaimTypes.SetAdditionalLdapFilterForEntity(this.TxtGroupAdditionalLdapFilter.Text, DirectoryObjectType.Group);
             if (newGroupConfigObject)
             {
                 Settings.ClaimTypes.Add(groupConfig);
