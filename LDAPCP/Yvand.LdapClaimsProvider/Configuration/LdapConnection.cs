@@ -1,4 +1,5 @@
-﻿using Microsoft.SharePoint.Administration;
+﻿using Microsoft.SharePoint;
+using Microsoft.SharePoint.Administration;
 using Microsoft.SharePoint.Utilities;
 using System;
 using System.Collections.Generic;
@@ -128,20 +129,24 @@ namespace Yvand.LdapClaimsProvider.Configuration
                 {
                     try
                     {
-                        // This try block is to get domain name information about AD domain of current computer
-                        // If this fails, execution should still continue as:
-                        // - It will be attempted again in a different way in OperationContext.GetDomainInformation(), so it should be given a chance
-                        // - It often (only) fails with COMException, which tend to occur only in some code path, but finally works depending on how LDAPCP is called
-                        // - It's not essential, even though it can have serious impacts, for example, value of role claims miss the domain name
-                        Domain computerDomain = Domain.GetComputerDomain();
-                        this._DirectoryConnection = computerDomain.GetDirectoryEntry();
+                        // Do these operations using the application pool account privileges to avoid COMException due to lack of permissions
+                        SPSecurity.RunWithElevatedPrivileges(delegate ()
+                        {
+                            // This try block is to get domain name information about AD domain of current computer
+                            // If this fails, execution should still continue as:
+                            // - It will be attempted again in a different way in OperationContext.GetDomainInformation(), so it should be given a chance
+                            // - It often (only) fails with COMException, which tend to occur only in some code path, but finally works depending on how LDAPCP is called
+                            // - It's not essential, even though it can have serious impacts, for example, value of role claims miss the domain name
+                            Domain computerDomain = Domain.GetComputerDomain();
+                            this._DirectoryConnection = computerDomain.GetDirectoryEntry();
 
-                        // Set properties LDAPConnection.DomainFQDN and LDAPConnection.DomainName here as a workaround to issue https://github.com/Yvand/LDAPCP/issues/87
-                        this.DomainFQDN = computerDomain.Name;
-                        this.DomainName = Utils.GetDomainName(this.DomainFQDN);
+                            // Set properties LDAPConnection.DomainFQDN and LDAPConnection.DomainName here as a workaround to issue https://github.com/Yvand/LDAPCP/issues/87
+                            this.DomainFQDN = computerDomain.Name;
+                            this.DomainName = Utils.GetDomainName(this.DomainFQDN);
 
-                        // Property LDAPConnection.AuthenticationType must be set, in order to build the PrincipalContext correctly in GetGroupsFromActiveDirectory()
-                        this.AuthenticationType = this.DirectoryConnection.AuthenticationType;
+                            // Property LDAPConnection.AuthenticationType must be set, in order to build the PrincipalContext correctly in GetGroupsFromActiveDirectory()
+                            this.AuthenticationType = this.DirectoryConnection.AuthenticationType;
+                        });
                     }
                     catch (System.Runtime.InteropServices.COMException ex)
                     {
@@ -204,7 +209,7 @@ namespace Yvand.LdapClaimsProvider.Configuration
                 return InitializationSuccessful;
             }
 
-            
+
 
             // This block does LDAP operations
             using (new SPMonitoredScope($"[{LDAPCPSE.ClaimsProviderName}] Get domain names / root container information about LDAP server \"{this.DirectoryConnection.Path}\"", 2000))
