@@ -1,5 +1,5 @@
 ﻿<%@ Page Language="C#" AutoEventWireup="true" Inherits="Microsoft.SharePoint.WebControls.LayoutsPageBase" MasterPageFile="~/_admin/admin.master" %>
-<%@ Register TagPrefix="LDAPCP" TagName="ClaimTypesConfigUC" src="ClaimTypesConfig.ascx" %>
+<%@ Register TagPrefix="LDAPCP" TagName="PermsMappingsUC" src="PermsMappings.ascx" %>
 <%@ Import Namespace="Yvand.LdapClaimsProvider.Configuration" %>
 <%@ Import Namespace="Yvand.LdapClaimsProvider" %>
 <%@ Import Namespace="System.Diagnostics" %>
@@ -12,6 +12,6 @@
 </asp:Content>
 <asp:Content ID="Main" ContentPlaceHolderID="PlaceHolderMain" runat="server">
     <table border="0" cellspacing="0" cellpadding="0" width="100%">
-        <LDAPCP:ClaimTypesConfigUC ID="LdapcpClaimsList" Runat="server" ClaimsProviderName="<%# LDAPCPSE.ClaimsProviderName %>" ConfigurationName="<%# ClaimsProviderConstants.CONFIGURATION_NAME %>" ConfigurationID="<%# new Guid(ClaimsProviderConstants.CONFIGURATION_ID) %>" />
+        <LDAPCP:PermsMappingsUC ID="PermsMappings" Runat="server" ClaimsProviderName="<%# LDAPCPSE.ClaimsProviderName %>" ConfigurationName="<%# ClaimsProviderConstants.CONFIGURATION_NAME %>" ConfigurationID="<%# new Guid(ClaimsProviderConstants.CONFIGURATION_ID) %>" />
     </table>
 </asp:Content>

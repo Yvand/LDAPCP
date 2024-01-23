@@ -1,5 +1,5 @@
 ﻿<%@ Assembly Name="$SharePoint.Project.AssemblyFullName$" %>
-<%@ Control Language="C#" AutoEventWireup="true" CodeBehind="ClaimTypesConfig.ascx.cs" Inherits="Yvand.LdapClaimsProvider.Administration.ClaimTypesConfigUserControl" %>
+<%@ Control Language="C#" AutoEventWireup="true" CodeBehind="PermsMappings.ascx.cs" Inherits="Yvand.LdapClaimsProvider.Administration.PermsMappingsUserControl" %>
 <%@ Register TagPrefix="asp" Namespace="System.Web.UI" Assembly="System.Web.Extensions, Version=3.5.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35" %>
 
 <script type="text/javascript" src="/_layouts/15/ldapcpse/jquery-1.9.1.min.js"></script>

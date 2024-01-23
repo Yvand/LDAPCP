@@ -11,7 +11,7 @@ using Yvand.LdapClaimsProvider.Configuration;
 
 namespace Yvand.LdapClaimsProvider.Administration
 {
-    public partial class ClaimTypesConfigUserControl : LDAPCPSEUserControl
+    public partial class PermsMappingsUserControl : LDAPCPSEUserControl
     {
         public string TrustName = String.Empty; // This must be a member to be accessible from marup code, it cannot be a property
         List<KeyValuePair<int, ClaimTypeConfig>> ClaimsMapping;

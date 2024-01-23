@@ -10,7 +10,7 @@
 namespace Yvand.LdapClaimsProvider.Administration {
     
     
-    public partial class ClaimTypesConfigUserControl {
+    public partial class PermsMappingsUserControl {
         
         /// <summary>
         /// LabelMessage control.
