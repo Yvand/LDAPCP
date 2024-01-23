@@ -120,18 +120,18 @@ namespace Yvand.LdapClaimsProvider.Configuration
                 {
                     return this._DirectoryConnection;
                 }
-
-                if (!this.UseDefaultADConnection)
+                // Do these operations using the application pool account privileges to avoid COMException due to lack of permissions
+                SPSecurity.RunWithElevatedPrivileges(delegate ()
                 {
-                    this._DirectoryConnection = new DirectoryEntry(this.LdapPath, this.Username, this.Password, this.AuthenticationType);
-                }
-                else
-                {
-                    try
+                    if (!this.UseDefaultADConnection)
                     {
-                        // Do these operations using the application pool account privileges to avoid COMException due to lack of permissions
-                        SPSecurity.RunWithElevatedPrivileges(delegate ()
+                        this._DirectoryConnection = new DirectoryEntry(this.LdapPath, this.Username, this.Password, this.AuthenticationType);
+                    }
+                    else
+                    {
+                        try
                         {
+
                             // This try block is to get domain name information about AD domain of current computer
                             // If this fails, execution should still continue as:
                             // - It will be attempted again in a different way in OperationContext.GetDomainInformation(), so it should be given a chance
@@ -146,19 +146,19 @@ namespace Yvand.LdapClaimsProvider.Configuration
 
                             // Property LDAPConnection.AuthenticationType must be set, in order to build the PrincipalContext correctly in GetGroupsFromActiveDirectory()
                             this.AuthenticationType = this.DirectoryConnection.AuthenticationType;
-                        });
+                        }
+                        catch (System.Runtime.InteropServices.COMException ex)
+                        {
+                            // Domain.GetDomain() may fail with the following error: System.Runtime.InteropServices.COMException: Retrieving the COM class factory for component with CLSID {080D0D78-F421-11D0-A36E-00C04FB950DC} failed due to the following error: 800703fa Illegal operation attempted on a registry key that has been marked for deletion. (Exception from HRESULT: 0x800703FA).
+                            Logger.LogException("", $"while getting domain names information about AD domain of current computer (COMException)", TraceCategory.Configuration, ex);
+                        }
+                        catch (Exception ex)
+                        {
+                            // Domain.GetDomain() may fail with the following error: System.Runtime.InteropServices.COMException: Retrieving the COM class factory for component with CLSID {080D0D78-F421-11D0-A36E-00C04FB950DC} failed due to the following error: 800703fa Illegal operation attempted on a registry key that has been marked for deletion. (Exception from HRESULT: 0x800703FA).
+                            Logger.LogException("", $"while getting domain names information about AD domain of current computer", TraceCategory.Configuration, ex);
+                        }
                     }
-                    catch (System.Runtime.InteropServices.COMException ex)
-                    {
-                        // Domain.GetDomain() may fail with the following error: System.Runtime.InteropServices.COMException: Retrieving the COM class factory for component with CLSID {080D0D78-F421-11D0-A36E-00C04FB950DC} failed due to the following error: 800703fa Illegal operation attempted on a registry key that has been marked for deletion. (Exception from HRESULT: 0x800703FA).
-                        Logger.LogException("", $"while getting domain names information about AD domain of current computer (COMException)", TraceCategory.Configuration, ex);
-                    }
-                    catch (Exception ex)
-                    {
-                        // Domain.GetDomain() may fail with the following error: System.Runtime.InteropServices.COMException: Retrieving the COM class factory for component with CLSID {080D0D78-F421-11D0-A36E-00C04FB950DC} failed due to the following error: 800703fa Illegal operation attempted on a registry key that has been marked for deletion. (Exception from HRESULT: 0x800703FA).
-                        Logger.LogException("", $"while getting domain names information about AD domain of current computer", TraceCategory.Configuration, ex);
-                    }
-                }
+                });
                 this._DirectoryConnection.Disposed += _DirectoryConnection_Disposed;
                 return this._DirectoryConnection;
             }

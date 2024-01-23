@@ -429,6 +429,7 @@ namespace Yvand.LdapClaimsProvider
             Stopwatch globalStopWatch = new Stopwatch();
             globalStopWatch.Start();
 
+            //foreach (var ldapConnection in this.Settings.LdapConnections.Where(x => x.DirectoryConnection != null))
             Parallel.ForEach(this.Settings.LdapConnections.Where(x => x.DirectoryConnection != null), ldapConnection =>
             {
                 Debug.WriteLine($"ldapConnection: Path: {ldapConnection.DirectoryConnection.Path}, UseDefaultADConnection: {ldapConnection.UseDefaultADConnection}");
@@ -500,6 +501,7 @@ namespace Yvand.LdapClaimsProvider
                     }
                 }
             });
+
 
             globalStopWatch.Stop();
             Logger.Log(String.Format("[{0}] Got {1} result(s) in {2}ms from all servers with query \"{3}\"", ClaimsProviderName, results.Count, globalStopWatch.ElapsedMilliseconds.ToString(), ldapFilter), TraceSeverity.Verbose, EventSeverity.Information, TraceCategory.GraphRequests);
