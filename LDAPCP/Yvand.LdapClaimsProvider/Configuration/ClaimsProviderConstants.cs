@@ -102,32 +102,32 @@ namespace Yvand.LdapClaimsProvider.Configuration
                 WIF4_5.ClaimTypes.Upn,
                 new ClaimTypeConfig
                 {
-                    EntityType = DirectoryObjectType.User,
-                    LDAPClass = "user",
-                    LDAPAttribute = "userPrincipalName",
-                    AdditionalLDAPFilter = "(!(objectClass=computer))"
+                    DirectoryObjectType = DirectoryObjectType.User,
+                    DirectoryObjectClass = "user",
+                    DirectoryObjectAttribute = "userPrincipalName",
+                    DirectoryObjectAdditionalFilter = "(!(objectClass=computer))"
                 }
             },
             {
                 WIF4_5.ClaimTypes.Email,
                 new ClaimTypeConfig
                 {
-                    EntityType = DirectoryObjectType.User,
-                    LDAPClass = "user",
-                    LDAPAttribute = "mail",
-                    AdditionalLDAPFilter = "(!(objectClass=computer))",
-                    EntityDataKey = EntityMetadataPerLdapAttributes.ContainsKey("mail") ? EntityMetadataPerLdapAttributes["mail"] : String.Empty,
+                    DirectoryObjectType = DirectoryObjectType.User,
+                    DirectoryObjectClass = "user",
+                    DirectoryObjectAttribute = "mail",
+                    DirectoryObjectAdditionalFilter = "(!(objectClass=computer))",
+                    SPEntityDataKey = EntityMetadataPerLdapAttributes.ContainsKey("mail") ? EntityMetadataPerLdapAttributes["mail"] : String.Empty,
                 }
             },
             {
                 WIF4_5.ClaimTypes.WindowsAccountName,
                 new ClaimTypeConfig
                 {
-                    EntityType = DirectoryObjectType.User,
-                    LDAPClass = "user",
-                    LDAPAttribute = "sAMAccountName",
-                    AdditionalLDAPFilter = "(!(objectClass=computer))",
-                    EntityDataKey = EntityMetadataPerLdapAttributes.ContainsKey("sAMAccountName") ? EntityMetadataPerLdapAttributes["sAMAccountName"] : String.Empty,
+                    DirectoryObjectType = DirectoryObjectType.User,
+                    DirectoryObjectClass = "user",
+                    DirectoryObjectAttribute = "sAMAccountName",
+                    DirectoryObjectAdditionalFilter = "(!(objectClass=computer))",
+                    SPEntityDataKey = EntityMetadataPerLdapAttributes.ContainsKey("sAMAccountName") ? EntityMetadataPerLdapAttributes["sAMAccountName"] : String.Empty,
                 }
             },
         };
@@ -171,7 +171,7 @@ namespace Yvand.LdapClaimsProvider.Configuration
             {
                 if (item.ClaimTypeConfigMatch.ClaimType != attribute.ClaimType) { continue; }
 
-                if (!item.LdapEntityProperties.Contains(attribute.LDAPAttribute)) { continue; }
+                if (!item.LdapEntityProperties.Contains(attribute.DirectoryObjectAttribute)) { continue; }
 
                 // if compareWithDomain is true, don't consider 2 results as identical if they don't are in same domain
                 // Using same bool to compare both DomainName and DomainFQDN causes scenario below to potentially generate duplicates:
@@ -186,7 +186,7 @@ namespace Yvand.LdapClaimsProvider.Configuration
                     continue;   // They don't are in same domain, so not identical, jump to next item
                 }
 
-                if (String.Equals(item.LdapEntityProperties[attribute.LDAPAttribute][0].ToString(), result.LdapEntityProperties[attribute.LDAPAttribute][0].ToString(), StringComparison.InvariantCultureIgnoreCase))
+                if (String.Equals(item.LdapEntityProperties[attribute.DirectoryObjectAttribute][0].ToString(), result.LdapEntityProperties[attribute.DirectoryObjectAttribute][0].ToString(), StringComparison.InvariantCultureIgnoreCase))
                 {
                     return true;
                 }
@@ -327,7 +327,7 @@ namespace Yvand.LdapClaimsProvider.Configuration
             if (this.IncomingEntity == null) { throw new ArgumentNullException(nameof(this.IncomingEntity)); }
             this.IncomingEntityClaimTypeConfig = runtimeClaimTypesList.FirstOrDefault(x =>
                String.Equals(x.ClaimType, this.IncomingEntity.ClaimType, StringComparison.InvariantCultureIgnoreCase) &&
-               !x.UseMainClaimTypeOfDirectoryObject);
+               !x.IsAdditionalLdapSearchAttribute);
 
             if (this.IncomingEntityClaimTypeConfig == null)
             {
@@ -342,19 +342,19 @@ namespace Yvand.LdapClaimsProvider.Configuration
             this.ExactSearch = true;
             this.Input = this.IncomingEntity.Value;
             this.InputHasKeyword = false;
-            if (!String.IsNullOrEmpty(IncomingEntityClaimTypeConfig.ClaimValuePrefix))
+            if (!String.IsNullOrEmpty(IncomingEntityClaimTypeConfig.ClaimValueLeadingToken))
             {
-                if (this.IncomingEntity.Value.StartsWith(IncomingEntityClaimTypeConfig.ClaimValuePrefix, StringComparison.InvariantCultureIgnoreCase))
+                if (this.IncomingEntity.Value.StartsWith(IncomingEntityClaimTypeConfig.ClaimValueLeadingToken, StringComparison.InvariantCultureIgnoreCase))
                 {
-                    this.Input = this.IncomingEntity.Value.Substring(IncomingEntityClaimTypeConfig.ClaimValuePrefix.Length);
+                    this.Input = this.IncomingEntity.Value.Substring(IncomingEntityClaimTypeConfig.ClaimValueLeadingToken.Length);
                 }
-                else
-                {
-                    this.InputHasKeyword = IncomingEntityClaimTypeConfig.DoNotAddClaimValuePrefixIfBypassLookup;
-                }
+                //else
+                //{
+                //    this.InputHasKeyword = IncomingEntityClaimTypeConfig.DoNotAddClaimValuePrefixIfBypassLookup;
+                //}
 
-                if (IncomingEntityClaimTypeConfig.ClaimValuePrefix.Contains(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINNAME) ||
-                    IncomingEntityClaimTypeConfig.ClaimValuePrefix.Contains(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINFQDN))
+                if (IncomingEntityClaimTypeConfig.ClaimValueLeadingToken.Contains(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINNAME) ||
+                    IncomingEntityClaimTypeConfig.ClaimValueLeadingToken.Contains(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINFQDN))
                 {
                     this.Input = Utils.GetAccountFromFullAccountName(this.Input);
                 }
@@ -373,12 +373,12 @@ namespace Yvand.LdapClaimsProvider.Configuration
                 // Restrict search to ClaimType currently selected in the hierarchy (may return multiple results if identity claim type)
                 CurrentClaimTypeConfigList = runtimeClaimTypesList.FindAll(x =>
                     String.Equals(x.ClaimType, this.HierarchyNodeID, StringComparison.InvariantCultureIgnoreCase) &&
-                    this.DirectoryObjectTypes.Contains(x.EntityType));
+                    this.DirectoryObjectTypes.Contains(x.DirectoryObjectType));
             }
             else
             {
                 // List<T>.FindAll returns an empty list if no result found: http://msdn.microsoft.com/en-us/library/fh1w7y8z(v=vs.110).aspx
-                CurrentClaimTypeConfigList = runtimeClaimTypesList.FindAll(x => this.DirectoryObjectTypes.Contains(x.EntityType));
+                CurrentClaimTypeConfigList = runtimeClaimTypesList.FindAll(x => this.DirectoryObjectTypes.Contains(x.DirectoryObjectType));
             }
         }
 
@@ -387,7 +387,7 @@ namespace Yvand.LdapClaimsProvider.Configuration
             if (this.IncomingEntity == null) { throw new ArgumentNullException(nameof(this.IncomingEntity)); }
             this.IncomingEntityClaimTypeConfig = runtimeClaimTypesList.FirstOrDefault(x =>
                String.Equals(x.ClaimType, this.IncomingEntity.ClaimType, StringComparison.InvariantCultureIgnoreCase) &&
-               !x.UseMainClaimTypeOfDirectoryObject);
+               !x.IsAdditionalLdapSearchAttribute);
 
             if (this.IncomingEntityClaimTypeConfig == null)
             {

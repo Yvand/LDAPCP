@@ -140,27 +140,27 @@ namespace Yvand.LdapClaimsProvider.Configuration
             //{
             //    ClaimTypeConfig ctConfig = nonIdentityClaimType.Value;
             //    ctConfig.ClaimType = String.Empty;
-            //    ctConfig.UseMainClaimTypeOfDirectoryObject = true;
+            //    ctConfig.IsAdditionalLdapSearchAttribute = true;
             //    newCTConfigCollection.Add(ctConfig);
             //}
 
-            // Additional properties to find user and create entity with the identity claim type (UseMainClaimTypeOfDirectoryObject=true)
-            newCTConfigCollection.Add(new ClaimTypeConfig { EntityType = DirectoryObjectType.User, LDAPClass = "user", LDAPAttribute = "displayName", UseMainClaimTypeOfDirectoryObject = true, EntityDataKey = PeopleEditorEntityDataKeys.DisplayName, AdditionalLDAPFilter = "(!(objectClass=computer))" });
-            newCTConfigCollection.Add(new ClaimTypeConfig { EntityType = DirectoryObjectType.User, LDAPClass = "user", LDAPAttribute = "cn", UseMainClaimTypeOfDirectoryObject = true, AdditionalLDAPFilter = "(!(objectClass=computer))" });
-            newCTConfigCollection.Add(new ClaimTypeConfig { EntityType = DirectoryObjectType.User, LDAPClass = "user", LDAPAttribute = "sn", UseMainClaimTypeOfDirectoryObject = true, AdditionalLDAPFilter = "(!(objectClass=computer))" });
-            newCTConfigCollection.Add(new ClaimTypeConfig { EntityType = DirectoryObjectType.User, LDAPClass = "user", LDAPAttribute = "givenName", UseMainClaimTypeOfDirectoryObject = true, AdditionalLDAPFilter = "(!(objectClass=computer))" });  // First name
+            // Additional properties to find user and create entity with the identity claim type (IsAdditionalLdapSearchAttribute=true)
+            newCTConfigCollection.Add(new ClaimTypeConfig { DirectoryObjectType = DirectoryObjectType.User, DirectoryObjectClass = "user", DirectoryObjectAttribute = "displayName", IsAdditionalLdapSearchAttribute = true, SPEntityDataKey = PeopleEditorEntityDataKeys.DisplayName, DirectoryObjectAdditionalFilter = "(!(objectClass=computer))" });
+            newCTConfigCollection.Add(new ClaimTypeConfig { DirectoryObjectType = DirectoryObjectType.User, DirectoryObjectClass = "user", DirectoryObjectAttribute = "cn", IsAdditionalLdapSearchAttribute = true, DirectoryObjectAdditionalFilter = "(!(objectClass=computer))" });
+            newCTConfigCollection.Add(new ClaimTypeConfig { DirectoryObjectType = DirectoryObjectType.User, DirectoryObjectClass = "user", DirectoryObjectAttribute = "sn", IsAdditionalLdapSearchAttribute = true, DirectoryObjectAdditionalFilter = "(!(objectClass=computer))" });
+            newCTConfigCollection.Add(new ClaimTypeConfig { DirectoryObjectType = DirectoryObjectType.User, DirectoryObjectClass = "user", DirectoryObjectAttribute = "givenName", IsAdditionalLdapSearchAttribute = true, DirectoryObjectAdditionalFilter = "(!(objectClass=computer))" });  // First name
 
-            // Additional properties to populate metadata of entity created: no claim type set, EntityDataKey is set and UseMainClaimTypeOfDirectoryObject = false (default value)
-            newCTConfigCollection.Add(new ClaimTypeConfig { EntityType = DirectoryObjectType.User, LDAPClass = "user", LDAPAttribute = "physicalDeliveryOfficeName", EntityDataKey = PeopleEditorEntityDataKeys.Location, AdditionalLDAPFilter = "(!(objectClass=computer))" });
-            newCTConfigCollection.Add(new ClaimTypeConfig { EntityType = DirectoryObjectType.User, LDAPClass = "user", LDAPAttribute = "title", EntityDataKey = PeopleEditorEntityDataKeys.JobTitle, AdditionalLDAPFilter = "(!(objectClass=computer))" });
-            newCTConfigCollection.Add(new ClaimTypeConfig { EntityType = DirectoryObjectType.User, LDAPClass = "user", LDAPAttribute = "msRTCSIP-PrimaryUserAddress", EntityDataKey = PeopleEditorEntityDataKeys.SIPAddress, AdditionalLDAPFilter = "(!(objectClass=computer))" });
-            newCTConfigCollection.Add(new ClaimTypeConfig { EntityType = DirectoryObjectType.User, LDAPClass = "user", LDAPAttribute = "telephoneNumber", EntityDataKey = PeopleEditorEntityDataKeys.WorkPhone, AdditionalLDAPFilter = "(!(objectClass=computer))" });
+            // Additional properties to populate metadata of entity created: no claim type set, SPEntityDataKey is set and IsAdditionalLdapSearchAttribute = false (default value)
+            newCTConfigCollection.Add(new ClaimTypeConfig { DirectoryObjectType = DirectoryObjectType.User, DirectoryObjectClass = "user", DirectoryObjectAttribute = "physicalDeliveryOfficeName", SPEntityDataKey = PeopleEditorEntityDataKeys.Location, DirectoryObjectAdditionalFilter = "(!(objectClass=computer))" });
+            newCTConfigCollection.Add(new ClaimTypeConfig { DirectoryObjectType = DirectoryObjectType.User, DirectoryObjectClass = "user", DirectoryObjectAttribute = "title", SPEntityDataKey = PeopleEditorEntityDataKeys.JobTitle, DirectoryObjectAdditionalFilter = "(!(objectClass=computer))" });
+            newCTConfigCollection.Add(new ClaimTypeConfig { DirectoryObjectType = DirectoryObjectType.User, DirectoryObjectClass = "user", DirectoryObjectAttribute = "msRTCSIP-PrimaryUserAddress", SPEntityDataKey = PeopleEditorEntityDataKeys.SIPAddress, DirectoryObjectAdditionalFilter = "(!(objectClass=computer))" });
+            newCTConfigCollection.Add(new ClaimTypeConfig { DirectoryObjectType = DirectoryObjectType.User, DirectoryObjectClass = "user", DirectoryObjectAttribute = "telephoneNumber", SPEntityDataKey = PeopleEditorEntityDataKeys.WorkPhone, DirectoryObjectAdditionalFilter = "(!(objectClass=computer))" });
 
             // Group
-            newCTConfigCollection.Add(new ClaimTypeConfig { EntityType = DirectoryObjectType.Group, LDAPClass = "group", LDAPAttribute = "sAMAccountName", ClaimType = ClaimsProviderConstants.DefaultMainGroupClaimType, ClaimValuePrefix = @"{fqdn}\" });
-            newCTConfigCollection.Add(new ClaimTypeConfig { EntityType = DirectoryObjectType.Group, LDAPClass = "group", LDAPAttribute = "displayName", UseMainClaimTypeOfDirectoryObject = true, EntityDataKey = PeopleEditorEntityDataKeys.DisplayName });
-            newCTConfigCollection.Add(new ClaimTypeConfig { EntityType = DirectoryObjectType.Group, LDAPClass = "group", LDAPAttribute = "mail", EntityDataKey = PeopleEditorEntityDataKeys.Email });
-            newCTConfigCollection.Add(new ClaimTypeConfig { EntityType = DirectoryObjectType.User, LDAPClass = "user", SharePointEntityType = ClaimsProviderConstants.GroupClaimEntityType, LDAPAttribute = "primaryGroupID", ClaimType = WIF4_5.ClaimTypes.PrimaryGroupSid, SupportsWildcard = false });
+            newCTConfigCollection.Add(new ClaimTypeConfig { DirectoryObjectType = DirectoryObjectType.Group, DirectoryObjectClass = "group", DirectoryObjectAttribute = "sAMAccountName", ClaimType = ClaimsProviderConstants.DefaultMainGroupClaimType, ClaimValueLeadingToken = @"{fqdn}\" });
+            newCTConfigCollection.Add(new ClaimTypeConfig { DirectoryObjectType = DirectoryObjectType.Group, DirectoryObjectClass = "group", DirectoryObjectAttribute = "displayName", IsAdditionalLdapSearchAttribute = true, SPEntityDataKey = PeopleEditorEntityDataKeys.DisplayName });
+            newCTConfigCollection.Add(new ClaimTypeConfig { DirectoryObjectType = DirectoryObjectType.Group, DirectoryObjectClass = "group", DirectoryObjectAttribute = "mail", SPEntityDataKey = PeopleEditorEntityDataKeys.Email });
+            newCTConfigCollection.Add(new ClaimTypeConfig { DirectoryObjectType = DirectoryObjectType.User, DirectoryObjectClass = "user", SPEntityType = ClaimsProviderConstants.GroupClaimEntityType, DirectoryObjectAttribute = "primaryGroupID", ClaimType = WIF4_5.ClaimTypes.PrimaryGroupSid, DirectoryObjectAttributeSupportsWildcard = false });
 
             return newCTConfigCollection;
         }

@@ -135,12 +135,12 @@ namespace Yvand.LdapClaimsProvider.Administration
         {
             // User identifier settings
             this.lblUserIdClaimType.Text = Settings.ClaimTypes.IdentityClaim.ClaimType;
-            this.TxtUserIdLdapClass.Text = Settings.ClaimTypes.IdentityClaim.LDAPClass;
-            this.TxtUserIdLdapAttribute.Text = Settings.ClaimTypes.IdentityClaim.LDAPAttribute;
-            this.TxtUserIdDisplayTextAttribute.Text = Settings.ClaimTypes.IdentityClaim.LDAPAttributeToShowAsDisplayText;
+            this.TxtUserIdLdapClass.Text = Settings.ClaimTypes.IdentityClaim.DirectoryObjectClass;
+            this.TxtUserIdLdapAttribute.Text = Settings.ClaimTypes.IdentityClaim.DirectoryObjectAttribute;
+            this.TxtUserIdDisplayTextAttribute.Text = Settings.ClaimTypes.IdentityClaim.DirectoryObjectAttributeForDisplayText;
             this.TxtUserIdAdditionalLdapAttributes.Text = String.Join(",", Settings.ClaimTypes.GetSearchAttributesForEntity(DirectoryObjectType.User));
-            this.TxtUserIdLeadingToken.Text = Settings.ClaimTypes.IdentityClaim.ClaimValuePrefix;
-            this.TxtUserIdAdditionalLdapFilter.Text = Settings.ClaimTypes.IdentityClaim.AdditionalLDAPFilter;
+            this.TxtUserIdLeadingToken.Text = Settings.ClaimTypes.IdentityClaim.ClaimValueLeadingToken;
+            this.TxtUserIdAdditionalLdapFilter.Text = Settings.ClaimTypes.IdentityClaim.DirectoryObjectAdditionalFilter;
 
             // Group identifier settings
             var possibleGroupClaimTypes = Utils.GetNonWellKnownUserClaimTypesFromTrust(base.ClaimsProviderName);
@@ -154,12 +154,12 @@ namespace Yvand.LdapClaimsProvider.Administration
             if (groupCtc != null)
             {
                 this.DdlGroupClaimType.SelectedValue = groupCtc.ClaimType;
-                this.TxtGroupLdapClass.Text = groupCtc.LDAPClass;
-                this.TxtGroupLdapAttribute.Text = groupCtc.LDAPAttribute;
-                this.TxtGroupDisplayTextAttribute.Text = groupCtc.LDAPAttributeToShowAsDisplayText;
+                this.TxtGroupLdapClass.Text = groupCtc.DirectoryObjectClass;
+                this.TxtGroupLdapAttribute.Text = groupCtc.DirectoryObjectAttribute;
+                this.TxtGroupDisplayTextAttribute.Text = groupCtc.DirectoryObjectAttributeForDisplayText;
                 this.TxtGroupAdditionalLdapAttributes.Text = String.Join(",", Settings.ClaimTypes.GetSearchAttributesForEntity(DirectoryObjectType.Group));
-                this.TxtGroupLeadingToken.Text = groupCtc.ClaimValuePrefix;
-                this.TxtGroupAdditionalLdapFilter.Text = groupCtc.AdditionalLDAPFilter;
+                this.TxtGroupLeadingToken.Text = groupCtc.ClaimValueLeadingToken;
+                this.TxtGroupAdditionalLdapFilter.Text = groupCtc.DirectoryObjectAdditionalFilter;
             }
 
             // Other settings
@@ -215,11 +215,11 @@ namespace Yvand.LdapClaimsProvider.Administration
             if (ValidatePrerequisite() != ConfigStatus.AllGood) { return false; }
 
             // User identifier settings            
-            Settings.ClaimTypes.IdentityClaim.LDAPClass = this.TxtUserIdLdapClass.Text;
-            Settings.ClaimTypes.IdentityClaim.LDAPAttribute = this.TxtUserIdLdapAttribute.Text;
-            Settings.ClaimTypes.IdentityClaim.LDAPAttributeToShowAsDisplayText = this.TxtUserIdDisplayTextAttribute.Text;
-            Settings.ClaimTypes.SetSearchAttributesForEntity(this.TxtUserIdAdditionalLdapAttributes.Text, Settings.ClaimTypes.IdentityClaim.LDAPClass, DirectoryObjectType.User);
-            Settings.ClaimTypes.IdentityClaim.ClaimValuePrefix = this.TxtUserIdLeadingToken.Text;
+            Settings.ClaimTypes.IdentityClaim.DirectoryObjectClass = this.TxtUserIdLdapClass.Text;
+            Settings.ClaimTypes.IdentityClaim.DirectoryObjectAttribute = this.TxtUserIdLdapAttribute.Text;
+            Settings.ClaimTypes.IdentityClaim.DirectoryObjectAttributeForDisplayText = this.TxtUserIdDisplayTextAttribute.Text;
+            Settings.ClaimTypes.SetSearchAttributesForEntity(this.TxtUserIdAdditionalLdapAttributes.Text, Settings.ClaimTypes.IdentityClaim.DirectoryObjectClass, DirectoryObjectType.User);
+            Settings.ClaimTypes.IdentityClaim.ClaimValueLeadingToken = this.TxtUserIdLeadingToken.Text;
             Settings.ClaimTypes.SetAdditionalLdapFilterForEntity(this.TxtUserIdAdditionalLdapAttributes.Text, DirectoryObjectType.User);
 
             // Group identifier settings
@@ -227,15 +227,15 @@ namespace Yvand.LdapClaimsProvider.Administration
             bool newGroupConfigObject = false;
             if (groupConfig == null)
             {
-                groupConfig = new ClaimTypeConfig { EntityType = DirectoryObjectType.Group };
+                groupConfig = new ClaimTypeConfig { DirectoryObjectType = DirectoryObjectType.Group };
                 newGroupConfigObject = true;
             }
             groupConfig.ClaimType = this.DdlGroupClaimType.SelectedValue;
-            groupConfig.LDAPClass = this.TxtGroupLdapClass.Text;
-            groupConfig.LDAPAttribute = this.TxtGroupLdapAttribute.Text;
-            groupConfig.LDAPAttributeToShowAsDisplayText = this.TxtGroupDisplayTextAttribute.Text;
-            Settings.ClaimTypes.SetSearchAttributesForEntity(this.TxtGroupAdditionalLdapAttributes.Text, groupConfig.LDAPClass, DirectoryObjectType.Group);
-            groupConfig.ClaimValuePrefix = this.TxtGroupLeadingToken.Text;
+            groupConfig.DirectoryObjectClass = this.TxtGroupLdapClass.Text;
+            groupConfig.DirectoryObjectAttribute = this.TxtGroupLdapAttribute.Text;
+            groupConfig.DirectoryObjectAttributeForDisplayText = this.TxtGroupDisplayTextAttribute.Text;
+            Settings.ClaimTypes.SetSearchAttributesForEntity(this.TxtGroupAdditionalLdapAttributes.Text, groupConfig.DirectoryObjectClass, DirectoryObjectType.Group);
+            groupConfig.ClaimValueLeadingToken = this.TxtGroupLeadingToken.Text;
             Settings.ClaimTypes.SetAdditionalLdapFilterForEntity(this.TxtGroupAdditionalLdapFilter.Text, DirectoryObjectType.Group);
             if (newGroupConfigObject)
             {
@@ -267,9 +267,9 @@ namespace Yvand.LdapClaimsProvider.Administration
             }
             Settings.Timeout = timeOut;
 
-            foreach (var userAttr in this.Settings.ClaimTypes.Where(x => x.EntityType == DirectoryObjectType.User))
+            foreach (var userAttr in this.Settings.ClaimTypes.Where(x => x.DirectoryObjectType == DirectoryObjectType.User))
             {
-                userAttr.AdditionalLDAPFilter = this.TxtUserIdAdditionalLdapFilter.Text;
+                userAttr.DirectoryObjectAdditionalFilter = this.TxtUserIdAdditionalLdapFilter.Text;
             }
 
             if (commitChanges) { CommitChanges(); }

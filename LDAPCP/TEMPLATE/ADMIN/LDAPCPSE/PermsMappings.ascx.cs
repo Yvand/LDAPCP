@@ -66,7 +66,7 @@ namespace Yvand.LdapClaimsProvider.Administration
                     DdlNewEntityMetadata.Items.Add(fieldValue.ToString());
                 }
 
-                // Populate EntityType DDL
+                // Populate DirectoryObjectType DDL
                 foreach (var value in Enum.GetValues(typeof(DirectoryObjectType)))
                 {
                     DdlNewDirectoryObjectType.Items.Add(value.ToString());
@@ -132,7 +132,7 @@ namespace Yvand.LdapClaimsProvider.Administration
             {
                 tr = new TableRow();
                 bool allowEditItem = String.IsNullOrEmpty(attr.Value.ClaimType) ? false : true;
-                bool isIdentityClaimType = String.Equals(attr.Value.ClaimType, base.SPTrust.IdentityClaimTypeInformation.MappedClaimType, StringComparison.InvariantCultureIgnoreCase) && !attr.Value.UseMainClaimTypeOfDirectoryObject ? true : false;
+                bool isIdentityClaimType = String.Equals(attr.Value.ClaimType, base.SPTrust.IdentityClaimTypeInformation.MappedClaimType, StringComparison.InvariantCultureIgnoreCase) && !attr.Value.IsAdditionalLdapSearchAttribute ? true : false;
 
                 // ACTIONS
                 // LinkButton must always be created otherwise event receiver will not fire on postback 
@@ -191,21 +191,21 @@ namespace Yvand.LdapClaimsProvider.Administration
                         {
                             tr.CssClass = "ldapcp-rowClaimTypeNotUsedInTrust";
                         }
-                        else if (attr.Value.EntityType == DirectoryObjectType.Group && String.Equals(this.groupCtc.ClaimType, attr.Value.ClaimType, StringComparison.InvariantCultureIgnoreCase))
+                        else if (attr.Value.DirectoryObjectType == DirectoryObjectType.Group && String.Equals(this.groupCtc.ClaimType, attr.Value.ClaimType, StringComparison.InvariantCultureIgnoreCase))
                         {
                             tr.CssClass = "ldapcp-rowMainGroupClaimType";
                         }
                     }
                     else
                     {
-                        if (!attr.Value.UseMainClaimTypeOfDirectoryObject)
+                        if (!attr.Value.IsAdditionalLdapSearchAttribute)
                         {
                             c = GetTableCell("LDAP attribute linked to a PickerEntity metadata");
                         }
                         else
                         {
-                            c = GetTableCell($"LDAP attribute linked to the main mapping for object {attr.Value.EntityType}");
-                            if (attr.Value.EntityType == DirectoryObjectType.User)
+                            c = GetTableCell($"LDAP attribute linked to the main mapping for object {attr.Value.DirectoryObjectType}");
+                            if (attr.Value.DirectoryObjectType == DirectoryObjectType.User)
                             {
                                 tr.CssClass = "ldapcp-rowUserProperty";
                             }
@@ -221,28 +221,28 @@ namespace Yvand.LdapClaimsProvider.Administration
                     html = BuildDirectoryObjectTypeDDL(attr);
                     tr.Cells.Add(GetTableCell(html));
 
-                    html = String.Format(HtmlCellLAttrClass, attr.Value.LDAPClass, attr.Key);
+                    html = String.Format(HtmlCellLAttrClass, attr.Value.DirectoryObjectClass, attr.Key);
                     tr.Cells.Add(GetTableCell(html));
 
-                    html = String.Format(HtmlCellLAttrName, attr.Value.LDAPAttribute, attr.Key);
+                    html = String.Format(HtmlCellLAttrName, attr.Value.DirectoryObjectAttribute, attr.Key);
                     tr.Cells.Add(GetTableCell(html));
 
-                    html = String.Format(HtmlCellLDAPAttrToDisplay, attr.Value.LDAPAttributeToShowAsDisplayText, attr.Key);
+                    html = String.Format(HtmlCellLDAPAttrToDisplay, attr.Value.DirectoryObjectAttributeForDisplayText, attr.Key);
                     tr.Cells.Add(GetTableCell(html));
 
                     // OPTIONAL SETTINGS
                     MemberInfo[] members;
                     members = typeof(PeopleEditorEntityDataKeys).GetFields(BindingFlags.Static | BindingFlags.Public);
-                    html = BuildDDLFromTypeMembers(HtmlCellMetadata, attr, "EntityDataKey", members, true);
+                    html = BuildDDLFromTypeMembers(HtmlCellMetadata, attr, "SPEntityDataKey", members, true);
                     tr.Cells.Add(GetTableCell(html));
 
-                    html = String.Format(HtmlCellLAddLDAPFilter, attr.Value.AdditionalLDAPFilter, attr.Key);
+                    html = String.Format(HtmlCellLAddLDAPFilter, attr.Value.DirectoryObjectAdditionalFilter, attr.Key);
                     tr.Cells.Add(GetTableCell(html));
 
-                    html = String.Format(HtmlCellKeywordToValidateInputWithoutLookup, attr.Value.PrefixToBypassLookup, attr.Key);
+                    html = String.Format(HtmlCellKeywordToValidateInputWithoutLookup, attr.Value.LeadingKeywordToBypassLdapDuringSearch, attr.Key);
                     tr.Cells.Add(GetTableCell(html));
 
-                    html = String.Format(HtmlCellPrefixToAddToValueReturned, attr.Value.ClaimValuePrefix, attr.Key);
+                    html = String.Format(HtmlCellPrefixToAddToValueReturned, attr.Value.ClaimValueLeadingToken, attr.Key);
                     tr.Cells.Add(GetTableCell(html));
 
                     //if (isIdentityClaimType || !allowEditItem) html = String.Empty;
@@ -300,12 +300,12 @@ namespace Yvand.LdapClaimsProvider.Administration
             string option = "<option value=\"{0}\" {1}>{2}</option>";
             StringBuilder directoryObjectTypeOptions = new StringBuilder();
 
-            string selectedText = azureObject.Value.EntityType == DirectoryObjectType.User ? "selected" : String.Empty;
+            string selectedText = azureObject.Value.DirectoryObjectType == DirectoryObjectType.User ? "selected" : String.Empty;
             directoryObjectTypeOptions.Append(String.Format(option, DirectoryObjectType.User.ToString(), selectedText, DirectoryObjectType.User.ToString()));
-            selectedText = azureObject.Value.EntityType == DirectoryObjectType.Group ? "selected" : String.Empty;
+            selectedText = azureObject.Value.DirectoryObjectType == DirectoryObjectType.Group ? "selected" : String.Empty;
             directoryObjectTypeOptions.Append(String.Format(option, DirectoryObjectType.Group.ToString(), selectedText, DirectoryObjectType.Group.ToString()));
 
-            return String.Format(HtmlCellDirectoryObjectType, azureObject.Value.EntityType, azureObject.Key, directoryObjectTypeOptions.ToString());
+            return String.Format(HtmlCellDirectoryObjectType, azureObject.Value.DirectoryObjectType, azureObject.Key, directoryObjectTypeOptions.ToString());
         }
 
         private static TableHeaderCell GetTableHeaderCell(string Value)
@@ -354,14 +354,14 @@ namespace Yvand.LdapClaimsProvider.Administration
 
             ClaimTypeConfig newCTConfig = existingCTConfig.CopyConfiguration();
             newCTConfig.ClaimType = newClaimType;
-            newCTConfig.EntityType = directoryObjectTypeSelected;
-            newCTConfig.LDAPClass = formData["input_attrclass_" + itemId].Trim();
-            newCTConfig.LDAPAttribute = formData["input_attrname_" + itemId].Trim();
-            newCTConfig.LDAPAttributeToShowAsDisplayText = formData["input_LDAPAttrToDisplay_" + itemId];
-            newCTConfig.EntityDataKey = formData["list_Metadata_" + itemId];
-            newCTConfig.AdditionalLDAPFilter = formData["input_AddLDAPFilter_" + itemId];
-            newCTConfig.PrefixToBypassLookup = formData["input_KeywordToValidateInputWithoutLookup_" + itemId];
-            newCTConfig.ClaimValuePrefix = formData["input_PrefixToAddToValueReturned_" + itemId].ToLower();
+            newCTConfig.DirectoryObjectType = directoryObjectTypeSelected;
+            newCTConfig.DirectoryObjectClass = formData["input_attrclass_" + itemId].Trim();
+            newCTConfig.DirectoryObjectAttribute = formData["input_attrname_" + itemId].Trim();
+            newCTConfig.DirectoryObjectAttributeForDisplayText = formData["input_LDAPAttrToDisplay_" + itemId];
+            newCTConfig.SPEntityDataKey = formData["list_Metadata_" + itemId];
+            newCTConfig.DirectoryObjectAdditionalFilter = formData["input_AddLDAPFilter_" + itemId];
+            newCTConfig.LeadingKeywordToBypassLdapDuringSearch = formData["input_KeywordToValidateInputWithoutLookup_" + itemId];
+            newCTConfig.ClaimValueLeadingToken = formData["input_PrefixToAddToValueReturned_" + itemId].ToLower();
             //string newShowClaimNameInDisplayText = formData["chk_ShowClaimNameInDisplayText_" + itemId];
             //newCTConfig.ShowClaimNameInDisplayText = String.IsNullOrEmpty(newShowClaimNameInDisplayText) ? false : true;
 
@@ -432,11 +432,11 @@ namespace Yvand.LdapClaimsProvider.Administration
 
             ClaimTypeConfig newCTConfig = new ClaimTypeConfig();
             newCTConfig.ClaimType = newClaimType;
-            newCTConfig.EntityType = newDirectoryObjectType;
-            newCTConfig.LDAPClass = newLdapClass;
-            newCTConfig.LDAPAttribute = newLdapAttribute;
-            newCTConfig.UseMainClaimTypeOfDirectoryObject = useMainClaimTypeOfDirectoryObject;
-            newCTConfig.EntityDataKey = newEntityMetadata;
+            newCTConfig.DirectoryObjectType = newDirectoryObjectType;
+            newCTConfig.DirectoryObjectClass = newLdapClass;
+            newCTConfig.DirectoryObjectAttribute = newLdapAttribute;
+            newCTConfig.IsAdditionalLdapSearchAttribute = useMainClaimTypeOfDirectoryObject;
+            newCTConfig.SPEntityDataKey = newEntityMetadata;
 
             try
             {

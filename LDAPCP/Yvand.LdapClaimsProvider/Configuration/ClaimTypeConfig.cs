@@ -16,58 +16,6 @@ namespace Yvand.LdapClaimsProvider.Configuration
     /// </summary>
     public class ClaimTypeConfig : SPAutoSerializingObject, IEquatable<ClaimTypeConfig>
     {
-        /// <summary>
-        /// Name of the newAttribute in LDAP
-        /// </summary>
-        public string LDAPAttribute
-        {
-            get { return _LDAPAttribute; }
-            set { _LDAPAttribute = value; }
-        }
-        [Persisted]
-        private string _LDAPAttribute;
-
-        /// <summary>
-        /// Class of the newAttribute in LDAP, typically 'user' or 'group'
-        /// </summary>
-        public string LDAPClass
-        {
-            get { return _LDAPClass; }
-            set { _LDAPClass = value; }
-        }
-        [Persisted]
-        private string _LDAPClass;
-
-        public DirectoryObjectType EntityType
-        {
-            get
-            {
-                return String.IsNullOrWhiteSpace(_EntityType) ?
-                    DirectoryObjectType.User :  // Default is User
-                    (DirectoryObjectType)Enum.Parse(typeof(DirectoryObjectType), _EntityType);
-            }
-            set { _EntityType = value.ToString(); }
-        }
-        [Persisted]
-        private string _EntityType;
-
-        /// <summary>
-        /// Gets or sets this property to define if the entity created is a User (SPClaimEntityTypes.User) or a Group (SPClaimEntityTypes.FormsRole). Accepted values are "User" or "FormsRole"
-        /// </summary>
-        public string SharePointEntityType
-        {
-            get { return _SharePointEntityType; }
-            set
-            {
-                if (String.Equals(value, "User", StringComparison.CurrentCultureIgnoreCase) || String.Equals(value, ClaimsProviderConstants.GroupClaimEntityType, StringComparison.CurrentCultureIgnoreCase))
-                {
-                    _SharePointEntityType = value;
-                }
-            }
-        }
-        [Persisted]
-        private string _SharePointEntityType;
-
         public string ClaimType
         {
             get { return _ClaimType; }
@@ -76,36 +24,88 @@ namespace Yvand.LdapClaimsProvider.Configuration
         [Persisted]
         private string _ClaimType;
 
-        public bool SupportsWildcard
+        public DirectoryObjectType DirectoryObjectType
         {
-            get { return _SupportsWildcard; }
-            set { _SupportsWildcard = value; }
+            get
+            {
+                return String.IsNullOrWhiteSpace(_DirectoryObjectType) ?
+                    DirectoryObjectType.User :  // Default is User
+                    (DirectoryObjectType)Enum.Parse(typeof(DirectoryObjectType), _DirectoryObjectType);
+            }
+            set { _DirectoryObjectType = value.ToString(); }
         }
         [Persisted]
-        private bool _SupportsWildcard = true;
+        private string _DirectoryObjectType;
 
         /// <summary>
-        /// If set to true, property ClaimType should not be set
+        /// Class of the newAttribute in LDAP, typically 'user' or 'group'
         /// </summary>
-        public bool UseMainClaimTypeOfDirectoryObject
+        public string DirectoryObjectClass
         {
-            get { return _UseMainClaimTypeOfDirectoryObject; }
-            set { _UseMainClaimTypeOfDirectoryObject = value; }
+            get { return _DirectoryObjectClass; }
+            set { _DirectoryObjectClass = value; }
         }
         [Persisted]
-        private bool _UseMainClaimTypeOfDirectoryObject = false;
+        private string _DirectoryObjectClass;
+
+        /// <summary>
+        /// Name of the newAttribute in LDAP
+        /// </summary>
+        public string DirectoryObjectAttribute
+        {
+            get { return _DirectoryObjectAttribute; }
+            set { _DirectoryObjectAttribute = value; }
+        }
+        [Persisted]
+        private string _DirectoryObjectAttribute;
+
+        public bool DirectoryObjectAttributeSupportsWildcard
+        {
+            get { return _DirectoryObjectAttributeSupportsWildcard; }
+            set { _DirectoryObjectAttributeSupportsWildcard = value; }
+        }
+        [Persisted]
+        private bool _DirectoryObjectAttributeSupportsWildcard = true;
+
+        /// <summary>
+        /// Gets or sets this property to define if the entity created is a User (SPClaimEntityTypes.User) or a Group (SPClaimEntityTypes.FormsRole). Accepted values are "User" or "FormsRole"
+        /// </summary>
+        public string SPEntityType
+        {
+            get { return _SPEntityType; }
+            set
+            {
+                if (String.Equals(value, "User", StringComparison.CurrentCultureIgnoreCase) || String.Equals(value, ClaimsProviderConstants.GroupClaimEntityType, StringComparison.CurrentCultureIgnoreCase))
+                {
+                    _SPEntityType = value;
+                }
+            }
+        }
+        [Persisted]
+        private string _SPEntityType;
+
+        /// <summary>
+        /// If true, this entry contains directory object settings but no claim type
+        /// </summary>
+        public bool IsAdditionalLdapSearchAttribute
+        {
+            get { return _IsAdditionalLdapSearchAttribute; }
+            set { _IsAdditionalLdapSearchAttribute = value; }
+        }
+        [Persisted]
+        private bool _IsAdditionalLdapSearchAttribute = false;
 
         /// <summary>
         /// Can contain a member of class PeopleEditorEntityDataKey https://learn.microsoft.com/en-us/previous-versions/office/sharepoint-server/ms415673(v=office.15)
         /// to populate additional metadata in permission created
         /// </summary>
-        public string EntityDataKey
+        public string SPEntityDataKey
         {
-            get { return _EntityDataKey; }
-            set { _EntityDataKey = value; }
+            get { return _SPEntityDataKey; }
+            set { _SPEntityDataKey = value; }
         }
         [Persisted]
-        private string _EntityDataKey;
+        private string _SPEntityDataKey;
 
         /// <summary>
         /// Stores property SPTrustedClaimTypeInformation.DisplayName of current claim type.
@@ -132,68 +132,57 @@ namespace Yvand.LdapClaimsProvider.Configuration
         /// <summary>
         /// This prefix is added to the value of the permission created. This is useful to add a domain name before a group name (for example "domain\group" instead of "group")
         /// </summary>
-        public string ClaimValuePrefix
+        public string ClaimValueLeadingToken
         {
-            get { return _ClaimValuePrefix; }
-            set { _ClaimValuePrefix = value; }
+            get { return _ClaimValueLeadingToken; }
+            set { _ClaimValueLeadingToken = value; }
         }
         [Persisted]
-        private string _ClaimValuePrefix;
+        private string _ClaimValueLeadingToken;
 
-        /// <summary>
-        /// If set to true: permission created without LDAP lookup (possible if PrefixToBypassLookup is set and user typed this keyword in the input) should not contain the prefix (set in PrefixToAddToValueReturned) in the value
-        /// </summary>
-        public bool DoNotAddClaimValuePrefixIfBypassLookup
-        {
-            get { return _DoNotAddClaimValuePrefixIfBypassLookup; }
-            set { _DoNotAddClaimValuePrefixIfBypassLookup = value; }
-        }
-        [Persisted]
-        private bool _DoNotAddClaimValuePrefixIfBypassLookup;
+        ///// <summary>
+        ///// If set to true: permission created without LDAP lookup (possible if LeadingKeywordToBypassLdapDuringSearch is set and user typed this keyword in the input) should not contain the prefix (set in PrefixToAddToValueReturned) in the value
+        ///// </summary>
+        //public bool DoNotAddClaimValuePrefixIfBypassLookup
+        //{
+        //    get { return _DoNotAddClaimValuePrefixIfBypassLookup; }
+        //    set { _DoNotAddClaimValuePrefixIfBypassLookup = value; }
+        //}
+        //[Persisted]
+        //private bool _DoNotAddClaimValuePrefixIfBypassLookup;
 
         /// <summary>
         /// Set this to tell LDAPCP to validate user input (and create the permission) without LDAP lookup if it contains this keyword at the beginning
         /// </summary>
-        public string PrefixToBypassLookup
+        public string LeadingKeywordToBypassLdapDuringSearch
         {
-            get { return _PrefixToBypassLookup; }
-            set { _PrefixToBypassLookup = value; }
+            get { return _LeadingKeywordToBypassLdapDuringSearch; }
+            set { _LeadingKeywordToBypassLdapDuringSearch = value; }
         }
         [Persisted]
-        private string _PrefixToBypassLookup;
+        private string _LeadingKeywordToBypassLdapDuringSearch;
 
         /// <summary>
         /// Set this property to customize display text of the permission with a specific LDAP newAttribute (different than LDAPAttributeName, that is the actual value of the permission)
         /// </summary>
-        public string LDAPAttributeToShowAsDisplayText
+        public string DirectoryObjectAttributeForDisplayText
         {
-            get { return _LDAPAttributeToShowAsDisplayText; }
-            set { _LDAPAttributeToShowAsDisplayText = value; }
+            get { return _DirectoryObjectAttributeForDisplayText; }
+            set { _DirectoryObjectAttributeForDisplayText = value; }
         }
         [Persisted]
-        private string _LDAPAttributeToShowAsDisplayText;
-
-        /// <summary>
-        /// Gets or sets a Boolean value specifying whether claims provider should only return values that match exactly the input
-        /// </summary>
-        public bool FilterExactMatchOnly
-        {
-            get { return _FilterExactMatchOnly; }
-            set { _FilterExactMatchOnly = value; }
-        }
-        [Persisted]
-        private bool _FilterExactMatchOnly = false;
+        private string _DirectoryObjectAttributeForDisplayText;
 
         /// <summary>
         /// Set this property to set a specific LDAP filter
         /// </summary>
-        public string AdditionalLDAPFilter
+        public string DirectoryObjectAdditionalFilter
         {
-            get { return _AdditionalLDAPFilter; }
-            set { _AdditionalLDAPFilter = value; }
+            get { return _DirectoryObjectAdditionalFilter; }
+            set { _DirectoryObjectAdditionalFilter = value; }
         }
         [Persisted]
-        private string _AdditionalLDAPFilter;
+        private string _DirectoryObjectAdditionalFilter;
 
         /// <summary>
         /// Set to true to show the display name of claim type in parenthesis in display text of permission
@@ -326,24 +315,24 @@ namespace Yvand.LdapClaimsProvider.Configuration
 
         internal void Add(ClaimTypeConfig item, bool strictChecks)
         {
-            if (String.IsNullOrEmpty(item.LDAPAttribute) || String.IsNullOrEmpty(item.LDAPClass))
+            if (String.IsNullOrEmpty(item.DirectoryObjectAttribute) || String.IsNullOrEmpty(item.DirectoryObjectClass))
             {
-                throw new InvalidOperationException($"Properties LDAPAttribute and LDAPClass are required");
+                throw new InvalidOperationException($"Properties DirectoryObjectAttribute and DirectoryObjectClass are required");
             }
 
-            if (item.UseMainClaimTypeOfDirectoryObject && !String.IsNullOrEmpty(item.ClaimType))
+            if (item.IsAdditionalLdapSearchAttribute && !String.IsNullOrEmpty(item.ClaimType))
             {
-                throw new InvalidOperationException($"No claim type should be set if UseMainClaimTypeOfDirectoryObject is set to true");
+                throw new InvalidOperationException($"No claim type should be set if IsAdditionalLdapSearchAttribute is set to true");
             }
 
-            if (!item.UseMainClaimTypeOfDirectoryObject && String.IsNullOrEmpty(item.ClaimType) && String.IsNullOrEmpty(item.EntityDataKey))
+            if (!item.IsAdditionalLdapSearchAttribute && String.IsNullOrEmpty(item.ClaimType) && String.IsNullOrEmpty(item.SPEntityDataKey))
             {
-                throw new InvalidOperationException($"EntityDataKey is required if ClaimType is not set and UseMainClaimTypeOfDirectoryObject is set to false");
+                throw new InvalidOperationException($"SPEntityDataKey is required if ClaimType is not set and IsAdditionalLdapSearchAttribute is set to false");
             }
 
             if (Contains(item, new ClaimTypeConfigSamePermissionMetadata()))
             {
-                throw new InvalidOperationException($"Entity metadata '{item.EntityDataKey}' already exists in the collection for the object type '{item.EntityType}'");
+                throw new InvalidOperationException($"Entity metadata '{item.SPEntityDataKey}' already exists in the collection for the object type '{item.DirectoryObjectType}'");
             }
 
             if (Contains(item, new ClaimTypeConfigSameClaimType()))
@@ -353,61 +342,61 @@ namespace Yvand.LdapClaimsProvider.Configuration
 
             if (Contains(item, new ClaimTypeConfigEnsureUniquePrefixToBypassLookup()))
             {
-                throw new InvalidOperationException($"Prefix '{item.PrefixToBypassLookup}' is already set with another claim type and must be unique");
+                throw new InvalidOperationException($"Prefix '{item.LeadingKeywordToBypassLdapDuringSearch}' is already set with another claim type and must be unique");
             }
 
             if (Contains(item, new ClaimTypeConfigSameDirectoryConfiguration()))
             {
-                throw new InvalidOperationException($"An item with LDAP newAttribute '{item.LDAPAttribute}' and LDAP class '{item.LDAPClass}' already exists for the object type '{item.EntityType}'");
+                throw new InvalidOperationException($"An item with LDAP newAttribute '{item.DirectoryObjectAttribute}' and LDAP class '{item.DirectoryObjectClass}' already exists for the object type '{item.DirectoryObjectType}'");
             }
 
             if (Contains(item))
             {
                 if (String.IsNullOrEmpty(item.ClaimType))
-                    throw new InvalidOperationException($"This configuration with LDAP newAttribute '{item.LDAPAttribute}' and class '{item.LDAPClass}' already exists in the collection");
+                    throw new InvalidOperationException($"This configuration with LDAP newAttribute '{item.DirectoryObjectAttribute}' and class '{item.DirectoryObjectClass}' already exists in the collection");
                 else
                     throw new InvalidOperationException($"This configuration with claim type '{item.ClaimType}' already exists in the collection");
             }
 
-            if (ClaimsProviderConstants.EnforceOnly1ClaimTypeForGroup && item.EntityType == DirectoryObjectType.Group)
+            if (ClaimsProviderConstants.EnforceOnly1ClaimTypeForGroup && item.DirectoryObjectType == DirectoryObjectType.Group)
             {
                 if (Contains(item, new ClaimTypeConfigEnforeOnly1ClaimTypePerObjectType()))
                 {
-                    throw new InvalidOperationException($"A claim type for EntityType '{DirectoryObjectType.Group.ToString()}' already exists in the collection");
+                    throw new InvalidOperationException($"A claim type for DirectoryObjectType '{DirectoryObjectType.Group.ToString()}' already exists in the collection");
                 }
             }
 
             if (strictChecks)
             {
-                // If current item has UseMainClaimTypeOfDirectoryObject = true: check if another item with same EntityType AND a claim type defined
+                // If current item has IsAdditionalLdapSearchAttribute = true: check if another item with same DirectoryObjectType AND a claim type defined
                 // Another valid item may be added later, and even if not, code should handle that scenario
-                if (item.UseMainClaimTypeOfDirectoryObject && innerCol.FirstOrDefault(x => x.EntityType == item.EntityType && !String.IsNullOrEmpty(x.ClaimType)) == null)
+                if (item.IsAdditionalLdapSearchAttribute && innerCol.FirstOrDefault(x => x.DirectoryObjectType == item.DirectoryObjectType && !String.IsNullOrEmpty(x.ClaimType)) == null)
                 {
-                    throw new InvalidOperationException($"Cannot add this item (with UseMainClaimTypeOfDirectoryObject set to true) because collecton does not contain an item with same EntityType '{item.EntityType.ToString()}' AND a ClaimType set");
+                    throw new InvalidOperationException($"Cannot add this item (with IsAdditionalLdapSearchAttribute set to true) because collecton does not contain an item with same DirectoryObjectType '{item.DirectoryObjectType.ToString()}' AND a ClaimType set");
                 }
             }
 
             // If SPTrustedLoginProvider is set, additional checks can be done
             if (SPTrust != null)
             {
-                // If current claim type is identity claim type: EntityType must be User
+                // If current claim type is identity claim type: DirectoryObjectType must be User
                 if (String.Equals(item.ClaimType, SPTrust.IdentityClaimTypeInformation.MappedClaimType, StringComparison.InvariantCultureIgnoreCase))
                 {
-                    if (item.EntityType != DirectoryObjectType.User)
+                    if (item.DirectoryObjectType != DirectoryObjectType.User)
                     {
-                        throw new InvalidOperationException($"Identity claim type must be configured with EntityType 'User'");
+                        throw new InvalidOperationException($"Identity claim type must be configured with DirectoryObjectType 'User'");
                     }
                 }
             }
 
             // Enforce some settings for specific LDAP attributes
-            if (String.Equals(item.LDAPAttribute, "objectSid", StringComparison.InvariantCultureIgnoreCase))
+            if (String.Equals(item.DirectoryObjectAttribute, "objectSid", StringComparison.InvariantCultureIgnoreCase))
             {
-                item.SupportsWildcard = false; // For objectSid, no wildcard possible
+                item.DirectoryObjectAttributeSupportsWildcard = false; // For objectSid, no wildcard possible
             }
-            else if (String.Equals(item.LDAPAttribute, "primaryGroupID", StringComparison.InvariantCultureIgnoreCase))
+            else if (String.Equals(item.DirectoryObjectAttribute, "primaryGroupID", StringComparison.InvariantCultureIgnoreCase))
             {
-                item.SupportsWildcard = false; // For primaryGroupID, no wildcard possible
+                item.DirectoryObjectAttributeSupportsWildcard = false; // For primaryGroupID, no wildcard possible
             }
 
             innerCol.Add(item);
@@ -435,10 +424,10 @@ namespace Yvand.LdapClaimsProvider.Configuration
                         throw new InvalidOperationException($"Claim type cannot be changed because current item is the configuration of the identity claim type");
                     }
 
-                    // EntityType must be User
-                    if (newItem.EntityType != DirectoryObjectType.User)
+                    // DirectoryObjectType must be User
+                    if (newItem.DirectoryObjectType != DirectoryObjectType.User)
                     {
-                        throw new InvalidOperationException($"Identity claim type must be configured with EntityType 'User'");
+                        throw new InvalidOperationException($"Identity claim type must be configured with DirectoryObjectType 'User'");
                     }
                 }
             }
@@ -467,9 +456,9 @@ namespace Yvand.LdapClaimsProvider.Configuration
         }
 
         /// <summary>
-        /// Update the LDAPClass and LDAPAttribute of the identity ClaimTypeConfig. If new values duplicate an existing item, it will be removed from the collection
+        /// Update the DirectoryObjectClass and DirectoryObjectAttribute of the identity ClaimTypeConfig. If new values duplicate an existing item, it will be removed from the collection
         /// </summary>
-        /// <param name="newDirectoryObjectClass">new LDAPClass</param>
+        /// <param name="newDirectoryObjectClass">new DirectoryObjectClass</param>
         /// <param name="newDirectoryObjectAttribute">new newDirectoryObjectAttribute</param>
         /// <returns>True if the identity ClaimTypeConfig was successfully updated</returns>
         public bool UpdateUserIdentifier(string newDirectoryObjectClass, string newDirectoryObjectAttribute)
@@ -484,25 +473,25 @@ namespace Yvand.LdapClaimsProvider.Configuration
             if (identityClaimType == null)
                 return identifierUpdated;
 
-            if (String.Equals(identityClaimType.LDAPClass, newDirectoryObjectClass, StringComparison.InvariantCultureIgnoreCase) &&
-                String.Equals(identityClaimType.LDAPAttribute, newDirectoryObjectAttribute, StringComparison.InvariantCultureIgnoreCase))
+            if (String.Equals(identityClaimType.DirectoryObjectClass, newDirectoryObjectClass, StringComparison.InvariantCultureIgnoreCase) &&
+                String.Equals(identityClaimType.DirectoryObjectAttribute, newDirectoryObjectAttribute, StringComparison.InvariantCultureIgnoreCase))
             { return identifierUpdated; }
 
-            // Check if the new LDAPAttribute / LDAPClass duplicates an existing item, and delete it if so
+            // Check if the new DirectoryObjectAttribute / DirectoryObjectClass duplicates an existing item, and delete it if so
             for (int i = 0; i < innerCol.Count; i++)
             {
                 ClaimTypeConfig curCT = (ClaimTypeConfig)innerCol[i];
-                if (curCT.EntityType == DirectoryObjectType.User &&
-                    String.Equals(curCT.LDAPAttribute, newDirectoryObjectAttribute, StringComparison.InvariantCultureIgnoreCase) &&
-                    String.Equals(curCT.LDAPClass, newDirectoryObjectClass, StringComparison.InvariantCultureIgnoreCase))
+                if (curCT.DirectoryObjectType == DirectoryObjectType.User &&
+                    String.Equals(curCT.DirectoryObjectAttribute, newDirectoryObjectAttribute, StringComparison.InvariantCultureIgnoreCase) &&
+                    String.Equals(curCT.DirectoryObjectClass, newDirectoryObjectClass, StringComparison.InvariantCultureIgnoreCase))
                 {
                     innerCol.RemoveAt(i);
                     break;  // There can be only 1 potential duplicate
                 }
             }
 
-            identityClaimType.LDAPClass = newDirectoryObjectClass;
-            identityClaimType.LDAPAttribute = newDirectoryObjectAttribute;
+            identityClaimType.DirectoryObjectClass = newDirectoryObjectClass;
+            identityClaimType.DirectoryObjectAttribute = newDirectoryObjectAttribute;
             identifierUpdated = true;
             return identifierUpdated;
         }
@@ -623,8 +612,8 @@ namespace Yvand.LdapClaimsProvider.Configuration
         {
             return innerCol
                 .FirstOrDefault(x =>
-                    x.EntityType == objectType &&
-                    x.UseMainClaimTypeOfDirectoryObject == false);
+                    x.DirectoryObjectType == objectType &&
+                    x.IsAdditionalLdapSearchAttribute == false);
         }
 
         public ClaimTypeConfig GetByClaimType(string claimType)
@@ -638,14 +627,14 @@ namespace Yvand.LdapClaimsProvider.Configuration
         {
             return innerCol
                 .Where(x =>
-                    x.EntityType == entityType &&
-                    x.UseMainClaimTypeOfDirectoryObject == true);
+                    x.DirectoryObjectType == entityType &&
+                    x.IsAdditionalLdapSearchAttribute == true);
         }
 
         public IEnumerable<string> GetSearchAttributesForEntity(DirectoryObjectType entityType)
         {
             var existingAdditionalUserConfigs = GetAdditionalConfigurationsForEntity(entityType);
-            return existingAdditionalUserConfigs.Select(x => x.LDAPAttribute);
+            return existingAdditionalUserConfigs.Select(x => x.DirectoryObjectAttribute);
         }
 
         public void SetSearchAttributesForEntity(string newSearchAttributesList, string ldapClass, DirectoryObjectType entityType)
@@ -657,7 +646,7 @@ namespace Yvand.LdapClaimsProvider.Configuration
             // Step 1: Add new search attributes
             foreach (string newAttribute in newSearchAttributes)
             {
-                if (String.Equals(newAttribute, mainConfig.LDAPAttribute, StringComparison.InvariantCultureIgnoreCase))
+                if (String.Equals(newAttribute, mainConfig.DirectoryObjectAttribute, StringComparison.InvariantCultureIgnoreCase))
                 {
                     continue;
                 }
@@ -666,11 +655,11 @@ namespace Yvand.LdapClaimsProvider.Configuration
                     var newSearchAttributeConfig = new ClaimTypeConfig
                     {
                         ClaimType = String.Empty,
-                        UseMainClaimTypeOfDirectoryObject = true,
-                        EntityType = entityType,
-                        LDAPAttribute = newAttribute,
-                        LDAPClass = ldapClass,
-                        EntityDataKey = ClaimsProviderConstants.EntityMetadataPerLdapAttributes.ContainsKey(newAttribute) ? ClaimsProviderConstants.EntityMetadataPerLdapAttributes[newAttribute] : String.Empty,
+                        IsAdditionalLdapSearchAttribute = true,
+                        DirectoryObjectType = entityType,
+                        DirectoryObjectAttribute = newAttribute,
+                        DirectoryObjectClass = ldapClass,
+                        SPEntityDataKey = ClaimsProviderConstants.EntityMetadataPerLdapAttributes.ContainsKey(newAttribute) ? ClaimsProviderConstants.EntityMetadataPerLdapAttributes[newAttribute] : String.Empty,
                     };
                     Add(newSearchAttributeConfig);
                 }
@@ -679,20 +668,20 @@ namespace Yvand.LdapClaimsProvider.Configuration
             // Step 2: Remove existing search attributes that are missing in newAdditionalLdapFilter
             var existingSearchAttributesToRemove = innerCol
                 .Where(x =>
-                    x.EntityType == entityType &&
-                    x.UseMainClaimTypeOfDirectoryObject == true &&
-                    newSearchAttributes.Contains(x.LDAPAttribute) == false);
+                    x.DirectoryObjectType == entityType &&
+                    x.IsAdditionalLdapSearchAttribute == true &&
+                    newSearchAttributes.Contains(x.DirectoryObjectAttribute) == false);
             RemoveAll(existingSearchAttributesToRemove);
         }
 
         public void SetAdditionalLdapFilterForEntity(string newAdditionalLdapFilter, DirectoryObjectType entityType)
         {
             ClaimTypeConfig mainConfig = GetMainConfigurationForDirectoryObjectType(entityType);
-            mainConfig.AdditionalLDAPFilter = newAdditionalLdapFilter;
+            mainConfig.DirectoryObjectAdditionalFilter = newAdditionalLdapFilter;
             IEnumerable<ClaimTypeConfig> additionalConfigurations = GetAdditionalConfigurationsForEntity(entityType);
             foreach (ClaimTypeConfig additionalConfiguration in additionalConfigurations)
             {
-                additionalConfiguration.AdditionalLDAPFilter = newAdditionalLdapFilter;
+                additionalConfiguration.DirectoryObjectAdditionalFilter = newAdditionalLdapFilter;
             }
         }
     }
@@ -746,15 +735,15 @@ namespace Yvand.LdapClaimsProvider.Configuration
     }
 
     /// <summary>
-    /// Ensure that properties ClaimType, DirectoryObjectProperty and EntityType are unique
+    /// Ensure that properties ClaimType, DirectoryObjectProperty and DirectoryObjectType are unique
     /// </summary>
     public class ClaimTypeConfigSameConfig : EqualityComparer<ClaimTypeConfig>
     {
         public override bool Equals(ClaimTypeConfig existingCTConfig, ClaimTypeConfig newCTConfig)
         {
             if (String.Equals(existingCTConfig.ClaimType, newCTConfig.ClaimType, StringComparison.InvariantCultureIgnoreCase) &&
-                String.Equals(existingCTConfig.LDAPAttribute, newCTConfig.LDAPAttribute, StringComparison.InvariantCultureIgnoreCase) &&
-                String.Equals(existingCTConfig.LDAPClass, newCTConfig.LDAPClass, StringComparison.InvariantCultureIgnoreCase))
+                String.Equals(existingCTConfig.DirectoryObjectAttribute, newCTConfig.DirectoryObjectAttribute, StringComparison.InvariantCultureIgnoreCase) &&
+                String.Equals(existingCTConfig.DirectoryObjectClass, newCTConfig.DirectoryObjectClass, StringComparison.InvariantCultureIgnoreCase))
             {
                 return true;
             }
@@ -766,7 +755,7 @@ namespace Yvand.LdapClaimsProvider.Configuration
 
         public override int GetHashCode(ClaimTypeConfig ct)
         {
-            string hCode = ct.ClaimType + ct.LDAPAttribute + ct.LDAPClass;
+            string hCode = ct.ClaimType + ct.DirectoryObjectAttribute + ct.DirectoryObjectClass;
             return hCode.GetHashCode();
         }
     }
@@ -791,21 +780,21 @@ namespace Yvand.LdapClaimsProvider.Configuration
 
         public override int GetHashCode(ClaimTypeConfig ct)
         {
-            string hCode = ct.ClaimType + ct.EntityType + ct.LDAPAttribute + ct.LDAPClass;
+            string hCode = ct.ClaimType + ct.DirectoryObjectType + ct.DirectoryObjectAttribute + ct.DirectoryObjectClass;
             return hCode.GetHashCode();
         }
     }
 
     /// <summary>
-    /// Ensure that property EntityDataKey is unique for the EntityType
+    /// Ensure that property SPEntityDataKey is unique for the DirectoryObjectType
     /// </summary>
     public class ClaimTypeConfigSamePermissionMetadata : EqualityComparer<ClaimTypeConfig>
     {
         public override bool Equals(ClaimTypeConfig existingCTConfig, ClaimTypeConfig newCTConfig)
         {
-            if (!String.IsNullOrEmpty(newCTConfig.EntityDataKey) &&
-                String.Equals(existingCTConfig.EntityDataKey, newCTConfig.EntityDataKey, StringComparison.InvariantCultureIgnoreCase) &&
-                existingCTConfig.EntityType == newCTConfig.EntityType)
+            if (!String.IsNullOrEmpty(newCTConfig.SPEntityDataKey) &&
+                String.Equals(existingCTConfig.SPEntityDataKey, newCTConfig.SPEntityDataKey, StringComparison.InvariantCultureIgnoreCase) &&
+                existingCTConfig.DirectoryObjectType == newCTConfig.DirectoryObjectType)
             {
                 return true;
             }
@@ -817,20 +806,20 @@ namespace Yvand.LdapClaimsProvider.Configuration
 
         public override int GetHashCode(ClaimTypeConfig ct)
         {
-            string hCode = ct.ClaimType + ct.EntityType;
+            string hCode = ct.ClaimType + ct.DirectoryObjectType;
             return hCode.GetHashCode();
         }
     }
 
     /// <summary>
-    /// Ensure that there is no duplicate of "PrefixToBypassLookup" property
+    /// Ensure that there is no duplicate of "LeadingKeywordToBypassLdapDuringSearch" property
     /// </summary>
     internal class ClaimTypeConfigEnsureUniquePrefixToBypassLookup : EqualityComparer<ClaimTypeConfig>
     {
         public override bool Equals(ClaimTypeConfig existingCTConfig, ClaimTypeConfig newCTConfig)
         {
-            if (!String.IsNullOrEmpty(newCTConfig.PrefixToBypassLookup) &&
-                String.Equals(newCTConfig.PrefixToBypassLookup, existingCTConfig.PrefixToBypassLookup, StringComparison.InvariantCultureIgnoreCase))
+            if (!String.IsNullOrEmpty(newCTConfig.LeadingKeywordToBypassLdapDuringSearch) &&
+                String.Equals(newCTConfig.LeadingKeywordToBypassLdapDuringSearch, existingCTConfig.LeadingKeywordToBypassLdapDuringSearch, StringComparison.InvariantCultureIgnoreCase))
             {
                 return true;
             }
@@ -842,22 +831,22 @@ namespace Yvand.LdapClaimsProvider.Configuration
 
         public override int GetHashCode(ClaimTypeConfig ct)
         {
-            string hCode = ct.PrefixToBypassLookup;
+            string hCode = ct.LeadingKeywordToBypassLdapDuringSearch;
             return hCode.GetHashCode();
         }
     }
 
     /// <summary>
-    /// Should be used only to ensure that only 1 claim type is set per EntityType
+    /// Should be used only to ensure that only 1 claim type is set per DirectoryObjectType
     /// </summary>
     internal class ClaimTypeConfigEnforeOnly1ClaimTypePerObjectType : EqualityComparer<ClaimTypeConfig>
     {
         public override bool Equals(ClaimTypeConfig existingCTConfig, ClaimTypeConfig newCTConfig)
         {
             if ((!String.IsNullOrEmpty(newCTConfig.ClaimType) && !String.IsNullOrEmpty(existingCTConfig.ClaimType)) &&
-                existingCTConfig.EntityType == newCTConfig.EntityType &&
-                existingCTConfig.UseMainClaimTypeOfDirectoryObject == newCTConfig.UseMainClaimTypeOfDirectoryObject &&
-                newCTConfig.UseMainClaimTypeOfDirectoryObject == false)
+                existingCTConfig.DirectoryObjectType == newCTConfig.DirectoryObjectType &&
+                existingCTConfig.IsAdditionalLdapSearchAttribute == newCTConfig.IsAdditionalLdapSearchAttribute &&
+                newCTConfig.IsAdditionalLdapSearchAttribute == false)
             {
                 return true;
             }
@@ -869,21 +858,21 @@ namespace Yvand.LdapClaimsProvider.Configuration
 
         public override int GetHashCode(ClaimTypeConfig ct)
         {
-            string hCode = ct.ClaimType + ct.EntityType + ct.UseMainClaimTypeOfDirectoryObject.ToString();
+            string hCode = ct.ClaimType + ct.DirectoryObjectType + ct.IsAdditionalLdapSearchAttribute.ToString();
             return hCode.GetHashCode();
         }
     }
 
     /// <summary>
-    /// Check if a given object type (user or group) has 2 ClaimTypeConfig with the same LDAPAttribute and LDAPClass
+    /// Check if a given object type (user or group) has 2 ClaimTypeConfig with the same DirectoryObjectAttribute and DirectoryObjectClass
     /// </summary>
     public class ClaimTypeConfigSameDirectoryConfiguration : EqualityComparer<ClaimTypeConfig>
     {
         public override bool Equals(ClaimTypeConfig existingCTConfig, ClaimTypeConfig newCTConfig)
         {
-            if (String.Equals(existingCTConfig.LDAPAttribute, newCTConfig.LDAPAttribute, StringComparison.InvariantCultureIgnoreCase) &&
-                String.Equals(existingCTConfig.LDAPClass, newCTConfig.LDAPClass, StringComparison.InvariantCultureIgnoreCase) &&
-                existingCTConfig.EntityType == newCTConfig.EntityType)
+            if (String.Equals(existingCTConfig.DirectoryObjectAttribute, newCTConfig.DirectoryObjectAttribute, StringComparison.InvariantCultureIgnoreCase) &&
+                String.Equals(existingCTConfig.DirectoryObjectClass, newCTConfig.DirectoryObjectClass, StringComparison.InvariantCultureIgnoreCase) &&
+                existingCTConfig.DirectoryObjectType == newCTConfig.DirectoryObjectType)
             {
                 return true;
             }
@@ -895,7 +884,7 @@ namespace Yvand.LdapClaimsProvider.Configuration
 
         public override int GetHashCode(ClaimTypeConfig ct)
         {
-            string hCode = ct.LDAPAttribute + ct.LDAPClass + ct.EntityType;
+            string hCode = ct.DirectoryObjectAttribute + ct.DirectoryObjectClass + ct.DirectoryObjectType;
             return hCode.GetHashCode();
         }
     }
