@@ -375,28 +375,13 @@ namespace Yvand.LdapClaimsProvider
             }
             filter.Append("(| ");   // START OR
 
-            string preferredFilterPattern;
+            //string preferredFilterPattern;
             // Fix bug https://github.com/Yvand/LDAPCP/issues/53 by escaping special characters with their hex representation as documented in https://ldap.com/ldap-filters/
-            string input = currentContext.Input; // Utils.EscapeSpecialCharacters(currentContext.Input);
-            if (currentContext.ExactSearch)
-            {
-                preferredFilterPattern = input;
-            }
-            else
-            {
-                preferredFilterPattern = this.Settings.AddWildcardAsPrefixOfInput ? "*" + input + "*" : input + "*";
-            }
+            string input = Utils.EscapeSpecialCharacters(currentContext.Input);
 
             foreach (var ctConfig in currentContext.CurrentClaimTypeConfigList)
             {
-                if (ctConfig.SupportsWildcard)
-                {
-                    filter.Append(AddAttributeToFilter(currentContext, ctConfig, preferredFilterPattern));
-                }
-                else
-                {
-                    filter.Append(AddAttributeToFilter(currentContext, ctConfig, input));
-                }
+                filter.Append(AddLdapAttributeToFilter(currentContext, input, ctConfig));
             }
 
             if (this.Settings.FilterEnabledUsersOnly)
@@ -408,22 +393,31 @@ namespace Yvand.LdapClaimsProvider
             return filter.ToString();
         }
 
-        protected string AddAttributeToFilter(OperationContext currentContext, ClaimTypeConfig attribute, string searchPattern)
+        protected string AddLdapAttributeToFilter(OperationContext currentContext, string input, ClaimTypeConfig attributeConfig)
         {
-            string filter = String.Empty;
-            string additionalFilter = String.Empty;
+            string inputFormatted;
+            // Test if wildcard(s) should be added to the input
+            if (currentContext.ExactSearch || !attributeConfig.SupportsWildcard)
+            {
+                inputFormatted = input;
+            }
+            else
+            {
+                inputFormatted = this.Settings.AddWildcardAsPrefixOfInput ? "*" + input + "*" : input + "*";
+            }
 
-            if (this.Settings.FilterSecurityGroupsOnly && String.Equals(attribute.LDAPClass, "group", StringComparison.OrdinalIgnoreCase))
+            // Append an additional LDAP filter if needed
+            string additionalFilter = String.Empty;
+            if (this.Settings.FilterSecurityGroupsOnly && String.Equals(attributeConfig.LDAPClass, "group", StringComparison.OrdinalIgnoreCase))
             {
                 additionalFilter = ClaimsProviderConstants.LDAPFilterADSecurityGroupsOnly;
             }
-
-            if (!String.IsNullOrEmpty(attribute.AdditionalLDAPFilter))
+            if (!String.IsNullOrWhiteSpace(attributeConfig.AdditionalLDAPFilter))
             {
-                additionalFilter += attribute.AdditionalLDAPFilter;
+                additionalFilter += attributeConfig.AdditionalLDAPFilter;
             }
 
-            filter = String.Format(ClaimsProviderConstants.LDAPFilter, attribute.LDAPAttribute, searchPattern, attribute.LDAPClass, additionalFilter);
+            string filter = String.Format(ClaimsProviderConstants.LDAPFilter, attributeConfig.LDAPAttribute, inputFormatted, attributeConfig.LDAPClass, additionalFilter);
             return filter;
         }
 
