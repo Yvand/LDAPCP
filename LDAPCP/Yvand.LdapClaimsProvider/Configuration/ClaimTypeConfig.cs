@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.Remoting.Metadata;
 using WIF4_5 = System.Security.Claims;
 
 namespace Yvand.LdapClaimsProvider.Configuration
@@ -95,7 +96,7 @@ namespace Yvand.LdapClaimsProvider.Configuration
         private bool _UseMainClaimTypeOfDirectoryObject = false;
 
         /// <summary>
-        /// Can contain a member of class PeopleEditorEntityDataKey http://msdn.microsoft.com/en-us/library/office/microsoft.sharepoint.webcontrols.peopleeditorentitydatakeys_members(v=office.15).aspx
+        /// Can contain a member of class PeopleEditorEntityDataKey https://learn.microsoft.com/en-us/previous-versions/office/sharepoint-server/ms415673(v=office.15)
         /// to populate additional metadata in permission created
         /// </summary>
         public string EntityDataKey
@@ -657,6 +658,7 @@ namespace Yvand.LdapClaimsProvider.Configuration
                         EntityType = entityType,
                         LDAPAttribute = newAttribute,
                         LDAPClass = ldapClass,
+                        EntityDataKey = ClaimsProviderConstants.EntityMetadataPerLdapAttributes.ContainsKey(newAttribute) ? ClaimsProviderConstants.EntityMetadataPerLdapAttributes[newAttribute] : String.Empty,
                     };
                     Add(newSearchAttributeConfig);
                 }

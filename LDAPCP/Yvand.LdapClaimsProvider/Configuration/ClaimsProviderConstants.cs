@@ -85,6 +85,17 @@ namespace Yvand.LdapClaimsProvider.Configuration
             { ")", @"\29" },
         };
 
+        public static Dictionary<string, string> EntityMetadataPerLdapAttributes = new Dictionary<string, string>
+        {
+            { "mail", PeopleEditorEntityDataKeys.Email },
+            { "title", PeopleEditorEntityDataKeys.JobTitle },
+            { "displayName", PeopleEditorEntityDataKeys.DisplayName },
+            { "sAMAccountName", PeopleEditorEntityDataKeys.AccountName },
+            { "department", PeopleEditorEntityDataKeys.Department },
+            { "physicalDeliveryOfficeName", PeopleEditorEntityDataKeys.Location },
+            { "mobile", PeopleEditorEntityDataKeys.MobilePhone },
+        };
+
         public static Dictionary<string, ClaimTypeConfig> DefaultSettingsPerUserClaimType = new Dictionary<string, ClaimTypeConfig>()
         {
             {
@@ -104,7 +115,8 @@ namespace Yvand.LdapClaimsProvider.Configuration
                     EntityType = DirectoryObjectType.User,
                     LDAPClass = "user",
                     LDAPAttribute = "mail",
-                    AdditionalLDAPFilter = "(!(objectClass=computer))"
+                    AdditionalLDAPFilter = "(!(objectClass=computer))",
+                    EntityDataKey = EntityMetadataPerLdapAttributes.ContainsKey("mail") ? EntityMetadataPerLdapAttributes["mail"] : String.Empty,
                 }
             },
             {
@@ -114,7 +126,8 @@ namespace Yvand.LdapClaimsProvider.Configuration
                     EntityType = DirectoryObjectType.User,
                     LDAPClass = "user",
                     LDAPAttribute = "sAMAccountName",
-                    AdditionalLDAPFilter = "(!(objectClass=computer))"
+                    AdditionalLDAPFilter = "(!(objectClass=computer))",
+                    EntityDataKey = EntityMetadataPerLdapAttributes.ContainsKey("sAMAccountName") ? EntityMetadataPerLdapAttributes["sAMAccountName"] : String.Empty,
                 }
             },
         };
