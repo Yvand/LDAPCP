@@ -150,7 +150,7 @@ namespace Yvand.LdapClaimsProvider.Administration
                 this.DdlGroupClaimType.Items.Add(possibleGroupClaimTypeItem);
             }
 
-            ClaimTypeConfig groupCtc = Settings.ClaimTypes.GetMainConfigurationForDirectoryObjectType(DirectoryObjectType.Group);// Utils.GetMainGroupClaimTypeConfig(Settings.ClaimTypes);
+            ClaimTypeConfig groupCtc = Settings.ClaimTypes.GetMainConfigurationForDirectoryObjectType(DirectoryObjectType.Group);
             if (groupCtc != null)
             {
                 this.DdlGroupClaimType.SelectedValue = groupCtc.ClaimType;

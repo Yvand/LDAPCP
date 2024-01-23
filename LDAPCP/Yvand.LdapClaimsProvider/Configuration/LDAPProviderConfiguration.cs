@@ -392,7 +392,7 @@ namespace Yvand.LdapClaimsProvider.Configuration
         public virtual void ValidateConfiguration()
         {
             // In case ClaimTypes collection was modified, test if it is still valid
-            if (this.ClaimTypes == null)
+            if (this.ClaimTypes == null || this.ClaimTypes.Count == 0)
             {
                 throw new InvalidOperationException($"Configuration is not valid because collection {nameof(ClaimTypes)} is null");
             }

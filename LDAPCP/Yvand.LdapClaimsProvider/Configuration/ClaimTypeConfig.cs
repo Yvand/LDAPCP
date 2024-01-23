@@ -283,13 +283,15 @@ namespace Yvand.LdapClaimsProvider.Configuration
         {
             get
             {
-                //ClaimTypeConfig ctConfig = Utils.IdentifyIdentityClaimTypeConfigFromClaimTypeConfigCollection(innerCol, SPTrust.IdentityClaimTypeInformation.MappedClaimType);
+                if (innerCol == null)
+                {
+                    return null;
+                }
                 ClaimTypeConfig ctConfig = GetMainConfigurationForDirectoryObjectType(DirectoryObjectType.User);
                 return ctConfig;
             }
             set
             {
-                //ClaimTypeConfig ctConfig = Utils.IdentifyIdentityClaimTypeConfigFromClaimTypeConfigCollection(innerCol, SPTrust.IdentityClaimTypeInformation.MappedClaimType);
                 ClaimTypeConfig ctConfig = GetMainConfigurationForDirectoryObjectType(DirectoryObjectType.User);
                 ctConfig = value;
             }

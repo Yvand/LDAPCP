@@ -215,7 +215,14 @@ namespace Yvand.LdapClaimsProvider.Administration
                 return Status;
             }
 
-            if (Settings.ClaimTypes.IdentityClaim == null)
+            // This should never happen if the object is coming from config database
+            // But it may happen if object is in a mess in current process, amd SPS does not refresh it from config database because its version did not change
+            if (Configuration.ClaimTypes == null || Configuration.ClaimTypes.Count == 0)
+            {
+                Status |= ConfigStatus.ConfigurationInvalid;
+                return Status;
+            }
+            if (Configuration.ClaimTypes.IdentityClaim == null)
             {
                 Status |= ConfigStatus.NoIdentityClaimType;
             }

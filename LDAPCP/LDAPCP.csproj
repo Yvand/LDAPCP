@@ -80,6 +80,13 @@
       <DependentUpon>Yvand.LDAPCPSE.feature</DependentUpon>
     </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="TEMPLATE\ADMIN\LDAPCPSE\ClaimTypesConfig.ascx.cs">
+      <DependentUpon>ClaimTypesConfig.ascx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="TEMPLATE\ADMIN\LDAPCPSE\ClaimTypesConfig.ascx.designer.cs">
+      <DependentUpon>ClaimTypesConfig.ascx.cs</DependentUpon>
+    </Compile>
     <Compile Include="TEMPLATE\ADMIN\LDAPCPSE\GlobalSettings.ascx.cs">
       <DependentUpon>GlobalSettings.ascx</DependentUpon>
       <SubType>ASPXCodeBehind</SubType>
@@ -129,6 +136,8 @@
     <Content Include="Features\Yvand.LDAPCPSE\Yvand.LDAPCPSE.Template.xml">
       <DependentUpon>Yvand.LDAPCPSE.feature</DependentUpon>
     </Content>
+    <Content Include="TEMPLATE\ADMIN\LDAPCPSE\ClaimTypesConfig.ascx" />
+    <Content Include="TEMPLATE\ADMIN\LDAPCPSE\ClaimTypesConfig.aspx" />
     <Content Include="TEMPLATE\ADMIN\LDAPCPSE\GlobalSettings.ascx" />
     <Content Include="TEMPLATE\ADMIN\LDAPCPSE\GlobalSettings.aspx" />
     <Content Include="TEMPLATE\LAYOUTS\LDAPCPSE\jquery-1.9.1.min.js" />
