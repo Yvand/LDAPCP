@@ -4,7 +4,7 @@
   <!-- Common -->
   <PropertyGroup>
     <ProjectGuid>{66F4B88D-7D7E-4435-92DE-94810E2B8F9F}</ProjectGuid>
-    <PackageId>Yvand.LDAPCP</PackageId>
+    <PackageId>Yvand.LDAPCPSE</PackageId>
     <Authors>Yvan Duhamel</Authors>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
@@ -17,7 +17,7 @@
     <ProjectTypeGuids>{C1CDDADD-2546-481F-9697-4EA41081F2FC};{14822709-B5A1-4724-98CA-57A101D1B079};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
     <SandboxedSolution>False</SandboxedSolution>
     <SignAssembly>true</SignAssembly>
-    <AssemblyOriginatorKeyFile>LDAPCP.snk</AssemblyOriginatorKeyFile>
+    <AssemblyOriginatorKeyFile>Yvand.LDAPCPSE.snk</AssemblyOriginatorKeyFile>
     <DependsOnNETStandard>false</DependsOnNETStandard>
     <ProjectMode>SharePointCustomization</ProjectMode>
     <MinimumOfficeToolsVersion>14.1</MinimumOfficeToolsVersion>
@@ -117,7 +117,6 @@
     <None Include="LDAPCPSE.Administration.Links\SharePointProjectItem.spdata">
       <SharePointProjectItemId>{48070593-e687-4f19-8920-d28f17368f37}</SharePointProjectItemId>
     </None>
-    <None Include="LDAPCP.snk" />
     <None Include="Package\Package.package">
       <PackageId>{6ff99767-b95a-4143-8cd8-3978aa01fb80}</PackageId>
     </None>
@@ -127,6 +126,7 @@
     <None Include="TEMPLATE\SharePointProjectItem.spdata">
       <SharePointProjectItemId>{b58f5ced-5e00-4deb-a03e-295241a7c6ab}</SharePointProjectItemId>
     </None>
+    <None Include="Yvand.LDAPCPSE.snk" />
   </ItemGroup>
   <ItemGroup />
   <ItemGroup>
