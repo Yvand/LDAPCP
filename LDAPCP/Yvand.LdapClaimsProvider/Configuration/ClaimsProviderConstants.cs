@@ -130,6 +130,17 @@ namespace Yvand.LdapClaimsProvider.Configuration
                     SPEntityDataKey = EntityMetadataPerLdapAttributes.ContainsKey("sAMAccountName") ? EntityMetadataPerLdapAttributes["sAMAccountName"] : String.Empty,
                 }
             },
+            {
+                WIF4_5.ClaimTypes.PrimarySid,
+                new ClaimTypeConfig
+                {
+                    DirectoryObjectType = DirectoryObjectType.User,
+                    DirectoryObjectClass = "user",
+                    DirectoryObjectAttribute = "objectsid",
+                    DirectoryObjectAttributeSupportsWildcard = false,
+                    SPEntityDataKey = EntityMetadataPerLdapAttributes.ContainsKey("objectsid") ? EntityMetadataPerLdapAttributes["objectsid"] : String.Empty,
+                }
+            },
         };
     }
 
