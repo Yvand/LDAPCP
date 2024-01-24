@@ -162,23 +162,23 @@ namespace Yvand.LdapClaimsProvider.Configuration
         /// they are identical if they have the same claim type and same value
         /// </summary>
         /// <param name="result">LDAP result to compare</param>
-        /// <param name="attribute">AttributeHelper that matches result</param>
-        /// <param name="compareWithDomain">if true, don't consider 2 results as identical if they don't are in same domain.</param>
+        /// <param name="ctConfig">AttributeHelper that matches result</param>
+        /// <param name="dynamicDomainTokenSet">if true, don't consider 2 results as identical if they don't are in same domain.</param>
         /// <returns></returns>
-        public bool Contains(LdapSearchResult result, ClaimTypeConfig attribute, bool compareWithDomain)
+        public bool Contains(LdapSearchResult result, ClaimTypeConfig ctConfig, bool dynamicDomainTokenSet)
         {
             foreach (var item in base.Items)
             {
-                if (item.ClaimTypeConfigMatch.ClaimType != attribute.ClaimType) { continue; }
+                if (item.ClaimTypeConfigMatch.ClaimType != ctConfig.ClaimType) { continue; }
 
-                if (!item.LdapEntityProperties.Contains(attribute.DirectoryObjectAttribute)) { continue; }
+                if (!item.LdapEntityProperties.Contains(ctConfig.DirectoryObjectAttribute)) { continue; }
 
-                // if compareWithDomain is true, don't consider 2 results as identical if they don't are in same domain
+                // if dynamicDomainTokenSet is true, don't consider 2 results as identical if they don't are in same domain
                 // Using same bool to compare both DomainName and DomainFQDN causes scenario below to potentially generate duplicates:
                 // result.DomainName == item.DomainName BUT result.DomainFQDN != item.DomainFQDN AND value of claim is created with DomainName token
-                // If so, compareWithDomain will be true and test below will be true so duplicates won't be check, even though it would be possible. 
+                // If so, dynamicDomainTokenSet will be true and test below will be true so duplicates won't be check, even though it would be possible. 
                 // But this would be so unlikely that this scenario can be ignored
-                if (compareWithDomain && (
+                if (dynamicDomainTokenSet && (
                     !String.Equals(item.AuthorityMatch.DomainName, result.AuthorityMatch.DomainName, StringComparison.InvariantCultureIgnoreCase) ||
                     !String.Equals(item.AuthorityMatch.DomainFQDN, result.AuthorityMatch.DomainFQDN, StringComparison.InvariantCultureIgnoreCase)
                                          ))
@@ -186,7 +186,9 @@ namespace Yvand.LdapClaimsProvider.Configuration
                     continue;   // They don't are in same domain, so not identical, jump to next item
                 }
 
-                if (String.Equals(item.LdapEntityProperties[attribute.DirectoryObjectAttribute][0].ToString(), result.LdapEntityProperties[attribute.DirectoryObjectAttribute][0].ToString(), StringComparison.InvariantCultureIgnoreCase))
+                string itemDirectoryObjectPropertyValue = Utils.GetLdapValueAsString(item.LdapEntityProperties[ctConfig.DirectoryObjectAttribute][0], ctConfig.DirectoryObjectAttribute);
+                string resultDirectoryObjectPropertyValue = Utils.GetLdapValueAsString(result.LdapEntityProperties[ctConfig.DirectoryObjectAttribute][0], ctConfig.DirectoryObjectAttribute);
+                if (String.Equals(itemDirectoryObjectPropertyValue, resultDirectoryObjectPropertyValue, StringComparison.InvariantCultureIgnoreCase))
                 {
                     return true;
                 }

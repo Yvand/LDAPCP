@@ -1,6 +1,7 @@
 ﻿using Microsoft.SharePoint.Administration;
 using Microsoft.SharePoint.Administration.Claims;
 using Microsoft.SharePoint.WebControls;
+using Microsoft.Web.Hosting.Administration;
 using System;
 using System.Collections.Generic;
 using System.DirectoryServices;
@@ -353,15 +354,15 @@ namespace Yvand.LdapClaimsProvider.Configuration
 
         public static string ConvertSidBinaryToString(byte[] sidBinary)
         {
-            string sidString;
+            string sidString = String.Empty;
             try
             {
+                // Works even if the sid is from an exteral domain
                 SecurityIdentifier sid = new SecurityIdentifier(sidBinary, 0);
                 sidString = sid.ToString();
             }
             catch (Exception e)
             {
-                sidString = Encoding.UTF8.GetString(sidBinary);
             }
             return sidString;
         }
@@ -380,9 +381,37 @@ namespace Yvand.LdapClaimsProvider.Configuration
             return sidBinary;
         }
 
-        public static bool HasPrefixToken(string prefix, string tokenToSearch)
+        public static bool IsDynamicTokenSet(string stringToVerify, string dynamicTokenToSearch)
         {
-            return prefix != null && prefix.Contains(tokenToSearch);
+            return !String.IsNullOrWhiteSpace(stringToVerify) && stringToVerify.Contains(dynamicTokenToSearch);
+        }
+
+        public static string GetLdapValueAsString(object value, string directoryObjectAttributeName)
+        {
+            string directoryObjectPropertyValue = String.Empty;
+            // Fix https://github.com/Yvand/LDAPCP/issues/43: properly test the type of the value
+            if (value is string)
+            {
+                directoryObjectPropertyValue = value as string;
+            }
+            else if (value is byte[])
+            {
+                byte[] valueAsBytes = value as byte[];
+                if (String.Equals(directoryObjectAttributeName, "objectsid", StringComparison.OrdinalIgnoreCase))
+                {
+                    directoryObjectPropertyValue = Utils.ConvertSidBinaryToString(valueAsBytes);
+                }
+                else
+                {
+                    StringBuilder sb = new StringBuilder();
+                    for (int i = 0; i < valueAsBytes.Length; i++)
+                    {
+                        sb.Append(valueAsBytes[i].ToString("x2"));
+                    }
+                    directoryObjectPropertyValue = sb.ToString();
+                }
+            }
+            return directoryObjectPropertyValue;
         }
     }
 }

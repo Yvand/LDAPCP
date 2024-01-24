@@ -4,6 +4,7 @@ using Microsoft.SharePoint.Utilities;
 using Microsoft.SharePoint.WebControls;
 using System;
 using System.Collections.Generic;
+using System.Data.SqlTypes;
 using System.Diagnostics;
 using System.DirectoryServices;
 using System.Linq;
@@ -657,32 +658,32 @@ namespace Yvand.LdapClaimsProvider
             return entities;
         }
 
-        protected virtual LdapSearchResultCollection ProcessLdapResults(OperationContext currentContext, List<LdapSearchResult> LDAPSearchResults)
+        protected virtual LdapSearchResultCollection ProcessLdapResults(OperationContext currentContext, List<LdapSearchResult> ldapSearchResults)
         {
             LdapSearchResultCollection results = new LdapSearchResultCollection();
-            ResultPropertyCollection LDAPResultProperties;
+            ResultPropertyCollection ldapResultProperties;
             IEnumerable<ClaimTypeConfig> ctConfigs = currentContext.CurrentClaimTypeConfigList;
             if (currentContext.ExactSearch)
             {
                 ctConfigs = currentContext.CurrentClaimTypeConfigList.Where(x => !x.IsAdditionalLdapSearchAttribute);
             }
 
-            foreach (LdapSearchResult LDAPResult in LDAPSearchResults)
+            foreach (LdapSearchResult ldapResult in ldapSearchResults)
             {
-                LDAPResultProperties = LDAPResult.LdapEntityProperties;
+                ldapResultProperties = ldapResult.LdapEntityProperties;
                 // objectclass attribute should never be missing because it is explicitely requested in LDAP query
-                if (!LDAPResultProperties.Contains("objectclass"))
+                if (!ldapResultProperties.Contains("objectclass"))
                 {
-                    Logger.Log($"[{Name}] Property \"objectclass\" is missing in LDAP result, this may be due to insufficient entities of the account connecting to LDAP server '{LDAPResult.AuthorityMatch.DomainFQDN}'. Skipping result.", TraceSeverity.Unexpected, EventSeverity.Error, TraceCategory.GraphRequests);
+                    Logger.Log($"[{Name}] Property \"objectclass\" is missing in LDAP result, this may be due to insufficient entities of the account connecting to LDAP server '{ldapResult.AuthorityMatch.DomainFQDN}'. Skipping result.", TraceSeverity.Unexpected, EventSeverity.Error, TraceCategory.GraphRequests);
                     continue;
                 }
 
                 // Cast collection to be able to use StringComparer.InvariantCultureIgnoreCase for case insensitive search of ldap properties
-                IEnumerable<string> LDAPResultPropertyNames = LDAPResultProperties.PropertyNames.Cast<string>();
+                IEnumerable<string> LDAPResultPropertyNames = ldapResultProperties.PropertyNames.Cast<string>();
 
                 // Issue https://github.com/Yvand/LDAPCP/issues/16: If current result is a user, ensure LDAP attribute of identity ClaimTypeConfig exists in current LDAP result
                 bool isUserWithNoIdentityAttribute = false;
-                if (LDAPResultProperties["objectclass"].Cast<string>().Contains(this.Settings.IdentityClaimTypeConfig.DirectoryObjectClass, StringComparer.InvariantCultureIgnoreCase))
+                if (ldapResultProperties["objectclass"].Cast<string>().Contains(this.Settings.IdentityClaimTypeConfig.DirectoryObjectClass, StringComparer.InvariantCultureIgnoreCase))
                 {
                     // This is a user: check if his identity LDAP attribute (e.g. mail or sAMAccountName) is present
                     if (!LDAPResultPropertyNames.Contains(this.Settings.IdentityClaimTypeConfig.DirectoryObjectAttribute, StringComparer.InvariantCultureIgnoreCase))
@@ -704,7 +705,7 @@ namespace Yvand.LdapClaimsProvider
                     }
 
                     // Skip if: DirectoryObjectClass of current config does not match objectclass of LDAP result
-                    if (!LDAPResultProperties["objectclass"].Cast<string>().Contains(ctConfig.DirectoryObjectClass, StringComparer.InvariantCultureIgnoreCase))
+                    if (!ldapResultProperties["objectclass"].Cast<string>().Contains(ctConfig.DirectoryObjectClass, StringComparer.InvariantCultureIgnoreCase))
                     {
                         continue;
                     }
@@ -716,19 +717,11 @@ namespace Yvand.LdapClaimsProvider
                     }
 
                     // Get value with of current LDAP attribute
-                    string directoryObjectPropertyValue = String.Empty;
-                    object value = LDAPResultProperties[LDAPResultPropertyNames.First(x => String.Equals(x, ctConfig.DirectoryObjectAttribute, StringComparison.InvariantCultureIgnoreCase))][0];
                     // Fix https://github.com/Yvand/LDAPCP/issues/43: properly test the type of the value
-                    if (value is string)
+                    string directoryObjectPropertyValue = Utils.GetLdapValueAsString(ldapResultProperties[LDAPResultPropertyNames.First(x => String.Equals(x, ctConfig.DirectoryObjectAttribute, StringComparison.InvariantCultureIgnoreCase))][0], ctConfig.DirectoryObjectAttribute);
+                    if (String.IsNullOrWhiteSpace(directoryObjectPropertyValue)) 
                     {
-                        directoryObjectPropertyValue = value as string;
-                    }
-                    else if (value is byte[])
-                    {
-                        if (String.Equals(ctConfig.DirectoryObjectAttribute, "objectsid", StringComparison.OrdinalIgnoreCase))
-                        {
-                            directoryObjectPropertyValue = Utils.ConvertSidBinaryToString(value as byte[]);
-                        }
+                        continue;
                     }
 
                     // Check if current LDAP attribute value matches the input
@@ -787,40 +780,23 @@ namespace Yvand.LdapClaimsProvider
                     }
 
                     // When token domain is present, then ensure we do compare with the actual domain name
-                    bool compareWithDomain = Utils.HasPrefixToken(ctConfig.ClaimValueLeadingToken, ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINNAME);// ? true : this.Settings.CompareResultsWithDomainNameProp;
-                    if (!compareWithDomain)
+                    bool dynamicDomainTokenSet = Utils.IsDynamicTokenSet(ctConfig.ClaimValueLeadingToken, ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINNAME);// ? true : this.Settings.CompareResultsWithDomainNameProp;
+                    if (!dynamicDomainTokenSet)
                     {
-                        compareWithDomain = Utils.HasPrefixToken(ctConfig.ClaimValueLeadingToken, ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINFQDN);// ? true : this.Settings.CompareResultsWithDomainNameProp;
+                        dynamicDomainTokenSet = Utils.IsDynamicTokenSet(ctConfig.ClaimValueLeadingToken, ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINFQDN);// ? true : this.Settings.CompareResultsWithDomainNameProp;
                     }
-                    if (results.Contains(LDAPResult, ctConfigToUseForDuplicateCheck, compareWithDomain))
+                    if (results.Contains(ldapResult, ctConfigToUseForDuplicateCheck, dynamicDomainTokenSet))
                     {
                         continue;
                     }
 
-                    LDAPResult.ClaimTypeConfigMatch = ctConfig;
-                    LDAPResult.ValueMatch = directoryObjectPropertyValue;
-                    LDAPResult.PickerEntity = CreatePickerEntityHelper(currentContext, LDAPResult);
-                    results.Add(LDAPResult);
-
-                    //results.Add(
-                    //    new ConsolidatedResult
-                    //    {
-                    //        ClaimTypeConfig = ctConfig,
-                    //        LDAPResults = LDAPResultProperties,
-                    //        Value = directoryObjectPropertyValue,
-                    //        DomainName = LDAPResult.DomainName,
-                    //        DomainFQDN = LDAPResult.DomainFQDN,
-                    //        //DEBUG = String.Format("DirectoryObjectAttribute: {0}, LDAPAttributeValue: {1}, AlwaysResolveAgainstIdentityClaim: {2}", attr.DirectoryObjectAttribute, LDAPResultProperties[attr.DirectoryObjectAttribute][0].ToString(), attr.AlwaysResolveAgainstIdentityClaim.ToString())
-                    //    });
+                    ldapResult.ClaimTypeConfigMatch = ctConfig;
+                    ldapResult.ValueMatch = directoryObjectPropertyValue;
+                    ldapResult.PickerEntity = CreatePickerEntityHelper(currentContext, ldapResult);
+                    results.Add(ldapResult);
                 }
             }
             Logger.Log(String.Format("[{0}] {1} entity(ies) to create after filtering", Name, results.Count), TraceSeverity.Medium, EventSeverity.Information, TraceCategory.GraphRequests);
-            foreach (var result in results)
-            {
-                //PickerEntity pe = CreatePickerEntityHelper(result);
-                //// Add it to the return list of picker entries.
-                //result.PickerEntity = pe;
-            }
             return results;
         }
         #endregion
@@ -953,12 +929,12 @@ namespace Yvand.LdapClaimsProvider
             string value = claimValue;
 
             var attr = this.Settings.RuntimeClaimTypesList.FirstOrDefault(x => SPClaimTypes.Equals(x.ClaimType, claimType));
-            if (Utils.HasPrefixToken(attr.ClaimValueLeadingToken, ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINNAME))
+            if (Utils.IsDynamicTokenSet(attr.ClaimValueLeadingToken, ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINNAME))
             {
                 value = string.Format("{0}{1}", attr.ClaimValueLeadingToken.Replace(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINNAME, result.AuthorityMatch.DomainName), value);
             }
 
-            if (Utils.HasPrefixToken(attr.ClaimValueLeadingToken, ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINFQDN))
+            if (Utils.IsDynamicTokenSet(attr.ClaimValueLeadingToken, ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINFQDN))
             {
                 value = string.Format("{0}{1}", attr.ClaimValueLeadingToken.Replace(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINFQDN, result.AuthorityMatch.DomainFQDN), value);
             }
@@ -989,12 +965,12 @@ namespace Yvand.LdapClaimsProvider
             }
             else
             {
-                if (Utils.HasPrefixToken(result.ClaimTypeConfigMatch.ClaimValueLeadingToken, ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINNAME))
+                if (Utils.IsDynamicTokenSet(result.ClaimTypeConfigMatch.ClaimValueLeadingToken, ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINNAME))
                 {
                     prefixToAdd = string.Format("{0}", result.ClaimTypeConfigMatch.ClaimValueLeadingToken.Replace(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINNAME, result.AuthorityMatch.DomainName));
                 }
 
-                if (Utils.HasPrefixToken(result.ClaimTypeConfigMatch.ClaimValueLeadingToken, ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINFQDN))
+                if (Utils.IsDynamicTokenSet(result.ClaimTypeConfigMatch.ClaimValueLeadingToken, ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINFQDN))
                 {
                     prefixToAdd = string.Format("{0}", result.ClaimTypeConfigMatch.ClaimValueLeadingToken.Replace(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINFQDN, result.AuthorityMatch.DomainFQDN));
                 }
