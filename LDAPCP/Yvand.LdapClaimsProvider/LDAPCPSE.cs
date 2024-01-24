@@ -337,6 +337,7 @@ namespace Yvand.LdapClaimsProvider
         /// <param name="claims"></param>
         protected void AugmentEntity(Uri context, SPClaim entity, SPClaimProviderContext claimProviderContext, List<SPClaim> claims)
         {
+
             SPClaim decodedEntity;
             if (SPClaimProviderManager.IsUserIdentifierClaim(entity))
             {
@@ -362,62 +363,65 @@ namespace Yvand.LdapClaimsProvider
                 return;
             }
 
-            if (!ValidateSettings(context)) { return; }
-
-            this.Lock_LocalConfigurationRefresh.EnterReadLock();
-            OperationContext currentContext = null;
-            try
+            using (new SPMonitoredScope($"[{ClaimsProviderName}] Augment entity whith value \"{decodedEntity.ClaimType}", 3000))
             {
-                // There can be multiple TrustedProvider on the farm, but EntraCP should only do augmentation if current entity is from TrustedProvider it is associated with
-                if (!String.Equals(decodedEntity.OriginalIssuer, this.OriginalIssuerName, StringComparison.InvariantCultureIgnoreCase)) { return; }
+                if (!ValidateSettings(context)) { return; }
 
-                if (!this.Settings.EnableAugmentation) { return; }
-
-                Logger.Log($"[{Name}] Starting augmentation for user '{decodedEntity.Value}'.", TraceSeverity.Verbose, EventSeverity.Information, TraceCategory.Augmentation);
-                //ClaimTypeConfig groupClaimTypeSettings = this.Settings.RuntimeClaimTypesList.FirstOrDefault(x => x.DirectoryObjectType == DirectoryObjectType.Group);
-                //if (groupClaimTypeSettings == null)
-                //{
-                //    Logger.Log($"[{Name}] No claim type with DirectoryObjectType 'Group' was found, please check claims mapping table.",
-                //        TraceSeverity.High, EventSeverity.Error, TraceCategory.Augmentation);
-                //    return;
-                //}
-
-                currentContext = new OperationContext(this.Settings, OperationType.Augmentation, String.Empty, decodedEntity, context, null, null, Int32.MaxValue);
-                Stopwatch timer = new Stopwatch();
-                timer.Start();
-                List<string> groups = this.EntityProvider.GetEntityGroups(currentContext);
-                timer.Stop();
-                if (groups?.Count > 0)
+                this.Lock_LocalConfigurationRefresh.EnterReadLock();
+                OperationContext currentContext = null;
+                try
                 {
-                    foreach (string group in groups)
+                    // There can be multiple TrustedProvider on the farm, but EntraCP should only do augmentation if current entity is from TrustedProvider it is associated with
+                    if (!String.Equals(decodedEntity.OriginalIssuer, this.OriginalIssuerName, StringComparison.InvariantCultureIgnoreCase)) { return; }
+
+                    if (!this.Settings.EnableAugmentation) { return; }
+
+                    Logger.Log($"[{Name}] Starting augmentation for user '{decodedEntity.Value}'.", TraceSeverity.Verbose, EventSeverity.Information, TraceCategory.Augmentation);
+                    //ClaimTypeConfig groupClaimTypeSettings = this.Settings.RuntimeClaimTypesList.FirstOrDefault(x => x.DirectoryObjectType == DirectoryObjectType.Group);
+                    //if (groupClaimTypeSettings == null)
+                    //{
+                    //    Logger.Log($"[{Name}] No claim type with DirectoryObjectType 'Group' was found, please check claims mapping table.",
+                    //        TraceSeverity.High, EventSeverity.Error, TraceCategory.Augmentation);
+                    //    return;
+                    //}
+
+                    currentContext = new OperationContext(this.Settings, OperationType.Augmentation, String.Empty, decodedEntity, context, null, null, Int32.MaxValue);
+                    Stopwatch timer = new Stopwatch();
+                    timer.Start();
+                    List<string> groups = this.EntityProvider.GetEntityGroups(currentContext);
+                    timer.Stop();
+                    if (groups?.Count > 0)
                     {
-                        claims.Add(CreateClaim(this.Settings.MainGroupClaimTypeConfig.ClaimType, group, this.Settings.MainGroupClaimTypeConfig.ClaimValueType));
-                        Logger.Log($"[{Name}] Added group '{group}' to user '{currentContext.IncomingEntity.Value}'",
-                            TraceSeverity.Verbose, EventSeverity.Information, TraceCategory.Augmentation);
-                    }
-                    Logger.Log($"[{Name}] Augmented user '{currentContext.IncomingEntity.Value}' with {groups.Count} groups in {timer.ElapsedMilliseconds} ms",
-                        TraceSeverity.Medium, EventSeverity.Information, TraceCategory.Augmentation);
-                }
-                else
-                {
-                    Logger.Log($"[{Name}] Got no group in {timer.ElapsedMilliseconds} ms for user '{currentContext.IncomingEntity.Value}'",
-                        TraceSeverity.Medium, EventSeverity.Information, TraceCategory.Augmentation);
-                }
-            }
-            catch (Exception ex)
-            {
-                Logger.LogException(Name, "in AugmentEntity", TraceCategory.Augmentation, ex);
-            }
-            finally
-            {
-                this.Lock_LocalConfigurationRefresh.ExitReadLock();
-                if (currentContext != null)
-                {
-                    foreach (LdapConnection ldapConnection in currentContext.LdapConnections)
-                    {
-                        if (ldapConnection.DirectoryConnection != null)
+                        foreach (string group in groups)
                         {
-                            ldapConnection.DirectoryConnection.Dispose();
+                            claims.Add(CreateClaim(this.Settings.MainGroupClaimTypeConfig.ClaimType, group, this.Settings.MainGroupClaimTypeConfig.ClaimValueType));
+                            Logger.Log($"[{Name}] Added group '{group}' to user '{currentContext.IncomingEntity.Value}'",
+                                TraceSeverity.Verbose, EventSeverity.Information, TraceCategory.Augmentation);
+                        }
+                        Logger.Log($"[{Name}] Augmented user '{currentContext.IncomingEntity.Value}' with {groups.Count} groups in {timer.ElapsedMilliseconds} ms",
+                            TraceSeverity.Medium, EventSeverity.Information, TraceCategory.Augmentation);
+                    }
+                    else
+                    {
+                        Logger.Log($"[{Name}] Got no group in {timer.ElapsedMilliseconds} ms for user '{currentContext.IncomingEntity.Value}'",
+                            TraceSeverity.Medium, EventSeverity.Information, TraceCategory.Augmentation);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Logger.LogException(Name, "in AugmentEntity", TraceCategory.Augmentation, ex);
+                }
+                finally
+                {
+                    this.Lock_LocalConfigurationRefresh.ExitReadLock();
+                    if (currentContext != null)
+                    {
+                        foreach (LdapConnection ldapConnection in currentContext.LdapConnections)
+                        {
+                            if (ldapConnection.DirectoryConnection != null)
+                            {
+                                ldapConnection.DirectoryConnection.Dispose();
+                            }
                         }
                     }
                 }
@@ -428,73 +432,79 @@ namespace Yvand.LdapClaimsProvider
         #region Search
         protected override void FillResolve(Uri context, string[] entityTypes, string resolveInput, List<PickerEntity> resolved)
         {
-            if (!ValidateSettings(context)) { return; }
+            using (new SPMonitoredScope($"[{ClaimsProviderName}] Search entities which match input \"{resolveInput}", 3000))
+            {
+                if (!ValidateSettings(context)) { return; }
 
-            this.Lock_LocalConfigurationRefresh.EnterReadLock();
-            try
-            {
-                OperationContext currentContext = new OperationContext(this.Settings, OperationType.Search, resolveInput, null, context, entityTypes, null, 30);
-                List<PickerEntity> entities = SearchOrValidate(currentContext);
-                if (entities == null || entities.Count == 0) { return; }
-                foreach (PickerEntity entity in entities)
+                this.Lock_LocalConfigurationRefresh.EnterReadLock();
+                try
                 {
-                    resolved.Add(entity);
-                    Logger.Log($"[{Name}] Added entity: display text: '{entity.DisplayText}', claim value: '{entity.Claim.Value}', claim type: '{entity.Claim.ClaimType}'",
-                        TraceSeverity.Verbose, EventSeverity.Information, TraceCategory.Claims_Picking);
+                    OperationContext currentContext = new OperationContext(this.Settings, OperationType.Search, resolveInput, null, context, entityTypes, null, 30);
+                    List<PickerEntity> entities = SearchOrValidate(currentContext);
+                    if (entities == null || entities.Count == 0) { return; }
+                    foreach (PickerEntity entity in entities)
+                    {
+                        resolved.Add(entity);
+                        Logger.Log($"[{Name}] Added entity: display text: '{entity.DisplayText}', claim value: '{entity.Claim.Value}', claim type: '{entity.Claim.ClaimType}'",
+                            TraceSeverity.Verbose, EventSeverity.Information, TraceCategory.Claims_Picking);
+                    }
+                    Logger.Log($"[{Name}] Returned {entities.Count} entities with value '{currentContext.Input}'", TraceSeverity.Medium, EventSeverity.Information, TraceCategory.Claims_Picking);
                 }
-                Logger.Log($"[{Name}] Returned {entities.Count} entities with value '{currentContext.Input}'", TraceSeverity.Medium, EventSeverity.Information, TraceCategory.Claims_Picking);
-            }
-            catch (Exception ex)
-            {
-                Logger.LogException(Name, "in FillResolve(string)", TraceCategory.Claims_Picking, ex);
-            }
-            finally
-            {
-                this.Lock_LocalConfigurationRefresh.ExitReadLock();
+                catch (Exception ex)
+                {
+                    Logger.LogException(Name, "in FillResolve(string)", TraceCategory.Claims_Picking, ex);
+                }
+                finally
+                {
+                    this.Lock_LocalConfigurationRefresh.ExitReadLock();
+                }
             }
         }
 
         protected override void FillSearch(Uri context, string[] entityTypes, string searchPattern, string hierarchyNodeID, int maxCount, SPProviderHierarchyTree searchTree)
         {
-            if (!ValidateSettings(context)) { return; }
-
-            this.Lock_LocalConfigurationRefresh.EnterReadLock();
-            try
+            using (new SPMonitoredScope($"[{ClaimsProviderName}] Search entities which match input \"{searchPattern}", 3000))
             {
-                OperationContext currentContext = new OperationContext(this.Settings, OperationType.Search, searchPattern, null, context, entityTypes, hierarchyNodeID, maxCount);
-                List<PickerEntity> entities = this.SearchOrValidate(currentContext);
-                if (entities == null || entities.Count == 0) { return; }
-                SPProviderHierarchyNode matchNode = null;
-                foreach (PickerEntity entity in entities)
+                if (!ValidateSettings(context)) { return; }
+
+                this.Lock_LocalConfigurationRefresh.EnterReadLock();
+                try
                 {
-                    // Add current PickerEntity to the corresponding ClaimType in the hierarchy
-                    if (searchTree.HasChild(entity.Claim.ClaimType))
+                    OperationContext currentContext = new OperationContext(this.Settings, OperationType.Search, searchPattern, null, context, entityTypes, hierarchyNodeID, maxCount);
+                    List<PickerEntity> entities = this.SearchOrValidate(currentContext);
+                    if (entities == null || entities.Count == 0) { return; }
+                    SPProviderHierarchyNode matchNode = null;
+                    foreach (PickerEntity entity in entities)
                     {
-                        matchNode = searchTree.Children.First(x => x.HierarchyNodeID == entity.Claim.ClaimType);
-                    }
-                    else
-                    {
-                        ClaimTypeConfig ctConfig = this.Settings.RuntimeClaimTypesList.FirstOrDefault(x =>
-                            !x.IsAdditionalLdapSearchAttribute &&
-                            String.Equals(x.ClaimType, entity.Claim.ClaimType, StringComparison.InvariantCultureIgnoreCase));
+                        // Add current PickerEntity to the corresponding ClaimType in the hierarchy
+                        if (searchTree.HasChild(entity.Claim.ClaimType))
+                        {
+                            matchNode = searchTree.Children.First(x => x.HierarchyNodeID == entity.Claim.ClaimType);
+                        }
+                        else
+                        {
+                            ClaimTypeConfig ctConfig = this.Settings.RuntimeClaimTypesList.FirstOrDefault(x =>
+                                !x.IsAdditionalLdapSearchAttribute &&
+                                String.Equals(x.ClaimType, entity.Claim.ClaimType, StringComparison.InvariantCultureIgnoreCase));
 
-                        string nodeName = ctConfig != null ? ctConfig.ClaimTypeDisplayName : entity.Claim.ClaimType;
-                        matchNode = new SPProviderHierarchyNode(Name, nodeName, entity.Claim.ClaimType, true);
-                        searchTree.AddChild(matchNode);
+                            string nodeName = ctConfig != null ? ctConfig.ClaimTypeDisplayName : entity.Claim.ClaimType;
+                            matchNode = new SPProviderHierarchyNode(Name, nodeName, entity.Claim.ClaimType, true);
+                            searchTree.AddChild(matchNode);
+                        }
+                        matchNode.AddEntity(entity);
+                        Logger.Log($"[{Name}] Added entity: display text: '{entity.DisplayText}', claim value: '{entity.Claim.Value}', claim type: '{entity.Claim.ClaimType}'",
+                            TraceSeverity.Verbose, EventSeverity.Information, TraceCategory.Claims_Picking);
                     }
-                    matchNode.AddEntity(entity);
-                    Logger.Log($"[{Name}] Added entity: display text: '{entity.DisplayText}', claim value: '{entity.Claim.Value}', claim type: '{entity.Claim.ClaimType}'",
-                        TraceSeverity.Verbose, EventSeverity.Information, TraceCategory.Claims_Picking);
+                    Logger.Log($"[{Name}] Returned {entities.Count} entities from value '{currentContext.Input}'",
+                        TraceSeverity.Medium, EventSeverity.Information, TraceCategory.Claims_Picking);
                 }
-                Logger.Log($"[{Name}] Returned {entities.Count} entities from value '{currentContext.Input}'",
-                    TraceSeverity.Medium, EventSeverity.Information, TraceCategory.Claims_Picking);
-            }
-            catch (Exception ex)
-            {
-            }
-            finally
-            {
-                this.Lock_LocalConfigurationRefresh.ExitReadLock();
+                catch (Exception ex)
+                {
+                }
+                finally
+                {
+                    this.Lock_LocalConfigurationRefresh.ExitReadLock();
+                }
             }
         }
         #endregion
@@ -502,36 +512,39 @@ namespace Yvand.LdapClaimsProvider
         #region Validation
         protected override void FillResolve(Uri context, string[] entityTypes, SPClaim resolveInput, List<PickerEntity> resolved)
         {
-            if (!ValidateSettings(context)) { return; }
+            using (new SPMonitoredScope($"[{ClaimsProviderName}] Validate entity whith value \"{resolveInput.ClaimType}", 3000))
+            {
+                if (!ValidateSettings(context)) { return; }
 
-            this.Lock_LocalConfigurationRefresh.EnterReadLock();
-            try
-            {
-                // Ensure incoming claim should be validated by EntraCP
-                // Must be made after call to Initialize because SPTrustedLoginProvider name must be known
-                if (!String.Equals(resolveInput.OriginalIssuer, this.OriginalIssuerName, StringComparison.InvariantCultureIgnoreCase)) { return; }
+                this.Lock_LocalConfigurationRefresh.EnterReadLock();
+                try
+                {
+                    // Ensure incoming claim should be validated by EntraCP
+                    // Must be made after call to Initialize because SPTrustedLoginProvider name must be known
+                    if (!String.Equals(resolveInput.OriginalIssuer, this.OriginalIssuerName, StringComparison.InvariantCultureIgnoreCase)) { return; }
 
-                OperationContext currentContext = new OperationContext(this.Settings, OperationType.Validation, resolveInput.Value, resolveInput, context, entityTypes, null, 1);
-                List<PickerEntity> entities = this.SearchOrValidate(currentContext);
-                if (entities?.Count == 1)
-                {
-                    resolved.Add(entities[0]);
-                    Logger.Log($"[{Name}] Validated entity: display text: '{entities[0].DisplayText}', claim value: '{entities[0].Claim.Value}', claim type: '{entities[0].Claim.ClaimType}'",
-                        TraceSeverity.High, EventSeverity.Information, TraceCategory.Claims_Picking);
+                    OperationContext currentContext = new OperationContext(this.Settings, OperationType.Validation, resolveInput.Value, resolveInput, context, entityTypes, null, 1);
+                    List<PickerEntity> entities = this.SearchOrValidate(currentContext);
+                    if (entities?.Count == 1)
+                    {
+                        resolved.Add(entities[0]);
+                        Logger.Log($"[{Name}] Validated entity: display text: '{entities[0].DisplayText}', claim value: '{entities[0].Claim.Value}', claim type: '{entities[0].Claim.ClaimType}'",
+                            TraceSeverity.High, EventSeverity.Information, TraceCategory.Claims_Picking);
+                    }
+                    else
+                    {
+                        int entityCount = entities == null ? 0 : entities.Count;
+                        Logger.Log($"[{Name}] Validation failed: found {entityCount.ToString()} entities instead of 1 for incoming claim with value '{currentContext.IncomingEntity.Value}' and type '{currentContext.IncomingEntity.ClaimType}'", TraceSeverity.Unexpected, EventSeverity.Error, TraceCategory.Claims_Picking);
+                    }
                 }
-                else
+                catch (Exception ex)
                 {
-                    int entityCount = entities == null ? 0 : entities.Count;
-                    Logger.Log($"[{Name}] Validation failed: found {entityCount.ToString()} entities instead of 1 for incoming claim with value '{currentContext.IncomingEntity.Value}' and type '{currentContext.IncomingEntity.ClaimType}'", TraceSeverity.Unexpected, EventSeverity.Error, TraceCategory.Claims_Picking);
+                    Logger.LogException(Name, "in FillResolve(SPClaim)", TraceCategory.Claims_Picking, ex);
                 }
-            }
-            catch (Exception ex)
-            {
-                Logger.LogException(Name, "in FillResolve(SPClaim)", TraceCategory.Claims_Picking, ex);
-            }
-            finally
-            {
-                this.Lock_LocalConfigurationRefresh.ExitReadLock();
+                finally
+                {
+                    this.Lock_LocalConfigurationRefresh.ExitReadLock();
+                }
             }
         }
         #endregion
@@ -703,11 +716,23 @@ namespace Yvand.LdapClaimsProvider
                     }
 
                     // Get value with of current LDAP attribute
-                    // TODO: investigate https://github.com/Yvand/LDAPCP/issues/43
-                    string directoryObjectPropertyValue = LDAPResultProperties[LDAPResultPropertyNames.First(x => String.Equals(x, ctConfig.DirectoryObjectAttribute, StringComparison.InvariantCultureIgnoreCase))][0].ToString();
+                    string directoryObjectPropertyValue = String.Empty;
+                    object value = LDAPResultProperties[LDAPResultPropertyNames.First(x => String.Equals(x, ctConfig.DirectoryObjectAttribute, StringComparison.InvariantCultureIgnoreCase))][0];
+                    // Fix https://github.com/Yvand/LDAPCP/issues/43: properly test the type of the value
+                    if (value is string)
+                    {
+                        directoryObjectPropertyValue = value as string;
+                    }
+                    else if (value is byte[])
+                    {
+                        if (String.Equals(ctConfig.DirectoryObjectAttribute, "objectsid", StringComparison.OrdinalIgnoreCase))
+                        {
+                            directoryObjectPropertyValue = Utils.ConvertSidBinaryToString(value as byte[]);
+                        }
+                    }
 
                     // Check if current LDAP attribute value matches the input
-                    if (currentContext.ExactSearch)
+                    if (currentContext.ExactSearch || !ctConfig.DirectoryObjectAttributeSupportsWildcard)
                     {
                         if (!String.Equals(directoryObjectPropertyValue, currentContext.Input, StringComparison.InvariantCultureIgnoreCase))
                         {
