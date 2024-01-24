@@ -2,15 +2,9 @@
 using Microsoft.SharePoint.Administration;
 using Microsoft.SharePoint.Utilities;
 using System;
-using System.Collections.Generic;
 using System.DirectoryServices;
 using System.DirectoryServices.ActiveDirectory;
-using System.DirectoryServices.Protocols;
-using System.IO;
-using System.Linq;
 using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Yvand.LdapClaimsProvider.Configuration
 {
@@ -145,7 +139,7 @@ namespace Yvand.LdapClaimsProvider.Configuration
                             this.DomainName = Utils.GetDomainName(this.DomainFQDN);
 
                             // Property LDAPConnection.AuthenticationType must be set, in order to build the PrincipalContext correctly in GetGroupsFromActiveDirectory()
-                            this.AuthenticationType = this.DirectoryConnection.AuthenticationType;
+                            this.AuthenticationType = this._DirectoryConnection.AuthenticationType;
                         }
                         catch (System.Runtime.InteropServices.COMException ex)
                         {

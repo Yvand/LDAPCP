@@ -3,6 +3,7 @@ using Microsoft.SharePoint.Administration;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.DirectoryServices;
 using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -115,6 +116,11 @@ namespace Yvand.LdapClaimsProvider
                     {
                         errorNessage += $"{Environment.NewLine}Callstack: {stackTrace}";
                     }
+                }
+                else if (ex is DirectoryServicesCOMException)
+                {
+                    errorNessage = "[{0}] Unexpected error {1}: {2}: {3}";
+                    errorNessage = String.Format(errorNessage, claimsProviderName, customMessage, ex.GetType().Name, ((DirectoryServicesCOMException)ex).ExtendedErrorMessage);
                 }
                 else
                 {

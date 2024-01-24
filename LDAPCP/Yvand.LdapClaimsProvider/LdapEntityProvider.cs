@@ -362,7 +362,12 @@ namespace Yvand.LdapClaimsProvider
         public override List<LdapSearchResult> SearchOrValidateEntities(OperationContext currentContext)
         {
             string ldapFilter = this.BuildFilter(currentContext);
-            return this.QueryLDAPServers(currentContext, ldapFilter);
+            List<LdapSearchResult> LdapSearchResult = null;
+            SPSecurity.RunWithElevatedPrivileges(delegate ()
+            {
+                LdapSearchResult = this.QueryLDAPServers(currentContext, ldapFilter);
+            });
+            return LdapSearchResult;
         }
 
         protected string BuildFilter(OperationContext currentContext)
@@ -439,7 +444,7 @@ namespace Yvand.LdapClaimsProvider
                 {
                     ds.SearchRoot = directory;
                     ds.SizeLimit = currentContext.MaxCount;
-                    ds.ClientTimeout = new TimeSpan(0, 0, this.Settings.Timeout); // Set the timeout of the query
+                    ds.ClientTimeout = new TimeSpan(0, 0, this.Settings.Timeout); // Set the timeout in seconds
                     ds.PropertiesToLoad.Add("objectclass");
                     ds.PropertiesToLoad.Add("nETBIOSName");
                     foreach (var ldapAttribute in this.Settings.RuntimeClaimTypesList.Where(x => !String.IsNullOrWhiteSpace(x.DirectoryObjectAttribute)))
@@ -491,7 +496,7 @@ namespace Yvand.LdapClaimsProvider
                         }
                         catch (Exception ex)
                         {
-                            Logger.LogException(ClaimsProviderName, "while connecting to LDAP server " + directory.Path, TraceCategory.GraphRequests, ex);
+                            Logger.LogException(ClaimsProviderName, $"while connecting to \"{directory.Path}\"", TraceCategory.GraphRequests, ex);
                         }
                         finally
                         {
@@ -504,7 +509,7 @@ namespace Yvand.LdapClaimsProvider
 
 
             globalStopWatch.Stop();
-            Logger.Log(String.Format("[{0}] Got {1} result(s) in {2}ms from all servers with query \"{3}\"", ClaimsProviderName, results.Count, globalStopWatch.ElapsedMilliseconds.ToString(), ldapFilter), TraceSeverity.Verbose, EventSeverity.Information, TraceCategory.GraphRequests);
+            Logger.Log(String.Format("[{0}] Got {1} result(s) in {2}ms from all directories with query \"{3}\"", ClaimsProviderName, results.Count, globalStopWatch.ElapsedMilliseconds.ToString(), ldapFilter), TraceSeverity.Verbose, EventSeverity.Information, TraceCategory.GraphRequests);
             return results;
         }
     }
