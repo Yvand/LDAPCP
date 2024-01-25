@@ -9,19 +9,21 @@ using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Security.Claims;
-using Yvand.LdapClaimsProvider.Configuration;
+using Yvand.LdapClaimsProvider;
 
-namespace Yvand.LDAPCPSE.Tests
+namespace Yvand.LdapClaimsProvider.Tests
 {
     [SetUpFixture]
     public class UnitTestsHelper
     {
-        public static readonly EntraCP ClaimsProvider = new EntraCP(TestContext.Parameters["ClaimsProviderName"]);
+        public static readonly LDAPCPSE ClaimsProvider = new LDAPCPSE(TestContext.Parameters["ClaimsProviderName"]);
         public static SPTrustedLoginProvider SPTrust => SPSecurityTokenServiceManager.Local.TrustedLoginProviders.FirstOrDefault(x => String.Equals(x.ClaimProviderName, TestContext.Parameters["ClaimsProviderName"], StringComparison.InvariantCultureIgnoreCase));
         public static Uri TestSiteCollUri;
         public static string TestSiteRelativePath => $"/sites/{TestContext.Parameters["TestSiteCollectionName"]}";
         public const int MaxTime = 50000;
         public static string FarmAdmin => TestContext.Parameters["FarmAdmin"];
+        public static string DomainFqdn => TestContext.Parameters["DomainFqdn"];
+        public static string Domain => TestContext.Parameters["Domain"];
 #if DEBUG
         public const int TestRepeatCount = 1;
 #else
@@ -30,15 +32,13 @@ namespace Yvand.LDAPCPSE.Tests
 
         public static string RandomClaimType => "http://schemas.yvand.net/ws/claims/random";
         public static string RandomClaimValue => "IDoNotExist";
-        public static DirectoryObjectProperty RandomObjectProperty => DirectoryObjectProperty.AccountEnabled;
+        public static string RandomObjectProperty => "AccountEnabled";
 
         public static string TrustedGroupToAdd_ClaimType => TestContext.Parameters["TrustedGroupToAdd_ClaimType"];
         public static string TrustedGroupToAdd_ClaimValue => TestContext.Parameters["TrustedGroupToAdd_ClaimValue"];
         public static SPClaim TrustedGroup => new SPClaim(TrustedGroupToAdd_ClaimType, TrustedGroupToAdd_ClaimValue, ClaimValueTypes.String, SPOriginalIssuers.Format(SPOriginalIssuerType.TrustedProvider, SPTrust.Name));
 
-        public static string AzureTenantsJsonFile => TestContext.Parameters["AzureTenantsJsonFile"];
-        public static string DataFile_GuestAccountsUPN_Search => TestContext.Parameters["DataFile_GuestAccountsUPN_Search"];
-        public static string DataFile_GuestAccountsUPN_Validate => TestContext.Parameters["DataFile_GuestAccountsUPN_Validate"];
+        public static string AzureTenantsJsonFile => TestContext.Parameters["LdapConnections"];
         public static string DataFile_AllAccounts_Search => TestContext.Parameters["DataFile_AllAccounts_Search"];
         public static string DataFile_AllAccounts_Validate => TestContext.Parameters["DataFile_AllAccounts_Validate"];
         static TextWriterTraceListener Logger { get; set; }
@@ -49,11 +49,9 @@ namespace Yvand.LDAPCPSE.Tests
             Logger = new TextWriterTraceListener(TestContext.Parameters["TestLogFileName"]);
             Trace.Listeners.Add(Logger);
             Trace.AutoFlush = true;
-            Trace.TraceInformation($"{DateTime.Now.ToString("s")} Start integration tests of {EntraCP.ClaimsProviderName} {FileVersionInfo.GetVersionInfo(Assembly.GetAssembly(typeof(EntraCP)).Location).FileVersion}.");
+            Trace.TraceInformation($"{DateTime.Now.ToString("s")} Start integration tests of {ClaimsProvider.Name} {FileVersionInfo.GetVersionInfo(Assembly.GetAssembly(typeof(LDAPCPSE)).Location).FileVersion}.");
             Trace.TraceInformation($"{DateTime.Now.ToString("s")} DataFile_AllAccounts_Search: {DataFile_AllAccounts_Search}");
             Trace.TraceInformation($"{DateTime.Now.ToString("s")} DataFile_AllAccounts_Validate: {DataFile_AllAccounts_Validate}");
-            Trace.TraceInformation($"{DateTime.Now.ToString("s")} DataFile_GuestAccountsUPN_Search: {DataFile_GuestAccountsUPN_Search}");
-            Trace.TraceInformation($"{DateTime.Now.ToString("s")} DataFile_GuestAccountsUPN_Validate: {DataFile_GuestAccountsUPN_Validate}");
             Trace.TraceInformation($"{DateTime.Now.ToString("s")} TestSiteCollectionName: {TestContext.Parameters["TestSiteCollectionName"]}");
 
             if (SPTrust == null)
@@ -77,7 +75,7 @@ namespace Yvand.LDAPCPSE.Tests
                 {
                     foreach (SPAuthenticationProvider authenticationProviders in iisSetting.ClaimsAuthenticationProviders)
                     {
-                        if (String.Equals(authenticationProviders.ClaimProviderName, EntraCP.ClaimsProviderName, StringComparison.OrdinalIgnoreCase))
+                        if (String.Equals(authenticationProviders.ClaimProviderName, LDAPCPSE.ClaimsProviderName, StringComparison.OrdinalIgnoreCase))
                         {
                             return true;
                         }
@@ -121,7 +119,7 @@ namespace Yvand.LDAPCPSE.Tests
             if (!SPSite.Exists(TestSiteCollUri))
             {
                 Trace.TraceInformation($"{DateTime.Now.ToString("s")} Creating site collection {TestSiteCollUri.AbsoluteUri} with template '{spSiteTemplate}'...");
-                SPSite spSite = wa.Sites.Add(TestSiteCollUri.AbsoluteUri, EntraCP.ClaimsProviderName, EntraCP.ClaimsProviderName, 1033, spSiteTemplate, FarmAdmin, String.Empty, String.Empty);
+                SPSite spSite = wa.Sites.Add(TestSiteCollUri.AbsoluteUri, LDAPCPSE.ClaimsProviderName, LDAPCPSE.ClaimsProviderName, 1033, spSiteTemplate, FarmAdmin, String.Empty, String.Empty);
                 spSite.RootWeb.CreateDefaultAssociatedGroups(FarmAdmin, FarmAdmin, spSite.RootWeb.Title);
 
                 SPGroup membersGroup = spSite.RootWeb.AssociatedMemberGroup;
@@ -141,7 +139,7 @@ namespace Yvand.LDAPCPSE.Tests
         [OneTimeTearDown]
         public static void Cleanup()
         {
-            Trace.TraceInformation($"{DateTime.Now.ToString("s")} Integration tests of {EntraCP.ClaimsProviderName} {FileVersionInfo.GetVersionInfo(Assembly.GetAssembly(typeof(EntraCP)).Location).FileVersion} finished.");
+            Trace.TraceInformation($"{DateTime.Now.ToString("s")} Integration tests of {LDAPCPSE.ClaimsProviderName} {FileVersionInfo.GetVersionInfo(Assembly.GetAssembly(typeof(LDAPCPSE)).Location).FileVersion} finished.");
             Trace.Flush();
             if (Logger != null)
             {
@@ -158,14 +156,6 @@ namespace Yvand.LDAPCPSE.Tests
     //        yield return new[] { "AADGroupTes", "1", "99abdc91-e6e0-475c-a0ba-5014f91de853" };
     //    }
     //}
-
-    public enum ResultUserType
-    {
-        None,
-        Mixed,
-        Member,
-        Guest,
-    }
 
     public enum ResultEntityType
     {
@@ -187,7 +177,6 @@ namespace Yvand.LDAPCPSE.Tests
         public int SearchResultCount;
         public string SearchResultSingleEntityClaimValue;
         public ResultEntityType SearchResultEntityTypes;
-        public ResultUserType SearchResultUserTypes;
         public bool ExactMatch;
     }
 
@@ -196,11 +185,6 @@ namespace Yvand.LDAPCPSE.Tests
         public static IEnumerable<TestCaseData> GetTestData(EntityDataSourceType entityDataSourceType)
         {
             string csvPath = UnitTestsHelper.DataFile_AllAccounts_Search;
-            if (entityDataSourceType == EntityDataSourceType.UPNB2BGuestAccounts)
-            {
-                csvPath = UnitTestsHelper.DataFile_GuestAccountsUPN_Search;
-            }
-
             DataTable dt = DataTable.New.ReadCsv(csvPath);
             foreach (Row row in dt.Rows)
             {
@@ -209,7 +193,6 @@ namespace Yvand.LDAPCPSE.Tests
                 registrationData.SearchResultCount = Convert.ToInt32(row["SearchResultCount"]);
                 registrationData.SearchResultSingleEntityClaimValue = row["SearchResultSingleEntityClaimValue"];
                 registrationData.SearchResultEntityTypes = (ResultEntityType) Enum.Parse(typeof(ResultEntityType), row["SearchResultEntityTypes"]);
-                registrationData.SearchResultUserTypes = (ResultUserType)Enum.Parse(typeof(ResultUserType), row["SearchResultUserTypes"]);
                 registrationData.ExactMatch = Convert.ToBoolean(row["ExactMatch"]);
                 yield return new TestCaseData(new object[] { registrationData });
             }
@@ -236,11 +219,6 @@ namespace Yvand.LDAPCPSE.Tests
         public static IEnumerable<TestCaseData> GetTestData(EntityDataSourceType entityDataSourceType)
         {
             string csvPath = UnitTestsHelper.DataFile_AllAccounts_Validate;
-            if (entityDataSourceType == EntityDataSourceType.UPNB2BGuestAccounts)
-            {
-                csvPath = UnitTestsHelper.DataFile_GuestAccountsUPN_Validate;
-            }
-
             DataTable dt = DataTable.New.ReadCsv(csvPath);
 
             foreach (Row row in dt.Rows)
@@ -250,7 +228,6 @@ namespace Yvand.LDAPCPSE.Tests
                 registrationData.ShouldValidate = Convert.ToBoolean(row["ShouldValidate"]);
                 registrationData.IsMemberOfTrustedGroup = Convert.ToBoolean(row["IsMemberOfTrustedGroup"]);
                 registrationData.EntityType = (ResultEntityType)Enum.Parse(typeof(ResultEntityType), row["EntityType"]);
-                registrationData.UserType = (ResultUserType)Enum.Parse(typeof(ResultUserType), row["UserType"]);
                 yield return new TestCaseData(new object[] { registrationData });
             }
         }
@@ -262,6 +239,5 @@ namespace Yvand.LDAPCPSE.Tests
         public bool ShouldValidate;
         public bool IsMemberOfTrustedGroup;
         public ResultEntityType EntityType;
-        public ResultUserType UserType;
     }
 }
