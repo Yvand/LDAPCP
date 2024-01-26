@@ -13,7 +13,7 @@
     <Parameter name="FarmAdmin" value="i:0#.w|contoso\yvand" />
     <Parameter name="TestSiteCollectionName" value="LDAPCPSE.UnitTests" />
     <Parameter name="TrustedGroupToAdd_ClaimType" value="http://schemas.microsoft.com/ws/2008/06/identity/claims/role" />
-    <Parameter name="TrustedGroupToAdd_ClaimValue" value="group1" />
+    <Parameter name="TrustedGroupToAdd_ClaimValue" value="contoso.local\group1" />
     <Parameter name="ClaimsProviderConfigName" value="LDAPCSEPConfig" />
     <Parameter name="TestLogFileName" value="LDAPCPSEIntegrationTests.log" />
     <Parameter name="MultiPurposeCustomClaimType" value="http://schemas.yvand.org/claims/type1" />

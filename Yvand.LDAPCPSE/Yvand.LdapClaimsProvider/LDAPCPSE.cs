@@ -802,6 +802,13 @@ namespace Yvand.LdapClaimsProvider
         #endregion
 
         #region Helpers
+        protected virtual new SPClaim CreateClaim(string type, string value, string valueType)
+        {
+            // SPClaimProvider.CreateClaim sets property OriginalIssuer to SPOriginalIssuerType.ClaimProvider, which is not correct
+            //return CreateClaim(type, value, valueType);
+            return new SPClaim(type, value, valueType, this.OriginalIssuerName);
+        }
+
         protected virtual PickerEntity CreatePickerEntityHelper(OperationContext currentContext, LdapSearchResult result)
         {
             PickerEntity pe = CreatePickerEntity();
