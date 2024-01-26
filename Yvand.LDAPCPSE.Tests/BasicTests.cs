@@ -38,9 +38,9 @@ namespace Yvand.LdapClaimsProvider.Tests
         //}
 
         //[TestCase(@"group\ch", 1, @"contoso.local\group\chartest")]
-        //[TestCase(@"test)", 2, @"test)char@contoso.local")]
+        [TestCase(@"test_special)", 2, @"test_special)char@contoso.local")]
         //[TestCase(@"group\ch", 1, @"group\chartest")]
-        [TestCase(@"user1", 1, @"user1@contoso.local")]
+        [TestCase(@"testLdapcpseUser10", 1, @"testLdapcpseUser10@contoso.local")]
         public override void SearchEntities(string inputValue, int expectedResultCount, string expectedEntityClaimValue)
         {
             base.SearchEntities(inputValue, expectedResultCount, expectedEntityClaimValue);

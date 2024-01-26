@@ -134,15 +134,15 @@ namespace Yvand.LdapClaimsProvider.Configuration
                 newCTConfigCollection.Add(ctConfig);
             }
 
-            // Not adding those as additional attributes to avoid having too many LDAP attributes to search users in the LDAP filter
-            //var nonIdentityClaimTypes = ClaimsProviderConstants.DefaultSettingsPerUserClaimType.Where(x => x.Key != spTrust.IdentityClaimTypeInformation.MappedClaimType);
-            //foreach (var nonIdentityClaimType in nonIdentityClaimTypes)
-            //{
-            //    ClaimTypeConfig ctConfig = nonIdentityClaimType.Value;
-            //    ctConfig.ClaimType = String.Empty;
-            //    ctConfig.IsAdditionalLdapSearchAttribute = true;
-            //    newCTConfigCollection.Add(ctConfig);
-            //}
+            //// Not adding those as additional attributes to avoid having too many LDAP attributes to search users in the LDAP filter
+            var nonIdentityClaimTypes = ClaimsProviderConstants.DefaultSettingsPerUserClaimType.Where(x => x.Key != spTrust.IdentityClaimTypeInformation.MappedClaimType);
+            foreach (var nonIdentityClaimType in nonIdentityClaimTypes)
+            {
+                ClaimTypeConfig ctConfig = nonIdentityClaimType.Value;
+                ctConfig.ClaimType = String.Empty;
+                ctConfig.IsAdditionalLdapSearchAttribute = true;
+                newCTConfigCollection.Add(ctConfig);
+            }
 
             // Additional properties to find user and create entity with the identity claim type (IsAdditionalLdapSearchAttribute=true)
             newCTConfigCollection.Add(new ClaimTypeConfig { DirectoryObjectType = DirectoryObjectType.User, DirectoryObjectClass = "user", DirectoryObjectAttribute = "displayName", IsAdditionalLdapSearchAttribute = true, SPEntityDataKey = PeopleEditorEntityDataKeys.DisplayName, DirectoryObjectAdditionalFilter = "(!(objectClass=computer))" });

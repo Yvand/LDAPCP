@@ -270,7 +270,7 @@ namespace Yvand.LdapClaimsProvider.Configuration
         {
             //this.Settings = settings;
             this.OperationType = currentRequestType;
-            this.Input = Utils.EscapeSpecialCharacters(input);
+            this.Input = input; // Utils.EscapeSpecialCharacters(input);
             this.IncomingEntity = incomingEntity;
             this.UriContext = context;
             this.HierarchyNodeID = hierarchyNodeID;

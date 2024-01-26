@@ -477,9 +477,9 @@ namespace Yvand.LdapClaimsProvider
                             using (SearchResultCollection directoryResults = ds.FindAll())
                             {
                                 stopWatch.Stop();
-                                if (directoryResults != null && directoryResults.Count > 0)
+                                Logger.Log($"[{ClaimsProviderName}] Got {directoryResults.Count} result(s) in {stopWatch.ElapsedMilliseconds.ToString()}ms from '{directory.Path}' with filter '{ds.Filter}'", TraceSeverity.Medium, EventSeverity.Information, TraceCategory.GraphRequests);
+                                if (directoryResults.Count > 0)
                                 {
-                                    Logger.Log($"[{ClaimsProviderName}] Got {directoryResults.Count.ToString()} result(s) in {stopWatch.ElapsedMilliseconds.ToString()}ms from '{directory.Path}' with filter '{ds.Filter}'", TraceSeverity.Medium, EventSeverity.Information, TraceCategory.GraphRequests);
                                     lock (lockResults)
                                     {
                                         foreach (SearchResult item in directoryResults)
@@ -496,7 +496,7 @@ namespace Yvand.LdapClaimsProvider
                         }
                         catch (Exception ex)
                         {
-                            Logger.LogException(ClaimsProviderName, $"while connecting to \"{directory.Path}\"", TraceCategory.GraphRequests, ex);
+                            Logger.LogException(ClaimsProviderName, $"while connecting to \"{directory.Path}\" with filter '{ds.Filter}'", TraceCategory.GraphRequests, ex);
                         }
                         finally
                         {
@@ -509,7 +509,7 @@ namespace Yvand.LdapClaimsProvider
 
 
             globalStopWatch.Stop();
-            Logger.Log(String.Format("[{0}] Got {1} result(s) in {2}ms from all directories with query \"{3}\"", ClaimsProviderName, results.Count, globalStopWatch.ElapsedMilliseconds.ToString(), ldapFilter), TraceSeverity.Verbose, EventSeverity.Information, TraceCategory.GraphRequests);
+            Logger.Log(String.Format("[{0}] Got {1} result(s) in {2}ms from all directories with filter \"{3}\"", ClaimsProviderName, results.Count, globalStopWatch.ElapsedMilliseconds.ToString(), ldapFilter), TraceSeverity.Verbose, EventSeverity.Information, TraceCategory.GraphRequests);
             return results;
         }
     }
