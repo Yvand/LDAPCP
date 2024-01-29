@@ -1,25 +1,15 @@
-﻿using Newtonsoft.Json;
-using NUnit.Framework;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using NUnit.Framework;
 using Yvand.LdapClaimsProvider.Configuration;
-using WIF4_5 = System.Security.Claims;
 
 namespace Yvand.LdapClaimsProvider.Tests
 {
     [TestFixture]
     [Parallelizable(ParallelScope.Children)]
-    internal class PrimaryGroupIDTests : EntityTestsBase
+    internal class PrimaryGroupIdTests : EntityTestsBase
     {
         public override void InitializeSettings(bool applyChanges)
         {
             base.InitializeSettings(false);
-
-            // Extra initialization for current test class
             ClaimTypeConfig ctConfigPgidAttribute = new ClaimTypeConfig
             {
                 ClaimType = TestContext.Parameters["MultiPurposeCustomClaimType"], // WIF4_5.ClaimTypes.PrimaryGroupSid
@@ -40,9 +30,10 @@ namespace Yvand.LdapClaimsProvider.Tests
         [TestCase(@"513", 1, @"513")]
         [TestCase(@"51", 0, @"")]
         [TestCase(@"5133", 0, @"")]
-        public override void SearchEntities(string inputValue, int expectedResultCount, string expectedEntityClaimValue)
+        public void TestPrimaryGroupIdClaimType(string inputValue, int expectedResultCount, string expectedEntityClaimValue)
         {
-            base.SearchEntities(inputValue, expectedResultCount, expectedEntityClaimValue);
+            base.TestSearchOperation(inputValue, expectedResultCount, expectedEntityClaimValue);
+            base.TestValidationOperation(TestContext.Parameters["MultiPurposeCustomClaimType"], inputValue, expectedResultCount == 0 ? false : true);
         }
     }
 }

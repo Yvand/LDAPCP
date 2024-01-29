@@ -16,34 +16,25 @@ namespace Yvand.LdapClaimsProvider.Tests
     public class EntityTestsBase
     {
         /// <summary>
-        /// Configures whether to run entity search tests.
-        /// </summary>
-        public virtual bool TestSearch => true;
-
-        /// <summary>
-        /// Configures whether to run entity validation tests.
-        /// </summary>
-        public virtual bool TestValidation => true;
-
-        /// <summary>
-        /// Configures whether to run entity augmentation tests.
-        /// </summary>
-        public virtual bool TestAugmentation => true;
-
-        /// <summary>
-        /// Configures whether to exclude AAD Guest users from search and validation. This does not impact augmentation.
-        /// </summary>
-        public virtual bool ExcludeGuestUsers => false;
-
-        /// <summary>
-        /// Configures whether to exclude AAD Member users from search and validation. This does not impact augmentation.
-        /// </summary>
-        public virtual bool ExcludeMemberUsers => false;
-
-        /// <summary>
         /// Configures whether the configuration applied is valid, and whether the claims provider should be able to use it
         /// </summary>
         public bool ConfigurationShouldBeValid = true;
+
+        public string UserIdentifierClaimType
+        {
+            get
+            {
+                return Settings.ClaimTypes.GetMainConfigurationForDirectoryObjectType(DirectoryObjectType.User).ClaimType;
+            }
+        }
+
+        public string GroupIdentifierClaimType
+        {
+            get
+            {
+                return Settings.ClaimTypes.GetMainConfigurationForDirectoryObjectType(DirectoryObjectType.Group).ClaimType;
+            }
+        }
 
         protected LdapProviderConfiguration GlobalConfiguration;
         protected LdapProviderSettings Settings = new LdapProviderSettings();
@@ -99,9 +90,10 @@ namespace Yvand.LdapClaimsProvider.Tests
             List<LdapConnection> azureTenants = JsonConvert.DeserializeObject<List<LdapConnection>>(json);
             Settings.LdapConnections = azureTenants;
 
+            Settings.EnableAugmentation = true;
+
             if (applyChanges)
             {
-                //GlobalConfiguration.ApplySettings(Settings, true);
                 TestSettingsAndApplyThemIfValid();
                 Trace.TraceInformation($"{DateTime.Now:s} [EntityTestsBase] Updated configuration: {JsonConvert.SerializeObject(Settings, Formatting.None)}");
             }
@@ -124,78 +116,13 @@ namespace Yvand.LdapClaimsProvider.Tests
             }
         }
 
-        public virtual void SearchEntities(SearchEntityData registrationData)
-        {
-            if (!TestSearch)
-            {
-                return;
-            }
-
-            // If current entry does not return only users AND either guests or members are excluded, ExpectedResultCount cannot be determined so test cannot run
-            if (registrationData.SearchResultEntityTypes != ResultEntityType.User &&
-                (ExcludeGuestUsers || ExcludeMemberUsers))
-            {
-                return;
-            }
-
-            int expectedResultCount = registrationData.SearchResultCount;
-            if (Settings.FilterExactMatchOnly == true)
-            {
-                expectedResultCount = registrationData.ExactMatch ? 1 : 0;
-            }
-
-            TestSearchOperation(registrationData.Input, expectedResultCount, registrationData.SearchResultSingleEntityClaimValue);
-        }
-
-        public virtual void SearchEntities(string inputValue, int expectedResultCount, string expectedEntityClaimValue)
-        {
-            if (!TestSearch) { return; }
-
-            TestSearchOperation(inputValue, expectedResultCount, expectedEntityClaimValue);
-        }
-
-        public virtual void ValidateClaim(ValidateEntityData registrationData)
-        {
-            if (!TestValidation) { return; }
-
-            bool shouldValidate = registrationData.ShouldValidate;
-            string claimType = registrationData.EntityType == ResultEntityType.User ?
-                UnitTestsHelper.SPTrust.IdentityClaimTypeInformation.MappedClaimType :
-                UnitTestsHelper.TrustedGroupToAdd_ClaimType;
-
-            SPClaim inputClaim = new SPClaim(claimType, registrationData.ClaimValue, ClaimValueTypes.String, SPOriginalIssuers.Format(SPOriginalIssuerType.TrustedProvider, UnitTestsHelper.SPTrust.Name));
-            TestValidationOperation(inputClaim, shouldValidate, registrationData.ClaimValue);
-        }
-
-        public virtual void ValidateClaim(string claimType, string claimValue, bool shouldValidate)
-        {
-            if (!TestValidation) { return; }
-
-            SPClaim inputClaim = new SPClaim(claimType, claimValue, ClaimValueTypes.String, SPOriginalIssuers.Format(SPOriginalIssuerType.TrustedProvider, UnitTestsHelper.SPTrust.Name));
-            TestValidationOperation(inputClaim, shouldValidate, claimValue);
-        }
-
-        public virtual void AugmentEntity(ValidateEntityData registrationData)
-        {
-            if (!TestAugmentation) { return; }
-
-            TestAugmentationOperation(UnitTestsHelper.SPTrust.IdentityClaimTypeInformation.MappedClaimType, registrationData.ClaimValue, registrationData.IsMemberOfTrustedGroup);
-        }
-
-        public virtual void AugmentEntity(string claimValue, bool shouldHavePermissions)
-        {
-            if (!TestAugmentation) { return; }
-
-            TestAugmentationOperation(UnitTestsHelper.SPTrust.IdentityClaimTypeInformation.MappedClaimType, claimValue, shouldHavePermissions);
-        }
-
         /// <summary>
         /// Start search operation on a specific claims provider
         /// </summary>
         /// <param name="inputValue"></param>
         /// <param name="expectedCount">How many entities are expected to be returned. Set to Int32.MaxValue if exact number is unknown but greater than 0</param>
         /// <param name="expectedClaimValue"></param>
-        public static void TestSearchOperation(string inputValue, int expectedCount, string expectedClaimValue)
+        public void TestSearchOperation(string inputValue, int expectedCount, string expectedClaimValue)
         {
             try
             {
@@ -222,7 +149,7 @@ namespace Yvand.LdapClaimsProvider.Tests
             }
         }
 
-        public static void VerifySearchTest(List<PickerEntity> entities, string input, int expectedCount, string expectedClaimValue)
+        private void VerifySearchTest(List<PickerEntity> entities, string input, int expectedCount, string expectedClaimValue)
         {
             bool entityValueFound = false;
             StringBuilder detailedLog = new StringBuilder($"It returned {entities.Count} entities: ");
@@ -249,8 +176,19 @@ namespace Yvand.LdapClaimsProvider.Tests
             Assert.That(entities.Count, Is.EqualTo(expectedCount), $"Input \"{input}\" should have returned {expectedCount} entities, but it returned {entities.Count} instead. {detailedLog}");
         }
 
-        public static void TestValidationOperation(SPClaim inputClaim, bool shouldValidate, string expectedClaimValue)
+        public void TestValidationOperation(ValidateEntityData registrationData)
         {
+            bool shouldValidate = registrationData.ShouldValidate;
+            string claimType = registrationData.EntityType == ResultEntityType.User ?
+                UnitTestsHelper.SPTrust.IdentityClaimTypeInformation.MappedClaimType :
+                UnitTestsHelper.TrustedGroupToAdd_ClaimType;
+
+            TestValidationOperation(claimType, registrationData.ClaimValue, shouldValidate);
+        }
+
+        public void TestValidationOperation(string claimType, string claimValue, bool shouldValidate) //(SPClaim inputClaim, bool shouldValidate, string expectedClaimValue)
+        {
+            SPClaim inputClaim = new SPClaim(claimType, claimValue, ClaimValueTypes.String, SPOriginalIssuers.Format(SPOriginalIssuerType.TrustedProvider, UnitTestsHelper.SPTrust.Name));
             try
             {
                 Stopwatch timer = new Stopwatch();
@@ -263,19 +201,38 @@ namespace Yvand.LdapClaimsProvider.Tests
                 Assert.That(entities.Length, Is.EqualTo(expectedCount), $"Validation of entity \"{inputClaim.Value}\" should have returned {expectedCount} entity, but it returned {entities.Length} instead.");
                 if (shouldValidate)
                 {
-                    Assert.That(entities[0].Claim.Value, Is.EqualTo(expectedClaimValue).IgnoreCase, $"Validation of entity \"{inputClaim.Value}\" should have returned value \"{expectedClaimValue}\", but it returned \"{entities[0].Claim.Value}\" instead.");
+                    Assert.That(entities[0].Claim.Value, Is.EqualTo(claimValue).IgnoreCase, $"Validation of entity \"{inputClaim.Value}\" should have returned value \"{claimValue}\", but it returned \"{entities[0].Claim.Value}\" instead.");
                 }
                 timer.Stop();
-                Trace.TraceInformation($"{DateTime.Now:s} TestValidationOperation finished in {timer.ElapsedMilliseconds} ms. Parameters: inputClaim.Value: '{inputClaim.Value}', shouldValidate: '{shouldValidate}', expectedClaimValue: '{expectedClaimValue}'.");
+                Trace.TraceInformation($"{DateTime.Now:s} TestValidationOperation finished in {timer.ElapsedMilliseconds} ms. Parameters: inputClaim.Value: '{inputClaim.Value}', shouldValidate: '{shouldValidate}', expectedClaimValue: '{claimValue}'.");
             }
             catch (Exception ex)
             {
-                Trace.TraceError($"{DateTime.Now:s} TestValidationOperation failed with exception '{ex.GetType()}', message '{ex.Message}'. Parameters: inputClaim.Value: '{inputClaim.Value}', shouldValidate: '{shouldValidate}', expectedClaimValue: '{expectedClaimValue}'.");
+                Trace.TraceError($"{DateTime.Now:s} TestValidationOperation failed with exception '{ex.GetType()}', message '{ex.Message}'. Parameters: inputClaim.Value: '{inputClaim.Value}', shouldValidate: '{shouldValidate}', expectedClaimValue: '{claimValue}'.");
             }
         }
 
-        public static void TestAugmentationOperation(string claimType, string claimValue, bool isMemberOfTrustedGroup)
+        /// <summary>
+        /// Tests if the augmentation works as expected.
+        /// </summary>
+        /// <param name="registrationData"></param>
+        [Test, TestCaseSource(typeof(ValidateEntityDataSource), nameof(ValidateEntityDataSource.GetTestData), new object[] { EntityDataSourceType.AllAccounts })]
+        [Repeat(UnitTestsHelper.TestRepeatCount)]
+        public virtual void TestAugmentationOperation(ValidateEntityData registrationData)
         {
+            TestAugmentationOperation(registrationData.ClaimValue, registrationData.IsMemberOfTrustedGroup);
+        }
+
+        /// <summary>
+        /// Tests if the augmentation works as expected.
+        /// </summary>
+        /// <param name="claimValue"></param>
+        /// <param name="isMemberOfTrustedGroup"></param>
+        [TestCase("FakeAccount", false)]
+        [TestCase("yvand@contoso.local", true)]
+        public virtual void TestAugmentationOperation(string claimValue, bool isMemberOfTrustedGroup)
+        {
+            string claimType = UnitTestsHelper.SPTrust.IdentityClaimTypeInformation.MappedClaimType;
             try
             {
                 Stopwatch timer = new Stopwatch();
@@ -305,21 +262,6 @@ namespace Yvand.LdapClaimsProvider.Tests
             catch (Exception ex)
             {
                 Trace.TraceError($"{DateTime.Now:s} TestAugmentationOperation failed with exception '{ex.GetType()}', message '{ex.Message}'. Parameters: claimType: '{claimType}', claimValue: '{claimValue}', isMemberOfTrustedGroup: '{isMemberOfTrustedGroup}'.");
-            }
-        }
-    }
-
-    public class CustomConfigTestsBase : EntityTestsBase
-    {
-        public override void InitializeSettings(bool applyChanges)
-        {
-            base.InitializeSettings(false);
-            Settings.EnableAugmentation = true;
-            Settings.ClaimTypes.GetMainConfigurationForDirectoryObjectType(DirectoryObjectType.User).LeadingKeywordToBypassDirectory = "bypass-user:";
-            Settings.ClaimTypes.GetMainConfigurationForDirectoryObjectType(DirectoryObjectType.Group).LeadingKeywordToBypassDirectory = "bypass-group:";
-            if (applyChanges)
-            {
-                TestSettingsAndApplyThemIfValid();
             }
         }
     }
