@@ -239,7 +239,7 @@ namespace Yvand.LdapClaimsProvider.Administration
                     html = String.Format(HtmlCellLAddLDAPFilter, attr.Value.DirectoryObjectAdditionalFilter, attr.Key);
                     tr.Cells.Add(GetTableCell(html));
 
-                    html = String.Format(HtmlCellKeywordToValidateInputWithoutLookup, attr.Value.LeadingKeywordToBypassLdapDuringSearch, attr.Key);
+                    html = String.Format(HtmlCellKeywordToValidateInputWithoutLookup, attr.Value.LeadingKeywordToBypassDirectory, attr.Key);
                     tr.Cells.Add(GetTableCell(html));
 
                     html = String.Format(HtmlCellPrefixToAddToValueReturned, attr.Value.ClaimValueLeadingToken, attr.Key);
@@ -360,7 +360,7 @@ namespace Yvand.LdapClaimsProvider.Administration
             newCTConfig.DirectoryObjectAttributeForDisplayText = formData["input_LDAPAttrToDisplay_" + itemId];
             newCTConfig.SPEntityDataKey = formData["list_Metadata_" + itemId];
             newCTConfig.DirectoryObjectAdditionalFilter = formData["input_AddLDAPFilter_" + itemId];
-            newCTConfig.LeadingKeywordToBypassLdapDuringSearch = formData["input_KeywordToValidateInputWithoutLookup_" + itemId];
+            newCTConfig.LeadingKeywordToBypassDirectory = formData["input_KeywordToValidateInputWithoutLookup_" + itemId];
             newCTConfig.ClaimValueLeadingToken = formData["input_PrefixToAddToValueReturned_" + itemId].ToLower();
             //string newShowClaimNameInDisplayText = formData["chk_ShowClaimNameInDisplayText_" + itemId];
             //newCTConfig.ShowClaimNameInDisplayText = String.IsNullOrEmpty(newShowClaimNameInDisplayText) ? false : true;

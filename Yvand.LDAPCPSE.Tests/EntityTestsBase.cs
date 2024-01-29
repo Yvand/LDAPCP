@@ -43,7 +43,7 @@ namespace Yvand.LdapClaimsProvider.Tests
         /// <summary>
         /// Configures whether the configuration applied is valid, and whether the claims provider should be able to use it
         /// </summary>
-        public virtual bool ConfigurationIsValid => true;
+        public bool ConfigurationShouldBeValid = true;
 
         protected LdapProviderConfiguration GlobalConfiguration;
         protected LdapProviderSettings Settings = new LdapProviderSettings();
@@ -63,13 +63,30 @@ namespace Yvand.LdapClaimsProvider.Tests
                 Settings = (LdapProviderSettings)GlobalConfiguration.Settings;
                 Trace.TraceInformation($"{DateTime.Now:s} Took a backup of the original settings");
             }
-            InitializeConfiguration(true);
+            InitializeSettings(true);
+        }
+
+        [Test]
+        public virtual void TestSettingsAndApplyThemIfValid()
+        {
+            GlobalConfiguration.ApplySettings(Settings, false);
+            if (ConfigurationShouldBeValid)
+            {
+                Assert.DoesNotThrow(() => GlobalConfiguration.ValidateConfiguration(), "ValidateLocalConfiguration should NOT throw a InvalidOperationException because the configuration is valid");
+                GlobalConfiguration.Update();
+                Trace.TraceInformation($"{DateTime.Now:s} [{this.GetType().Name}] Updated configuration: {JsonConvert.SerializeObject(Settings, Formatting.None)}");
+            }
+            else
+            {
+                Assert.Throws<InvalidOperationException>(() => GlobalConfiguration.ValidateConfiguration(), "ValidateLocalConfiguration should throw a InvalidOperationException because the configuration is invalid");
+                Trace.TraceInformation($"{DateTime.Now:s} [{this.GetType().Name}] Invalid configuration: {JsonConvert.SerializeObject(Settings, Formatting.None)}");
+            }
         }
 
         /// <summary>
         /// Initialize configuration
         /// </summary>
-        public virtual void InitializeConfiguration(bool applyChanges)
+        public virtual void InitializeSettings(bool applyChanges)
         {
             Settings = new LdapProviderSettings();
             Settings.ClaimTypes = LdapProviderSettings.ReturnDefaultClaimTypesConfig(UnitTestsHelper.ClaimsProvider.Name);
@@ -80,11 +97,12 @@ namespace Yvand.LdapClaimsProvider.Tests
 
             string json = File.ReadAllText(UnitTestsHelper.AzureTenantsJsonFile);
             List<LdapConnection> azureTenants = JsonConvert.DeserializeObject<List<LdapConnection>>(json);
-            Settings.LdapConnections = azureTenants;            
+            Settings.LdapConnections = azureTenants;
 
             if (applyChanges)
             {
-                GlobalConfiguration.ApplySettings(Settings, true);
+                //GlobalConfiguration.ApplySettings(Settings, true);
+                TestSettingsAndApplyThemIfValid();
                 Trace.TraceInformation($"{DateTime.Now:s} [EntityTestsBase] Updated configuration: {JsonConvert.SerializeObject(Settings, Formatting.None)}");
             }
         }
@@ -169,19 +187,6 @@ namespace Yvand.LdapClaimsProvider.Tests
             if (!TestAugmentation) { return; }
 
             TestAugmentationOperation(UnitTestsHelper.SPTrust.IdentityClaimTypeInformation.MappedClaimType, claimValue, shouldHavePermissions);
-        }
-
-        [Test]
-        public virtual void ValidateInitialization()
-        {
-            if (ConfigurationIsValid)
-            {
-                Assert.That(UnitTestsHelper.ClaimsProvider.ValidateSettings(null), Is.True, "ValidateLocalConfiguration should return true because the configuration is valid");
-            }
-            else
-            {
-                Assert.That(UnitTestsHelper.ClaimsProvider.ValidateSettings(null), Is.False, "ValidateLocalConfiguration should return false because the configuration is not valid");
-            }
         }
 
         /// <summary>
@@ -300,6 +305,21 @@ namespace Yvand.LdapClaimsProvider.Tests
             catch (Exception ex)
             {
                 Trace.TraceError($"{DateTime.Now:s} TestAugmentationOperation failed with exception '{ex.GetType()}', message '{ex.Message}'. Parameters: claimType: '{claimType}', claimValue: '{claimValue}', isMemberOfTrustedGroup: '{isMemberOfTrustedGroup}'.");
+            }
+        }
+    }
+
+    public class CustomConfigTestsBase : EntityTestsBase
+    {
+        public override void InitializeSettings(bool applyChanges)
+        {
+            base.InitializeSettings(false);
+            Settings.EnableAugmentation = true;
+            Settings.ClaimTypes.GetMainConfigurationForDirectoryObjectType(DirectoryObjectType.User).LeadingKeywordToBypassDirectory = "bypass-user:";
+            Settings.ClaimTypes.GetMainConfigurationForDirectoryObjectType(DirectoryObjectType.Group).LeadingKeywordToBypassDirectory = "bypass-group:";
+            if (applyChanges)
+            {
+                TestSettingsAndApplyThemIfValid();
             }
         }
     }

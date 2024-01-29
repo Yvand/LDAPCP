@@ -50,6 +50,7 @@
   <ItemGroup>
     <Compile Include="BasicTests.cs" />
     <Compile Include="EntityTestsBase.cs" />
+    <Compile Include="PrimaryGroupIDTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="UnitTestsHelper.cs" />
   </ItemGroup>

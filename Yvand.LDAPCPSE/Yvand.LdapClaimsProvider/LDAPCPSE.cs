@@ -586,11 +586,11 @@ namespace Yvand.LdapClaimsProvider
                     // Check if a config to bypass LDAP lookup exists
                     // ClaimTypeConfigEnsureUniquePrefixToBypassLookup ensures that collection cannot contain duplicates
                     ClaimTypeConfig ctConfigWithInputPrefixMatch = currentContext.CurrentClaimTypeConfigList.FirstOrDefault(x =>
-                        !String.IsNullOrWhiteSpace(x.LeadingKeywordToBypassLdapDuringSearch) &&
-                        currentContext.Input.StartsWith(x.LeadingKeywordToBypassLdapDuringSearch, StringComparison.InvariantCultureIgnoreCase));
+                        !String.IsNullOrWhiteSpace(x.LeadingKeywordToBypassDirectory) &&
+                        currentContext.Input.StartsWith(x.LeadingKeywordToBypassDirectory, StringComparison.InvariantCultureIgnoreCase));
                     if (ctConfigWithInputPrefixMatch != null)
                     {
-                        string inputWithoutPrefix = currentContext.Input.Substring(ctConfigWithInputPrefixMatch.LeadingKeywordToBypassLdapDuringSearch.Length);
+                        string inputWithoutPrefix = currentContext.Input.Substring(ctConfigWithInputPrefixMatch.LeadingKeywordToBypassDirectory.Length);
                         if (String.IsNullOrEmpty(inputWithoutPrefix))
                         {
                             // No value in the input after the prefix, return
@@ -603,7 +603,7 @@ namespace Yvand.LdapClaimsProvider
                         if (pickerEntityList?.Count == 1)
                         {
                             PickerEntity entity = pickerEntityList.FirstOrDefault();
-                            Logger.Log($"[{Name}] Created entity without contacting Microsoft Entra ID tenant(s) because input started with prefix '{ctConfigWithInputPrefixMatch.LeadingKeywordToBypassLdapDuringSearch}', which is configured for claim type '{ctConfigWithInputPrefixMatch.ClaimType}'. Claim value: '{entity.Claim.Value}', claim type: '{entity.Claim.ClaimType}'",
+                            Logger.Log($"[{Name}] Created entity without contacting Microsoft Entra ID tenant(s) because input started with prefix '{ctConfigWithInputPrefixMatch.LeadingKeywordToBypassDirectory}', which is configured for claim type '{ctConfigWithInputPrefixMatch.ClaimType}'. Claim value: '{entity.Claim.Value}', claim type: '{entity.Claim.ClaimType}'",
                                 TraceSeverity.VerboseEx, EventSeverity.Information, TraceCategory.Claims_Picking);
                         }
                     }
@@ -619,10 +619,10 @@ namespace Yvand.LdapClaimsProvider
                     // Exactly 1 PickerEntity is expected by SharePoint
 
                     // Check if config corresponding to current claim type has a config to bypass LDAP lookup
-                    if (!String.IsNullOrWhiteSpace(currentContext.IncomingEntityClaimTypeConfig.LeadingKeywordToBypassLdapDuringSearch))
+                    if (!String.IsNullOrWhiteSpace(currentContext.IncomingEntityClaimTypeConfig.LeadingKeywordToBypassDirectory))
                     {
                         // At this stage, it is impossible to know if entity was originally created with the keyword that bypass query to Microsoft Entra ID
-                        // But it should be always validated since property LeadingKeywordToBypassLdapDuringSearch is set for current ClaimTypeConfig, so create entity manually
+                        // But it should be always validated since property LeadingKeywordToBypassDirectory is set for current ClaimTypeConfig, so create entity manually
                         pickerEntityList = CreatePickerEntityForSpecificClaimTypes(
                             currentContext,
                             currentContext.IncomingEntity.Value,
@@ -630,7 +630,7 @@ namespace Yvand.LdapClaimsProvider
                         if (pickerEntityList?.Count == 1)
                         {
                             PickerEntity entity = pickerEntityList.FirstOrDefault();
-                            Logger.Log($"[{Name}] Validated entity without contacting Microsoft Entra ID tenant(s) because its claim type ('{currentContext.IncomingEntityClaimTypeConfig.ClaimType}') has property 'LeadingKeywordToBypassLdapDuringSearch' set in EntraCPConfig.ClaimTypes. Claim value: '{entity.Claim.Value}', claim type: '{entity.Claim.ClaimType}'",
+                            Logger.Log($"[{Name}] Validated entity without contacting Microsoft Entra ID tenant(s) because its claim type ('{currentContext.IncomingEntityClaimTypeConfig.ClaimType}') has property 'LeadingKeywordToBypassDirectory' set in EntraCPConfig.ClaimTypes. Claim value: '{entity.Claim.Value}', claim type: '{entity.Claim.ClaimType}'",
                                 TraceSeverity.VerboseEx, EventSeverity.Information, TraceCategory.Claims_Picking);
                         }
                     }
@@ -836,7 +836,7 @@ namespace Yvand.LdapClaimsProvider
                     permissionValue = result.LdapEntityProperties[attribute.DirectoryObjectAttribute][0].ToString();    // Pick value of current result from actual LDAP attribute to use (which is not the LDAP attribute that matches input)
                     result.ClaimTypeConfigMatch.DirectoryObjectAttributeForDisplayText = attribute.DirectoryObjectAttributeForDisplayText;
                     result.ClaimTypeConfigMatch.ClaimValueLeadingToken = attribute.ClaimValueLeadingToken;
-                    result.ClaimTypeConfigMatch.LeadingKeywordToBypassLdapDuringSearch = attribute.LeadingKeywordToBypassLdapDuringSearch;
+                    result.ClaimTypeConfigMatch.LeadingKeywordToBypassDirectory = attribute.LeadingKeywordToBypassDirectory;
                 }
             }
 

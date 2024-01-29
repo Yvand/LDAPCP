@@ -141,7 +141,7 @@ namespace Yvand.LdapClaimsProvider.Configuration
         private string _ClaimValueLeadingToken;
 
         ///// <summary>
-        ///// If set to true: permission created without LDAP lookup (possible if LeadingKeywordToBypassLdapDuringSearch is set and user typed this keyword in the input) should not contain the prefix (set in PrefixToAddToValueReturned) in the value
+        ///// If set to true: permission created without LDAP lookup (possible if LeadingKeywordToBypassDirectory is set and user typed this keyword in the input) should not contain the prefix (set in PrefixToAddToValueReturned) in the value
         ///// </summary>
         //public bool DoNotAddClaimValuePrefixIfBypassLookup
         //{
@@ -154,7 +154,7 @@ namespace Yvand.LdapClaimsProvider.Configuration
         /// <summary>
         /// Set this to tell LDAPCP to validate user input (and create the permission) without LDAP lookup if it contains this keyword at the beginning
         /// </summary>
-        public string LeadingKeywordToBypassLdapDuringSearch
+        public string LeadingKeywordToBypassDirectory
         {
             get { return _LeadingKeywordToBypassLdapDuringSearch; }
             set { _LeadingKeywordToBypassLdapDuringSearch = value; }
@@ -342,7 +342,7 @@ namespace Yvand.LdapClaimsProvider.Configuration
 
             if (Contains(item, new ClaimTypeConfigEnsureUniquePrefixToBypassLookup()))
             {
-                throw new InvalidOperationException($"Prefix '{item.LeadingKeywordToBypassLdapDuringSearch}' is already set with another claim type and must be unique");
+                throw new InvalidOperationException($"Prefix '{item.LeadingKeywordToBypassDirectory}' is already set with another claim type and must be unique");
             }
 
             if (Contains(item, new ClaimTypeConfigSameDirectoryConfiguration()))
@@ -812,14 +812,14 @@ namespace Yvand.LdapClaimsProvider.Configuration
     }
 
     /// <summary>
-    /// Ensure that there is no duplicate of "LeadingKeywordToBypassLdapDuringSearch" property
+    /// Ensure that there is no duplicate of "LeadingKeywordToBypassDirectory" property
     /// </summary>
     internal class ClaimTypeConfigEnsureUniquePrefixToBypassLookup : EqualityComparer<ClaimTypeConfig>
     {
         public override bool Equals(ClaimTypeConfig existingCTConfig, ClaimTypeConfig newCTConfig)
         {
-            if (!String.IsNullOrEmpty(newCTConfig.LeadingKeywordToBypassLdapDuringSearch) &&
-                String.Equals(newCTConfig.LeadingKeywordToBypassLdapDuringSearch, existingCTConfig.LeadingKeywordToBypassLdapDuringSearch, StringComparison.InvariantCultureIgnoreCase))
+            if (!String.IsNullOrEmpty(newCTConfig.LeadingKeywordToBypassDirectory) &&
+                String.Equals(newCTConfig.LeadingKeywordToBypassDirectory, existingCTConfig.LeadingKeywordToBypassDirectory, StringComparison.InvariantCultureIgnoreCase))
             {
                 return true;
             }
@@ -831,7 +831,7 @@ namespace Yvand.LdapClaimsProvider.Configuration
 
         public override int GetHashCode(ClaimTypeConfig ct)
         {
-            string hCode = ct.LeadingKeywordToBypassLdapDuringSearch;
+            string hCode = ct.LeadingKeywordToBypassDirectory;
             return hCode.GetHashCode();
         }
     }

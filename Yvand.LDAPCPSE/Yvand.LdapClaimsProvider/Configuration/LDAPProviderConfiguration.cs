@@ -411,6 +411,13 @@ namespace Yvand.LdapClaimsProvider.Configuration
                 throw new InvalidOperationException($"Some changes made to collection {nameof(ClaimTypes)} are invalid and cannot be committed to configuration database. Inspect inner exception for more details about the error.", ex);
             }
 
+            // Ensure identity claim type is present and valid
+            ClaimTypeConfig identityClaimTypeConfig = this.ClaimTypes.GetMainConfigurationForDirectoryObjectType(DirectoryObjectType.User);
+            if (identityClaimTypeConfig == null)
+            {
+                throw new InvalidOperationException($"The configuration is invalid because the identity claim type configuration is missing in the collection {nameof(ClaimTypes)}, so changes cannot be committed to the configuration database.");
+            }
+
             foreach (LdapConnection server in this.LdapConnections)
             {
                 if (server == null)

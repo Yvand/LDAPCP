@@ -394,6 +394,11 @@ namespace Yvand.LdapClaimsProvider.Configuration
             {
                 directoryObjectPropertyValue = value as string;
             }
+            else if (value is Int32)
+            {
+                // This is true for ldap attribute primaryGroupID
+                directoryObjectPropertyValue = value.ToString();
+            }
             else if (value is byte[])
             {
                 byte[] valueAsBytes = value as byte[];
