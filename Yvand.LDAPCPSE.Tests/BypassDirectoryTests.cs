@@ -35,6 +35,8 @@ namespace Yvand.LdapClaimsProvider.Tests
         }
     }
 
+    [TestFixture]
+    [Parallelizable(ParallelScope.Children)]
     public class BypassDirectoryGloballyTests : ClaimsProviderTestsBase
     {
         public override void InitializeSettings(bool applyChanges)

@@ -8,8 +8,10 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
+using System.Runtime;
 using System.Security.Claims;
 using Yvand.LdapClaimsProvider;
+using Yvand.LdapClaimsProvider.Configuration;
 
 namespace Yvand.LdapClaimsProvider.Tests
 {
@@ -32,16 +34,23 @@ namespace Yvand.LdapClaimsProvider.Tests
 
         public static string RandomClaimType => "http://schemas.yvand.net/ws/claims/random";
         public static string RandomClaimValue => "IDoNotExist";
+        public static string RandomDirectoryObjectClass => "randomClass";
         public static string RandomDirectoryObjectAttribute => "randomAttribute";
 
         public static string TrustedGroupToAdd_ClaimType => TestContext.Parameters["TrustedGroupToAdd_ClaimType"];
         public static string TrustedGroupToAdd_ClaimValue => TestContext.Parameters["TrustedGroupToAdd_ClaimValue"];
         public static SPClaim TrustedGroup => new SPClaim(TrustedGroupToAdd_ClaimType, TrustedGroupToAdd_ClaimValue, ClaimValueTypes.String, SPOriginalIssuers.Format(SPOriginalIssuerType.TrustedProvider, SPTrust.Name));
 
+        public const string ValidTrustedUserSid = "S-1-5-21-2647467245-1611586658-188888215-107206";
+        public const string ValidTrustedGroupSid = "S-1-5-21-2647467245-1611586658-188888215-11601";
+
         public static string AzureTenantsJsonFile => TestContext.Parameters["LdapConnections"];
         public static string DataFile_AllAccounts_Search => TestContext.Parameters["DataFile_AllAccounts_Search"];
         public static string DataFile_AllAccounts_Validate => TestContext.Parameters["DataFile_AllAccounts_Validate"];
         static TextWriterTraceListener Logger { get; set; }
+
+        private static ILdapProviderSettings OriginalSettings;
+
 
         [OneTimeSetUp]
         public static void InitializeSiteCollection()
@@ -133,6 +142,13 @@ namespace Yvand.LdapClaimsProvider.Tests
                     SPGroup membersGroup = spSite.RootWeb.AssociatedMemberGroup;
                     membersGroup.AddUser(userInfo.LoginName, userInfo.Email, userInfo.Name, userInfo.Notes);
                 }
+            }
+
+            var globalConfiguration = LDAPCPSE.GetConfiguration(true);
+            if (globalConfiguration != null)
+            {
+                OriginalSettings = globalConfiguration.Settings;
+                Trace.TraceInformation($"{DateTime.Now:s} Took a backup of the original settings");
             }
         }
 

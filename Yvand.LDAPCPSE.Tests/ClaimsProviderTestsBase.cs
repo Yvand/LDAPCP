@@ -79,6 +79,7 @@ namespace Yvand.LdapClaimsProvider.Tests
             Settings.LdapConnections = azureTenants;
             Settings.EnableAugmentation = true;
 
+            Trace.TraceInformation($"{DateTime.Now:s} [{this.GetType().Name}] Initialized default settings. applyChanges: {applyChanges}");
             if (applyChanges)
             {
                 TestSettingsAndApplyThemIfValid();
