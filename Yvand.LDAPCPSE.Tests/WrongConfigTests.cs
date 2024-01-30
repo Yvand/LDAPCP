@@ -30,9 +30,8 @@ namespace Yvand.LdapClaimsProvider.Tests
         public override bool DoAugmentationTest => false;
 
         [Test]
-        public override void InitializeSettings(bool applyChanges)
+        public void TestAddSecondGroupClaimType()
         {
-            base.InitializeSettings(false);
             ClaimTypeConfig newGroupClaimTypeConfig = new ClaimTypeConfig
             {
                 ClaimType = UnitTestsHelper.RandomClaimType,
