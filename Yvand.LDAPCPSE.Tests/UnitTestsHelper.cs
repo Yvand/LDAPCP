@@ -32,7 +32,7 @@ namespace Yvand.LdapClaimsProvider.Tests
 
         public static string RandomClaimType => "http://schemas.yvand.net/ws/claims/random";
         public static string RandomClaimValue => "IDoNotExist";
-        public static string RandomObjectProperty => "AccountEnabled";
+        public static string RandomDirectoryObjectAttribute => "randomAttribute";
 
         public static string TrustedGroupToAdd_ClaimType => TestContext.Parameters["TrustedGroupToAdd_ClaimType"];
         public static string TrustedGroupToAdd_ClaimValue => TestContext.Parameters["TrustedGroupToAdd_ClaimValue"];

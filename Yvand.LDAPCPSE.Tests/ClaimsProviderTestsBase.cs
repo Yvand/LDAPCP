@@ -13,8 +13,13 @@ using Yvand.LdapClaimsProvider.Configuration;
 
 namespace Yvand.LdapClaimsProvider.Tests
 {
-    public class EntityTestsBase
+    public class ClaimsProviderTestsBase
     {
+        /// <summary>
+        /// Configures whether to run the entity augmentation tests.
+        /// </summary>
+        public virtual bool DoAugmentationTest => true;
+
         /// <summary>
         /// Configures whether the configuration applied is valid, and whether the claims provider should be able to use it
         /// </summary>
@@ -57,6 +62,29 @@ namespace Yvand.LdapClaimsProvider.Tests
             InitializeSettings(true);
         }
 
+        /// <summary>
+        /// Initialize configuration
+        /// </summary>
+        public virtual void InitializeSettings(bool applyChanges)
+        {
+            Settings = new LdapProviderSettings();
+            Settings.ClaimTypes = LdapProviderSettings.ReturnDefaultClaimTypesConfig(UnitTestsHelper.ClaimsProvider.Name);
+
+#if DEBUG
+            Settings.Timeout = 99999;
+#endif
+
+            string json = File.ReadAllText(UnitTestsHelper.AzureTenantsJsonFile);
+            List<LdapConnection> azureTenants = JsonConvert.DeserializeObject<List<LdapConnection>>(json);
+            Settings.LdapConnections = azureTenants;
+            Settings.EnableAugmentation = true;
+
+            if (applyChanges)
+            {
+                TestSettingsAndApplyThemIfValid();
+            }
+        }
+
         [Test]
         public virtual void TestSettingsAndApplyThemIfValid()
         {
@@ -74,31 +102,6 @@ namespace Yvand.LdapClaimsProvider.Tests
             }
         }
 
-        /// <summary>
-        /// Initialize configuration
-        /// </summary>
-        public virtual void InitializeSettings(bool applyChanges)
-        {
-            Settings = new LdapProviderSettings();
-            Settings.ClaimTypes = LdapProviderSettings.ReturnDefaultClaimTypesConfig(UnitTestsHelper.ClaimsProvider.Name);
-
-#if DEBUG
-            Settings.Timeout = 99999;
-#endif
-
-            string json = File.ReadAllText(UnitTestsHelper.AzureTenantsJsonFile);
-            List<LdapConnection> azureTenants = JsonConvert.DeserializeObject<List<LdapConnection>>(json);
-            Settings.LdapConnections = azureTenants;
-
-            Settings.EnableAugmentation = true;
-
-            if (applyChanges)
-            {
-                TestSettingsAndApplyThemIfValid();
-                Trace.TraceInformation($"{DateTime.Now:s} [EntityTestsBase] Updated configuration: {JsonConvert.SerializeObject(Settings, Formatting.None)}");
-            }
-        }
-
         [OneTimeTearDown]
         public void Cleanup()
         {
@@ -107,12 +110,12 @@ namespace Yvand.LdapClaimsProvider.Tests
                 if (OriginalSettings != null)
                 {
                     GlobalConfiguration.ApplySettings(OriginalSettings, true);
-                    Trace.TraceInformation($"{DateTime.Now:s} Restored original settings of LDAPCPSE configuration");
+                    Trace.TraceInformation($"{DateTime.Now:s} [{this.GetType().Name}] Restored original settings of LDAPCPSE configuration");
                 }
             }
             catch (Exception ex)
             {
-                Trace.TraceError($"{DateTime.Now:s} Unexpected error while restoring the original settings of LDAPCPSE configuration: {ex.Message}");
+                Trace.TraceError($"{DateTime.Now:s} [{this.GetType().Name}] Unexpected error while restoring the original settings of LDAPCPSE configuration: {ex.Message}");
             }
         }
 
@@ -232,7 +235,8 @@ namespace Yvand.LdapClaimsProvider.Tests
         [TestCase("yvand@contoso.local", true)]
         public virtual void TestAugmentationOperation(string claimValue, bool isMemberOfTrustedGroup)
         {
-            string claimType = UnitTestsHelper.SPTrust.IdentityClaimTypeInformation.MappedClaimType;
+            if (!DoAugmentationTest) { return; }
+            string claimType = UserIdentifierClaimType;
             try
             {
                 Stopwatch timer = new Stopwatch();

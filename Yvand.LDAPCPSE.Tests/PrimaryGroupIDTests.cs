@@ -5,7 +5,7 @@ namespace Yvand.LdapClaimsProvider.Tests
 {
     [TestFixture]
     [Parallelizable(ParallelScope.Children)]
-    internal class PrimaryGroupIdTests : EntityTestsBase
+    internal class PrimaryGroupIdTests : ClaimsProviderTestsBase
     {
         public override void InitializeSettings(bool applyChanges)
         {

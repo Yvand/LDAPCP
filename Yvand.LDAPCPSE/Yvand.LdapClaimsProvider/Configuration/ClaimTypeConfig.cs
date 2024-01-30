@@ -610,10 +610,23 @@ namespace Yvand.LdapClaimsProvider.Configuration
 
         public ClaimTypeConfig GetMainConfigurationForDirectoryObjectType(DirectoryObjectType objectType)
         {
-            return innerCol
+            if (objectType == DirectoryObjectType.User)
+            {
+                // If user, add a test on the identity claim type
+                return innerCol
                 .FirstOrDefault(x =>
-                    x.DirectoryObjectType == objectType &&
+                    x.DirectoryObjectType == DirectoryObjectType.User &&
+                    String.Equals(x.ClaimType, SPTrust.IdentityClaimTypeInformation.MappedClaimType, StringComparison.OrdinalIgnoreCase) &&
                     x.IsAdditionalLdapSearchAttribute == false);
+            }
+            else
+            {
+                // There can be only 1 DirectoryObjectType "Group"
+                return innerCol
+                .FirstOrDefault(x =>
+                    x.DirectoryObjectType == DirectoryObjectType.Group &&
+                    x.IsAdditionalLdapSearchAttribute == false);
+            }
         }
 
         public ClaimTypeConfig GetByClaimType(string claimType)

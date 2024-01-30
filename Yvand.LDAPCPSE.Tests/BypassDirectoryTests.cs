@@ -5,7 +5,7 @@ namespace Yvand.LdapClaimsProvider.Tests
 {
     [TestFixture]
     [Parallelizable(ParallelScope.Children)]
-    public class BypassDirectoryOnClaimTypesTests : EntityTestsBase
+    public class BypassDirectoryOnClaimTypesTests : ClaimsProviderTestsBase
     {
         public override void InitializeSettings(bool applyChanges)
         {
@@ -35,7 +35,7 @@ namespace Yvand.LdapClaimsProvider.Tests
         }
     }
 
-    public class BypassDirectoryGloballyTests : EntityTestsBase
+    public class BypassDirectoryGloballyTests : ClaimsProviderTestsBase
     {
         public override void InitializeSettings(bool applyChanges)
         {

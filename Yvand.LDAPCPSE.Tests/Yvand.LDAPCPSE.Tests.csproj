@@ -50,10 +50,11 @@
   <ItemGroup>
     <Compile Include="BasicConfigurationTests.cs" />
     <Compile Include="BypassDirectoryTests.cs" />
-    <Compile Include="EntityTestsBase.cs" />
+    <Compile Include="ClaimsProviderTestsBase.cs" />
     <Compile Include="PrimaryGroupIdTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="UnitTestsHelper.cs" />
+    <Compile Include="WrongConfigTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Yvand.LDAPCPSE\Yvand.LDAPCPSE.csproj">
