@@ -7,15 +7,14 @@ namespace Yvand.LdapClaimsProvider.Tests
     [Parallelizable(ParallelScope.Children)]
     public class BypassDirectoryOnClaimTypesTests : ClaimsProviderTestsBase
     {
-        public override void InitializeSettings(bool applyChanges)
+        public override void InitializeSettings()
         {
-            base.InitializeSettings(false);
+            base.InitializeSettings();
             Settings.ClaimTypes.GetMainConfigurationForDirectoryObjectType(DirectoryObjectType.User).LeadingKeywordToBypassDirectory = "bypass-user:";
             Settings.ClaimTypes.GetMainConfigurationForDirectoryObjectType(DirectoryObjectType.Group).LeadingKeywordToBypassDirectory = "bypass-group:";
-            if (applyChanges)
-            {
+            //if (applyChanges)
                 TestSettingsAndApplyThemIfValid();
-            }
+            //}
         }
 
         [TestCase("bypass-user:externalUser@contoso.com", 1, "externalUser@contoso.com")]
@@ -39,14 +38,14 @@ namespace Yvand.LdapClaimsProvider.Tests
     [Parallelizable(ParallelScope.Children)]
     public class BypassDirectoryGloballyTests : ClaimsProviderTestsBase
     {
-        public override void InitializeSettings(bool applyChanges)
+        public override void InitializeSettings()
         {
-            base.InitializeSettings(false);
+            base.InitializeSettings();
             Settings.AlwaysResolveUserInput = true;
-            if (applyChanges)
-            {
+            //if (applyChanges)
+            //{
                 TestSettingsAndApplyThemIfValid();
-            }
+            //}
         }
 
         [Test]

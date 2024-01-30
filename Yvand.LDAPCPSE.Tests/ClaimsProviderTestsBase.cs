@@ -45,28 +45,34 @@ namespace Yvand.LdapClaimsProvider.Tests
         protected LdapProviderSettings Settings = new LdapProviderSettings();
         private static ILdapProviderSettings OriginalSettings;
 
+        //[OneTimeSetUp]
+        //public void Init()
+        //{
+        //    GlobalConfiguration = LDAPCPSE.GetConfiguration(true);
+        //    if (GlobalConfiguration == null)
+        //    {
+        //        GlobalConfiguration = LDAPCPSE.CreateConfiguration();
+        //    }
+        //    else
+        //    {
+        //        OriginalSettings = GlobalConfiguration.Settings;
+        //        Settings = (LdapProviderSettings)GlobalConfiguration.Settings;
+        //        Trace.TraceInformation($"{DateTime.Now:s} Took a backup of the original settings");
+        //    }
+        //    InitializeSettings(true);
+        //}
+
+        /// <summary>
+        /// Initialize configuration
+        /// </summary>
         [OneTimeSetUp]
-        public void Init()
+        public virtual void InitializeSettings()
         {
             GlobalConfiguration = LDAPCPSE.GetConfiguration(true);
             if (GlobalConfiguration == null)
             {
                 GlobalConfiguration = LDAPCPSE.CreateConfiguration();
             }
-            else
-            {
-                OriginalSettings = GlobalConfiguration.Settings;
-                Settings = (LdapProviderSettings)GlobalConfiguration.Settings;
-                Trace.TraceInformation($"{DateTime.Now:s} Took a backup of the original settings");
-            }
-            InitializeSettings(true);
-        }
-
-        /// <summary>
-        /// Initialize configuration
-        /// </summary>
-        public virtual void InitializeSettings(bool applyChanges)
-        {
             Settings = new LdapProviderSettings();
             Settings.ClaimTypes = LdapProviderSettings.ReturnDefaultClaimTypesConfig(UnitTestsHelper.ClaimsProvider.Name);
 
@@ -79,14 +85,14 @@ namespace Yvand.LdapClaimsProvider.Tests
             Settings.LdapConnections = azureTenants;
             Settings.EnableAugmentation = true;
 
-            Trace.TraceInformation($"{DateTime.Now:s} [{this.GetType().Name}] Initialized default settings. applyChanges: {applyChanges}");
-            if (applyChanges)
-            {
-                TestSettingsAndApplyThemIfValid();
-            }
+            Trace.TraceInformation($"{DateTime.Now:s} [{this.GetType().Name}] Initialized default settings.");
+            //if (applyChanges)
+            //{
+                //TestSettingsAndApplyThemIfValid();
+            //}
         }
 
-        [Test]
+        //[Test]
         public virtual void TestSettingsAndApplyThemIfValid()
         {
             GlobalConfiguration.ApplySettings(Settings, false);
@@ -106,18 +112,19 @@ namespace Yvand.LdapClaimsProvider.Tests
         [OneTimeTearDown]
         public void Cleanup()
         {
-            try
-            {
-                if (OriginalSettings != null)
-                {
-                    GlobalConfiguration.ApplySettings(OriginalSettings, true);
-                    Trace.TraceInformation($"{DateTime.Now:s} [{this.GetType().Name}] Restored original settings of LDAPCPSE configuration");
-                }
-            }
-            catch (Exception ex)
-            {
-                Trace.TraceError($"{DateTime.Now:s} [{this.GetType().Name}] Unexpected error while restoring the original settings of LDAPCPSE configuration: {ex.Message}");
-            }
+            Trace.TraceInformation($"{DateTime.Now:s} [{this.GetType().Name}] Cleanup.");
+            //try
+            //{
+            //    if (OriginalSettings != null)
+            //    {
+            //        GlobalConfiguration.ApplySettings(OriginalSettings, true);
+            //        Trace.TraceInformation($"{DateTime.Now:s} [{this.GetType().Name}] Restored original settings of LDAPCPSE configuration");
+            //    }
+            //}
+            //catch (Exception ex)
+            //{
+            //    Trace.TraceError($"{DateTime.Now:s} [{this.GetType().Name}] Unexpected error while restoring the original settings of LDAPCPSE configuration: {ex.Message}");
+            //}
         }
 
         /// <summary>

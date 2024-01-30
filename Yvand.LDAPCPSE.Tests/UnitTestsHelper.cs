@@ -155,6 +155,21 @@ namespace Yvand.LdapClaimsProvider.Tests
         [OneTimeTearDown]
         public static void Cleanup()
         {
+            Trace.TraceInformation($"{DateTime.Now:s} [SETUP] Cleanup.");
+            try
+            {
+                var globalConfiguration = LDAPCPSE.GetConfiguration(true);
+                if (globalConfiguration != null && OriginalSettings != null)
+                {
+                    globalConfiguration.ApplySettings(OriginalSettings, true);
+                    Trace.TraceInformation($"{DateTime.Now:s} [SETUP] Restored original settings of LDAPCPSE configuration");
+                }
+            }
+            catch (Exception ex)
+            {
+                Trace.TraceError($"{DateTime.Now:s} [SETUP] Unexpected error while restoring the original settings of LDAPCPSE configuration: {ex.Message}");
+            }
+
             Trace.TraceInformation($"{DateTime.Now.ToString("s")} Integration tests of {LDAPCPSE.ClaimsProviderName} {FileVersionInfo.GetVersionInfo(Assembly.GetAssembly(typeof(LDAPCPSE)).Location).FileVersion} finished.");
             Trace.Flush();
             if (Logger != null)

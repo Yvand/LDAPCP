@@ -10,16 +10,16 @@ namespace Yvand.LdapClaimsProvider.Tests
     [NonParallelizable]
     public class UseSidAttributeForUserIdentifierPermissionTests : ClaimsProviderTestsBase
     {
-        public override void InitializeSettings(bool applyChanges)
+        public override void InitializeSettings()
         {
-            base.InitializeSettings(applyChanges);
+            base.InitializeSettings();
             //base.Settings.ClaimTypes.IdentityClaim.DirectoryObjectAttribute = "objectSid";
             base.Settings.ClaimTypes.UpdateUserIdentifier("user", "objectSid");
-            Trace.TraceInformation($"{DateTime.Now:s} [{this.GetType().Name}] Initialized custom settings. applyChanges: {applyChanges}");
-            if (applyChanges)
-            {
+            Trace.TraceInformation($"{DateTime.Now:s} [{this.GetType().Name}] Initialized custom settings.");
+            //if (applyChanges)
+            //{
                 TestSettingsAndApplyThemIfValid();
-            }
+            //}
         }
 
         [TestCase(UnitTestsHelper.ValidTrustedUserSid, 1, UnitTestsHelper.ValidTrustedUserSid)]

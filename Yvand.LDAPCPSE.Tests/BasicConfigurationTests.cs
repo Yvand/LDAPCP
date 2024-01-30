@@ -6,6 +6,12 @@ namespace Yvand.LdapClaimsProvider.Tests
     [Parallelizable(ParallelScope.Children)]
     internal class BasicConfigurationTests : ClaimsProviderTestsBase
     {
+        public override void InitializeSettings()
+        {
+            base.InitializeSettings();
+            base.TestSettingsAndApplyThemIfValid();
+        }
+
         [Test, TestCaseSource(typeof(SearchEntityDataSource), nameof(SearchEntityDataSource.GetTestData), new object[] { EntityDataSourceType.AllAccounts })]
         [Repeat(UnitTestsHelper.TestRepeatCount)]
         public void TestSearch(SearchEntityData registrationData)

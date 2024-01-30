@@ -7,9 +7,9 @@ namespace Yvand.LdapClaimsProvider.Tests
     [Parallelizable(ParallelScope.Children)]
     internal class PrimaryGroupIdTests : ClaimsProviderTestsBase
     {
-        public override void InitializeSettings(bool applyChanges)
+        public override void InitializeSettings()
         {
-            base.InitializeSettings(false);
+            base.InitializeSettings();
             ClaimTypeConfig ctConfigPgidAttribute = new ClaimTypeConfig
             {
                 ClaimType = TestContext.Parameters["MultiPurposeCustomClaimType"], // WIF4_5.ClaimTypes.PrimaryGroupSid
@@ -21,10 +21,10 @@ namespace Yvand.LdapClaimsProvider.Tests
                 DirectoryObjectAttributeSupportsWildcard = false,
             };
             Settings.ClaimTypes.Add(ctConfigPgidAttribute);
-            if (applyChanges)
-            {
+            //if (applyChanges)
+            //{
                 TestSettingsAndApplyThemIfValid();
-            }
+            //}
         }
 
         [TestCase(@"513", 1, @"513")]
