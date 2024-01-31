@@ -844,7 +844,8 @@ namespace Yvand.LdapClaimsProvider
             {
                 // This attribute is not directly linked to a claim type, so entity is created with identity claim type
                 permissionClaimType = this.Settings.IdentityClaimTypeConfig.ClaimType;
-                permissionValue = FormatPermissionValue(currentContext, permissionClaimType, result.LdapEntityProperties[this.Settings.IdentityClaimTypeConfig.DirectoryObjectAttribute][0].ToString(), isIdentityClaimType, result);
+                //permissionValue = FormatPermissionValue(currentContext, permissionClaimType, result.LdapEntityProperties[this.Settings.IdentityClaimTypeConfig.DirectoryObjectAttribute][0].ToString(), isIdentityClaimType, result);
+                permissionValue = FormatPermissionValue(currentContext, permissionClaimType, this.Settings.IdentityClaimTypeConfig.DirectoryObjectAttribute, isIdentityClaimType, result);
                 claim = CreateClaim(
                     permissionClaimType,
                     permissionValue,
@@ -854,7 +855,8 @@ namespace Yvand.LdapClaimsProvider
             }
             else
             {
-                permissionValue = FormatPermissionValue(currentContext, result.ClaimTypeConfigMatch.ClaimType, permissionValue, isIdentityClaimType, result);
+                //permissionValue = FormatPermissionValue(currentContext, result.ClaimTypeConfigMatch.ClaimType, permissionValue, isIdentityClaimType, result);
+                permissionValue = FormatPermissionValue(currentContext, result.ClaimTypeConfigMatch.ClaimType, result.ClaimTypeConfigMatch.DirectoryObjectAttribute, isIdentityClaimType, result);
                 claim = CreateClaim(
                     permissionClaimType,
                     permissionValue,
@@ -931,9 +933,11 @@ namespace Yvand.LdapClaimsProvider
             return entities.Count > 0 ? entities : null;
         }
 
-        protected virtual string FormatPermissionValue(OperationContext currentContext, string claimType, string claimValue/*, string domainName, string domainFQDN*/, bool isIdentityClaimType, LdapSearchResult result)
+        //protected virtual string FormatPermissionValue(OperationContext currentContext, string claimType, string claimValue/*, string domainName, string domainFQDN*/, bool isIdentityClaimType, LdapSearchResult result)
+        protected virtual string FormatPermissionValue(OperationContext currentContext, string claimType, string directoryObjectAttributeName, bool isIdentityClaimType, LdapSearchResult result)
         {
-            string value = claimValue;
+            object claimValue = result.LdapEntityProperties[directoryObjectAttributeName][0];
+            string value = Utils.GetLdapValueAsString(claimValue, directoryObjectAttributeName);
 
             var attr = this.Settings.RuntimeClaimTypesList.FirstOrDefault(x => SPClaimTypes.Equals(x.ClaimType, claimType));
             if (Utils.IsDynamicTokenSet(attr.ClaimValueLeadingToken, ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINNAME))
