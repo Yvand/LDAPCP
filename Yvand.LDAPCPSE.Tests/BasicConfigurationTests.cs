@@ -9,7 +9,14 @@ namespace Yvand.LdapClaimsProvider.Tests
         public override void InitializeSettings()
         {
             base.InitializeSettings();
-            base.TestSettingsAndApplyThemIfValid();
+            //base.CheckSettingsTest();
+            base.ApplySettings();
+        }
+
+        [Test]
+        public override void CheckSettingsTest()
+        {
+            base.CheckSettingsTest();
         }
 
         [Test, TestCaseSource(typeof(SearchEntityDataSource), nameof(SearchEntityDataSource.GetTestData), new object[] { EntityDataSourceType.AllAccounts })]

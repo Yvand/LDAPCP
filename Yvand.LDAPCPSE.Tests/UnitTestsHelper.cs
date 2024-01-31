@@ -49,6 +49,7 @@ namespace Yvand.LdapClaimsProvider.Tests
         public static string DataFile_AllAccounts_Validate => TestContext.Parameters["DataFile_AllAccounts_Validate"];
         static TextWriterTraceListener Logger { get; set; }
 
+        private static LdapProviderConfiguration PersistedConfiguration;
         private static ILdapProviderSettings OriginalSettings;
 
 
@@ -58,18 +59,18 @@ namespace Yvand.LdapClaimsProvider.Tests
             Logger = new TextWriterTraceListener(TestContext.Parameters["TestLogFileName"]);
             Trace.Listeners.Add(Logger);
             Trace.AutoFlush = true;
-            Trace.TraceInformation($"{DateTime.Now.ToString("s")} Start integration tests of {ClaimsProvider.Name} {FileVersionInfo.GetVersionInfo(Assembly.GetAssembly(typeof(LDAPCPSE)).Location).FileVersion}.");
-            Trace.TraceInformation($"{DateTime.Now.ToString("s")} DataFile_AllAccounts_Search: {DataFile_AllAccounts_Search}");
-            Trace.TraceInformation($"{DateTime.Now.ToString("s")} DataFile_AllAccounts_Validate: {DataFile_AllAccounts_Validate}");
-            Trace.TraceInformation($"{DateTime.Now.ToString("s")} TestSiteCollectionName: {TestContext.Parameters["TestSiteCollectionName"]}");
+            Trace.TraceInformation($"{DateTime.Now.ToString("s")} [SETUP] Start integration tests of {ClaimsProvider.Name} {FileVersionInfo.GetVersionInfo(Assembly.GetAssembly(typeof(LDAPCPSE)).Location).FileVersion}.");
+            Trace.TraceInformation($"{DateTime.Now.ToString("s")} [SETUP] DataFile_AllAccounts_Search: {DataFile_AllAccounts_Search}");
+            Trace.TraceInformation($"{DateTime.Now.ToString("s")} [SETUP] DataFile_AllAccounts_Validate: {DataFile_AllAccounts_Validate}");
+            Trace.TraceInformation($"{DateTime.Now.ToString("s")} [SETUP] TestSiteCollectionName: {TestContext.Parameters["TestSiteCollectionName"]}");
 
             if (SPTrust == null)
             {
-                Trace.TraceError($"{DateTime.Now.ToString("s")} SPTrust: is null");
+                Trace.TraceError($"{DateTime.Now.ToString("s")} [SETUP] SPTrust: is null");
             }
             else
             {
-                Trace.TraceInformation($"{DateTime.Now.ToString("s")} SPTrust: {SPTrust.Name}");
+                Trace.TraceInformation($"{DateTime.Now.ToString("s")} [SETUP] SPTrust: {SPTrust.Name}");
             }
 
 #if DEBUG
@@ -94,11 +95,11 @@ namespace Yvand.LdapClaimsProvider.Tests
             });
             if (wa == null)
             {
-                Trace.TraceError($"{DateTime.Now.ToString("s")} Web application was NOT found.");
+                Trace.TraceError($"{DateTime.Now.ToString("s")} [SETUP] Web application was NOT found.");
                 return;
             }
 
-            Trace.TraceInformation($"{DateTime.Now.ToString("s")} Web application {wa.Name} found.");
+            Trace.TraceInformation($"{DateTime.Now.ToString("s")} [SETUP] Web application {wa.Name} found.");
             Uri waRootAuthority = wa.AlternateUrls[0].Uri;
             TestSiteCollUri = new Uri($"{waRootAuthority.GetLeftPart(UriPartial.Authority)}{TestSiteRelativePath}");
             SPClaimProviderManager claimMgr = SPClaimProviderManager.Local;
@@ -116,7 +117,7 @@ namespace Yvand.LdapClaimsProvider.Tests
             // The root site may not exist, but it must be present for tests to run
             if (!SPSite.Exists(waRootAuthority))
             {
-                Trace.TraceInformation($"{DateTime.Now.ToString("s")} Creating root site collection {waRootAuthority.AbsoluteUri}...");
+                Trace.TraceInformation($"{DateTime.Now.ToString("s")} [SETUP] Creating root site collection {waRootAuthority.AbsoluteUri}...");
                 SPSite spSite = wa.Sites.Add(waRootAuthority.AbsoluteUri, "root", "root", 1033, spSiteTemplate, FarmAdmin, String.Empty, String.Empty);
                 spSite.RootWeb.CreateDefaultAssociatedGroups(FarmAdmin, FarmAdmin, spSite.RootWeb.Title);
 
@@ -127,7 +128,7 @@ namespace Yvand.LdapClaimsProvider.Tests
 
             if (!SPSite.Exists(TestSiteCollUri))
             {
-                Trace.TraceInformation($"{DateTime.Now.ToString("s")} Creating site collection {TestSiteCollUri.AbsoluteUri} with template '{spSiteTemplate}'...");
+                Trace.TraceInformation($"{DateTime.Now.ToString("s")} [SETUP] Creating site collection {TestSiteCollUri.AbsoluteUri} with template '{spSiteTemplate}'...");
                 SPSite spSite = wa.Sites.Add(TestSiteCollUri.AbsoluteUri, LDAPCPSE.ClaimsProviderName, LDAPCPSE.ClaimsProviderName, 1033, spSiteTemplate, FarmAdmin, String.Empty, String.Empty);
                 spSite.RootWeb.CreateDefaultAssociatedGroups(FarmAdmin, FarmAdmin, spSite.RootWeb.Title);
 
@@ -144,11 +145,16 @@ namespace Yvand.LdapClaimsProvider.Tests
                 }
             }
 
-            var globalConfiguration = LDAPCPSE.GetConfiguration(true);
-            if (globalConfiguration != null)
+            PersistedConfiguration = LDAPCPSE.GetConfiguration(true);
+            if (PersistedConfiguration != null)
             {
-                OriginalSettings = globalConfiguration.Settings;
-                Trace.TraceInformation($"{DateTime.Now:s} Took a backup of the original settings");
+                OriginalSettings = PersistedConfiguration.Settings;
+                Trace.TraceInformation($"{DateTime.Now:s} [SETUP] Took a backup of the original settings");
+            }
+            else
+            {
+                PersistedConfiguration = LDAPCPSE.CreateConfiguration();
+                Trace.TraceInformation($"{DateTime.Now:s} [SETUP] Persisted configuration not found, created it");
             }
         }
 
@@ -158,10 +164,9 @@ namespace Yvand.LdapClaimsProvider.Tests
             Trace.TraceInformation($"{DateTime.Now:s} [SETUP] Cleanup.");
             try
             {
-                var globalConfiguration = LDAPCPSE.GetConfiguration(true);
-                if (globalConfiguration != null && OriginalSettings != null)
+                if (PersistedConfiguration != null && OriginalSettings != null)
                 {
-                    globalConfiguration.ApplySettings(OriginalSettings, true);
+                    PersistedConfiguration.ApplySettings(OriginalSettings, true);
                     Trace.TraceInformation($"{DateTime.Now:s} [SETUP] Restored original settings of LDAPCPSE configuration");
                 }
             }
@@ -170,7 +175,7 @@ namespace Yvand.LdapClaimsProvider.Tests
                 Trace.TraceError($"{DateTime.Now:s} [SETUP] Unexpected error while restoring the original settings of LDAPCPSE configuration: {ex.Message}");
             }
 
-            Trace.TraceInformation($"{DateTime.Now.ToString("s")} Integration tests of {LDAPCPSE.ClaimsProviderName} {FileVersionInfo.GetVersionInfo(Assembly.GetAssembly(typeof(LDAPCPSE)).Location).FileVersion} finished.");
+            Trace.TraceInformation($"{DateTime.Now.ToString("s")} [SETUP] Integration tests of {LDAPCPSE.ClaimsProviderName} {FileVersionInfo.GetVersionInfo(Assembly.GetAssembly(typeof(LDAPCPSE)).Location).FileVersion} finished.");
             Trace.Flush();
             if (Logger != null)
             {

@@ -160,7 +160,7 @@ namespace Yvand.LdapClaimsProvider.Configuration
             set { _LeadingKeywordToBypassLdapDuringSearch = value; }
         }
         [Persisted]
-        private string _LeadingKeywordToBypassLdapDuringSearch;
+        private string _LeadingKeywordToBypassLdapDuringSearch = String.Empty;
 
         /// <summary>
         /// Set this property to customize display text of the permission with a specific LDAP newAttribute (different than LDAPAttributeName, that is the actual value of the permission)

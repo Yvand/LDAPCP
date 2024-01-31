@@ -88,25 +88,36 @@ namespace Yvand.LdapClaimsProvider.Tests
             Trace.TraceInformation($"{DateTime.Now:s} [{this.GetType().Name}] Initialized default settings.");
             //if (applyChanges)
             //{
-                //TestSettingsAndApplyThemIfValid();
+                //CheckSettingsTest();
             //}
         }
 
-        //[Test]
-        public virtual void TestSettingsAndApplyThemIfValid()
+        /// <summary>
+        /// Override this method and decorate it with [Test] if the settings applied in the inherited class should be tested
+        /// </summary>
+        public virtual void CheckSettingsTest()
         {
             GlobalConfiguration.ApplySettings(Settings, false);
             if (ConfigurationShouldBeValid)
             {
                 Assert.DoesNotThrow(() => GlobalConfiguration.ValidateConfiguration(), "ValidateLocalConfiguration should NOT throw a InvalidOperationException because the configuration is valid");
-                GlobalConfiguration.Update();
-                Trace.TraceInformation($"{DateTime.Now:s} [{this.GetType().Name}] Updated configuration: {JsonConvert.SerializeObject(Settings, Formatting.None)}");
+                //GlobalConfiguration.Update();
+                //Trace.TraceInformation($"{DateTime.Now:s} [{this.GetType().Name}] Updated configuration: {JsonConvert.SerializeObject(Settings, Formatting.None)}");
             }
             else
             {
                 Assert.Throws<InvalidOperationException>(() => GlobalConfiguration.ValidateConfiguration(), "ValidateLocalConfiguration should throw a InvalidOperationException because the configuration is invalid");
                 Trace.TraceInformation($"{DateTime.Now:s} [{this.GetType().Name}] Invalid configuration: {JsonConvert.SerializeObject(Settings, Formatting.None)}");
             }
+        }
+
+        /// <summary>
+        /// Applies the <see cref="Settings"/> to the configuration object and save it in the configuration database
+        /// </summary>
+        public void ApplySettings()
+        {
+            GlobalConfiguration.ApplySettings(Settings, true);
+            Trace.TraceInformation($"{DateTime.Now:s} [{this.GetType().Name}] Updated configuration: {JsonConvert.SerializeObject(Settings, Formatting.None)}");
         }
 
         [OneTimeTearDown]

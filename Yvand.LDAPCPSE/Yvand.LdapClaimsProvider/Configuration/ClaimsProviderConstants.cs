@@ -96,7 +96,7 @@ namespace Yvand.LdapClaimsProvider.Configuration
             { "mobile", PeopleEditorEntityDataKeys.MobilePhone },
         };
 
-        public static Dictionary<string, ClaimTypeConfig> DefaultSettingsPerUserClaimType = new Dictionary<string, ClaimTypeConfig>()
+        public static readonly Dictionary<string, ClaimTypeConfig> DefaultSettingsPerUserClaimType = new Dictionary<string, ClaimTypeConfig>()
         {
             {
                 WIF4_5.ClaimTypes.Upn,

@@ -21,10 +21,17 @@ namespace Yvand.LdapClaimsProvider.Tests
                 DirectoryObjectAttributeSupportsWildcard = false,
             };
             Settings.ClaimTypes.Add(ctConfigPgidAttribute);
+            base.ApplySettings();
             //if (applyChanges)
             //{
-                TestSettingsAndApplyThemIfValid();
+            //CheckSettingsTest();
             //}
+        }
+
+        [Test]
+        public override void CheckSettingsTest()
+        {
+            base.CheckSettingsTest();
         }
 
         [TestCase(@"513", 1, @"513")]

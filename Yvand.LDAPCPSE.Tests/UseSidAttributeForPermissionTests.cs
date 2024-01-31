@@ -16,10 +16,17 @@ namespace Yvand.LdapClaimsProvider.Tests
             //base.Settings.ClaimTypes.IdentityClaim.DirectoryObjectAttribute = "objectSid";
             base.Settings.ClaimTypes.UpdateUserIdentifier("user", "objectSid");
             Trace.TraceInformation($"{DateTime.Now:s} [{this.GetType().Name}] Initialized custom settings.");
+            base.ApplySettings();
             //if (applyChanges)
             //{
-                TestSettingsAndApplyThemIfValid();
+            //CheckSettingsTest();
             //}
+        }
+
+        [Test]
+        public override void CheckSettingsTest()
+        {
+            base.CheckSettingsTest();
         }
 
         [TestCase(UnitTestsHelper.ValidTrustedUserSid, 1, UnitTestsHelper.ValidTrustedUserSid)]
@@ -48,9 +55,10 @@ namespace Yvand.LdapClaimsProvider.Tests
     //            DirectoryObjectAttributeSupportsWildcard = false,
     //        };
     //        Settings.ClaimTypes.Add(ctConfigPgidAttribute);
+        //base.ApplySettings();
     //        if (applyChanges)
     //        {
-    //            TestSettingsAndApplyThemIfValid();
+    //            CheckSettingsTest();
     //        }
     //    }
 
