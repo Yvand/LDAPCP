@@ -8,9 +8,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
-using System.Runtime;
 using System.Security.Claims;
-using Yvand.LdapClaimsProvider;
 using Yvand.LdapClaimsProvider.Configuration;
 
 namespace Yvand.LdapClaimsProvider.Tests
@@ -49,7 +47,7 @@ namespace Yvand.LdapClaimsProvider.Tests
         public static string DataFile_AllAccounts_Validate => TestContext.Parameters["DataFile_AllAccounts_Validate"];
         static TextWriterTraceListener Logger { get; set; }
 
-        private static LdapProviderConfiguration PersistedConfiguration;
+        public static LdapProviderConfiguration PersistedConfiguration;
         private static ILdapProviderSettings OriginalSettings;
 
 

@@ -18,14 +18,14 @@ namespace Yvand.LdapClaimsProvider.Tests
         /// <summary>
         /// Configures whether to run the entity augmentation tests.
         /// </summary>
-        public virtual bool DoAugmentationTest => true;
+        protected virtual bool DoAugmentationTest => true;
 
         /// <summary>
         /// Configures whether the configuration applied is valid, and whether the claims provider should be able to use it
         /// </summary>
-        public bool ConfigurationShouldBeValid = true;
+        protected bool ConfigurationShouldBeValid = true;
 
-        public string UserIdentifierClaimType
+        protected string UserIdentifierClaimType
         {
             get
             {
@@ -33,7 +33,7 @@ namespace Yvand.LdapClaimsProvider.Tests
             }
         }
 
-        public string GroupIdentifierClaimType
+        protected string GroupIdentifierClaimType
         {
             get
             {
@@ -41,38 +41,14 @@ namespace Yvand.LdapClaimsProvider.Tests
             }
         }
 
-        protected LdapProviderConfiguration GlobalConfiguration;
         protected LdapProviderSettings Settings = new LdapProviderSettings();
-        private static ILdapProviderSettings OriginalSettings;
-
-        //[OneTimeSetUp]
-        //public void Init()
-        //{
-        //    GlobalConfiguration = LDAPCPSE.GetConfiguration(true);
-        //    if (GlobalConfiguration == null)
-        //    {
-        //        GlobalConfiguration = LDAPCPSE.CreateConfiguration();
-        //    }
-        //    else
-        //    {
-        //        OriginalSettings = GlobalConfiguration.Settings;
-        //        Settings = (LdapProviderSettings)GlobalConfiguration.Settings;
-        //        Trace.TraceInformation($"{DateTime.Now:s} Took a backup of the original settings");
-        //    }
-        //    InitializeSettings(true);
-        //}
 
         /// <summary>
-        /// Initialize configuration
+        /// Initialize settings
         /// </summary>
         [OneTimeSetUp]
         public virtual void InitializeSettings()
         {
-            GlobalConfiguration = LDAPCPSE.GetConfiguration(true);
-            if (GlobalConfiguration == null)
-            {
-                GlobalConfiguration = LDAPCPSE.CreateConfiguration();
-            }
             Settings = new LdapProviderSettings();
             Settings.ClaimTypes = LdapProviderSettings.ReturnDefaultClaimTypesConfig(UnitTestsHelper.ClaimsProvider.Name);
 
@@ -86,10 +62,6 @@ namespace Yvand.LdapClaimsProvider.Tests
             Settings.EnableAugmentation = true;
 
             Trace.TraceInformation($"{DateTime.Now:s} [{this.GetType().Name}] Initialized default settings.");
-            //if (applyChanges)
-            //{
-                //CheckSettingsTest();
-            //}
         }
 
         /// <summary>
@@ -97,16 +69,14 @@ namespace Yvand.LdapClaimsProvider.Tests
         /// </summary>
         public virtual void CheckSettingsTest()
         {
-            GlobalConfiguration.ApplySettings(Settings, false);
+            UnitTestsHelper.PersistedConfiguration.ApplySettings(Settings, false);
             if (ConfigurationShouldBeValid)
             {
-                Assert.DoesNotThrow(() => GlobalConfiguration.ValidateConfiguration(), "ValidateLocalConfiguration should NOT throw a InvalidOperationException because the configuration is valid");
-                //GlobalConfiguration.Update();
-                //Trace.TraceInformation($"{DateTime.Now:s} [{this.GetType().Name}] Updated configuration: {JsonConvert.SerializeObject(Settings, Formatting.None)}");
+                Assert.DoesNotThrow(() => UnitTestsHelper.PersistedConfiguration.ValidateConfiguration(), "ValidateLocalConfiguration should NOT throw a InvalidOperationException because the configuration is valid");
             }
             else
             {
-                Assert.Throws<InvalidOperationException>(() => GlobalConfiguration.ValidateConfiguration(), "ValidateLocalConfiguration should throw a InvalidOperationException because the configuration is invalid");
+                Assert.Throws<InvalidOperationException>(() => UnitTestsHelper.PersistedConfiguration.ValidateConfiguration(), "ValidateLocalConfiguration should throw a InvalidOperationException because the configuration is invalid");
                 Trace.TraceInformation($"{DateTime.Now:s} [{this.GetType().Name}] Invalid configuration: {JsonConvert.SerializeObject(Settings, Formatting.None)}");
             }
         }
@@ -116,7 +86,7 @@ namespace Yvand.LdapClaimsProvider.Tests
         /// </summary>
         public void ApplySettings()
         {
-            GlobalConfiguration.ApplySettings(Settings, true);
+            UnitTestsHelper.PersistedConfiguration.ApplySettings(Settings, true);
             Trace.TraceInformation($"{DateTime.Now:s} [{this.GetType().Name}] Updated configuration: {JsonConvert.SerializeObject(Settings, Formatting.None)}");
         }
 
@@ -124,18 +94,6 @@ namespace Yvand.LdapClaimsProvider.Tests
         public void Cleanup()
         {
             Trace.TraceInformation($"{DateTime.Now:s} [{this.GetType().Name}] Cleanup.");
-            //try
-            //{
-            //    if (OriginalSettings != null)
-            //    {
-            //        GlobalConfiguration.ApplySettings(OriginalSettings, true);
-            //        Trace.TraceInformation($"{DateTime.Now:s} [{this.GetType().Name}] Restored original settings of LDAPCPSE configuration");
-            //    }
-            //}
-            //catch (Exception ex)
-            //{
-            //    Trace.TraceError($"{DateTime.Now:s} [{this.GetType().Name}] Unexpected error while restoring the original settings of LDAPCPSE configuration: {ex.Message}");
-            //}
         }
 
         /// <summary>

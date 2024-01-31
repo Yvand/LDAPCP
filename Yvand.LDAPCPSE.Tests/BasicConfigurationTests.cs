@@ -9,7 +9,6 @@ namespace Yvand.LdapClaimsProvider.Tests
         public override void InitializeSettings()
         {
             base.InitializeSettings();
-            //base.CheckSettingsTest();
             base.ApplySettings();
         }
 

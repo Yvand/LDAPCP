@@ -22,10 +22,6 @@ namespace Yvand.LdapClaimsProvider.Tests
             };
             Settings.ClaimTypes.Add(ctConfigPgidAttribute);
             base.ApplySettings();
-            //if (applyChanges)
-            //{
-            //CheckSettingsTest();
-            //}
         }
 
         [Test]

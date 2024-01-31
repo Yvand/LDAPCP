@@ -7,7 +7,7 @@ namespace Yvand.LdapClaimsProvider.Tests
     [TestFixture]
     public class WrongConfigNoIdentityClaimTypeTests : ClaimsProviderTestsBase
     {
-        public override bool DoAugmentationTest => false;
+        protected override bool DoAugmentationTest => false;
 
         public override void InitializeSettings()
         {
@@ -20,14 +20,19 @@ namespace Yvand.LdapClaimsProvider.Tests
             };
             base.Settings.ClaimTypes = new ClaimTypeConfigCollection(UnitTestsHelper.SPTrust) { randomClaimTypeConfig };
             ConfigurationShouldBeValid = false;
-            base.ApplySettings();
+        }
+
+        [Test]
+        public override void CheckSettingsTest()
+        {
+            base.CheckSettingsTest();
         }
     }
 
     [TestFixture]
     public class WrongConfigMultipleGroupClaimTypesTests : ClaimsProviderTestsBase
     {
-        public override bool DoAugmentationTest => false;
+        protected override bool DoAugmentationTest => false;
 
         public override void InitializeSettings()
         {
@@ -52,8 +57,7 @@ namespace Yvand.LdapClaimsProvider.Tests
     [TestFixture]
     public class WrongUpdatesOnClaimTypesTests : ClaimsProviderTestsBase
     {
-        public override bool DoAugmentationTest => false;
-        const string ConfigUpdateErrorMessage = "Some changes made to list ClaimTypes are invalid and cannot be committed to configuration database. Inspect inner exception for more details about the error.";
+        protected override bool DoAugmentationTest => false;
 
         public override void InitializeSettings()
         {

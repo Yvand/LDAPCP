@@ -13,9 +13,6 @@ namespace Yvand.LdapClaimsProvider.Tests
             Settings.ClaimTypes.GetMainConfigurationForDirectoryObjectType(DirectoryObjectType.User).LeadingKeywordToBypassDirectory = "bypass-user:";
             Settings.ClaimTypes.GetMainConfigurationForDirectoryObjectType(DirectoryObjectType.Group).LeadingKeywordToBypassDirectory = "bypass-group:";
             base.ApplySettings();
-            //if (applyChanges)
-            //CheckSettingsTest();
-            //}
         }
 
         [Test]
@@ -50,10 +47,6 @@ namespace Yvand.LdapClaimsProvider.Tests
             base.InitializeSettings();
             Settings.AlwaysResolveUserInput = true;
             base.ApplySettings();
-            //if (applyChanges)
-            //{
-            //CheckSettingsTest();
-            //}
         }
 
         [Test]
