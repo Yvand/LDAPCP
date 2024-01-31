@@ -120,25 +120,25 @@ namespace Yvand.LdapClaimsProvider.Configuration
             // Then add the rest of user details as mapped to the identity claim type
             // Then add the group claim type
             ClaimTypeConfigCollection newCTConfigCollection = new ClaimTypeConfigCollection(spTrust);
-            if (ClaimsProviderConstants.DefaultSettingsPerUserClaimType.ContainsKey(spTrust.IdentityClaimTypeInformation.MappedClaimType))
+            ClaimTypeConfig ctConfig = ClaimsProviderConstants.GetDefaultSettingsPerUserClaimType(spTrust.IdentityClaimTypeInformation.MappedClaimType);
+            if (ctConfig != null)
             {
                 // identity claim type is well-known
-                ClaimTypeConfig ctConfig = ClaimsProviderConstants.DefaultSettingsPerUserClaimType[spTrust.IdentityClaimTypeInformation.MappedClaimType];
                 ctConfig.ClaimType = spTrust.IdentityClaimTypeInformation.MappedClaimType;
                 newCTConfigCollection.Add(ctConfig);
             }
             else
             {
                 // Unknown identity claim type
-                ClaimTypeConfig ctConfig = new ClaimTypeConfig { ClaimType = spTrust.IdentityClaimTypeInformation.MappedClaimType };
+                ctConfig = new ClaimTypeConfig { ClaimType = spTrust.IdentityClaimTypeInformation.MappedClaimType };
                 newCTConfigCollection.Add(ctConfig);
             }
 
             //// Not adding those as additional attributes to avoid having too many LDAP attributes to search users in the LDAP filter
-            var nonIdentityClaimTypes = ClaimsProviderConstants.DefaultSettingsPerUserClaimType.Where(x => x.Key != spTrust.IdentityClaimTypeInformation.MappedClaimType);
+            var nonIdentityClaimTypes = ClaimsProviderConstants.GetDefaultSettingsPerUserClaimType().Where(x => x.Key != spTrust.IdentityClaimTypeInformation.MappedClaimType);
             foreach (var nonIdentityClaimType in nonIdentityClaimTypes)
             {
-                ClaimTypeConfig ctConfig = nonIdentityClaimType.Value;
+                ctConfig = nonIdentityClaimType.Value;
                 ctConfig.ClaimType = String.Empty;
                 ctConfig.IsAdditionalLdapSearchAttribute = true;
                 newCTConfigCollection.Add(ctConfig);

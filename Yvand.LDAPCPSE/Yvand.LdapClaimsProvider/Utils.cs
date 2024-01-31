@@ -94,7 +94,7 @@ namespace Yvand.LdapClaimsProvider.Configuration
 
             // Return all claim types registered in the SPTrustedLoginProvider that do not match a known user claim type
             IEnumerable<string> nonWellKnownUserClaimTypes = trust.ClaimTypeInformation
-                .Where(x => !ClaimsProviderConstants.DefaultSettingsPerUserClaimType.ContainsKey(x.MappedClaimType))
+                .Where(x => ClaimsProviderConstants.GetDefaultSettingsPerUserClaimType(x.MappedClaimType) == null)
                 .Select(x => x.MappedClaimType);
             return nonWellKnownUserClaimTypes;
         }

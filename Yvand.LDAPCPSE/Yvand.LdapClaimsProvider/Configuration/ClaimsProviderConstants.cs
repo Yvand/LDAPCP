@@ -75,9 +75,9 @@ namespace Yvand.LdapClaimsProvider.Configuration
         public static Dictionary<string, string> SpecialCharacters
         {
             get => _SpecialCharacters;
-            set => _SpecialCharacters = value;
+            //set => _SpecialCharacters = value;
         }
-        private static Dictionary<string, string> _SpecialCharacters = new Dictionary<string, string>
+        private static readonly Dictionary<string, string> _SpecialCharacters = new Dictionary<string, string>
         {
             { @"\", @"\5C" },   // '\' must be the 1st to be evaluated because '\' is also present in the escape characters themselves
             { "*", @"\2A" },
@@ -85,7 +85,7 @@ namespace Yvand.LdapClaimsProvider.Configuration
             { ")", @"\29" },
         };
 
-        public static Dictionary<string, string> EntityMetadataPerLdapAttributes = new Dictionary<string, string>
+        public static readonly Dictionary<string, string> EntityMetadataPerLdapAttributes = new Dictionary<string, string>
         {
             { "mail", PeopleEditorEntityDataKeys.Email },
             { "title", PeopleEditorEntityDataKeys.JobTitle },
@@ -96,52 +96,70 @@ namespace Yvand.LdapClaimsProvider.Configuration
             { "mobile", PeopleEditorEntityDataKeys.MobilePhone },
         };
 
-        public static readonly Dictionary<string, ClaimTypeConfig> DefaultSettingsPerUserClaimType = new Dictionary<string, ClaimTypeConfig>()
+        public static List<KeyValuePair<string, ClaimTypeConfig>> GetDefaultSettingsPerUserClaimType()
         {
+            // This Dictionary cannot be exposed directly as a static member of this class, as it would risk one of its members to be modified, and that modif would span on the whole process
+            Dictionary<string, ClaimTypeConfig> defaultSettingsPerUserClaimType = new Dictionary<string, ClaimTypeConfig>
             {
-                WIF4_5.ClaimTypes.Upn,
-                new ClaimTypeConfig
                 {
-                    DirectoryObjectType = DirectoryObjectType.User,
-                    DirectoryObjectClass = "user",
-                    DirectoryObjectAttribute = "userPrincipalName",
-                    DirectoryObjectAdditionalFilter = "(!(objectClass=computer))"
+                    WIF4_5.ClaimTypes.Upn,
+                    new ClaimTypeConfig
+                    {
+                        DirectoryObjectType = DirectoryObjectType.User,
+                        DirectoryObjectClass = "user",
+                        DirectoryObjectAttribute = "userPrincipalName",
+                        DirectoryObjectAdditionalFilter = "(!(objectClass=computer))"
+                    }
+                },
+                {
+                    WIF4_5.ClaimTypes.Email,
+                    new ClaimTypeConfig
+                    {
+                        DirectoryObjectType = DirectoryObjectType.User,
+                        DirectoryObjectClass = "user",
+                        DirectoryObjectAttribute = "mail",
+                        DirectoryObjectAdditionalFilter = "(!(objectClass=computer))",
+                        SPEntityDataKey = EntityMetadataPerLdapAttributes.ContainsKey("mail") ? EntityMetadataPerLdapAttributes["mail"] : String.Empty,
+                    }
+                },
+                {
+                    WIF4_5.ClaimTypes.WindowsAccountName,
+                    new ClaimTypeConfig
+                    {
+                        DirectoryObjectType = DirectoryObjectType.User,
+                        DirectoryObjectClass = "user",
+                        DirectoryObjectAttribute = "sAMAccountName",
+                        DirectoryObjectAdditionalFilter = "(!(objectClass=computer))",
+                        SPEntityDataKey = EntityMetadataPerLdapAttributes.ContainsKey("sAMAccountName") ? EntityMetadataPerLdapAttributes["sAMAccountName"] : String.Empty,
+                    }
                 }
-            },
+                //{
+                //    WIF4_5.ClaimTypes.PrimarySid,
+                //    new ClaimTypeConfig
+                //    {
+                //        DirectoryObjectType = DirectoryObjectType.User,
+                //        DirectoryObjectClass = "user",
+                //        DirectoryObjectAttribute = "objectsid",
+                //        DirectoryObjectAttributeSupportsWildcard = false,
+                //        SPEntityDataKey = EntityMetadataPerLdapAttributes.ContainsKey("objectsid") ? EntityMetadataPerLdapAttributes["objectsid"] : String.Empty,
+                //    }
+                //},
+            };
+            // Returns a copy of the Dictionary, not the Dictionary itself, to prevent its members to be modified
+            return defaultSettingsPerUserClaimType.ToList();
+        }
+
+        public static ClaimTypeConfig GetDefaultSettingsPerUserClaimType(string claimType)
+        {
+            foreach (KeyValuePair<string, ClaimTypeConfig> kvp in GetDefaultSettingsPerUserClaimType())
             {
-                WIF4_5.ClaimTypes.Email,
-                new ClaimTypeConfig
+                if (String.Equals(kvp.Key, claimType, StringComparison.OrdinalIgnoreCase))
                 {
-                    DirectoryObjectType = DirectoryObjectType.User,
-                    DirectoryObjectClass = "user",
-                    DirectoryObjectAttribute = "mail",
-                    DirectoryObjectAdditionalFilter = "(!(objectClass=computer))",
-                    SPEntityDataKey = EntityMetadataPerLdapAttributes.ContainsKey("mail") ? EntityMetadataPerLdapAttributes["mail"] : String.Empty,
+                    return kvp.Value;
                 }
-            },
-            {
-                WIF4_5.ClaimTypes.WindowsAccountName,
-                new ClaimTypeConfig
-                {
-                    DirectoryObjectType = DirectoryObjectType.User,
-                    DirectoryObjectClass = "user",
-                    DirectoryObjectAttribute = "sAMAccountName",
-                    DirectoryObjectAdditionalFilter = "(!(objectClass=computer))",
-                    SPEntityDataKey = EntityMetadataPerLdapAttributes.ContainsKey("sAMAccountName") ? EntityMetadataPerLdapAttributes["sAMAccountName"] : String.Empty,
-                }
-            },
-            //{
-            //    WIF4_5.ClaimTypes.PrimarySid,
-            //    new ClaimTypeConfig
-            //    {
-            //        DirectoryObjectType = DirectoryObjectType.User,
-            //        DirectoryObjectClass = "user",
-            //        DirectoryObjectAttribute = "objectsid",
-            //        DirectoryObjectAttributeSupportsWildcard = false,
-            //        SPEntityDataKey = EntityMetadataPerLdapAttributes.ContainsKey("objectsid") ? EntityMetadataPerLdapAttributes["objectsid"] : String.Empty,
-            //    }
-            //},
-        };
+            }
+            return null;
+        }
     }
 
     public enum DirectoryObjectType
