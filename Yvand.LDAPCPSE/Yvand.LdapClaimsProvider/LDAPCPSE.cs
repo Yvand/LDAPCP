@@ -823,47 +823,61 @@ namespace Yvand.LdapClaimsProvider
                 isIdentityClaimType = true;
             }
 
-            if (result.ClaimTypeConfigMatch.IsAdditionalLdapSearchAttribute && result.ClaimTypeConfigMatch.DirectoryObjectClass != this.Settings.IdentityClaimTypeConfig.DirectoryObjectClass)
+            ClaimTypeConfig ctConfigToUseForClaimValue = result.ClaimTypeConfigMatch;
+            if (result.ClaimTypeConfigMatch.IsAdditionalLdapSearchAttribute /*&& result.ClaimTypeConfigMatch.DirectoryObjectClass != this.Settings.IdentityClaimTypeConfig.DirectoryObjectClass*/)
             {
                 // Get reference attribute to use to create actual entity (claim type and its DirectoryObjectAttribute) from current result
-                ClaimTypeConfig attribute = this.Settings.RuntimeClaimTypesList.FirstOrDefault(x => !x.IsAdditionalLdapSearchAttribute && x.DirectoryObjectClass == result.ClaimTypeConfigMatch.DirectoryObjectClass);
-                if (attribute != null)
-                {
-                    permissionClaimType = attribute.ClaimType;
-                    result.ClaimTypeConfigMatch.ClaimType = attribute.ClaimType;
-                    result.ClaimTypeConfigMatch.DirectoryObjectType = attribute.DirectoryObjectType;
-                    result.ClaimTypeConfigMatch.ClaimTypeDisplayName = attribute.ClaimTypeDisplayName;
-                    permissionValue = result.LdapEntityProperties[attribute.DirectoryObjectAttribute][0].ToString();    // Pick value of current result from actual LDAP attribute to use (which is not the LDAP attribute that matches input)
-                    result.ClaimTypeConfigMatch.DirectoryObjectAttributeForDisplayText = attribute.DirectoryObjectAttributeForDisplayText;
-                    result.ClaimTypeConfigMatch.ClaimValueLeadingToken = attribute.ClaimValueLeadingToken;
-                    result.ClaimTypeConfigMatch.LeadingKeywordToBypassDirectory = attribute.LeadingKeywordToBypassDirectory;
-                }
+                ctConfigToUseForClaimValue = this.Settings.RuntimeClaimTypesList.FirstOrDefault(x => !x.IsAdditionalLdapSearchAttribute && x.DirectoryObjectClass == result.ClaimTypeConfigMatch.DirectoryObjectClass);
+                //ClaimTypeConfig attribute = this.Settings.RuntimeClaimTypesList.FirstOrDefault(x => !x.IsAdditionalLdapSearchAttribute && x.DirectoryObjectClass == result.ClaimTypeConfigMatch.DirectoryObjectClass);
+                //if (attribute != null)
+                //{
+                //    permissionClaimType = attribute.ClaimType;
+                //    result.ClaimTypeConfigMatch.ClaimType = attribute.ClaimType;
+                //    result.ClaimTypeConfigMatch.DirectoryObjectType = attribute.DirectoryObjectType;
+                //    result.ClaimTypeConfigMatch.DirectoryObjectClass = attribute.DirectoryObjectClass;
+                //    result.ClaimTypeConfigMatch.DirectoryObjectAttribute = attribute.DirectoryObjectAttribute;
+                //    result.ClaimTypeConfigMatch.ClaimTypeDisplayName = attribute.ClaimTypeDisplayName;
+                //    //permissionValue = result.LdapEntityProperties[attribute.DirectoryObjectAttribute][0].ToString();    // Pick value of current result from actual LDAP attribute to use (which is not the LDAP attribute that matches input)
+                //    result.ClaimTypeConfigMatch.DirectoryObjectAttributeForDisplayText = attribute.DirectoryObjectAttributeForDisplayText;
+                //    result.ClaimTypeConfigMatch.ClaimValueLeadingToken = attribute.ClaimValueLeadingToken;
+                //    result.ClaimTypeConfigMatch.LeadingKeywordToBypassDirectory = attribute.LeadingKeywordToBypassDirectory;
+                //}
             }
 
-            if (result.ClaimTypeConfigMatch.IsAdditionalLdapSearchAttribute && result.ClaimTypeConfigMatch.DirectoryObjectClass == this.Settings.IdentityClaimTypeConfig.DirectoryObjectClass)
-            {
-                // This attribute is not directly linked to a claim type, so entity is created with identity claim type
-                permissionClaimType = this.Settings.IdentityClaimTypeConfig.ClaimType;
-                //permissionValue = FormatPermissionValue(currentContext, permissionClaimType, result.LdapEntityProperties[this.Settings.IdentityClaimTypeConfig.DirectoryObjectAttribute][0].ToString(), isIdentityClaimType, result);
-                permissionValue = FormatPermissionValue(currentContext, permissionClaimType, this.Settings.IdentityClaimTypeConfig.DirectoryObjectAttribute, isIdentityClaimType, result);
-                claim = CreateClaim(
-                    permissionClaimType,
-                    permissionValue,
-                    this.Settings.IdentityClaimTypeConfig.ClaimValueType/*,
+            // TEST
+            permissionClaimType = ctConfigToUseForClaimValue.ClaimType;
+            permissionValue = FormatPermissionValue(currentContext, ctConfigToUseForClaimValue.ClaimType, ctConfigToUseForClaimValue.DirectoryObjectAttribute, isIdentityClaimType, result);
+            claim = CreateClaim(
+                permissionClaimType,
+                permissionValue,
+                this.Settings.IdentityClaimTypeConfig.ClaimValueType/*,
                     false*/);
-                pe.EntityType = this.Settings.IdentityClaimTypeConfig.DirectoryObjectType == DirectoryObjectType.User ? SPClaimEntityTypes.User : ClaimsProviderConstants.GroupClaimEntityType;
-            }
-            else
-            {
-                //permissionValue = FormatPermissionValue(currentContext, result.ClaimTypeConfigMatch.ClaimType, permissionValue, isIdentityClaimType, result);
-                permissionValue = FormatPermissionValue(currentContext, result.ClaimTypeConfigMatch.ClaimType, result.ClaimTypeConfigMatch.DirectoryObjectAttribute, isIdentityClaimType, result);
-                claim = CreateClaim(
-                    permissionClaimType,
-                    permissionValue,
-                    result.ClaimTypeConfigMatch.ClaimValueType/*,
-                    false*/);
-                pe.EntityType = result.ClaimTypeConfigMatch.DirectoryObjectType == DirectoryObjectType.User ? SPClaimEntityTypes.User : ClaimsProviderConstants.GroupClaimEntityType;
-            }
+            pe.EntityType = this.Settings.IdentityClaimTypeConfig.DirectoryObjectType == DirectoryObjectType.User ? SPClaimEntityTypes.User : ClaimsProviderConstants.GroupClaimEntityType;
+
+            //if (result.ClaimTypeConfigMatch.IsAdditionalLdapSearchAttribute && result.ClaimTypeConfigMatch.DirectoryObjectClass == this.Settings.IdentityClaimTypeConfig.DirectoryObjectClass)
+            //{
+            //    // This attribute is not directly linked to a claim type, so entity is created with identity claim type
+            //    permissionClaimType = this.Settings.IdentityClaimTypeConfig.ClaimType;
+            //    //permissionValue = FormatPermissionValue(currentContext, permissionClaimType, result.LdapEntityProperties[this.Settings.IdentityClaimTypeConfig.DirectoryObjectAttribute][0].ToString(), isIdentityClaimType, result);
+            //    permissionValue = FormatPermissionValue(currentContext, permissionClaimType, this.Settings.IdentityClaimTypeConfig.DirectoryObjectAttribute, isIdentityClaimType, result);
+            //    claim = CreateClaim(
+            //        permissionClaimType,
+            //        permissionValue,
+            //        this.Settings.IdentityClaimTypeConfig.ClaimValueType/*,
+            //        false*/);
+            //    pe.EntityType = this.Settings.IdentityClaimTypeConfig.DirectoryObjectType == DirectoryObjectType.User ? SPClaimEntityTypes.User : ClaimsProviderConstants.GroupClaimEntityType;
+            //}
+            //else
+            //{
+            //    //permissionValue = FormatPermissionValue(currentContext, result.ClaimTypeConfigMatch.ClaimType, permissionValue, isIdentityClaimType, result);
+            //    permissionValue = FormatPermissionValue(currentContext, result.ClaimTypeConfigMatch.ClaimType, result.ClaimTypeConfigMatch.DirectoryObjectAttribute, isIdentityClaimType, result);
+            //    claim = CreateClaim(
+            //        permissionClaimType,
+            //        permissionValue,
+            //        result.ClaimTypeConfigMatch.ClaimValueType/*,
+            //        false*/);
+            //    pe.EntityType = result.ClaimTypeConfigMatch.DirectoryObjectType == DirectoryObjectType.User ? SPClaimEntityTypes.User : ClaimsProviderConstants.GroupClaimEntityType;
+            //}
 
             int nbMetadata = 0;
             // Populate metadata of new PickerEntity

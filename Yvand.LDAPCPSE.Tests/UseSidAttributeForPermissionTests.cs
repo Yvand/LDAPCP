@@ -116,6 +116,15 @@ namespace Yvand.LdapClaimsProvider.Tests
             base.InitializeSettings();
             base.Settings.ClaimTypes.UpdateGroupIdentifier("group", "objectSid");
             base.Settings.ClaimTypes.GetMainConfigurationForDirectoryObjectType(DirectoryObjectType.Group).ClaimValueLeadingToken = String.Empty;
+            ClaimTypeConfig ctConfigPgidAttribute = new ClaimTypeConfig
+            {
+                ClaimType = String.Empty,
+                IsAdditionalLdapSearchAttribute = true,
+                DirectoryObjectType = DirectoryObjectType.Group,
+                DirectoryObjectClass = "group",
+                DirectoryObjectAttribute = "sAMAccountName",
+            };
+            base.Settings.ClaimTypes.Add(ctConfigPgidAttribute);
             Trace.TraceInformation($"{DateTime.Now:s} [{this.GetType().Name}] Initialized custom settings.");
             base.ApplySettings();
         }
@@ -131,7 +140,7 @@ namespace Yvand.LdapClaimsProvider.Tests
         public void TestGroupSidAttribute(string inputValue, int expectedResultCount, string expectedEntityClaimValue)
         {
             base.TestSearchOperation(inputValue, expectedResultCount, expectedEntityClaimValue);
-            base.TestValidationOperation(base.GroupIdentifierClaimType, inputValue, expectedResultCount == 0 ? false : true);
+            base.TestValidationOperation(base.GroupIdentifierClaimType, expectedEntityClaimValue, expectedResultCount == 0 ? false : true);
         }
     }
 }
