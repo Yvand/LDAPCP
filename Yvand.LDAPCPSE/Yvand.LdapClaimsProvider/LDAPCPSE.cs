@@ -362,7 +362,7 @@ namespace Yvand.LdapClaimsProvider
                 return;
             }
 
-            using (new SPMonitoredScope($"[{ClaimsProviderName}] Augment entity whith claimValue \"{decodedEntity.ClaimType}", 3000))
+            using (new SPMonitoredScope($"[{ClaimsProviderName}] Augment entity whith value \"{decodedEntity.ClaimType}", 3000))
             {
                 if (!ValidateSettings(context)) { return; }
 
@@ -444,10 +444,10 @@ namespace Yvand.LdapClaimsProvider
                     foreach (PickerEntity entity in entities)
                     {
                         resolved.Add(entity);
-                        Logger.Log($"[{Name}] Added entity: display text: '{entity.DisplayText}', claim claimValue: '{entity.Claim.Value}', claim type: '{entity.Claim.ClaimType}'",
+                        Logger.Log($"[{Name}] Added entity: display text: '{entity.DisplayText}', claim value: '{entity.Claim.Value}', claim type: '{entity.Claim.ClaimType}'",
                             TraceSeverity.Verbose, EventSeverity.Information, TraceCategory.Claims_Picking);
                     }
-                    Logger.Log($"[{Name}] Returned {entities.Count} entities with claimValue '{currentContext.Input}'", TraceSeverity.Medium, EventSeverity.Information, TraceCategory.Claims_Picking);
+                    Logger.Log($"[{Name}] Returned {entities.Count} entities with value '{currentContext.Input}'", TraceSeverity.Medium, EventSeverity.Information, TraceCategory.Claims_Picking);
                 }
                 catch (Exception ex)
                 {
@@ -491,10 +491,10 @@ namespace Yvand.LdapClaimsProvider
                             searchTree.AddChild(matchNode);
                         }
                         matchNode.AddEntity(entity);
-                        Logger.Log($"[{Name}] Added entity: display text: '{entity.DisplayText}', claim claimValue: '{entity.Claim.Value}', claim type: '{entity.Claim.ClaimType}'",
+                        Logger.Log($"[{Name}] Added entity: display text: '{entity.DisplayText}', claim value: '{entity.Claim.Value}', claim type: '{entity.Claim.ClaimType}'",
                             TraceSeverity.Verbose, EventSeverity.Information, TraceCategory.Claims_Picking);
                     }
-                    Logger.Log($"[{Name}] Returned {entities.Count} entities from claimValue '{currentContext.Input}'",
+                    Logger.Log($"[{Name}] Returned {entities.Count} entities from value '{currentContext.Input}'",
                         TraceSeverity.Medium, EventSeverity.Information, TraceCategory.Claims_Picking);
                 }
                 catch (Exception ex)
@@ -511,7 +511,7 @@ namespace Yvand.LdapClaimsProvider
         #region Validation
         protected override void FillResolve(Uri context, string[] entityTypes, SPClaim resolveInput, List<PickerEntity> resolved)
         {
-            using (new SPMonitoredScope($"[{ClaimsProviderName}] Validate entity whith claimValue \"{resolveInput.ClaimType}", 3000))
+            using (new SPMonitoredScope($"[{ClaimsProviderName}] Validate entity whith value \"{resolveInput.ClaimType}", 3000))
             {
                 if (!ValidateSettings(context)) { return; }
 
@@ -527,13 +527,13 @@ namespace Yvand.LdapClaimsProvider
                     if (entities?.Count == 1)
                     {
                         resolved.Add(entities[0]);
-                        Logger.Log($"[{Name}] Validated entity: display text: '{entities[0].DisplayText}', claim claimValue: '{entities[0].Claim.Value}', claim type: '{entities[0].Claim.ClaimType}'",
+                        Logger.Log($"[{Name}] Validated entity: display text: '{entities[0].DisplayText}', claim value: '{entities[0].Claim.Value}', claim type: '{entities[0].Claim.ClaimType}'",
                             TraceSeverity.High, EventSeverity.Information, TraceCategory.Claims_Picking);
                     }
                     else
                     {
                         int entityCount = entities == null ? 0 : entities.Count;
-                        Logger.Log($"[{Name}] Validation failed: found {entityCount.ToString()} entities instead of 1 for incoming claim with claimValue '{currentContext.IncomingEntity.Value}' and type '{currentContext.IncomingEntity.ClaimType}'", TraceSeverity.Unexpected, EventSeverity.Error, TraceCategory.Claims_Picking);
+                        Logger.Log($"[{Name}] Validation failed: found {entityCount.ToString()} entities instead of 1 for incoming claim with value '{currentContext.IncomingEntity.Value}' and type '{currentContext.IncomingEntity.ClaimType}'", TraceSeverity.Unexpected, EventSeverity.Error, TraceCategory.Claims_Picking);
                     }
                 }
                 catch (Exception ex)
@@ -590,7 +590,7 @@ namespace Yvand.LdapClaimsProvider
                         string inputWithoutPrefix = currentContext.Input.Substring(ctConfigWithInputPrefixMatch.LeadingKeywordToBypassDirectory.Length);
                         if (String.IsNullOrEmpty(inputWithoutPrefix))
                         {
-                            // No claimValue in the input after the prefix, return
+                            // No value in the input after the prefix, return
                             return pickerEntityList;
                         }
                         pickerEntityList = CreatePickerEntityForSpecificClaimTypes(
@@ -600,7 +600,7 @@ namespace Yvand.LdapClaimsProvider
                         if (pickerEntityList?.Count == 1)
                         {
                             PickerEntity entity = pickerEntityList.FirstOrDefault();
-                            Logger.Log($"[{Name}] Created entity without contacting Microsoft Entra ID tenant(s) because input started with prefix '{ctConfigWithInputPrefixMatch.LeadingKeywordToBypassDirectory}', which is configured for claim type '{ctConfigWithInputPrefixMatch.ClaimType}'. Claim claimValue: '{entity.Claim.Value}', claim type: '{entity.Claim.ClaimType}'",
+                            Logger.Log($"[{Name}] Created entity without contacting Microsoft Entra ID tenant(s) because input started with prefix '{ctConfigWithInputPrefixMatch.LeadingKeywordToBypassDirectory}', which is configured for claim type '{ctConfigWithInputPrefixMatch.ClaimType}'. Claim value: '{entity.Claim.Value}', claim type: '{entity.Claim.ClaimType}'",
                                 TraceSeverity.VerboseEx, EventSeverity.Information, TraceCategory.Claims_Picking);
                         }
                     }
@@ -626,7 +626,7 @@ namespace Yvand.LdapClaimsProvider
                         if (pickerEntityList?.Count == 1)
                         {
                             PickerEntity entity = pickerEntityList.FirstOrDefault();
-                            Logger.Log($"[{Name}] Validated entity without contacting Microsoft Entra ID tenant(s) because its claim type ('{currentContext.IncomingEntityClaimTypeConfig.ClaimType}') has property 'LeadingKeywordToBypassDirectory' set in EntraCPConfig.ClaimTypes. Claim claimValue: '{entity.Claim.Value}', claim type: '{entity.Claim.ClaimType}'",
+                            Logger.Log($"[{Name}] Validated entity without contacting Microsoft Entra ID tenant(s) because its claim type ('{currentContext.IncomingEntityClaimTypeConfig.ClaimType}') has property 'LeadingKeywordToBypassDirectory' set in EntraCPConfig.ClaimTypes. Claim value: '{entity.Claim.Value}', claim type: '{entity.Claim.ClaimType}'",
                                 TraceSeverity.VerboseEx, EventSeverity.Information, TraceCategory.Claims_Picking);
                         }
                     }
@@ -679,8 +679,8 @@ namespace Yvand.LdapClaimsProvider
 
                 foreach (ClaimTypeConfig ctConfig in ctConfigs)
                 {
-                    // Issue https://github.com/Yvand/LDAPCP/issues/16: If current result is a user, ensure LDAP attribute of identity ClaimTypeConfig exists in current LDAP result
-                    // Skip current ldap result if: current config has IsAdditionalLdapSearchAttribute AND LDAP result is a user AND LDAP result doesn't have identifier attribute
+                    // Issue https://github.com/Yvand/LDAPCP/issues/16:
+                    // Skip if: current config has IsAdditionalLdapSearchAttribute, but LDAP result does not have the identifier attribute
                     if (ctConfig.IsAdditionalLdapSearchAttribute)
                     {
                         ClaimTypeConfig mainDirectoryObjectctConfig = ctConfig.DirectoryObjectType == DirectoryObjectType.User ? this.Settings.UserIdentifierClaimTypeConfig : this.Settings.GroupIdentifierClaimTypeConfig;
@@ -702,15 +702,15 @@ namespace Yvand.LdapClaimsProvider
                         continue;
                     }
 
-                    // Get claimValue with of current LDAP attribute
-                    // Fix https://github.com/Yvand/LDAPCP/issues/43: properly test the type of the claimValue
+                    // Get the LDAP attribute value of the current ClaimTypeConfig
+                    // Fix https://github.com/Yvand/LDAPCP/issues/43: properly test the type of the LDAP attribute's value, and always get it as a string
                     string directoryObjectPropertyValue = Utils.GetLdapValueAsString(ldapResultProperties[LDAPResultPropertyNames.First(x => String.Equals(x, ctConfig.DirectoryObjectAttribute, StringComparison.InvariantCultureIgnoreCase))][0], ctConfig.DirectoryObjectAttribute);
                     if (String.IsNullOrWhiteSpace(directoryObjectPropertyValue))
                     {
                         continue;
                     }
 
-                    // Check if current LDAP attribute claimValue matches the input
+                    // Check if current LDAP attribute's value matches the input
                     if (currentContext.ExactSearch || !ctConfig.DirectoryObjectAttributeSupportsWildcard)
                     {
                         if (!String.Equals(directoryObjectPropertyValue, currentContext.Input, StringComparison.InvariantCultureIgnoreCase))
@@ -791,7 +791,7 @@ namespace Yvand.LdapClaimsProvider
         protected virtual new SPClaim CreateClaim(string type, string value, string valueType)
         {
             // SPClaimProvider.CreateClaim sets property OriginalIssuer to SPOriginalIssuerType.ClaimProvider, which is not correct
-            //return CreateClaim(type, claimValue, valueType);
+            //return CreateClaim(type, value, valueType);
             return new SPClaim(type, value, valueType, this.OriginalIssuerName);
         }
 
@@ -819,7 +819,7 @@ namespace Yvand.LdapClaimsProvider
             // Change condition to fix bug http://ldapcp.codeplex.com/discussions/653087: only rely on the LDAP class
             foreach (ClaimTypeConfig ctConfig in this.Settings.RuntimeMetadataConfig.Where(x => String.Equals(x.DirectoryObjectClass, result.ClaimTypeConfigMatch.DirectoryObjectClass, StringComparison.InvariantCultureIgnoreCase)))
             {
-                // if there is actally a claimValue in the LDAP result, then it can be set
+                // if the the LDAP result has a value for the LDAP attribute of the current metadata, then the metadata can be set
                 if (result.DirectoryResultProperties.Contains(ctConfig.DirectoryObjectAttribute) && result.DirectoryResultProperties[ctConfig.DirectoryObjectAttribute].Count > 0)
                 {
                     entity.EntityData[ctConfig.SPEntityDataKey] = result.DirectoryResultProperties[ctConfig.DirectoryObjectAttribute][0].ToString();
@@ -828,7 +828,7 @@ namespace Yvand.LdapClaimsProvider
                 }
             }
 
-            Logger.Log($"[{Name}] Created entity: display text: '{entity.DisplayText}', claimValue: '{entity.Claim.Value}', claim type: '{entity.Claim.ClaimType}', and filled with {nbMetadata} metadata.", TraceSeverity.VerboseEx, EventSeverity.Information, TraceCategory.Claims_Picking);
+            Logger.Log($"[{Name}] Created entity: display text: '{entity.DisplayText}', claim value: '{entity.Claim.Value}', claim type: '{entity.Claim.ClaimType}', and filled with {nbMetadata} metadata.", TraceSeverity.VerboseEx, EventSeverity.Information, TraceCategory.Claims_Picking);
             return entity;
         }
 
@@ -852,7 +852,7 @@ namespace Yvand.LdapClaimsProvider
                 if (!String.IsNullOrEmpty(ctConfig.SPEntityDataKey))
                 {
                     entity.EntityData[ctConfig.SPEntityDataKey] = entity.Claim.Value;
-                    Logger.Log($"[{Name}] Added metadata '{ctConfig.SPEntityDataKey}' with claimValue '{entity.EntityData[ctConfig.SPEntityDataKey]}' to new entity", TraceSeverity.VerboseEx, EventSeverity.Information, TraceCategory.Claims_Picking);
+                    Logger.Log($"[{Name}] Added metadata '{ctConfig.SPEntityDataKey}' with value '{entity.EntityData[ctConfig.SPEntityDataKey]}' to new entity", TraceSeverity.VerboseEx, EventSeverity.Information, TraceCategory.Claims_Picking);
                 }
 
                 UniqueDirectoryResult fakeLdapResult = new UniqueDirectoryResult
@@ -863,7 +863,7 @@ namespace Yvand.LdapClaimsProvider
                 entity.DisplayText = FormatPermissionDisplayText(currentContext, fakeLdapResult, claimValue);
 
                 entities.Add(entity);
-                Logger.Log($"[{Name}] Created entity: display text: '{entity.DisplayText}', claimValue: '{entity.Claim.Value}', claim type: '{entity.Claim.ClaimType}'.", TraceSeverity.VerboseEx, EventSeverity.Information, TraceCategory.Claims_Picking);
+                Logger.Log($"[{Name}] Created entity: display text: '{entity.DisplayText}', claim value: '{entity.Claim.Value}', claim type: '{entity.Claim.ClaimType}'.", TraceSeverity.VerboseEx, EventSeverity.Information, TraceCategory.Claims_Picking);
             }
             return entities.Count > 0 ? entities : null;
         }
@@ -959,7 +959,7 @@ namespace Yvand.LdapClaimsProvider
                     }
                 }
 
-                // Check if LDAP claimValue that actually resolved this result should be included in the display text of the entity
+                // Check if LDAP value that actually resolved this result should be included in the display text of the entity
                 if (displayLdapMatchForIdentityClaimType && result.DirectoryResultProperties.Contains(result.ClaimTypeConfigMatch.DirectoryObjectAttribute)
                     && !String.Equals(valueDisplayedInPermission, claimValue, StringComparison.InvariantCultureIgnoreCase))
                 {
