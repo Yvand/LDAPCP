@@ -162,7 +162,7 @@ namespace Yvand.LdapClaimsProvider
                                 // https://github.com/Yvand/LDAPCP/issues/148 - the group property used for the group value should be based on the LDAPCP configuration
                                 // By default it should be the SamAccountName, since it's also the default attribute set in LDAPCP configuration
                                 string claimValue = adGroup.SamAccountName;
-                                switch (this.Settings.MainGroupClaimTypeConfig.DirectoryObjectAttribute.ToLower())
+                                switch (this.Settings.GroupIdentifierClaimTypeConfig.DirectoryObjectAttribute.ToLower())
                                 {
                                     case "name":
                                         claimValue = adGroup.Name;
@@ -177,20 +177,20 @@ namespace Yvand.LdapClaimsProvider
                                         break;
                                 }
 
-                                if (!String.IsNullOrEmpty(this.Settings.MainGroupClaimTypeConfig.ClaimValueLeadingToken))
+                                if (!String.IsNullOrEmpty(this.Settings.GroupIdentifierClaimTypeConfig.ClaimValueLeadingToken))
                                 {
                                     // Principal.DistinguishedName is used to build the domain name / FQDN of the current group. Example of value: CN=group1,CN=Users,DC=contoso,DC=local
                                     string groupDN = adGroup.DistinguishedName;
                                     if (String.IsNullOrEmpty(groupDN)) { continue; }
 
                                     Utils.GetDomainInformation(groupDN, out groupDomainName, out groupDomainFqdn);
-                                    if (this.Settings.MainGroupClaimTypeConfig.ClaimValueLeadingToken.Contains(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINNAME))
+                                    if (this.Settings.GroupIdentifierClaimTypeConfig.ClaimValueLeadingToken.Contains(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINNAME))
                                     {
-                                        claimValue = this.Settings.MainGroupClaimTypeConfig.ClaimValueLeadingToken.Replace(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINNAME, groupDomainName) + claimValue;
+                                        claimValue = this.Settings.GroupIdentifierClaimTypeConfig.ClaimValueLeadingToken.Replace(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINNAME, groupDomainName) + claimValue;
                                     }
-                                    else if (this.Settings.MainGroupClaimTypeConfig.ClaimValueLeadingToken.Contains(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINFQDN))
+                                    else if (this.Settings.GroupIdentifierClaimTypeConfig.ClaimValueLeadingToken.Contains(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINFQDN))
                                     {
-                                        claimValue = this.Settings.MainGroupClaimTypeConfig.ClaimValueLeadingToken.Replace(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINFQDN, groupDomainFqdn) + claimValue;
+                                        claimValue = this.Settings.GroupIdentifierClaimTypeConfig.ClaimValueLeadingToken.Replace(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINFQDN, groupDomainFqdn) + claimValue;
                                     }
                                 }
                                 //SPClaim claim = CreateClaim(groupCTConfig.ClaimType, claimValue, groupCTConfig.ClaimValueType, false);
@@ -237,7 +237,7 @@ namespace Yvand.LdapClaimsProvider
         {
             List<SPClaim> groups = new List<SPClaim>();
             //if (groupsCTConfig == null || groupsCTConfig.Count() == 0) { return new List<string>(); }
-            string ldapFilter = string.Format("(&(ObjectClass={0}) ({1}={2}){3})", this.Settings.IdentityClaimTypeConfig.DirectoryObjectClass, this.Settings.IdentityClaimTypeConfig.DirectoryObjectAttribute, currentContext.IncomingEntity.Value, this.Settings.IdentityClaimTypeConfig.DirectoryObjectAdditionalFilter);
+            string ldapFilter = string.Format("(&(ObjectClass={0}) ({1}={2}){3})", this.Settings.UserIdentifierClaimTypeConfig.DirectoryObjectClass, this.Settings.UserIdentifierClaimTypeConfig.DirectoryObjectAttribute, currentContext.IncomingEntity.Value, this.Settings.UserIdentifierClaimTypeConfig.DirectoryObjectAdditionalFilter);
             string logMessageCredentials = String.IsNullOrWhiteSpace(ldapConnection.LdapEntry.Username) ? "process identity" : ldapConnection.LdapEntry.Username;
             string directoryDetails = $"from LDAP server \"{ldapConnection.LdapEntry.Path}\" with LDAP filter \"{ldapFilter}\" (authenticate as \"{logMessageCredentials}\" with AuthenticationType \"{ldapConnection.LdapEntry.AuthenticationType}\").";
             Logger.Log($"[{ClaimsProviderName}] Getting LDAP groups of user \"{currentContext.IncomingEntity.Value}\" {directoryDetails}", TraceSeverity.Verbose, EventSeverity.Information, TraceCategory.Augmentation);
@@ -276,12 +276,12 @@ namespace Yvand.LdapClaimsProvider
                         {
                             //foreach (ClaimTypeConfig groupCTConfig in groupsCTConfig)
                             //{
-                            ClaimTypeConfig groupCTConfig = this.Settings.MainGroupClaimTypeConfig;
+                            ClaimTypeConfig groupCTConfig = this.Settings.GroupIdentifierClaimTypeConfig;
                             int propertyCount = 0;
                             ResultPropertyValueCollection groupValues = null;
                             bool valueIsDistinguishedNameFormat;
 
-                            //if (groupCTConfig.ClaimType == this.Settings.MainGroupClaimTypeConfig.ClaimType)
+                            //if (groupCTConfig.ClaimType == this.Settings.GroupIdentifierClaimTypeConfig.ClaimType)
                             //{
                             valueIsDistinguishedNameFormat = true;
                             foreach (string groupMembershipAttributes in ldapConnection.GroupMembershipLdapAttributes)

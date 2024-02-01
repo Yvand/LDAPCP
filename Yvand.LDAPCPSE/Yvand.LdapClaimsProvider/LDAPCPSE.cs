@@ -20,8 +20,8 @@ namespace Yvand.LdapClaimsProvider
     {
         List<ClaimTypeConfig> RuntimeClaimTypesList { get; }
         IEnumerable<ClaimTypeConfig> RuntimeMetadataConfig { get; }
-        ClaimTypeConfig IdentityClaimTypeConfig { get; }
-        ClaimTypeConfig MainGroupClaimTypeConfig { get; }
+        ClaimTypeConfig UserIdentifierClaimTypeConfig { get; }
+        ClaimTypeConfig GroupIdentifierClaimTypeConfig { get; }
     }
 
     public class LDAPCPSettings : LdapProviderSettings, ILDAPCPSettings
@@ -43,9 +43,9 @@ namespace Yvand.LdapClaimsProvider
 
         public IEnumerable<ClaimTypeConfig> RuntimeMetadataConfig { get; set; }
 
-        public ClaimTypeConfig IdentityClaimTypeConfig { get; set; }
+        public ClaimTypeConfig UserIdentifierClaimTypeConfig { get; set; }
 
-        public ClaimTypeConfig MainGroupClaimTypeConfig { get; set; }
+        public ClaimTypeConfig GroupIdentifierClaimTypeConfig { get; set; }
     }
 
     public class LDAPCPSE : SPClaimProvider
@@ -252,14 +252,14 @@ namespace Yvand.LdapClaimsProvider
                 claimTypesSetInTrust.Add(localClaimTypeConfig);
                 if (String.Equals(this.SPTrust.IdentityClaimTypeInformation.MappedClaimType, localClaimTypeConfig.ClaimType, StringComparison.InvariantCultureIgnoreCase))
                 {
-                    // Identity claim type found, set IdentityClaimTypeConfig property
+                    // Identity claim type found, set UserIdentifierClaimTypeConfig property
                     identityClaimTypeFound = true;
-                    settings.IdentityClaimTypeConfig = localClaimTypeConfig;
+                    settings.UserIdentifierClaimTypeConfig = localClaimTypeConfig;
                 }
                 else if (!groupClaimTypeFound && localClaimTypeConfig.DirectoryObjectType == DirectoryObjectType.Group)
                 {
                     groupClaimTypeFound = true;
-                    settings.MainGroupClaimTypeConfig = localClaimTypeConfig;
+                    settings.GroupIdentifierClaimTypeConfig = localClaimTypeConfig;
                 }
             }
 
@@ -276,19 +276,19 @@ namespace Yvand.LdapClaimsProvider
                 ClaimTypeConfig localClaimTypeConfig = claimTypeConfig.CopyConfiguration();
                 if (localClaimTypeConfig.DirectoryObjectType == DirectoryObjectType.User)
                 {
-                    localClaimTypeConfig.ClaimType = settings.IdentityClaimTypeConfig.ClaimType;
-                    localClaimTypeConfig.DirectoryObjectAttributeForDisplayText = settings.IdentityClaimTypeConfig.DirectoryObjectAttributeForDisplayText;
+                    localClaimTypeConfig.ClaimType = settings.UserIdentifierClaimTypeConfig.ClaimType;
+                    localClaimTypeConfig.DirectoryObjectAttributeForDisplayText = settings.UserIdentifierClaimTypeConfig.DirectoryObjectAttributeForDisplayText;
                 }
                 else
                 {
                     // If not a user, it must be a group
-                    if (settings.MainGroupClaimTypeConfig == null)
+                    if (settings.GroupIdentifierClaimTypeConfig == null)
                     {
                         continue;
                     }
-                    localClaimTypeConfig.ClaimType = settings.MainGroupClaimTypeConfig.ClaimType;
-                    localClaimTypeConfig.DirectoryObjectAttributeForDisplayText = settings.MainGroupClaimTypeConfig.DirectoryObjectAttributeForDisplayText;
-                    localClaimTypeConfig.ClaimTypeDisplayName = settings.MainGroupClaimTypeConfig.ClaimTypeDisplayName;
+                    localClaimTypeConfig.ClaimType = settings.GroupIdentifierClaimTypeConfig.ClaimType;
+                    localClaimTypeConfig.DirectoryObjectAttributeForDisplayText = settings.GroupIdentifierClaimTypeConfig.DirectoryObjectAttributeForDisplayText;
+                    localClaimTypeConfig.ClaimTypeDisplayName = settings.GroupIdentifierClaimTypeConfig.ClaimTypeDisplayName;
                 }
                 additionalClaimTypeConfigList.Add(localClaimTypeConfig);
             }
@@ -393,7 +393,7 @@ namespace Yvand.LdapClaimsProvider
                     {
                         foreach (string group in groups)
                         {
-                            claims.Add(CreateClaim(this.Settings.MainGroupClaimTypeConfig.ClaimType, group, this.Settings.MainGroupClaimTypeConfig.ClaimValueType));
+                            claims.Add(CreateClaim(this.Settings.GroupIdentifierClaimTypeConfig.ClaimType, group, this.Settings.GroupIdentifierClaimTypeConfig.ClaimValueType));
                             Logger.Log($"[{Name}] Added group '{group}' to user '{currentContext.IncomingEntity.Value}'",
                                 TraceSeverity.Verbose, EventSeverity.Information, TraceCategory.Augmentation);
                         }
@@ -683,7 +683,7 @@ namespace Yvand.LdapClaimsProvider
                     // Skip current ldap result if: current config has IsAdditionalLdapSearchAttribute AND LDAP result is a user AND LDAP result doesn't have identifier attribute
                     if (ctConfig.IsAdditionalLdapSearchAttribute)
                     {
-                        ClaimTypeConfig mainDirectoryObjectctConfig = ctConfig.DirectoryObjectType == DirectoryObjectType.User ? this.Settings.IdentityClaimTypeConfig : this.Settings.MainGroupClaimTypeConfig;
+                        ClaimTypeConfig mainDirectoryObjectctConfig = ctConfig.DirectoryObjectType == DirectoryObjectType.User ? this.Settings.UserIdentifierClaimTypeConfig : this.Settings.GroupIdentifierClaimTypeConfig;
                         if (!LDAPResultPropertyNames.Contains(mainDirectoryObjectctConfig.DirectoryObjectAttribute, StringComparer.InvariantCultureIgnoreCase))
                         {
                             continue;
@@ -743,9 +743,9 @@ namespace Yvand.LdapClaimsProvider
                     {
                         if (ctConfig.DirectoryObjectType == DirectoryObjectType.User)
                         {
-                            if (String.Equals(ctConfig.DirectoryObjectClass, this.Settings.IdentityClaimTypeConfig.DirectoryObjectClass, StringComparison.InvariantCultureIgnoreCase))
+                            if (String.Equals(ctConfig.DirectoryObjectClass, this.Settings.UserIdentifierClaimTypeConfig.DirectoryObjectClass, StringComparison.InvariantCultureIgnoreCase))
                             {
-                                ctConfigToUseForDuplicateCheck = this.Settings.IdentityClaimTypeConfig;
+                                ctConfigToUseForDuplicateCheck = this.Settings.UserIdentifierClaimTypeConfig;
                             }
                             else
                             {
@@ -754,9 +754,9 @@ namespace Yvand.LdapClaimsProvider
                         }
                         else
                         {
-                            if (this.Settings.MainGroupClaimTypeConfig != null && String.Equals(ctConfig.DirectoryObjectClass, this.Settings.MainGroupClaimTypeConfig.DirectoryObjectClass, StringComparison.InvariantCultureIgnoreCase))
+                            if (this.Settings.GroupIdentifierClaimTypeConfig != null && String.Equals(ctConfig.DirectoryObjectClass, this.Settings.GroupIdentifierClaimTypeConfig.DirectoryObjectClass, StringComparison.InvariantCultureIgnoreCase))
                             {
-                                ctConfigToUseForDuplicateCheck = this.Settings.MainGroupClaimTypeConfig;
+                                ctConfigToUseForDuplicateCheck = this.Settings.GroupIdentifierClaimTypeConfig;
                             }
                             else
                             {
@@ -801,7 +801,7 @@ namespace Yvand.LdapClaimsProvider
             if (result.ClaimTypeConfigMatch.IsAdditionalLdapSearchAttribute)
             {
                 // Get the config to use to create the actual entity (claim type and its DirectoryObjectAttribute) from current result
-                ctConfigToUseForClaimValue = result.ClaimTypeConfigMatch.DirectoryObjectType == DirectoryObjectType.User ? this.Settings.IdentityClaimTypeConfig : this.Settings.MainGroupClaimTypeConfig;
+                ctConfigToUseForClaimValue = result.ClaimTypeConfigMatch.DirectoryObjectType == DirectoryObjectType.User ? this.Settings.UserIdentifierClaimTypeConfig : this.Settings.GroupIdentifierClaimTypeConfig;
             }
 
             string permissionValue = FormatPermissionValue(currentContext, ctConfigToUseForClaimValue.ClaimType, ctConfigToUseForClaimValue.DirectoryObjectAttribute, result);
@@ -889,7 +889,7 @@ namespace Yvand.LdapClaimsProvider
 
         protected virtual string FormatPermissionDisplayText(OperationContext currentContext, UniqueDirectoryResult result, string claimValue)
         {
-            bool isUserIdentityClaimType = String.Equals(result.ClaimTypeConfigMatch.ClaimType, this.Settings.IdentityClaimTypeConfig.ClaimType, StringComparison.InvariantCultureIgnoreCase);
+            bool isUserIdentityClaimType = String.Equals(result.ClaimTypeConfigMatch.ClaimType, this.Settings.UserIdentifierClaimTypeConfig.ClaimType, StringComparison.InvariantCultureIgnoreCase);
             string entityDisplayText = this.Settings.EntityDisplayTextPrefix;
             string valueDisplayedInPermission = String.Empty;
             bool displayLdapMatchForIdentityClaimType = false;
@@ -954,7 +954,7 @@ namespace Yvand.LdapClaimsProvider
                     else
                     {   // Always specifically use LDAP attribute of identity claim type
                         entityDisplayText += prefixToAdd;
-                        valueDisplayedInPermission = result.DirectoryResultProperties[this.Settings.IdentityClaimTypeConfig.DirectoryObjectAttribute][0].ToString();
+                        valueDisplayedInPermission = result.DirectoryResultProperties[this.Settings.UserIdentifierClaimTypeConfig.DirectoryObjectAttribute][0].ToString();
                         entityDisplayText += valueDisplayedInPermission;
                     }
                 }
