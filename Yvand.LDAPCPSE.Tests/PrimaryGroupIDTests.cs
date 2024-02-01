@@ -36,7 +36,7 @@ namespace Yvand.LdapClaimsProvider.Tests
         public void TestPrimaryGroupIdClaimType(string inputValue, int expectedResultCount, string expectedEntityClaimValue)
         {
             base.TestSearchOperation(inputValue, expectedResultCount, expectedEntityClaimValue);
-            base.TestValidationOperation(TestContext.Parameters["MultiPurposeCustomClaimType"], inputValue, expectedResultCount == 0 ? false : true);
+            base.TestValidationOperation(TestContext.Parameters["MultiPurposeCustomClaimType"], expectedEntityClaimValue, expectedResultCount == 0 ? false : true);
         }
     }
 }

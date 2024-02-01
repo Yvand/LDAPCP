@@ -447,7 +447,7 @@ namespace Yvand.LdapClaimsProvider
                     ds.ClientTimeout = new TimeSpan(0, 0, this.Settings.Timeout); // Set the timeout in seconds
                     ds.PropertiesToLoad.Add("objectclass");
                     ds.PropertiesToLoad.Add("nETBIOSName");
-                    foreach (var ldapAttribute in this.Settings.RuntimeClaimTypesList.Where(x => !String.IsNullOrWhiteSpace(x.DirectoryObjectAttribute)))
+                    foreach (var ldapAttribute in currentContext.CurrentClaimTypeConfigList.Where(x => !String.IsNullOrWhiteSpace(x.DirectoryObjectAttribute)))
                     {
                         ds.PropertiesToLoad.Add(ldapAttribute.DirectoryObjectAttribute);
                         if (!String.IsNullOrEmpty(ldapAttribute.DirectoryObjectAttributeForDisplayText))

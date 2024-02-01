@@ -482,7 +482,7 @@ namespace Yvand.LdapClaimsProvider
                         }
                         else
                         {
-                            ClaimTypeConfig ctConfig = this.Settings.RuntimeClaimTypesList.FirstOrDefault(x =>
+                            ClaimTypeConfig ctConfig = currentContext.CurrentClaimTypeConfigList.FirstOrDefault(x =>
                                 !x.IsAdditionalLdapSearchAttribute &&
                                 String.Equals(x.ClaimType, entity.Claim.ClaimType, StringComparison.InvariantCultureIgnoreCase));
 
@@ -677,27 +677,17 @@ namespace Yvand.LdapClaimsProvider
                 // Cast collection to be able to use StringComparer.InvariantCultureIgnoreCase for case insensitive search of ldap properties
                 IEnumerable<string> LDAPResultPropertyNames = ldapResultProperties.PropertyNames.Cast<string>();
 
-                // Issue https://github.com/Yvand/LDAPCP/issues/16: If current result is a user, ensure LDAP attribute of identity ClaimTypeConfig exists in current LDAP result
-                bool isUserWithNoIdentityAttribute = false;
-                if (ldapResultProperties["objectclass"].Cast<string>().Contains(this.Settings.IdentityClaimTypeConfig.DirectoryObjectClass, StringComparer.InvariantCultureIgnoreCase))
-                {
-                    // This is a user: check if his identity LDAP attribute (e.g. mail or sAMAccountName) is present
-                    if (!LDAPResultPropertyNames.Contains(this.Settings.IdentityClaimTypeConfig.DirectoryObjectAttribute, StringComparer.InvariantCultureIgnoreCase))
-                    {
-                        // This may match a result like PrimaryGroupID, which has DirectoryObjectType "Group", but DirectoryObjectClass "User"
-                        // So it cannot be ruled out immediately, but needs be tested against each ClaimTypeConfig
-                        //Logger.Log($"[{Name}] Ignoring a user because he doesn't have the LDAP attribute '{IdentityClaimTypeConfig.DirectoryObjectAttribute}'", TraceSeverity.VerboseEx, EventSeverity.Information, TraceCategory.LDAP_Lookup);
-                        //continue;
-                        isUserWithNoIdentityAttribute = true;
-                    }
-                }
-
                 foreach (ClaimTypeConfig ctConfig in ctConfigs)
                 {
-                    // Skip if: current config is for users AND LDAP result is a user AND LDAP result doesn't have identity attribute set
-                    if (ctConfig.DirectoryObjectType == DirectoryObjectType.User && isUserWithNoIdentityAttribute)
+                    // Issue https://github.com/Yvand/LDAPCP/issues/16: If current result is a user, ensure LDAP attribute of identity ClaimTypeConfig exists in current LDAP result
+                    // Skip current ldap result if: current config has IsAdditionalLdapSearchAttribute AND LDAP result is a user AND LDAP result doesn't have identifier attribute
+                    if (ctConfig.IsAdditionalLdapSearchAttribute)
                     {
-                        continue;
+                        ClaimTypeConfig mainDirectoryObjectctConfig = ctConfig.DirectoryObjectType == DirectoryObjectType.User ? this.Settings.IdentityClaimTypeConfig : this.Settings.MainGroupClaimTypeConfig;
+                        if (!LDAPResultPropertyNames.Contains(mainDirectoryObjectctConfig.DirectoryObjectAttribute, StringComparer.InvariantCultureIgnoreCase))
+                        {
+                            continue;
+                        }
                     }
 
                     // Skip if: DirectoryObjectClass of current config does not match objectclass of LDAP result
@@ -715,7 +705,7 @@ namespace Yvand.LdapClaimsProvider
                     // Get claimValue with of current LDAP attribute
                     // Fix https://github.com/Yvand/LDAPCP/issues/43: properly test the type of the claimValue
                     string directoryObjectPropertyValue = Utils.GetLdapValueAsString(ldapResultProperties[LDAPResultPropertyNames.First(x => String.Equals(x, ctConfig.DirectoryObjectAttribute, StringComparison.InvariantCultureIgnoreCase))][0], ctConfig.DirectoryObjectAttribute);
-                    if (String.IsNullOrWhiteSpace(directoryObjectPropertyValue)) 
+                    if (String.IsNullOrWhiteSpace(directoryObjectPropertyValue))
                     {
                         continue;
                     }
@@ -811,7 +801,7 @@ namespace Yvand.LdapClaimsProvider
             if (result.ClaimTypeConfigMatch.IsAdditionalLdapSearchAttribute)
             {
                 // Get the config to use to create the actual entity (claim type and its DirectoryObjectAttribute) from current result
-                ctConfigToUseForClaimValue = Settings.ClaimTypes.GetMainConfigurationForDirectoryObjectType(result.ClaimTypeConfigMatch.DirectoryObjectType);
+                ctConfigToUseForClaimValue = result.ClaimTypeConfigMatch.DirectoryObjectType == DirectoryObjectType.User ? this.Settings.IdentityClaimTypeConfig : this.Settings.MainGroupClaimTypeConfig;
             }
 
             string permissionValue = FormatPermissionValue(currentContext, ctConfigToUseForClaimValue.ClaimType, ctConfigToUseForClaimValue.DirectoryObjectAttribute, result);
@@ -883,7 +873,7 @@ namespace Yvand.LdapClaimsProvider
             object claimValue = result.DirectoryResultProperties[directoryObjectAttributeName][0];
             string value = Utils.GetLdapValueAsString(claimValue, directoryObjectAttributeName);
 
-            var attr = this.Settings.RuntimeClaimTypesList.FirstOrDefault(x => SPClaimTypes.Equals(x.ClaimType, claimType));
+            var attr = currentContext.CurrentClaimTypeConfigList.FirstOrDefault(x => SPClaimTypes.Equals(x.ClaimType, claimType));
             if (Utils.IsDynamicTokenSet(attr.ClaimValueLeadingToken, ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINNAME))
             {
                 value = string.Format("{0}{1}", attr.ClaimValueLeadingToken.Replace(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINNAME, result.AuthorityMatch.DomainName), value);
