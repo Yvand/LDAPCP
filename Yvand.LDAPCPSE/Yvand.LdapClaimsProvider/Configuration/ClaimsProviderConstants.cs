@@ -175,16 +175,18 @@ namespace Yvand.LdapClaimsProvider.Configuration
         Augmentation,
     }
 
-    public class LdapSearchResult
+    public class UniqueDirectoryResult
     {
-        public ResultPropertyCollection LdapResultProperties;
-        public LdapConnection AuthorityMatch;
+        public ResultPropertyCollection DirectoryResultProperties;
+        public DirectoryConnection AuthorityMatch;
         public ClaimTypeConfig ClaimTypeConfigMatch;
-        public string ValueMatch;
-        public PickerEntity SPPickerEntity;
+        public string DirectoryValueMatch;
     }
 
-    public class LdapSearchResultCollection : Collection<LdapSearchResult>
+    /// <summary>
+    /// This collection ensures it contains only unique results, so no duplicate is returned to SharePoint
+    /// </summary>
+    public class UniqueDirectoryResultCollection : Collection<UniqueDirectoryResult>
     {
         /// <summary>
         /// Compare 2 results to not add duplicates
@@ -194,13 +196,13 @@ namespace Yvand.LdapClaimsProvider.Configuration
         /// <param name="ctConfig">AttributeHelper that matches result</param>
         /// <param name="dynamicDomainTokenSet">if true, don't consider 2 results as identical if they don't are in same domain.</param>
         /// <returns></returns>
-        public bool Contains(LdapSearchResult result, ClaimTypeConfig ctConfig, bool dynamicDomainTokenSet)
+        public bool Contains(UniqueDirectoryResult result, ClaimTypeConfig ctConfig, bool dynamicDomainTokenSet)
         {
             foreach (var item in base.Items)
             {
                 if (item.ClaimTypeConfigMatch.ClaimType != ctConfig.ClaimType) { continue; }
 
-                if (!item.LdapResultProperties.Contains(ctConfig.DirectoryObjectAttribute)) { continue; }
+                if (!item.DirectoryResultProperties.Contains(ctConfig.DirectoryObjectAttribute)) { continue; }
 
                 // if dynamicDomainTokenSet is true, don't consider 2 results as identical if they don't are in same domain
                 // Using same bool to compare both DomainName and DomainFQDN causes scenario below to potentially generate duplicates:
@@ -215,8 +217,8 @@ namespace Yvand.LdapClaimsProvider.Configuration
                     continue;   // They don't are in same domain, so not identical, jump to next item
                 }
 
-                string itemDirectoryObjectPropertyValue = Utils.GetLdapValueAsString(item.LdapResultProperties[ctConfig.DirectoryObjectAttribute][0], ctConfig.DirectoryObjectAttribute);
-                string resultDirectoryObjectPropertyValue = Utils.GetLdapValueAsString(result.LdapResultProperties[ctConfig.DirectoryObjectAttribute][0], ctConfig.DirectoryObjectAttribute);
+                string itemDirectoryObjectPropertyValue = Utils.GetLdapValueAsString(item.DirectoryResultProperties[ctConfig.DirectoryObjectAttribute][0], ctConfig.DirectoryObjectAttribute);
+                string resultDirectoryObjectPropertyValue = Utils.GetLdapValueAsString(result.DirectoryResultProperties[ctConfig.DirectoryObjectAttribute][0], ctConfig.DirectoryObjectAttribute);
                 if (String.Equals(itemDirectoryObjectPropertyValue, resultDirectoryObjectPropertyValue, StringComparison.InvariantCultureIgnoreCase))
                 {
                     return true;
@@ -282,7 +284,7 @@ namespace Yvand.LdapClaimsProvider.Configuration
         /// </summary>
         public List<ClaimTypeConfig> CurrentClaimTypeConfigList { get; private set; }
 
-        public List<LdapConnection> LdapConnections { get; private set; }
+        public List<DirectoryConnection> LdapConnections { get; private set; }
 
         public OperationContext(ILDAPCPSettings settings, OperationType currentRequestType, string input, SPClaim incomingEntity, Uri context, string[] entityTypes, string hierarchyNodeID, int maxCount)
         {
@@ -295,11 +297,11 @@ namespace Yvand.LdapClaimsProvider.Configuration
             this.MaxCount = maxCount;
 
             // settings.LdapConnections must be cloned locally to ensure its properties ($select / $filter) won't be updated by multiple threads
-            this.LdapConnections = new List<LdapConnection>(settings.LdapConnections.Count);
-            foreach (LdapConnection tenant in settings.LdapConnections)
+            this.LdapConnections = new List<DirectoryConnection>(settings.LdapConnections.Count);
+            foreach (DirectoryConnection tenant in settings.LdapConnections)
             {
-                LdapConnection copy = new LdapConnection();
-                Utils.CopyPublicProperties(typeof(LdapConnection), tenant, copy);
+                DirectoryConnection copy = new DirectoryConnection();
+                Utils.CopyPublicProperties(typeof(DirectoryConnection), tenant, copy);
                 LdapConnections.Add(copy);
             }
 

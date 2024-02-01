@@ -32,7 +32,7 @@ namespace Yvand.LdapClaimsProvider
             List<string> groups = new List<string>();
             object lockResults = new object();
 
-            // Creates 1 synchronous action per LdapConnection
+            // Creates 1 synchronous action per DirectoryConnection
             Parallel.ForEach(currentContext.LdapConnections, ldapConnection =>
             {
                 List<string> directoryGroups = new List<string>();
@@ -62,7 +62,7 @@ namespace Yvand.LdapClaimsProvider
         /// <param name="currentContext"></param>
         /// <param name="groupCTConfig"></param>
         /// <returns></returns>
-        protected virtual List<string> GetGroupsFromActiveDirectory(Configuration.LdapConnection ldapConnection, OperationContext currentContext)
+        protected virtual List<string> GetGroupsFromActiveDirectory(Configuration.DirectoryConnection ldapConnection, OperationContext currentContext)
         {
             // Convert AuthenticationTypes to ContextOptions, slightly inspired by https://stackoverflow.com/questions/17451277/what-equivalent-of-authenticationtypes-secure-in-principalcontexts-contextoptio
             // AuthenticationTypes Enum: https://learn.microsoft.com/en-us/dotnet/api/system.directoryservices.authenticationtypes?view=netframework-4.8.1
@@ -207,7 +207,7 @@ namespace Yvand.LdapClaimsProvider
                 }
                 catch (PrincipalServerDownException ex)
                 {
-                    Logger.LogException(ClaimsProviderName, $"while getting AD groups of user \"{currentContext.IncomingEntity.Value}\" using UserPrincipal.GetAuthorizationGroups() {directoryDetails} Is this server an Active DirectoryConnection server?", TraceCategory.Augmentation, ex);
+                    Logger.LogException(ClaimsProviderName, $"while getting AD groups of user \"{currentContext.IncomingEntity.Value}\" using UserPrincipal.GetAuthorizationGroups() {directoryDetails} Is this server an Active LdapEntry server?", TraceCategory.Augmentation, ex);
                 }
                 catch (Exception ex)
                 {
@@ -233,13 +233,13 @@ namespace Yvand.LdapClaimsProvider
         /// <param name="currentContext">Information about current context and operation</param>
         /// <param name="groupsCTConfig"></param>
         /// <returns></returns>
-        protected virtual List<string> GetGroupsFromLDAPDirectory(Configuration.LdapConnection ldapConnection, OperationContext currentContext)
+        protected virtual List<string> GetGroupsFromLDAPDirectory(Configuration.DirectoryConnection ldapConnection, OperationContext currentContext)
         {
             List<SPClaim> groups = new List<SPClaim>();
             //if (groupsCTConfig == null || groupsCTConfig.Count() == 0) { return new List<string>(); }
             string ldapFilter = string.Format("(&(ObjectClass={0}) ({1}={2}){3})", this.Settings.IdentityClaimTypeConfig.DirectoryObjectClass, this.Settings.IdentityClaimTypeConfig.DirectoryObjectAttribute, currentContext.IncomingEntity.Value, this.Settings.IdentityClaimTypeConfig.DirectoryObjectAdditionalFilter);
-            string logMessageCredentials = String.IsNullOrWhiteSpace(ldapConnection.DirectoryConnection.Username) ? "process identity" : ldapConnection.DirectoryConnection.Username;
-            string directoryDetails = $"from LDAP server \"{ldapConnection.DirectoryConnection.Path}\" with LDAP filter \"{ldapFilter}\" (authenticate as \"{logMessageCredentials}\" with AuthenticationType \"{ldapConnection.DirectoryConnection.AuthenticationType}\").";
+            string logMessageCredentials = String.IsNullOrWhiteSpace(ldapConnection.LdapEntry.Username) ? "process identity" : ldapConnection.LdapEntry.Username;
+            string directoryDetails = $"from LDAP server \"{ldapConnection.LdapEntry.Path}\" with LDAP filter \"{ldapFilter}\" (authenticate as \"{logMessageCredentials}\" with AuthenticationType \"{ldapConnection.LdapEntry.AuthenticationType}\").";
             Logger.Log($"[{ClaimsProviderName}] Getting LDAP groups of user \"{currentContext.IncomingEntity.Value}\" {directoryDetails}", TraceSeverity.Verbose, EventSeverity.Information, TraceCategory.Augmentation);
             using (new SPMonitoredScope($"[{ClaimsProviderName}] Get LDAP groups of user \"{currentContext.IncomingEntity.Value}\" {directoryDetails}", 1000))
             {
@@ -247,7 +247,7 @@ namespace Yvand.LdapClaimsProvider
                 stopWatch.Start();
                 try
                 {
-                    using (DirectorySearcher searcher = new DirectorySearcher(ldapConnection.DirectoryConnection))
+                    using (DirectorySearcher searcher = new DirectorySearcher(ldapConnection.LdapEntry))
                     {
                         searcher.ClientTimeout = new TimeSpan(0, 0, this.Settings.Timeout);
                         searcher.Filter = ldapFilter;
@@ -346,9 +346,9 @@ namespace Yvand.LdapClaimsProvider
                 }
                 finally
                 {
-                    if (ldapConnection.DirectoryConnection != null)
+                    if (ldapConnection.LdapEntry != null)
                     {
-                        ldapConnection.DirectoryConnection.Dispose();
+                        ldapConnection.LdapEntry.Dispose();
                     }
                     stopWatch.Stop();
                     Logger.Log($"[{ClaimsProviderName}] Got {groups.Count} group(s) for user \"{currentContext.IncomingEntity.Value}\" in {stopWatch.ElapsedMilliseconds.ToString()} ms {directoryDetails}",
@@ -359,10 +359,10 @@ namespace Yvand.LdapClaimsProvider
             return groups.Select(x => x.Value).ToList();
         }
 
-        public override List<LdapSearchResult> SearchOrValidateEntities(OperationContext currentContext)
+        public override List<UniqueDirectoryResult> SearchOrValidateEntities(OperationContext currentContext)
         {
             string ldapFilter = this.BuildFilter(currentContext);
-            List<LdapSearchResult> LdapSearchResult = null;
+            List<UniqueDirectoryResult> LdapSearchResult = null;
             SPSecurity.RunWithElevatedPrivileges(delegate ()
             {
                 LdapSearchResult = this.QueryLDAPServers(currentContext, ldapFilter);
@@ -426,20 +426,20 @@ namespace Yvand.LdapClaimsProvider
             return filter;
         }
 
-        protected List<LdapSearchResult> QueryLDAPServers(OperationContext currentContext, string ldapFilter)
+        protected List<UniqueDirectoryResult> QueryLDAPServers(OperationContext currentContext, string ldapFilter)
         {
             if (this.Settings.LdapConnections == null || this.Settings.LdapConnections.Count == 0) { return null; }
             object lockResults = new object();
-            List<LdapSearchResult> results = new List<LdapSearchResult>();
+            List<UniqueDirectoryResult> results = new List<UniqueDirectoryResult>();
             Stopwatch globalStopWatch = new Stopwatch();
             globalStopWatch.Start();
 
-            //foreach (var ldapConnection in this.Settings.LdapConnections.Where(x => x.DirectoryConnection != null))
-            Parallel.ForEach(this.Settings.LdapConnections.Where(x => x.DirectoryConnection != null), ldapConnection =>
+            //foreach (var ldapConnection in this.Settings.LdapConnections.Where(x => x.LdapEntry != null))
+            Parallel.ForEach(this.Settings.LdapConnections.Where(x => x.LdapEntry != null), ldapConnection =>
             {
-                Debug.WriteLine($"ldapConnection: Path: {ldapConnection.DirectoryConnection.Path}, UseDefaultADConnection: {ldapConnection.UseDefaultADConnection}");
-                Logger.LogDebug($"ldapConnection: Path: {ldapConnection.DirectoryConnection.Path}, UseDefaultADConnection: {ldapConnection.UseDefaultADConnection}");
-                DirectoryEntry directory = ldapConnection.DirectoryConnection;
+                Debug.WriteLine($"ldapConnection: Path: {ldapConnection.LdapEntry.Path}, UseDefaultADConnection: {ldapConnection.UseDefaultADConnection}");
+                Logger.LogDebug($"ldapConnection: Path: {ldapConnection.LdapEntry.Path}, UseDefaultADConnection: {ldapConnection.UseDefaultADConnection}");
+                DirectoryEntry directory = ldapConnection.LdapEntry;
                 using (DirectorySearcher ds = new DirectorySearcher(ldapFilter))
                 {
                     ds.SearchRoot = directory;
@@ -464,8 +464,8 @@ namespace Yvand.LdapClaimsProvider
                         }
                     }
 
-                    string loggMessage = $"[{ClaimsProviderName}] Connecting to \"{ldapConnection.DirectoryConnection.Path}\" with AuthenticationType \"{ldapConnection.DirectoryConnection.AuthenticationType}\", authenticating ";
-                    loggMessage += String.IsNullOrWhiteSpace(ldapConnection.DirectoryConnection.Username) ? "as process identity" : $"with credentials \"{ldapConnection.DirectoryConnection.Username}\"";
+                    string loggMessage = $"[{ClaimsProviderName}] Connecting to \"{ldapConnection.LdapEntry.Path}\" with AuthenticationType \"{ldapConnection.LdapEntry.AuthenticationType}\", authenticating ";
+                    loggMessage += String.IsNullOrWhiteSpace(ldapConnection.LdapEntry.Username) ? "as process identity" : $"with credentials \"{ldapConnection.LdapEntry.Username}\"";
                     loggMessage += $" and sending a query with filter \"{ds.Filter}\"...";
                     using (new SPMonitoredScope(loggMessage, 3000)) // threshold of 3 seconds before it's considered too much. If exceeded it is recorded in a higher logging level
                     {
@@ -484,9 +484,9 @@ namespace Yvand.LdapClaimsProvider
                                     {
                                         foreach (SearchResult item in directoryResults)
                                         {
-                                            results.Add(new LdapSearchResult()
+                                            results.Add(new UniqueDirectoryResult()
                                             {
-                                                LdapResultProperties = item.Properties,
+                                                DirectoryResultProperties = item.Properties,
                                                 AuthorityMatch = ldapConnection,
                                             });
                                         }

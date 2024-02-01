@@ -101,7 +101,7 @@
     <Compile Include="Yvand.LdapClaimsProvider\Configuration\ClaimsProviderConstants.cs" />
     <Compile Include="Yvand.LdapClaimsProvider\Configuration\ClaimTypeConfig.cs" />
     <Compile Include="Yvand.LdapClaimsProvider\Configuration\LDAPProviderConfiguration.cs" />
-    <Compile Include="Yvand.LdapClaimsProvider\Configuration\LdapConnection.cs" />
+    <Compile Include="Yvand.LdapClaimsProvider\Configuration\DirectoryConnection.cs" />
     <Compile Include="Yvand.LdapClaimsProvider\EntityProviderBase.cs" />
     <Compile Include="Yvand.LdapClaimsProvider\LDAPCPSE.cs" />
     <Compile Include="Yvand.LdapClaimsProvider\LdapEntityProvider.cs" />

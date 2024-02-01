@@ -59,7 +59,7 @@ namespace Yvand.LdapClaimsProvider.Configuration
         /// <summary>
         /// Gets the list of Azure tenants to use to get entities
         /// </summary>
-        List<LdapConnection> LdapConnections { get; }
+        List<DirectoryConnection> LdapConnections { get; }
         bool FilterEnabledUsersOnly { get; }
         bool FilterSecurityGroupsOnly { get; }
         bool AddWildcardAsPrefixOfInput { get; }
@@ -80,7 +80,7 @@ namespace Yvand.LdapClaimsProvider.Configuration
         #endregion
 
         #region EntraID specific settings
-        public List<LdapConnection> LdapConnections { get; set; } = new List<LdapConnection>();
+        public List<DirectoryConnection> LdapConnections { get; set; } = new List<DirectoryConnection>();
         public bool FilterEnabledUsersOnly { get; set; } = true;
         public bool FilterSecurityGroupsOnly { get; set; } = true;
         public bool AddWildcardAsPrefixOfInput { get; set; } = false;
@@ -263,13 +263,13 @@ namespace Yvand.LdapClaimsProvider.Configuration
 
 
         #region "EntraID settings implemented from IEntraIDEntityProviderSettings"
-        public List<LdapConnection> LdapConnections
+        public List<DirectoryConnection> LdapConnections
         {
             get => _LdapServers;
             private set => _LdapServers = value;
         }
         [Persisted]
-        private List<LdapConnection> _LdapServers;// = new List<LdapConnection>();
+        private List<DirectoryConnection> _LdapServers;// = new List<DirectoryConnection>();
 
         public bool FilterEnabledUsersOnly
         {
@@ -418,7 +418,7 @@ namespace Yvand.LdapClaimsProvider.Configuration
                 throw new InvalidOperationException($"The configuration is invalid because the identity claim type configuration is missing in the collection {nameof(ClaimTypes)}, so changes cannot be committed to the configuration database.");
             }
 
-            foreach (LdapConnection server in this.LdapConnections)
+            foreach (DirectoryConnection server in this.LdapConnections)
             {
                 if (server == null)
                 {

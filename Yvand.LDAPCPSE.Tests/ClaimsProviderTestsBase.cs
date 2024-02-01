@@ -57,7 +57,7 @@ namespace Yvand.LdapClaimsProvider.Tests
 #endif
 
             string json = File.ReadAllText(UnitTestsHelper.AzureTenantsJsonFile);
-            List<LdapConnection> azureTenants = JsonConvert.DeserializeObject<List<LdapConnection>>(json);
+            List<DirectoryConnection> azureTenants = JsonConvert.DeserializeObject<List<DirectoryConnection>>(json);
             Settings.LdapConnections = azureTenants;
             Settings.EnableAugmentation = true;
 

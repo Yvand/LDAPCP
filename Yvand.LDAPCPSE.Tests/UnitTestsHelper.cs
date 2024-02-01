@@ -25,7 +25,7 @@ namespace Yvand.LdapClaimsProvider.Tests
         public static string DomainFqdn => TestContext.Parameters["DomainFqdn"];
         public static string Domain => TestContext.Parameters["Domain"];
 #if DEBUG
-        public const int TestRepeatCount = 1;
+        public const int TestRepeatCount = 10;
 #else
     public const int TestRepeatCount = 20;
 #endif

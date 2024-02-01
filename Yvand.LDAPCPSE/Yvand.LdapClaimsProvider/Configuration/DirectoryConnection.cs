@@ -8,7 +8,7 @@ using System.Reflection;
 
 namespace Yvand.LdapClaimsProvider.Configuration
 {
-    public class LdapConnection : SPAutoSerializingObject
+    public class DirectoryConnection : SPAutoSerializingObject
     {
         public Guid Identifier
         {
@@ -106,20 +106,20 @@ namespace Yvand.LdapClaimsProvider.Configuration
         /// <summary>
         /// DirectoryEntry used to make LDAP queries
         /// </summary>
-        public DirectoryEntry DirectoryConnection
+        public DirectoryEntry LdapEntry
         {
             get
             {
-                if (this._DirectoryConnection != null)
+                if (this._LdapEntry != null)
                 {
-                    return this._DirectoryConnection;
+                    return this._LdapEntry;
                 }
                 // Do these operations using the application pool account privileges to avoid COMException due to lack of permissions
                 SPSecurity.RunWithElevatedPrivileges(delegate ()
                 {
                     if (!this.UseDefaultADConnection)
                     {
-                        this._DirectoryConnection = new DirectoryEntry(this.LdapPath, this.Username, this.Password, this.AuthenticationType);
+                        this._LdapEntry = new DirectoryEntry(this.LdapPath, this.Username, this.Password, this.AuthenticationType);
                     }
                     else
                     {
@@ -132,14 +132,14 @@ namespace Yvand.LdapClaimsProvider.Configuration
                             // - It often (only) fails with COMException, which tend to occur only in some code path, but finally works depending on how LDAPCP is called
                             // - It's not essential, even though it can have serious impacts, for example, value of role claims miss the domain name
                             Domain computerDomain = Domain.GetComputerDomain();
-                            this._DirectoryConnection = computerDomain.GetDirectoryEntry();
+                            this._LdapEntry = computerDomain.GetDirectoryEntry();
 
                             // Set properties LDAPConnection.DomainFQDN and LDAPConnection.DomainName here as a workaround to issue https://github.com/Yvand/LDAPCP/issues/87
                             this.DomainFQDN = computerDomain.Name;
                             this.DomainName = Utils.GetDomainName(this.DomainFQDN);
 
                             // Property LDAPConnection.AuthenticationType must be set, in order to build the PrincipalContext correctly in GetGroupsFromActiveDirectory()
-                            this.AuthenticationType = this._DirectoryConnection.AuthenticationType;
+                            this.AuthenticationType = this._LdapEntry.AuthenticationType;
                         }
                         catch (System.Runtime.InteropServices.COMException ex)
                         {
@@ -153,17 +153,17 @@ namespace Yvand.LdapClaimsProvider.Configuration
                         }
                     }
                 });
-                this._DirectoryConnection.Disposed += _DirectoryConnection_Disposed;
-                return this._DirectoryConnection;
+                this._LdapEntry.Disposed += _DirectoryConnection_Disposed;
+                return this._LdapEntry;
             }
         }
 
         private void _DirectoryConnection_Disposed(object sender, EventArgs e)
         {
-            _DirectoryConnection = null;
+            _LdapEntry = null;
         }
 
-        private DirectoryEntry _DirectoryConnection;
+        private DirectoryEntry _LdapEntry;
 
         /// <summary>
         /// LDAP filter
@@ -192,7 +192,7 @@ namespace Yvand.LdapClaimsProvider.Configuration
         /// </summary>
         public string DomaindistinguishedName { get; private set; }
 
-        public LdapConnection()
+        public DirectoryConnection()
         {
         }
 
@@ -206,44 +206,44 @@ namespace Yvand.LdapClaimsProvider.Configuration
 
 
             // This block does LDAP operations
-            using (new SPMonitoredScope($"[{LDAPCPSE.ClaimsProviderName}] Get domain names / root container information about LDAP server \"{this.DirectoryConnection.Path}\"", 2000))
+            using (new SPMonitoredScope($"[{LDAPCPSE.ClaimsProviderName}] Get domain names / root container information about LDAP server \"{this.LdapEntry.Path}\"", 2000))
             {
                 try
                 {
 #if DEBUG
                     this.AuthenticationType = AuthenticationTypes.None;
-                    Logger.LogDebug($"Hardcoded property DirectoryEntry.AuthenticationType to {AuthenticationType} for \"{this.DirectoryConnection.Path}\"");
+                    Logger.LogDebug($"Hardcoded property DirectoryEntry.AuthenticationType to {AuthenticationType} for \"{this.LdapEntry.Path}\"");
 #endif
 
                     // Method PropertyCollection.Contains("distinguishedName") does a LDAP bind
                     // In AD LDS: property "distinguishedName" = "CN=LDSInstance2,DC=ADLDS,DC=local", properties "name" and "cn" = "LDSInstance2"
-                    if (this.DirectoryConnection.Properties.Contains("distinguishedName"))
+                    if (this.LdapEntry.Properties.Contains("distinguishedName"))
                     {
-                        DomaindistinguishedName = this.DirectoryConnection.Properties["distinguishedName"].Value.ToString();
+                        DomaindistinguishedName = this.LdapEntry.Properties["distinguishedName"].Value.ToString();
                         string domainName;
                         string domainFQDN;
                         Utils.GetDomainInformation(DomaindistinguishedName, out domainName, out domainFQDN);
                         this.DomainName = domainName;
                         this.DomainFQDN = domainFQDN;
                     }
-                    else if (this.DirectoryConnection.Properties.Contains("name"))
+                    else if (this.LdapEntry.Properties.Contains("name"))
                     {
-                        DomainName = this.DirectoryConnection.Properties["name"].Value.ToString();
+                        DomainName = this.LdapEntry.Properties["name"].Value.ToString();
                     }
-                    else if (this.DirectoryConnection.Properties.Contains("cn"))
+                    else if (this.LdapEntry.Properties.Contains("cn"))
                     {
                         // Tivoli stores domain name in property "cn" (properties "distinguishedName" and "name" don't exist)
-                        DomainName = this.DirectoryConnection.Properties["cn"].Value.ToString();
+                        DomainName = this.LdapEntry.Properties["cn"].Value.ToString();
                     }
                     InitializationSuccessful = true;
                 }
                 catch (DirectoryServicesCOMException ex)
                 {
-                    Logger.LogException("", $"while getting domain names information for LDAP connection {this.DirectoryConnection.Path} (DirectoryServicesCOMException)", TraceCategory.Configuration, ex);
+                    Logger.LogException("", $"while getting domain names information for LDAP connection {this.LdapEntry.Path} (DirectoryServicesCOMException)", TraceCategory.Configuration, ex);
                 }
                 catch (Exception ex)
                 {
-                    Logger.LogException("", $"while getting domain names information for LDAP connection {this.DirectoryConnection.Path} (Exception)", TraceCategory.Configuration, ex);
+                    Logger.LogException("", $"while getting domain names information for LDAP connection {this.LdapEntry.Path} (Exception)", TraceCategory.Configuration, ex);
                 }
             }
             return InitializationSuccessful;
@@ -253,9 +253,9 @@ namespace Yvand.LdapClaimsProvider.Configuration
         /// Returns a copy of the current object. This copy does not have any member of the base SharePoint base class set
         /// </summary>
         /// <returns></returns>
-        internal LdapConnection CopyConfiguration()
+        internal DirectoryConnection CopyConfiguration()
         {
-            LdapConnection copy = new LdapConnection();
+            DirectoryConnection copy = new DirectoryConnection();
             // Copy non-inherited public properties
             PropertyInfo[] propertiesToCopy = this.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance | BindingFlags.DeclaredOnly);
             foreach (PropertyInfo property in propertiesToCopy)

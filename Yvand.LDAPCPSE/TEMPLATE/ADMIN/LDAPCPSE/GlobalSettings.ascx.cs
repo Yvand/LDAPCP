@@ -8,7 +8,7 @@ using System.Linq;
 using System.Web.UI.WebControls;
 using Yvand.LdapClaimsProvider.Configuration;
 using AuthenticationTypes = System.DirectoryServices.AuthenticationTypes;
-using LdapConnection = Yvand.LdapClaimsProvider.Configuration.LdapConnection;
+using DirectoryConnection = Yvand.LdapClaimsProvider.Configuration.DirectoryConnection;
 
 namespace Yvand.LdapClaimsProvider.Administration
 {
@@ -85,7 +85,7 @@ namespace Yvand.LdapClaimsProvider.Administration
             if (Settings.LdapConnections != null)
             {
                 PropertyCollectionBinder pcb = new PropertyCollectionBinder();
-                foreach (LdapConnection ldapConnection in Settings.LdapConnections)
+                foreach (DirectoryConnection ldapConnection in Settings.LdapConnections)
                 {
                     if (ldapConnection.UseDefaultADConnection)
                     {
@@ -198,7 +198,7 @@ namespace Yvand.LdapClaimsProvider.Administration
 
             GridViewRow rowToDelete = grdLDAPConnections.Rows[e.RowIndex];
             Guid Id = new Guid(rowToDelete.Cells[0].Text);
-            LdapConnection tenantToRemove = Settings.LdapConnections.FirstOrDefault(x => x.Identifier == Id);
+            DirectoryConnection tenantToRemove = Settings.LdapConnections.FirstOrDefault(x => x.Identifier == Id);
             if (tenantToRemove != null)
             {
                 Settings.LdapConnections.Remove(tenantToRemove);
@@ -249,7 +249,7 @@ namespace Yvand.LdapClaimsProvider.Administration
                 CheckBox chkIsADDomain = (CheckBox)item.FindControl("ChkGetGroupMembershipAsADDomain");
                 TextBox txtId = (TextBox)item.FindControl("IdPropHidden");
 
-                LdapConnection ldapConnection = Settings.LdapConnections.First(x => x.Identifier == new Guid(txtId.Text));
+                DirectoryConnection ldapConnection = Settings.LdapConnections.First(x => x.Identifier == new Guid(txtId.Text));
                 ldapConnection.EnableAugmentation = chkAugEn.Checked;
                 ldapConnection.GetGroupMembershipUsingDotNetHelpers = chkIsADDomain.Checked;
             }
@@ -355,7 +355,7 @@ namespace Yvand.LdapClaimsProvider.Administration
             if (this.RbUseServerDomain.Checked)
             {
                 Settings.LdapConnections.Add(
-                    new LdapConnection
+                    new DirectoryConnection
                     {
                         UseDefaultADConnection = true,
                         EnableAugmentation = true,
@@ -366,7 +366,7 @@ namespace Yvand.LdapClaimsProvider.Administration
             {
                 AuthenticationTypes authNType = GetSelectedAuthenticationTypes(true);
                 Settings.LdapConnections.Add(
-                    new LdapConnection
+                    new DirectoryConnection
                     {
                         UseDefaultADConnection = false,
                         LdapPath = this.TxtLdapConnectionString.Text,
