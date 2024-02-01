@@ -110,7 +110,6 @@ namespace Yvand.LdapClaimsProvider.Tests
     [Parallelizable(ParallelScope.Children)]
     public class UseSidAttributeAsGroupIdentifierTests : ClaimsProviderTestsBase
     {
-        protected override bool DoAugmentationTest => false;
         public override void InitializeSettings()
         {
             base.InitializeSettings();
@@ -141,6 +140,13 @@ namespace Yvand.LdapClaimsProvider.Tests
         {
             base.TestSearchOperation(inputValue, expectedResultCount, expectedEntityClaimValue);
             base.TestValidationOperation(base.GroupIdentifierClaimType, expectedEntityClaimValue, expectedResultCount == 0 ? false : true);
+        }
+
+        [TestCase("FakeAccount", false)]
+        [TestCase("yvand@contoso.local", true)]
+        public override void TestAugmentationOperation(string claimValue, bool isMemberOfTrustedGroup)
+        {
+            base.TestAugmentationOperation(claimValue, isMemberOfTrustedGroup);
         }
     }
 }

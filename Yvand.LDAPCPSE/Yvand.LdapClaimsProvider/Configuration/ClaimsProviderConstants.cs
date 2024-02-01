@@ -180,7 +180,7 @@ namespace Yvand.LdapClaimsProvider.Configuration
         public ResultPropertyCollection DirectoryResultProperties;
         public DirectoryConnection AuthorityMatch;
         public ClaimTypeConfig ClaimTypeConfigMatch;
-        public string DirectoryValueMatch;
+        public string DirectoryAttributeValueMatch;
     }
 
     /// <summary>
@@ -214,7 +214,7 @@ namespace Yvand.LdapClaimsProvider.Configuration
                     !String.Equals(item.AuthorityMatch.DomainFQDN, result.AuthorityMatch.DomainFQDN, StringComparison.InvariantCultureIgnoreCase)
                                          ))
                 {
-                    continue;   // They don't are in same domain, so not identical, jump to next item
+                    continue;   // They are not in the same domain, so not identical, jump to next item
                 }
 
                 string itemDirectoryObjectPropertyValue = Utils.GetLdapValueAsString(item.DirectoryResultProperties[ctConfig.DirectoryObjectAttribute][0], ctConfig.DirectoryObjectAttribute);

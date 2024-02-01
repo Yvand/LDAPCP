@@ -100,12 +100,10 @@ namespace Yvand.LdapClaimsProvider
 
         public LDAPCPSE(string displayName) : base(displayName)
         {
-            //this.EntityProvider = new LdapEntityProvider(Name);
         }
 
         public LDAPCPSE(string displayName, ILDAPCPSettings customSettings) : base(displayName)
         {
-            //this.EntityProvider = new LdapEntityProvider(Name);
             this.CustomSettings = customSettings;
         }
 
@@ -554,7 +552,6 @@ namespace Yvand.LdapClaimsProvider
         protected List<PickerEntity> SearchOrValidate(OperationContext currentContext)
         {
             List<UniqueDirectoryResult> ldapSearchResults = null;
-            UniqueDirectoryResultCollection processedLdapResults;
             List<PickerEntity> pickerEntityList = new List<PickerEntity>();
             try
             {
@@ -658,8 +655,8 @@ namespace Yvand.LdapClaimsProvider
 
         protected virtual List<PickerEntity> ProcessLdapResults(OperationContext currentContext, List<UniqueDirectoryResult> ldapSearchResults)
         {
-            List<PickerEntity> resultEntities = new List<PickerEntity>();
-            UniqueDirectoryResultCollection results = new UniqueDirectoryResultCollection();
+            List<PickerEntity> spEntities = new List<PickerEntity>();
+            UniqueDirectoryResultCollection uniqueLdapResults = new UniqueDirectoryResultCollection();
             ResultPropertyCollection ldapResultProperties;
             IEnumerable<ClaimTypeConfig> ctConfigs = currentContext.CurrentClaimTypeConfigList;
             if (currentContext.ExactSearch)
@@ -749,8 +746,8 @@ namespace Yvand.LdapClaimsProvider
                         }
                     }
 
-                    // Check if current result (association of LDAP result + ClaimTypeConfig) is not already in results list
-                    // Get ClaimTypeConfig to use to check if result is already present in the results list
+                    // Check if current result (association of LDAP result + ClaimTypeConfig) is not already in uniqueLdapResults list
+                    // Get ClaimTypeConfig to use to check if result is already present in the uniqueLdapResults list
                     ClaimTypeConfig ctConfigToUseForDuplicateCheck = ctConfig;
                     if (ctConfig.IsAdditionalLdapSearchAttribute)
                     {
@@ -784,20 +781,19 @@ namespace Yvand.LdapClaimsProvider
                     {
                         dynamicDomainTokenSet = Utils.IsDynamicTokenSet(ctConfig.ClaimValueLeadingToken, ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINFQDN);// ? true : this.Settings.CompareResultsWithDomainNameProp;
                     }
-                    if (results.Contains(ldapResult, ctConfigToUseForDuplicateCheck, dynamicDomainTokenSet))
+                    if (uniqueLdapResults.Contains(ldapResult, ctConfigToUseForDuplicateCheck, dynamicDomainTokenSet))
                     {
                         continue;
                     }
 
                     ldapResult.ClaimTypeConfigMatch = ctConfig;
-                    ldapResult.DirectoryValueMatch = directoryObjectPropertyValue;
-                    //ldapResult.SPPickerEntity = CreatePickerEntityHelper(currentContext, ldapResult);
-                    resultEntities.Add(CreatePickerEntityHelper(currentContext, ldapResult));
-                    results.Add(ldapResult);
+                    ldapResult.DirectoryAttributeValueMatch = directoryObjectPropertyValue;
+                    spEntities.Add(CreatePickerEntityHelper(currentContext, ldapResult));
+                    uniqueLdapResults.Add(ldapResult);
                 }
             }
-            Logger.Log(String.Format("[{0}] {1} entity(ies) to create after filtering", Name, results.Count), TraceSeverity.Medium, EventSeverity.Information, TraceCategory.GraphRequests);
-            return resultEntities;
+            Logger.Log(String.Format("[{0}] {1} entity(ies) to create after filtering", Name, uniqueLdapResults.Count), TraceSeverity.Medium, EventSeverity.Information, TraceCategory.GraphRequests);
+            return spEntities;
         }
         #endregion
 
@@ -825,7 +821,7 @@ namespace Yvand.LdapClaimsProvider
             entity.EntityType = ctConfigToUseForClaimValue.DirectoryObjectType == DirectoryObjectType.User ? SPClaimEntityTypes.User : ClaimsProviderConstants.GroupClaimEntityType;
             entity.IsResolved = true;
             entity.EntityGroupName = this.Name;
-            entity.Description = String.Format(PickerEntityOnMouseOver, result.ClaimTypeConfigMatch.DirectoryObjectAttribute, result.DirectoryValueMatch);
+            entity.Description = String.Format(PickerEntityOnMouseOver, result.ClaimTypeConfigMatch.DirectoryObjectAttribute, result.DirectoryAttributeValueMatch);
             entity.DisplayText = FormatPermissionDisplayText(currentContext, result, permissionValue);
 
             int nbMetadata = 0;
@@ -872,7 +868,7 @@ namespace Yvand.LdapClaimsProvider
                 UniqueDirectoryResult fakeLdapResult = new UniqueDirectoryResult
                 {
                     ClaimTypeConfigMatch = ctConfig,
-                    DirectoryValueMatch = claimValue,
+                    DirectoryAttributeValueMatch = claimValue,
                 };
                 entity.DisplayText = FormatPermissionDisplayText(currentContext, fakeLdapResult, claimValue);
 
@@ -905,7 +901,6 @@ namespace Yvand.LdapClaimsProvider
         {
             bool isUserIdentityClaimType = String.Equals(result.ClaimTypeConfigMatch.ClaimType, this.Settings.IdentityClaimTypeConfig.ClaimType, StringComparison.InvariantCultureIgnoreCase);
             string entityDisplayText = this.Settings.EntityDisplayTextPrefix;
-            //string claimValue = result.SPPickerEntity.Claim.Value;
             string valueDisplayedInPermission = String.Empty;
             bool displayLdapMatchForIdentityClaimType = false;
             string prefixToAdd = string.Empty;
@@ -1122,6 +1117,5 @@ namespace Yvand.LdapClaimsProvider
         {
             schema.AddSchemaElement(new SPSchemaElement(PeopleEditorEntityDataKeys.DisplayName, "Display Name", SPSchemaElementType.Both));
         }
-
     }
 }
