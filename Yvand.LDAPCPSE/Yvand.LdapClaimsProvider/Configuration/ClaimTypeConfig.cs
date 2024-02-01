@@ -456,7 +456,8 @@ namespace Yvand.LdapClaimsProvider.Configuration
         }
 
         /// <summary>
-        /// Update the DirectoryObjectClass and DirectoryObjectAttribute of the identity ClaimTypeConfig. If new values duplicate an existing item, it will be removed from the collection
+        /// Updates the properties <see cref="ClaimTypeConfig.DirectoryObjectClass"/> and <see cref="ClaimTypeConfig.DirectoryObjectAttribute"/> of the user identifier.
+        /// If new values duplicate an existing item, it will be removed from the collection
         /// </summary>
         /// <param name="newDirectoryObjectClass">new DirectoryObjectClass</param>
         /// <param name="newDirectoryObjectAttribute">new newDirectoryObjectAttribute</param>
@@ -466,16 +467,18 @@ namespace Yvand.LdapClaimsProvider.Configuration
             if (String.IsNullOrEmpty(newDirectoryObjectClass)) throw new ArgumentNullException(nameof(newDirectoryObjectClass));
             if (String.IsNullOrEmpty(newDirectoryObjectAttribute)) throw new ArgumentNullException(nameof(newDirectoryObjectAttribute));
 
-            bool identifierUpdated = false;
-            if (SPTrust == null) { return identifierUpdated; }
+            bool identifierConfigUpdated = false;
+            if (SPTrust == null) { return identifierConfigUpdated; }
 
-            ClaimTypeConfig identityClaimType = IdentityClaim;
-            if (identityClaimType == null)
-                return identifierUpdated;
+            ClaimTypeConfig userIdentifierConfig = IdentityClaim;
+            if (userIdentifierConfig == null)
+            {
+                return identifierConfigUpdated;
+            }
 
-            if (String.Equals(identityClaimType.DirectoryObjectClass, newDirectoryObjectClass, StringComparison.InvariantCultureIgnoreCase) &&
-                String.Equals(identityClaimType.DirectoryObjectAttribute, newDirectoryObjectAttribute, StringComparison.InvariantCultureIgnoreCase))
-            { return identifierUpdated; }
+            if (String.Equals(userIdentifierConfig.DirectoryObjectClass, newDirectoryObjectClass, StringComparison.InvariantCultureIgnoreCase) &&
+                String.Equals(userIdentifierConfig.DirectoryObjectAttribute, newDirectoryObjectAttribute, StringComparison.InvariantCultureIgnoreCase))
+            { return identifierConfigUpdated; }
 
             // Check if the new DirectoryObjectAttribute / DirectoryObjectClass duplicates an existing item, and delete it if so
             for (int i = 0; i < innerCol.Count; i++)
@@ -490,10 +493,47 @@ namespace Yvand.LdapClaimsProvider.Configuration
                 }
             }
 
-            identityClaimType.DirectoryObjectClass = newDirectoryObjectClass;
-            identityClaimType.DirectoryObjectAttribute = newDirectoryObjectAttribute;
-            identifierUpdated = true;
-            return identifierUpdated;
+            userIdentifierConfig.DirectoryObjectClass = newDirectoryObjectClass;
+            userIdentifierConfig.DirectoryObjectAttribute = newDirectoryObjectAttribute;
+            identifierConfigUpdated = true;
+            return identifierConfigUpdated;
+        }
+
+        public bool UpdateGroupIdentifier(string newDirectoryObjectClass, string newDirectoryObjectAttribute)
+        {
+            if (String.IsNullOrEmpty(newDirectoryObjectClass)) throw new ArgumentNullException(nameof(newDirectoryObjectClass));
+            if (String.IsNullOrEmpty(newDirectoryObjectAttribute)) throw new ArgumentNullException(nameof(newDirectoryObjectAttribute));
+
+            bool identifierConfigUpdated = false;
+            if (SPTrust == null) { return identifierConfigUpdated; }
+
+            ClaimTypeConfig groupIdentifierConfig = GetMainConfigurationForDirectoryObjectType(DirectoryObjectType.Group);
+            if (groupIdentifierConfig == null)
+            { 
+                return identifierConfigUpdated;
+            }
+
+            if (String.Equals(groupIdentifierConfig.DirectoryObjectClass, newDirectoryObjectClass, StringComparison.InvariantCultureIgnoreCase) &&
+                String.Equals(groupIdentifierConfig.DirectoryObjectAttribute, newDirectoryObjectAttribute, StringComparison.InvariantCultureIgnoreCase))
+            { return identifierConfigUpdated; }
+
+            // Check if the new DirectoryObjectAttribute / DirectoryObjectClass duplicates an existing item, and delete it if so
+            for (int i = 0; i < innerCol.Count; i++)
+            {
+                ClaimTypeConfig curCT = (ClaimTypeConfig)innerCol[i];
+                if (curCT.DirectoryObjectType == DirectoryObjectType.Group &&
+                    String.Equals(curCT.DirectoryObjectAttribute, newDirectoryObjectAttribute, StringComparison.InvariantCultureIgnoreCase) &&
+                    String.Equals(curCT.DirectoryObjectClass, newDirectoryObjectClass, StringComparison.InvariantCultureIgnoreCase))
+                {
+                    innerCol.RemoveAt(i);
+                    break;  // There can be only 1 potential duplicate
+                }
+            }
+
+            groupIdentifierConfig.DirectoryObjectClass = newDirectoryObjectClass;
+            groupIdentifierConfig.DirectoryObjectAttribute = newDirectoryObjectAttribute;
+            identifierConfigUpdated = true;
+            return identifierConfigUpdated;
         }
 
         public void Clear()

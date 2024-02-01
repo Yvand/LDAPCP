@@ -39,14 +39,13 @@ namespace Yvand.LdapClaimsProvider.Tests
         public static string TrustedGroupToAdd_ClaimValue => TestContext.Parameters["TrustedGroupToAdd_ClaimValue"];
         public static SPClaim TrustedGroup => new SPClaim(TrustedGroupToAdd_ClaimType, TrustedGroupToAdd_ClaimValue, ClaimValueTypes.String, SPOriginalIssuers.Format(SPOriginalIssuerType.TrustedProvider, SPTrust.Name));
 
-        public const string ValidTrustedUserSid = "S-1-5-21-2647467245-1611586658-188888215-107206";
-        public const string ValidTrustedGroupSid = "S-1-5-21-2647467245-1611586658-188888215-11601";
+        public const string ValidTrustedUserSid = "S-1-5-21-2647467245-1611586658-188888215-107206"; // CONTOSO\testLdapcpseUser_001
+        public const string ValidTrustedGroupSid = "S-1-5-21-2647467245-1611586658-188888215-11601"; // CONTOSO\group1
 
         public static string AzureTenantsJsonFile => TestContext.Parameters["LdapConnections"];
         public static string DataFile_AllAccounts_Search => TestContext.Parameters["DataFile_AllAccounts_Search"];
         public static string DataFile_AllAccounts_Validate => TestContext.Parameters["DataFile_AllAccounts_Validate"];
         static TextWriterTraceListener Logger { get; set; }
-
         public static LdapProviderConfiguration PersistedConfiguration;
         private static ILdapProviderSettings OriginalSettings;
 
@@ -71,9 +70,21 @@ namespace Yvand.LdapClaimsProvider.Tests
                 Trace.TraceInformation($"{DateTime.Now.ToString("s")} [SETUP] SPTrust: {SPTrust.Name}");
             }
 
+            PersistedConfiguration = LDAPCPSE.GetConfiguration(true);
+            if (PersistedConfiguration != null)
+            {
+                OriginalSettings = PersistedConfiguration.Settings;
+                Trace.TraceInformation($"{DateTime.Now:s} [SETUP] Took a backup of the original settings");
+            }
+            else
+            {
+                PersistedConfiguration = LDAPCPSE.CreateConfiguration();
+                Trace.TraceInformation($"{DateTime.Now:s} [SETUP] Persisted configuration not found, created it");
+            }
+
 #if DEBUG
             TestSiteCollUri = new Uri($"http://spsites{TestSiteRelativePath}");
-            //return; // Uncommented when debugging from unit tests
+            return; // Uncommented when debugging from unit tests
 #endif
 
             var service = SPFarm.Local.Services.GetValue<SPWebService>(String.Empty);
@@ -141,18 +152,6 @@ namespace Yvand.LdapClaimsProvider.Tests
                     SPGroup membersGroup = spSite.RootWeb.AssociatedMemberGroup;
                     membersGroup.AddUser(userInfo.LoginName, userInfo.Email, userInfo.Name, userInfo.Notes);
                 }
-            }
-
-            PersistedConfiguration = LDAPCPSE.GetConfiguration(true);
-            if (PersistedConfiguration != null)
-            {
-                OriginalSettings = PersistedConfiguration.Settings;
-                Trace.TraceInformation($"{DateTime.Now:s} [SETUP] Took a backup of the original settings");
-            }
-            else
-            {
-                PersistedConfiguration = LDAPCPSE.CreateConfiguration();
-                Trace.TraceInformation($"{DateTime.Now:s} [SETUP] Persisted configuration not found, created it");
             }
         }
 
