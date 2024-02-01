@@ -486,7 +486,7 @@ namespace Yvand.LdapClaimsProvider
                                         {
                                             results.Add(new LdapSearchResult()
                                             {
-                                                LdapEntityProperties = item.Properties,
+                                                LdapResultProperties = item.Properties,
                                                 AuthorityMatch = ldapConnection,
                                             });
                                         }

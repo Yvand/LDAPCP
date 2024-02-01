@@ -177,11 +177,11 @@ namespace Yvand.LdapClaimsProvider.Configuration
 
     public class LdapSearchResult
     {
-        public ResultPropertyCollection LdapEntityProperties;
+        public ResultPropertyCollection LdapResultProperties;
         public LdapConnection AuthorityMatch;
         public ClaimTypeConfig ClaimTypeConfigMatch;
         public string ValueMatch;
-        public PickerEntity PickerEntity;
+        public PickerEntity SPPickerEntity;
     }
 
     public class LdapSearchResultCollection : Collection<LdapSearchResult>
@@ -200,7 +200,7 @@ namespace Yvand.LdapClaimsProvider.Configuration
             {
                 if (item.ClaimTypeConfigMatch.ClaimType != ctConfig.ClaimType) { continue; }
 
-                if (!item.LdapEntityProperties.Contains(ctConfig.DirectoryObjectAttribute)) { continue; }
+                if (!item.LdapResultProperties.Contains(ctConfig.DirectoryObjectAttribute)) { continue; }
 
                 // if dynamicDomainTokenSet is true, don't consider 2 results as identical if they don't are in same domain
                 // Using same bool to compare both DomainName and DomainFQDN causes scenario below to potentially generate duplicates:
@@ -215,8 +215,8 @@ namespace Yvand.LdapClaimsProvider.Configuration
                     continue;   // They don't are in same domain, so not identical, jump to next item
                 }
 
-                string itemDirectoryObjectPropertyValue = Utils.GetLdapValueAsString(item.LdapEntityProperties[ctConfig.DirectoryObjectAttribute][0], ctConfig.DirectoryObjectAttribute);
-                string resultDirectoryObjectPropertyValue = Utils.GetLdapValueAsString(result.LdapEntityProperties[ctConfig.DirectoryObjectAttribute][0], ctConfig.DirectoryObjectAttribute);
+                string itemDirectoryObjectPropertyValue = Utils.GetLdapValueAsString(item.LdapResultProperties[ctConfig.DirectoryObjectAttribute][0], ctConfig.DirectoryObjectAttribute);
+                string resultDirectoryObjectPropertyValue = Utils.GetLdapValueAsString(result.LdapResultProperties[ctConfig.DirectoryObjectAttribute][0], ctConfig.DirectoryObjectAttribute);
                 if (String.Equals(itemDirectoryObjectPropertyValue, resultDirectoryObjectPropertyValue, StringComparison.InvariantCultureIgnoreCase))
                 {
                     return true;
