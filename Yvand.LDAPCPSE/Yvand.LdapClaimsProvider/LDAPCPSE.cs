@@ -551,7 +551,7 @@ namespace Yvand.LdapClaimsProvider
         #region ProcessSearchOrValidation
         protected List<PickerEntity> SearchOrValidate(OperationContext currentContext)
         {
-            List<UniqueDirectoryResult> ldapSearchResults = null;
+            List<LdapEntityProviderResult> ldapSearchResults = null;
             List<PickerEntity> pickerEntityList = new List<PickerEntity>();
             try
             {
@@ -653,7 +653,7 @@ namespace Yvand.LdapClaimsProvider
             return entities;
         }
 
-        protected virtual List<PickerEntity> ProcessLdapResults(OperationContext currentContext, List<UniqueDirectoryResult> ldapSearchResults)
+        protected virtual List<PickerEntity> ProcessLdapResults(OperationContext currentContext, List<LdapEntityProviderResult> ldapSearchResults)
         {
             List<PickerEntity> spEntities = new List<PickerEntity>();
             UniqueDirectoryResultCollection uniqueLdapResults = new UniqueDirectoryResultCollection();
@@ -664,7 +664,7 @@ namespace Yvand.LdapClaimsProvider
                 ctConfigs = currentContext.CurrentClaimTypeConfigList.Where(x => !x.IsAdditionalLdapSearchAttribute);
             }
 
-            foreach (UniqueDirectoryResult ldapResult in ldapSearchResults)
+            foreach (LdapEntityProviderResult ldapResult in ldapSearchResults)
             {
                 ldapResultProperties = ldapResult.DirectoryResultProperties;
                 // objectclass attribute should never be missing because it is explicitely requested in LDAP query
@@ -786,11 +786,12 @@ namespace Yvand.LdapClaimsProvider
                         continue;
                     }
 
-                    ldapResult.ClaimTypeConfigMatch = ctConfig;
-                    ldapResult.DirectoryAttributeValueMatch = directoryObjectPropertyValue;
-                    ldapResult.PermissionClaimValue = permissionClaimValue;
-                    spEntities.Add(CreatePickerEntityHelper(currentContext, ldapResult));
-                    uniqueLdapResults.Add(ldapResult);
+                    UniqueDirectoryResult uniqueLdapResult = new UniqueDirectoryResult(ldapResult, ctConfig, directoryObjectPropertyValue, permissionClaimValue);
+                    //ldapResult.ClaimTypeConfigMatch = ctConfig;
+                    //ldapResult.DirectoryAttributeValueMatch = directoryObjectPropertyValue;
+                    //ldapResult.PermissionClaimValue = permissionClaimValue;
+                    spEntities.Add(CreatePickerEntityHelper(currentContext, uniqueLdapResult));
+                    uniqueLdapResults.Add(uniqueLdapResult);
                 }
             }
             Logger.Log(String.Format("[{0}] {1} entity(ies) to create after filtering", Name, uniqueLdapResults.Count), TraceSeverity.Medium, EventSeverity.Information, TraceCategory.GraphRequests);
@@ -831,9 +832,9 @@ namespace Yvand.LdapClaimsProvider
             foreach (ClaimTypeConfig ctConfig in this.Settings.RuntimeMetadataConfig.Where(x => String.Equals(x.DirectoryObjectClass, result.ClaimTypeConfigMatch.DirectoryObjectClass, StringComparison.InvariantCultureIgnoreCase)))
             {
                 // if the the LDAP result has a value for the LDAP attribute of the current metadata, then the metadata can be set
-                if (result.DirectoryResultProperties.Contains(ctConfig.DirectoryObjectAttribute) && result.DirectoryResultProperties[ctConfig.DirectoryObjectAttribute].Count > 0)
+                if (result.DirectoryResult.DirectoryResultProperties.Contains(ctConfig.DirectoryObjectAttribute) && result.DirectoryResult.DirectoryResultProperties[ctConfig.DirectoryObjectAttribute].Count > 0)
                 {
-                    entity.EntityData[ctConfig.SPEntityDataKey] = result.DirectoryResultProperties[ctConfig.DirectoryObjectAttribute][0].ToString();
+                    entity.EntityData[ctConfig.SPEntityDataKey] = result.DirectoryResult.DirectoryResultProperties[ctConfig.DirectoryObjectAttribute][0].ToString();
                     nbMetadata++;
                     Logger.Log($"[{Name}] Set metadata '{ctConfig.SPEntityDataKey}' of new entity to '{entity.EntityData[ctConfig.SPEntityDataKey]}'", TraceSeverity.VerboseEx, EventSeverity.Information, TraceCategory.Claims_Picking);
                 }
@@ -866,11 +867,7 @@ namespace Yvand.LdapClaimsProvider
                     Logger.Log($"[{Name}] Added metadata '{ctConfig.SPEntityDataKey}' with value '{entity.EntityData[ctConfig.SPEntityDataKey]}' to new entity", TraceSeverity.VerboseEx, EventSeverity.Information, TraceCategory.Claims_Picking);
                 }
 
-                UniqueDirectoryResult fakeLdapResult = new UniqueDirectoryResult
-                {
-                    ClaimTypeConfigMatch = ctConfig,
-                    DirectoryAttributeValueMatch = claimValue,
-                };
+                UniqueDirectoryResult fakeLdapResult = new UniqueDirectoryResult(ctConfig, claimValue);
                 entity.DisplayText = FormatPermissionDisplayText(currentContext, fakeLdapResult, claimValue);
 
                 entities.Add(entity);
@@ -883,15 +880,18 @@ namespace Yvand.LdapClaimsProvider
         {
             string value = result.PermissionClaimValue;
 
-            var attr = currentContext.CurrentClaimTypeConfigList.FirstOrDefault(x => SPClaimTypes.Equals(x.ClaimType, claimType));
-            if (Utils.IsDynamicTokenSet(attr.ClaimValueLeadingToken, ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINNAME))
+            if (result.DirectoryResult != null)
             {
-                value = string.Format("{0}{1}", attr.ClaimValueLeadingToken.Replace(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINNAME, result.AuthorityMatch.DomainName), value);
-            }
+                var attr = currentContext.CurrentClaimTypeConfigList.FirstOrDefault(x => SPClaimTypes.Equals(x.ClaimType, claimType));
+                if (Utils.IsDynamicTokenSet(attr.ClaimValueLeadingToken, ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINNAME))
+                {
+                    value = string.Format("{0}{1}", attr.ClaimValueLeadingToken.Replace(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINNAME, result.DirectoryResult.AuthorityMatch.DomainName), value);
+                }
 
-            if (Utils.IsDynamicTokenSet(attr.ClaimValueLeadingToken, ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINFQDN))
-            {
-                value = string.Format("{0}{1}", attr.ClaimValueLeadingToken.Replace(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINFQDN, result.AuthorityMatch.DomainFQDN), value);
+                if (Utils.IsDynamicTokenSet(attr.ClaimValueLeadingToken, ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINFQDN))
+                {
+                    value = string.Format("{0}{1}", attr.ClaimValueLeadingToken.Replace(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINFQDN, result.DirectoryResult.AuthorityMatch.DomainFQDN), value);
+                }
             }
 
             return value;
@@ -905,7 +905,7 @@ namespace Yvand.LdapClaimsProvider
             bool displayLdapMatchForIdentityClaimType = false;
             string prefixToAdd = string.Empty;
 
-            if (result.DirectoryResultProperties == null)
+            if (result.DirectoryResult == null)
             {
                 // Result does not come from a LDAP server, it was created manually
                 if (isUserIdentityClaimType)
@@ -921,12 +921,12 @@ namespace Yvand.LdapClaimsProvider
             {
                 if (Utils.IsDynamicTokenSet(result.ClaimTypeConfigMatch.ClaimValueLeadingToken, ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINNAME))
                 {
-                    prefixToAdd = string.Format("{0}", result.ClaimTypeConfigMatch.ClaimValueLeadingToken.Replace(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINNAME, result.AuthorityMatch.DomainName));
+                    prefixToAdd = string.Format("{0}", result.ClaimTypeConfigMatch.ClaimValueLeadingToken.Replace(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINNAME, result.DirectoryResult.AuthorityMatch.DomainName));
                 }
 
                 if (Utils.IsDynamicTokenSet(result.ClaimTypeConfigMatch.ClaimValueLeadingToken, ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINFQDN))
                 {
-                    prefixToAdd = string.Format("{0}", result.ClaimTypeConfigMatch.ClaimValueLeadingToken.Replace(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINFQDN, result.AuthorityMatch.DomainFQDN));
+                    prefixToAdd = string.Format("{0}", result.ClaimTypeConfigMatch.ClaimValueLeadingToken.Replace(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINFQDN, result.DirectoryResult.AuthorityMatch.DomainFQDN));
                 }
 
                 if (isUserIdentityClaimType)
@@ -934,14 +934,14 @@ namespace Yvand.LdapClaimsProvider
                     displayLdapMatchForIdentityClaimType = true; // this.CurrentConfiguration.DisplayLdapMatchForIdentityClaimTypeProp;
                 }
 
-                if (!String.IsNullOrEmpty(result.ClaimTypeConfigMatch.DirectoryObjectAttributeForDisplayText) && result.DirectoryResultProperties.Contains(result.ClaimTypeConfigMatch.DirectoryObjectAttributeForDisplayText))
+                if (!String.IsNullOrEmpty(result.ClaimTypeConfigMatch.DirectoryObjectAttributeForDisplayText) && result.DirectoryResult.DirectoryResultProperties.Contains(result.ClaimTypeConfigMatch.DirectoryObjectAttributeForDisplayText))
                 {   // AttributeHelper is set to use a specific LDAP attribute as display text of entity
                     if (!isUserIdentityClaimType && result.ClaimTypeConfigMatch.ShowClaimNameInDisplayText)
                     {
                         entityDisplayText += "(" + result.ClaimTypeConfigMatch.ClaimTypeDisplayName + ") ";
                     }
                     entityDisplayText += prefixToAdd;
-                    valueDisplayedInPermission = result.DirectoryResultProperties[result.ClaimTypeConfigMatch.DirectoryObjectAttributeForDisplayText][0].ToString();
+                    valueDisplayedInPermission = result.DirectoryResult.DirectoryResultProperties[result.ClaimTypeConfigMatch.DirectoryObjectAttributeForDisplayText][0].ToString();
                     entityDisplayText += valueDisplayedInPermission;
                 }
                 else
@@ -964,13 +964,13 @@ namespace Yvand.LdapClaimsProvider
                     else
                     {   // Always specifically use LDAP attribute of identity claim type
                         entityDisplayText += prefixToAdd;
-                        valueDisplayedInPermission = result.DirectoryResultProperties[this.Settings.UserIdentifierClaimTypeConfig.DirectoryObjectAttribute][0].ToString();
+                        valueDisplayedInPermission = result.DirectoryResult.DirectoryResultProperties[this.Settings.UserIdentifierClaimTypeConfig.DirectoryObjectAttribute][0].ToString();
                         entityDisplayText += valueDisplayedInPermission;
                     }
                 }
 
                 // Check if LDAP value that actually resolved this result should be included in the display text of the entity
-                if (displayLdapMatchForIdentityClaimType && result.DirectoryResultProperties.Contains(result.ClaimTypeConfigMatch.DirectoryObjectAttribute)
+                if (displayLdapMatchForIdentityClaimType && result.DirectoryResult.DirectoryResultProperties.Contains(result.ClaimTypeConfigMatch.DirectoryObjectAttribute)
                     && !String.Equals(valueDisplayedInPermission, claimValue, StringComparison.InvariantCultureIgnoreCase))
                 {
                     entityDisplayText += String.Format(" ({0})", claimValue);

@@ -359,10 +359,10 @@ namespace Yvand.LdapClaimsProvider
             return groups.Select(x => x.Value).ToList();
         }
 
-        public override List<UniqueDirectoryResult> SearchOrValidateEntities(OperationContext currentContext)
+        public override List<LdapEntityProviderResult> SearchOrValidateEntities(OperationContext currentContext)
         {
             string ldapFilter = this.BuildFilter(currentContext);
-            List<UniqueDirectoryResult> LdapSearchResult = null;
+            List<LdapEntityProviderResult> LdapSearchResult = null;
             SPSecurity.RunWithElevatedPrivileges(delegate ()
             {
                 LdapSearchResult = this.QueryLDAPServers(currentContext, ldapFilter);
@@ -426,11 +426,11 @@ namespace Yvand.LdapClaimsProvider
             return filter;
         }
 
-        protected List<UniqueDirectoryResult> QueryLDAPServers(OperationContext currentContext, string ldapFilter)
+        protected List<LdapEntityProviderResult> QueryLDAPServers(OperationContext currentContext, string ldapFilter)
         {
             if (this.Settings.LdapConnections == null || this.Settings.LdapConnections.Count == 0) { return null; }
             object lockResults = new object();
-            List<UniqueDirectoryResult> results = new List<UniqueDirectoryResult>();
+            List<LdapEntityProviderResult> results = new List<LdapEntityProviderResult>();
             Stopwatch globalStopWatch = new Stopwatch();
             globalStopWatch.Start();
 
@@ -484,11 +484,7 @@ namespace Yvand.LdapClaimsProvider
                                     {
                                         foreach (SearchResult item in directoryResults)
                                         {
-                                            results.Add(new UniqueDirectoryResult()
-                                            {
-                                                DirectoryResultProperties = item.Properties,
-                                                AuthorityMatch = ldapConnection,
-                                            });
+                                            results.Add(new LdapEntityProviderResult(item.Properties, ldapConnection));
                                         }
                                     }
                                 }

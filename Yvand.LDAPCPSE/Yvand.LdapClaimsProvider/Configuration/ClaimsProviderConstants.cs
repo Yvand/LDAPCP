@@ -175,32 +175,57 @@ namespace Yvand.LdapClaimsProvider.Configuration
         Augmentation,
     }
 
-    public class UniqueDirectoryResult
+    public class LdapEntityProviderResult
     {
         /// <summary>
-        /// LDAP result
+        /// Single LDAP result from the directory, with all its properties
         /// </summary>
-        public ResultPropertyCollection DirectoryResultProperties;
+        public ResultPropertyCollection DirectoryResultProperties { get; private set; }
 
         /// <summary>
-        /// The directory which found the LDAP result
+        /// The directory which returned the LDAP result
         /// </summary>
-        public DirectoryConnection AuthorityMatch;
+        public DirectoryConnection AuthorityMatch { get; private set; }
+
+        public LdapEntityProviderResult(ResultPropertyCollection directoryResultProperties, DirectoryConnection authorityMatch)
+        {
+            this.DirectoryResultProperties = directoryResultProperties;
+            this.AuthorityMatch = authorityMatch;
+        }
+    }
+
+    public class UniqueDirectoryResult
+    {
+        public LdapEntityProviderResult DirectoryResult { get; private set; }
 
         /// <summary>
         /// The configuration which matched the LDAP result
         /// </summary>
-        public ClaimTypeConfig ClaimTypeConfigMatch;
+        public ClaimTypeConfig ClaimTypeConfigMatch { get; private set; }
 
         /// <summary>
         /// The LDAP attribute value which matched the input
         /// </summary>
-        public string DirectoryAttributeValueMatch;
+        public string DirectoryAttributeValueMatch { get; private set; }
 
         /// <summary>
         /// Actual claim value set in the Picker Entity returned to SharePoint
         /// </summary>
-        public string PermissionClaimValue;
+        public string PermissionClaimValue { get; private set; }
+
+        public UniqueDirectoryResult(LdapEntityProviderResult directoryResult, ClaimTypeConfig claimTypeConfigMatch, string directoryAttributeValueMatch, string permissionClaimValue)
+        {
+            this.DirectoryResult = directoryResult;
+            this.ClaimTypeConfigMatch = claimTypeConfigMatch;
+            this.DirectoryAttributeValueMatch = directoryAttributeValueMatch;
+            this.PermissionClaimValue = permissionClaimValue;
+        }
+
+        public UniqueDirectoryResult(ClaimTypeConfig claimTypeConfigMatch, string permissionClaimValue)
+        {
+            this.ClaimTypeConfigMatch = claimTypeConfigMatch;
+            this.PermissionClaimValue = permissionClaimValue;
+        }
     }
 
     /// <summary>
@@ -216,13 +241,13 @@ namespace Yvand.LdapClaimsProvider.Configuration
         /// <param name="ctConfig">AttributeHelper that matches result</param>
         /// <param name="dynamicDomainTokenSet">if true, don't consider 2 results as identical if they don't are in same domain.</param>
         /// <returns></returns>
-        public bool Contains(UniqueDirectoryResult result, ClaimTypeConfig ctConfig, bool dynamicDomainTokenSet)
+        public bool Contains(LdapEntityProviderResult result, ClaimTypeConfig ctConfig, bool dynamicDomainTokenSet)
         {
             foreach (var item in base.Items)
             {
                 if (item.ClaimTypeConfigMatch.ClaimType != ctConfig.ClaimType) { continue; }
 
-                if (!item.DirectoryResultProperties.Contains(ctConfig.DirectoryObjectAttribute)) { continue; }
+                if (!item.DirectoryResult.DirectoryResultProperties.Contains(ctConfig.DirectoryObjectAttribute)) { continue; }
 
                 // if dynamicDomainTokenSet is true, don't consider 2 results as identical if they don't are in same domain
                 // Using same bool to compare both DomainName and DomainFQDN causes scenario below to potentially generate duplicates:
@@ -230,14 +255,14 @@ namespace Yvand.LdapClaimsProvider.Configuration
                 // If so, dynamicDomainTokenSet will be true and test below will be true so duplicates won't be check, even though it would be possible. 
                 // But this would be so unlikely that this scenario can be ignored
                 if (dynamicDomainTokenSet && (
-                    !String.Equals(item.AuthorityMatch.DomainName, result.AuthorityMatch.DomainName, StringComparison.InvariantCultureIgnoreCase) ||
-                    !String.Equals(item.AuthorityMatch.DomainFQDN, result.AuthorityMatch.DomainFQDN, StringComparison.InvariantCultureIgnoreCase)
+                    !String.Equals(item.DirectoryResult.AuthorityMatch.DomainName, result.AuthorityMatch.DomainName, StringComparison.InvariantCultureIgnoreCase) ||
+                    !String.Equals(item.DirectoryResult.AuthorityMatch.DomainFQDN, result.AuthorityMatch.DomainFQDN, StringComparison.InvariantCultureIgnoreCase)
                                          ))
                 {
                     continue;   // They are not in the same domain, so not identical, jump to next item
                 }
 
-                string itemDirectoryObjectPropertyValue = Utils.GetLdapValueAsString(item.DirectoryResultProperties[ctConfig.DirectoryObjectAttribute][0], ctConfig.DirectoryObjectAttribute);
+                string itemDirectoryObjectPropertyValue = Utils.GetLdapValueAsString(item.DirectoryResult.DirectoryResultProperties[ctConfig.DirectoryObjectAttribute][0], ctConfig.DirectoryObjectAttribute);
                 string resultDirectoryObjectPropertyValue = Utils.GetLdapValueAsString(result.DirectoryResultProperties[ctConfig.DirectoryObjectAttribute][0], ctConfig.DirectoryObjectAttribute);
                 if (String.Equals(itemDirectoryObjectPropertyValue, resultDirectoryObjectPropertyValue, StringComparison.InvariantCultureIgnoreCase))
                 {
