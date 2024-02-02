@@ -80,6 +80,7 @@
     <Compile Include="Features\Yvand.LDAPCPSE\Yvand.LDAPCPSE.EventReceiver.cs">
       <DependentUpon>Yvand.LDAPCPSE.feature</DependentUpon>
     </Compile>
+    <Compile Include="LoggerTest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="TEMPLATE\ADMIN\LDAPCPSE\PermsMappings.ascx.cs">
       <DependentUpon>PermsMappings.ascx</DependentUpon>

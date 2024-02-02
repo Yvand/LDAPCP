@@ -748,7 +748,7 @@ namespace Yvand.LdapClaimsProvider
                             }
                             else
                             {
-                                continue;  // Current ClaimTypeConfig is a user but current LDAP result is not, skip
+                                continue;  // Local ClaimTypeConfig is a user but current LDAP result is not, skip
                             }
                         }
                         else
@@ -769,7 +769,7 @@ namespace Yvand.LdapClaimsProvider
                             }
                             else
                             {
-                                continue;  // Current ClaimTypeConfig is a group but current LDAP result is not, skip
+                                continue;  // Local ClaimTypeConfig is a group but current LDAP result is not, skip
                             }
                         }
                     }

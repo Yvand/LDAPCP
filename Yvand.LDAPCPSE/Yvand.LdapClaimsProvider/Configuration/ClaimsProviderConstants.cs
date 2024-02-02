@@ -55,7 +55,7 @@ namespace Yvand.LdapClaimsProvider.Configuration
                     // If assembly was removed from the GAC, CLR throws a FileNotFoundException
                     catch (System.IO.FileNotFoundException)
                     {
-                        // Current process will never detect if assembly is added to the GAC later, which is fine
+                        // Local process will never detect if assembly is added to the GAC later, which is fine
                         _ClaimsProviderVersion = " ";
                     }
                     return _ClaimsProviderVersion;
