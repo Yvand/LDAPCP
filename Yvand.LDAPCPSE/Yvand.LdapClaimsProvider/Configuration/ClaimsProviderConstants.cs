@@ -177,10 +177,30 @@ namespace Yvand.LdapClaimsProvider.Configuration
 
     public class UniqueDirectoryResult
     {
+        /// <summary>
+        /// LDAP result
+        /// </summary>
         public ResultPropertyCollection DirectoryResultProperties;
+
+        /// <summary>
+        /// The directory which found the LDAP result
+        /// </summary>
         public DirectoryConnection AuthorityMatch;
+
+        /// <summary>
+        /// The configuration which matched the LDAP result
+        /// </summary>
         public ClaimTypeConfig ClaimTypeConfigMatch;
+
+        /// <summary>
+        /// The LDAP attribute value which matched the input
+        /// </summary>
         public string DirectoryAttributeValueMatch;
+
+        /// <summary>
+        /// Actual claim value set in the Picker Entity returned to SharePoint
+        /// </summary>
+        public string PermissionClaimValue;
     }
 
     /// <summary>

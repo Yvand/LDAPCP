@@ -679,17 +679,6 @@ namespace Yvand.LdapClaimsProvider
 
                 foreach (ClaimTypeConfig ctConfig in ctConfigs)
                 {
-                    // Issue https://github.com/Yvand/LDAPCP/issues/16:
-                    // Skip if: current config has IsAdditionalLdapSearchAttribute, but LDAP result does not have the identifier attribute
-                    if (ctConfig.IsAdditionalLdapSearchAttribute)
-                    {
-                        ClaimTypeConfig mainDirectoryObjectctConfig = ctConfig.DirectoryObjectType == DirectoryObjectType.User ? this.Settings.UserIdentifierClaimTypeConfig : this.Settings.GroupIdentifierClaimTypeConfig;
-                        if (!LDAPResultPropertyNames.Contains(mainDirectoryObjectctConfig.DirectoryObjectAttribute, StringComparer.InvariantCultureIgnoreCase))
-                        {
-                            continue;
-                        }
-                    }
-
                     // Skip if: DirectoryObjectClass of current config does not match objectclass of LDAP result
                     if (!ldapResultProperties["objectclass"].Cast<string>().Contains(ctConfig.DirectoryObjectClass, StringComparer.InvariantCultureIgnoreCase))
                     {
@@ -705,6 +694,7 @@ namespace Yvand.LdapClaimsProvider
                     // Get the LDAP attribute value of the current ClaimTypeConfig
                     // Fix https://github.com/Yvand/LDAPCP/issues/43: properly test the type of the LDAP attribute's value, and always get it as a string
                     string directoryObjectPropertyValue = Utils.GetLdapValueAsString(ldapResultProperties[LDAPResultPropertyNames.First(x => String.Equals(x, ctConfig.DirectoryObjectAttribute, StringComparison.InvariantCultureIgnoreCase))][0], ctConfig.DirectoryObjectAttribute);
+                    string permissionClaimValue = directoryObjectPropertyValue;
                     if (String.IsNullOrWhiteSpace(directoryObjectPropertyValue))
                     {
                         continue;
@@ -746,6 +736,16 @@ namespace Yvand.LdapClaimsProvider
                             if (String.Equals(ctConfig.DirectoryObjectClass, this.Settings.UserIdentifierClaimTypeConfig.DirectoryObjectClass, StringComparison.InvariantCultureIgnoreCase))
                             {
                                 ctConfigToUseForDuplicateCheck = this.Settings.UserIdentifierClaimTypeConfig;
+
+                                // Get the permission value using the LDAP attribute of the identifier config, if it exists, and skip current LDAP result if it does not exist
+                                if (!LDAPResultPropertyNames.Contains(this.Settings.UserIdentifierClaimTypeConfig.DirectoryObjectAttribute, StringComparer.InvariantCultureIgnoreCase))
+                                {
+                                    continue;
+                                }
+                                else
+                                {
+                                    permissionClaimValue = Utils.GetLdapValueAsString(ldapResultProperties[LDAPResultPropertyNames.First(x => String.Equals(x, this.Settings.UserIdentifierClaimTypeConfig.DirectoryObjectAttribute, StringComparison.InvariantCultureIgnoreCase))][0], this.Settings.UserIdentifierClaimTypeConfig.DirectoryObjectAttribute);
+                                }
                             }
                             else
                             {
@@ -757,6 +757,16 @@ namespace Yvand.LdapClaimsProvider
                             if (this.Settings.GroupIdentifierClaimTypeConfig != null && String.Equals(ctConfig.DirectoryObjectClass, this.Settings.GroupIdentifierClaimTypeConfig.DirectoryObjectClass, StringComparison.InvariantCultureIgnoreCase))
                             {
                                 ctConfigToUseForDuplicateCheck = this.Settings.GroupIdentifierClaimTypeConfig;
+
+                                // Get the permission value using the LDAP attribute of the identifier config, if it exists, and skip current LDAP result if it does not exist
+                                if (!LDAPResultPropertyNames.Contains(this.Settings.GroupIdentifierClaimTypeConfig.DirectoryObjectAttribute, StringComparer.InvariantCultureIgnoreCase))
+                                {
+                                    continue;
+                                }
+                                else
+                                {
+                                    permissionClaimValue = Utils.GetLdapValueAsString(ldapResultProperties[LDAPResultPropertyNames.First(x => String.Equals(x, this.Settings.GroupIdentifierClaimTypeConfig.DirectoryObjectAttribute, StringComparison.InvariantCultureIgnoreCase))][0], this.Settings.GroupIdentifierClaimTypeConfig.DirectoryObjectAttribute);
+                                }
                             }
                             else
                             {
@@ -778,6 +788,7 @@ namespace Yvand.LdapClaimsProvider
 
                     ldapResult.ClaimTypeConfigMatch = ctConfig;
                     ldapResult.DirectoryAttributeValueMatch = directoryObjectPropertyValue;
+                    ldapResult.PermissionClaimValue = permissionClaimValue;
                     spEntities.Add(CreatePickerEntityHelper(currentContext, ldapResult));
                     uniqueLdapResults.Add(ldapResult);
                 }
@@ -795,7 +806,7 @@ namespace Yvand.LdapClaimsProvider
             return new SPClaim(type, value, valueType, this.OriginalIssuerName);
         }
 
-        protected virtual PickerEntity CreatePickerEntityHelper(OperationContext currentContext, UniqueDirectoryResult result)
+        protected PickerEntity CreatePickerEntityHelper(OperationContext currentContext, UniqueDirectoryResult result)
         {
             ClaimTypeConfig ctConfigToUseForClaimValue = result.ClaimTypeConfigMatch;
             if (result.ClaimTypeConfigMatch.IsAdditionalLdapSearchAttribute)
@@ -804,7 +815,7 @@ namespace Yvand.LdapClaimsProvider
                 ctConfigToUseForClaimValue = result.ClaimTypeConfigMatch.DirectoryObjectType == DirectoryObjectType.User ? this.Settings.UserIdentifierClaimTypeConfig : this.Settings.GroupIdentifierClaimTypeConfig;
             }
 
-            string permissionValue = FormatPermissionValue(currentContext, ctConfigToUseForClaimValue.ClaimType, ctConfigToUseForClaimValue.DirectoryObjectAttribute, result);
+            string permissionValue = FormatPermissionValue(currentContext, ctConfigToUseForClaimValue.ClaimType, result);
             SPClaim claim = CreateClaim(ctConfigToUseForClaimValue.ClaimType, permissionValue, ctConfigToUseForClaimValue.ClaimValueType);
             PickerEntity entity = CreatePickerEntity();
             entity.Claim = claim;
@@ -868,10 +879,9 @@ namespace Yvand.LdapClaimsProvider
             return entities.Count > 0 ? entities : null;
         }
 
-        protected virtual string FormatPermissionValue(OperationContext currentContext, string claimType, string directoryObjectAttributeName, UniqueDirectoryResult result)
+        protected virtual string FormatPermissionValue(OperationContext currentContext, string claimType, UniqueDirectoryResult result)
         {
-            object claimValue = result.DirectoryResultProperties[directoryObjectAttributeName][0];
-            string value = Utils.GetLdapValueAsString(claimValue, directoryObjectAttributeName);
+            string value = result.PermissionClaimValue;
 
             var attr = currentContext.CurrentClaimTypeConfigList.FirstOrDefault(x => SPClaimTypes.Equals(x.ClaimType, claimType));
             if (Utils.IsDynamicTokenSet(attr.ClaimValueLeadingToken, ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINNAME))

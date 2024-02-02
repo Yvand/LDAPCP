@@ -7,7 +7,7 @@ namespace Yvand.LdapClaimsProvider.Tests
 {
     [TestFixture]
     [Parallelizable(ParallelScope.Children)]
-    public class UseSidAttributeForUserIdentifierPermissionTests : ClaimsProviderTestsBase
+    public class UseSidAttributeAsUserIdentifierPermissionTests : ClaimsProviderTestsBase
     {
         public override void InitializeSettings()
         {
