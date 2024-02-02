@@ -656,8 +656,7 @@ namespace Yvand.LdapClaimsProvider
         protected virtual List<PickerEntity> ProcessLdapResults(OperationContext currentContext, List<LdapEntityProviderResult> ldapSearchResults)
         {
             List<PickerEntity> spEntities = new List<PickerEntity>();
-            ClaimsProviderEntityCollection uniqueLdapResults = new ClaimsProviderEntityCollection();
-            ResultPropertyCollection ldapResultProperties;
+            ClaimsProviderEntityCollection uniqueDirectoryResults = new ClaimsProviderEntityCollection();
             IEnumerable<ClaimTypeConfig> ctConfigs = currentContext.CurrentClaimTypeConfigList;
             if (currentContext.ExactSearch)
             {
@@ -666,7 +665,7 @@ namespace Yvand.LdapClaimsProvider
 
             foreach (LdapEntityProviderResult ldapResult in ldapSearchResults)
             {
-                ldapResultProperties = ldapResult.DirectoryResultProperties;
+                ResultPropertyCollection ldapResultProperties = ldapResult.DirectoryResultProperties;
                 // objectclass attribute should never be missing because it is explicitely requested in LDAP query
                 if (!ldapResultProperties.Contains("objectclass"))
                 {
@@ -726,8 +725,8 @@ namespace Yvand.LdapClaimsProvider
                         }
                     }
 
-                    // Check if current result (association of LDAP result + ClaimTypeConfig) is not already in uniqueLdapResults list
-                    // Get ClaimTypeConfig to use to check if result is already present in the uniqueLdapResults list
+                    // Check if current result (association of LDAP result + ClaimTypeConfig) is not already in uniqueDirectoryResults list
+                    // Get ClaimTypeConfig to use to check if result is already present in the uniqueDirectoryResults list
                     ClaimTypeConfig ctConfigToUseForDuplicateCheck = ctConfig;
                     if (ctConfig.IsAdditionalLdapSearchAttribute)
                     {
@@ -781,17 +780,17 @@ namespace Yvand.LdapClaimsProvider
                     {
                         dynamicDomainTokenSet = Utils.IsDynamicTokenSet(ctConfig.ClaimValueLeadingToken, ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINFQDN);// ? true : this.Settings.CompareResultsWithDomainNameProp;
                     }
-                    if (uniqueLdapResults.Contains(ldapResult, ctConfigToUseForDuplicateCheck, dynamicDomainTokenSet))
+                    if (uniqueDirectoryResults.Contains(ldapResult, ctConfigToUseForDuplicateCheck, dynamicDomainTokenSet))
                     {
                         continue;
                     }
 
                     ClaimsProviderEntity uniqueLdapResult = new ClaimsProviderEntity(ldapResult, ctConfig, directoryObjectPropertyValue, permissionClaimValue);
                     spEntities.Add(CreatePickerEntityHelper(currentContext, uniqueLdapResult));
-                    uniqueLdapResults.Add(uniqueLdapResult);
+                    uniqueDirectoryResults.Add(uniqueLdapResult);
                 }
             }
-            Logger.Log(String.Format("[{0}] {1} entity(ies) to create after filtering", Name, uniqueLdapResults.Count), TraceSeverity.Medium, EventSeverity.Information, TraceCategory.GraphRequests);
+            Logger.Log($"[{Name}] Created {spEntities.Count} entity(ies) after filtering directory results", TraceSeverity.Verbose, EventSeverity.Information, TraceCategory.Lookup);
             return spEntities;
         }
         #endregion
