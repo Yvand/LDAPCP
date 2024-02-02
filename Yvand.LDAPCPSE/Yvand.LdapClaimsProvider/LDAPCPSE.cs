@@ -656,7 +656,7 @@ namespace Yvand.LdapClaimsProvider
         protected virtual List<PickerEntity> ProcessLdapResults(OperationContext currentContext, List<LdapEntityProviderResult> ldapSearchResults)
         {
             List<PickerEntity> spEntities = new List<PickerEntity>();
-            UniqueDirectoryResultCollection uniqueLdapResults = new UniqueDirectoryResultCollection();
+            ClaimsProviderEntityCollection uniqueLdapResults = new ClaimsProviderEntityCollection();
             ResultPropertyCollection ldapResultProperties;
             IEnumerable<ClaimTypeConfig> ctConfigs = currentContext.CurrentClaimTypeConfigList;
             if (currentContext.ExactSearch)
@@ -786,10 +786,7 @@ namespace Yvand.LdapClaimsProvider
                         continue;
                     }
 
-                    UniqueDirectoryResult uniqueLdapResult = new UniqueDirectoryResult(ldapResult, ctConfig, directoryObjectPropertyValue, permissionClaimValue);
-                    //ldapResult.ClaimTypeConfigMatch = ctConfig;
-                    //ldapResult.DirectoryAttributeValueMatch = directoryObjectPropertyValue;
-                    //ldapResult.PermissionClaimValue = permissionClaimValue;
+                    ClaimsProviderEntity uniqueLdapResult = new ClaimsProviderEntity(ldapResult, ctConfig, directoryObjectPropertyValue, permissionClaimValue);
                     spEntities.Add(CreatePickerEntityHelper(currentContext, uniqueLdapResult));
                     uniqueLdapResults.Add(uniqueLdapResult);
                 }
@@ -807,7 +804,7 @@ namespace Yvand.LdapClaimsProvider
             return new SPClaim(type, value, valueType, this.OriginalIssuerName);
         }
 
-        protected PickerEntity CreatePickerEntityHelper(OperationContext currentContext, UniqueDirectoryResult result)
+        protected PickerEntity CreatePickerEntityHelper(OperationContext currentContext, ClaimsProviderEntity result)
         {
             ClaimTypeConfig ctConfigToUseForClaimValue = result.ClaimTypeConfigMatch;
             if (result.ClaimTypeConfigMatch.IsAdditionalLdapSearchAttribute)
@@ -867,7 +864,7 @@ namespace Yvand.LdapClaimsProvider
                     Logger.Log($"[{Name}] Added metadata '{ctConfig.SPEntityDataKey}' with value '{entity.EntityData[ctConfig.SPEntityDataKey]}' to new entity", TraceSeverity.VerboseEx, EventSeverity.Information, TraceCategory.Claims_Picking);
                 }
 
-                UniqueDirectoryResult fakeLdapResult = new UniqueDirectoryResult(ctConfig, claimValue);
+                ClaimsProviderEntity fakeLdapResult = new ClaimsProviderEntity(ctConfig, claimValue);
                 entity.DisplayText = FormatPermissionDisplayText(currentContext, fakeLdapResult, claimValue);
 
                 entities.Add(entity);
@@ -876,7 +873,7 @@ namespace Yvand.LdapClaimsProvider
             return entities.Count > 0 ? entities : null;
         }
 
-        protected virtual string FormatPermissionValue(OperationContext currentContext, string claimType, UniqueDirectoryResult result)
+        protected virtual string FormatPermissionValue(OperationContext currentContext, string claimType, ClaimsProviderEntity result)
         {
             string value = result.PermissionClaimValue;
 
@@ -897,7 +894,7 @@ namespace Yvand.LdapClaimsProvider
             return value;
         }
 
-        protected virtual string FormatPermissionDisplayText(OperationContext currentContext, UniqueDirectoryResult result, string claimValue)
+        protected virtual string FormatPermissionDisplayText(OperationContext currentContext, ClaimsProviderEntity result, string claimValue)
         {
             bool isUserIdentityClaimType = String.Equals(result.ClaimTypeConfigMatch.ClaimType, this.Settings.UserIdentifierClaimTypeConfig.ClaimType, StringComparison.InvariantCultureIgnoreCase);
             string entityDisplayText = this.Settings.EntityDisplayTextPrefix;

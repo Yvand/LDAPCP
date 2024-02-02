@@ -194,7 +194,7 @@ namespace Yvand.LdapClaimsProvider.Configuration
         }
     }
 
-    public class UniqueDirectoryResult
+    public class ClaimsProviderEntity
     {
         public LdapEntityProviderResult DirectoryResult { get; private set; }
 
@@ -213,7 +213,7 @@ namespace Yvand.LdapClaimsProvider.Configuration
         /// </summary>
         public string PermissionClaimValue { get; private set; }
 
-        public UniqueDirectoryResult(LdapEntityProviderResult directoryResult, ClaimTypeConfig claimTypeConfigMatch, string directoryAttributeValueMatch, string permissionClaimValue)
+        public ClaimsProviderEntity(LdapEntityProviderResult directoryResult, ClaimTypeConfig claimTypeConfigMatch, string directoryAttributeValueMatch, string permissionClaimValue)
         {
             this.DirectoryResult = directoryResult;
             this.ClaimTypeConfigMatch = claimTypeConfigMatch;
@@ -221,7 +221,7 @@ namespace Yvand.LdapClaimsProvider.Configuration
             this.PermissionClaimValue = permissionClaimValue;
         }
 
-        public UniqueDirectoryResult(ClaimTypeConfig claimTypeConfigMatch, string permissionClaimValue)
+        public ClaimsProviderEntity(ClaimTypeConfig claimTypeConfigMatch, string permissionClaimValue)
         {
             this.ClaimTypeConfigMatch = claimTypeConfigMatch;
             this.PermissionClaimValue = permissionClaimValue;
@@ -231,7 +231,7 @@ namespace Yvand.LdapClaimsProvider.Configuration
     /// <summary>
     /// This collection ensures it contains only unique results, so no duplicate is returned to SharePoint
     /// </summary>
-    public class UniqueDirectoryResultCollection : Collection<UniqueDirectoryResult>
+    public class ClaimsProviderEntityCollection : Collection<ClaimsProviderEntity>
     {
         /// <summary>
         /// Compare 2 results to not add duplicates
