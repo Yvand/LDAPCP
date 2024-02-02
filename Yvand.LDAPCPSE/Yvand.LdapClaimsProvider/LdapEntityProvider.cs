@@ -175,6 +175,10 @@ namespace Yvand.LdapClaimsProvider
                                     case "samaccountname":
                                         claimValue = adGroup.SamAccountName;
                                         break;
+
+                                    case "objectsid":
+                                        claimValue = adGroup.Sid.Value;
+                                        break;
                                 }
 
                                 if (!String.IsNullOrEmpty(this.Settings.GroupIdentifierClaimTypeConfig.ClaimValueLeadingToken))
