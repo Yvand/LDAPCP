@@ -278,10 +278,6 @@ namespace Yvand.LdapClaimsProvider.Configuration
     /// </summary>
     public class OperationContext
     {
-        //public ILDAPCPSettings Settings { get; private set; }
-        /// <summary>
-        /// Indicates what kind of operation SharePoint is requesting
-        /// </summary>
         public OperationType OperationType { get; private set; }
 
         /// <summary>
@@ -333,9 +329,8 @@ namespace Yvand.LdapClaimsProvider.Configuration
 
         public OperationContext(ILDAPCPSettings settings, OperationType currentRequestType, string input, SPClaim incomingEntity, Uri context, string[] entityTypes, string hierarchyNodeID, int maxCount)
         {
-            //this.Settings = settings;
             this.OperationType = currentRequestType;
-            this.Input = input; // Utils.EscapeSpecialCharacters(input);
+            this.Input = input;
             this.IncomingEntity = incomingEntity;
             this.UriContext = context;
             this.HierarchyNodeID = hierarchyNodeID;
@@ -400,7 +395,7 @@ namespace Yvand.LdapClaimsProvider.Configuration
         /// Validation is when SharePoint expects exactly 1 PickerEntity from the incoming SPClaim
         /// </summary>
         /// <param name="runtimeClaimTypesList"></param>
-        protected void InitializeValidation(List<ClaimTypeConfig> runtimeClaimTypesList)
+        private void InitializeValidation(List<ClaimTypeConfig> runtimeClaimTypesList)
         {
             if (this.IncomingEntity == null) { throw new ArgumentNullException(nameof(this.IncomingEntity)); }
             this.IncomingEntityClaimTypeConfig = runtimeClaimTypesList.FirstOrDefault(x =>
@@ -426,10 +421,6 @@ namespace Yvand.LdapClaimsProvider.Configuration
                 {
                     this.Input = this.IncomingEntity.Value.Substring(IncomingEntityClaimTypeConfig.ClaimValueLeadingToken.Length);
                 }
-                //else
-                //{
-                //    this.InputHasKeyword = IncomingEntityClaimTypeConfig.DoNotAddClaimValuePrefixIfBypassLookup;
-                //}
 
                 if (IncomingEntityClaimTypeConfig.ClaimValueLeadingToken.Contains(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINNAME) ||
                     IncomingEntityClaimTypeConfig.ClaimValueLeadingToken.Contains(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINFQDN))
@@ -443,7 +434,7 @@ namespace Yvand.LdapClaimsProvider.Configuration
         /// Search is when SharePoint expects a list of any PickerEntity that match input provided
         /// </summary>
         /// <param name="runtimeClaimTypesList"></param>
-        protected void InitializeSearch(List<ClaimTypeConfig> runtimeClaimTypesList, bool exactSearch)
+        private void InitializeSearch(List<ClaimTypeConfig> runtimeClaimTypesList, bool exactSearch)
         {
             this.ExactSearch = exactSearch;
             if (!String.IsNullOrEmpty(this.HierarchyNodeID))
@@ -460,18 +451,9 @@ namespace Yvand.LdapClaimsProvider.Configuration
             }
         }
 
-        protected void InitializeAugmentation(List<ClaimTypeConfig> runtimeClaimTypesList)
+        private void InitializeAugmentation(List<ClaimTypeConfig> runtimeClaimTypesList)
         {
-            if (this.IncomingEntity == null) { throw new ArgumentNullException(nameof(this.IncomingEntity)); }
-            this.IncomingEntityClaimTypeConfig = runtimeClaimTypesList.FirstOrDefault(x =>
-               String.Equals(x.ClaimType, this.IncomingEntity.ClaimType, StringComparison.InvariantCultureIgnoreCase) &&
-               !x.IsAdditionalLdapSearchAttribute);
-
-            if (this.IncomingEntityClaimTypeConfig == null)
-            {
-                Logger.Log($"[{LDAPCPSE.ClaimsProviderName}] Unable to augment entity \"{this.IncomingEntity.Value}\" because its claim type \"{this.IncomingEntity.ClaimType}\" was not found in the ClaimTypes list of current configuration.", TraceSeverity.Unexpected, EventSeverity.Error, TraceCategory.Configuration);
-                throw new InvalidOperationException($"[{LDAPCPSE.ClaimsProviderName}] Unable to augment entity \"{this.IncomingEntity.Value}\" because its claim type \"{this.IncomingEntity.ClaimType}\" was not found in the ClaimTypes list of current configuration.");
-            }
+            CurrentClaimTypeConfigList = runtimeClaimTypesList.FindAll(x => x.DirectoryObjectType == DirectoryObjectType.Group);
         }
     }
 }

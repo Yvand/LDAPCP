@@ -48,6 +48,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AugmentationTests.cs" />
     <Compile Include="BasicConfigurationTests.cs" />
     <Compile Include="BypassDirectoryTests.cs" />
     <Compile Include="ClaimsProviderTestsBase.cs" />

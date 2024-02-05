@@ -314,7 +314,7 @@ namespace Yvand.LdapClaimsProvider.Configuration
         /// </summary>
         /// <param name="distinguishedNameValue">e.g. "CN=group1,CN=Users,DC=contoso,DC=local"</param>
         /// <returns>e.g. "group1", or an empty string if not found</returns>
-        public static string GetValueFromDistinguishedName(string distinguishedNameValue)
+        public static string GetNameFromDistinguishedName(string distinguishedNameValue)
         {
             int equalsIndex = distinguishedNameValue.IndexOf("=", 1);
             int commaIndex = distinguishedNameValue.IndexOf(",", 1);
