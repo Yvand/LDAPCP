@@ -155,8 +155,8 @@ namespace Yvand.LdapClaimsProvider.Tests
         {
             bool shouldValidate = registrationData.ShouldValidate;
             string claimType = registrationData.EntityType == ResultEntityType.User ?
-                UnitTestsHelper.SPTrust.IdentityClaimTypeInformation.MappedClaimType :
-                UnitTestsHelper.TrustedGroupToAdd_ClaimType;
+                UserIdentifierClaimType :
+                GroupIdentifierClaimType;
 
             TestValidationOperation(claimType, registrationData.ClaimValue, shouldValidate);
         }

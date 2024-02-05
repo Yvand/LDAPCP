@@ -35,12 +35,10 @@ namespace Yvand.LdapClaimsProvider.Tests
         public static string RandomDirectoryObjectClass => "randomClass";
         public static string RandomDirectoryObjectAttribute => "randomAttribute";
 
-        public static string TrustedGroupToAdd_ClaimType => TestContext.Parameters["TrustedGroupToAdd_ClaimType"];
-        public static string TrustedGroupToAdd_ClaimValue => TestContext.Parameters["TrustedGroupToAdd_ClaimValue"];
-        //public static SPClaim TrustedGroup => new SPClaim(TrustedGroupToAdd_ClaimType, TrustedGroupToAdd_ClaimValue, ClaimValueTypes.String, SPOriginalIssuers.Format(SPOriginalIssuerType.TrustedProvider, SPTrust.Name));
-
-        public const string ValidTrustedUserSid = "S-1-5-21-2647467245-1611586658-188888215-107206"; // CONTOSO\testLdapcpseUser_001
-        public const string ValidTrustedGroupSid = "S-1-5-21-2647467245-1611586658-188888215-11601"; // CONTOSO\group1
+        public static string ValidGroupClaimType => TestContext.Parameters["ValidGroupClaimType"];
+        public static string ValidGroupName => TestContext.Parameters["ValidGroupName"];
+        public const string ValidGroupSid = "S-1-5-21-2647467245-1611586658-188888215-11601"; //=> TestContext.Parameters["ValidTrustedGroupName"]; // CONTOSO\group1
+        public const string ValidUserSid = "S-1-5-21-2647467245-1611586658-188888215-107206"; // => TestContext.Parameters["ValidUserSid"]; // CONTOSO\testLdapcpseUser_001
 
         public static string AzureTenantsJsonFile => TestContext.Parameters["LdapConnections"];
         public static string DataFile_AllAccounts_Search => TestContext.Parameters["DataFile_AllAccounts_Search"];
@@ -112,8 +110,8 @@ namespace Yvand.LdapClaimsProvider.Tests
             Uri waRootAuthority = wa.AlternateUrls[0].Uri;
             TestSiteCollUri = new Uri($"{waRootAuthority.GetLeftPart(UriPartial.Authority)}{TestSiteRelativePath}");
             SPClaimProviderManager claimMgr = SPClaimProviderManager.Local;
-            string encodedClaim = claimMgr.EncodeClaim(new SPClaim(TrustedGroupToAdd_ClaimType, TrustedGroupToAdd_ClaimValue, ClaimValueTypes.String, SPOriginalIssuers.Format(SPOriginalIssuerType.TrustedProvider, UnitTestsHelper.SPTrust.Name)));
-            SPUserInfo userInfo = new SPUserInfo { LoginName = encodedClaim, Name = TrustedGroupToAdd_ClaimValue };
+            string encodedGroupClaim = claimMgr.EncodeClaim(new SPClaim(ValidGroupClaimType, ValidGroupName, ClaimValueTypes.String, SPOriginalIssuers.Format(SPOriginalIssuerType.TrustedProvider, UnitTestsHelper.SPTrust.Name)));
+            SPUserInfo groupInfo = new SPUserInfo { LoginName = encodedGroupClaim, Name = ValidGroupName };
 
             FileVersionInfo spAssemblyVersion = FileVersionInfo.GetVersionInfo(Assembly.GetAssembly(typeof(SPSite)).Location);
             string spSiteTemplate = "STS#3"; // modern team site template
@@ -131,7 +129,7 @@ namespace Yvand.LdapClaimsProvider.Tests
                 spSite.RootWeb.CreateDefaultAssociatedGroups(FarmAdmin, FarmAdmin, spSite.RootWeb.Title);
 
                 SPGroup membersGroup = spSite.RootWeb.AssociatedMemberGroup;
-                membersGroup.AddUser(userInfo.LoginName, userInfo.Email, userInfo.Name, userInfo.Notes);
+                membersGroup.AddUser(groupInfo.LoginName, groupInfo.Email, groupInfo.Name, groupInfo.Notes);
                 spSite.Dispose();
             }
 
@@ -142,7 +140,7 @@ namespace Yvand.LdapClaimsProvider.Tests
                 spSite.RootWeb.CreateDefaultAssociatedGroups(FarmAdmin, FarmAdmin, spSite.RootWeb.Title);
 
                 SPGroup membersGroup = spSite.RootWeb.AssociatedMemberGroup;
-                membersGroup.AddUser(userInfo.LoginName, userInfo.Email, userInfo.Name, userInfo.Notes);
+                membersGroup.AddUser(groupInfo.LoginName, groupInfo.Email, groupInfo.Name, groupInfo.Notes);
                 spSite.Dispose();
             }
             else
@@ -150,7 +148,7 @@ namespace Yvand.LdapClaimsProvider.Tests
                 using (SPSite spSite = new SPSite(TestSiteCollUri.AbsoluteUri))
                 {
                     SPGroup membersGroup = spSite.RootWeb.AssociatedMemberGroup;
-                    membersGroup.AddUser(userInfo.LoginName, userInfo.Email, userInfo.Name, userInfo.Notes);
+                    membersGroup.AddUser(groupInfo.LoginName, groupInfo.Email, groupInfo.Name, groupInfo.Notes);
                 }
             }
         }
@@ -225,7 +223,7 @@ namespace Yvand.LdapClaimsProvider.Tests
                 registrationData.Input = row["Input"];
                 registrationData.SearchResultCount = Convert.ToInt32(row["SearchResultCount"]);
                 registrationData.SearchResultSingleEntityClaimValue = row["SearchResultSingleEntityClaimValue"];
-                registrationData.SearchResultEntityTypes = (ResultEntityType) Enum.Parse(typeof(ResultEntityType), row["SearchResultEntityTypes"]);
+                registrationData.SearchResultEntityTypes = (ResultEntityType)Enum.Parse(typeof(ResultEntityType), row["SearchResultEntityTypes"]);
                 registrationData.ExactMatch = Convert.ToBoolean(row["ExactMatch"]);
                 yield return new TestCaseData(new object[] { registrationData });
             }

@@ -23,8 +23,8 @@ namespace Yvand.LdapClaimsProvider.Tests
             base.CheckSettingsTest();
         }
 
-        [TestCase(UnitTestsHelper.ValidTrustedUserSid, 1, UnitTestsHelper.ValidTrustedUserSid)]
-        [TestCase(@"testLdapcpseUser_001", 1, UnitTestsHelper.ValidTrustedUserSid)]
+        [TestCase(UnitTestsHelper.ValidUserSid, 1, UnitTestsHelper.ValidUserSid)]
+        [TestCase(@"testLdapcpseUser_001", 1, UnitTestsHelper.ValidUserSid)]
         [TestCase(@"S-1-5-21-0000000000-1611586658-188888215-107206", 0, @"")]
         public void TestSidAttribute(string inputValue, int expectedResultCount, string expectedEntityClaimValue)
         {
@@ -61,7 +61,7 @@ namespace Yvand.LdapClaimsProvider.Tests
             base.CheckSettingsTest();
         }
 
-        [TestCase(UnitTestsHelper.ValidTrustedUserSid, 1, @"testLdapcpseUser_001@contoso.local")]
+        [TestCase(UnitTestsHelper.ValidUserSid, 1, @"testLdapcpseUser_001@contoso.local")]
         [TestCase(@"testLdapcpseUser_001", 1, @"testLdapcpseUser_001@contoso.local")]
         public void TestSidAttribute(string inputValue, int expectedResultCount, string expectedEntityClaimValue)
         {
@@ -97,7 +97,7 @@ namespace Yvand.LdapClaimsProvider.Tests
             base.CheckSettingsTest();
         }
 
-        [TestCase(UnitTestsHelper.ValidTrustedUserSid, 1, UnitTestsHelper.ValidTrustedUserSid)]
+        [TestCase(UnitTestsHelper.ValidUserSid, 1, UnitTestsHelper.ValidUserSid)]
         [TestCase(@"S-1-5-21-0000000000-1611586658-188888215-107206", 0, @"")]
         public void TestSidAttribute(string inputValue, int expectedResultCount, string expectedEntityClaimValue)
         {
@@ -134,8 +134,8 @@ namespace Yvand.LdapClaimsProvider.Tests
             base.CheckSettingsTest();
         }
 
-        [TestCase(UnitTestsHelper.ValidTrustedGroupSid, 1, UnitTestsHelper.ValidTrustedGroupSid)]
-        [TestCase("group1", 1, UnitTestsHelper.ValidTrustedGroupSid)]
+        [TestCase(UnitTestsHelper.ValidGroupSid, 1, UnitTestsHelper.ValidGroupSid)]
+        [TestCase("group1", 1, UnitTestsHelper.ValidGroupSid)]
         public void TestGroupSidAttribute(string inputValue, int expectedResultCount, string expectedEntityClaimValue)
         {
             base.TestSearchOperation(inputValue, expectedResultCount, expectedEntityClaimValue);
@@ -146,7 +146,7 @@ namespace Yvand.LdapClaimsProvider.Tests
         [TestCase("yvand@contoso.local", true)]
         public void TestAugmentationOperation(string claimValue, bool isMemberOfTrustedGroup)
         {
-            base.TestAugmentationOperation(claimValue, isMemberOfTrustedGroup, UnitTestsHelper.ValidTrustedGroupSid);
+            base.TestAugmentationOperation(claimValue, isMemberOfTrustedGroup, UnitTestsHelper.ValidGroupSid);
         }
     }
 }

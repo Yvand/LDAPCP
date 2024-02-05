@@ -26,14 +26,14 @@ namespace Yvand.LdapClaimsProvider.Tests
         [Repeat(UnitTestsHelper.TestRepeatCount)]
         public virtual void TestAugmentationOperation(ValidateEntityData registrationData)
         {
-            TestAugmentationOperation(registrationData.ClaimValue, registrationData.IsMemberOfTrustedGroup, UnitTestsHelper.TrustedGroupToAdd_ClaimValue);
+            TestAugmentationOperation(registrationData.ClaimValue, registrationData.IsMemberOfTrustedGroup, UnitTestsHelper.ValidGroupName);
         }
 
         [TestCase("FakeAccount", false)]
         [TestCase("yvand@contoso.local", true)]
         public void TestAugmentationOperation(string claimValue, bool isMemberOfTrustedGroup)
         {
-            base.TestAugmentationOperation(claimValue, isMemberOfTrustedGroup, UnitTestsHelper.TrustedGroupToAdd_ClaimValue);
+            base.TestAugmentationOperation(claimValue, isMemberOfTrustedGroup, UnitTestsHelper.ValidGroupName);
         }
     }
 
@@ -58,7 +58,7 @@ namespace Yvand.LdapClaimsProvider.Tests
         //[TestCase("yvand@contoso.local", true)]
         //public void TestAugmentationOperation(string claimValue, bool isMemberOfTrustedGroup)
         //{
-        //    base.TestAugmentationOperation(claimValue, isMemberOfTrustedGroup, UnitTestsHelper.ValidTrustedGroupSid);
+        //    base.TestAugmentationOperation(claimValue, isMemberOfTrustedGroup, UnitTestsHelper.ValidGroupSid);
         //}
     }
 }
