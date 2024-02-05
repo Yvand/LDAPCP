@@ -6,7 +6,7 @@ namespace Yvand.LdapClaimsProvider.Tests
     [Parallelizable(ParallelScope.Children)]
     internal class BasicConfigurationTests : ClaimsProviderTestsBase
     {
-        public override void InitializeSettings()
+        protected override void InitializeSettings()
         {
             base.InitializeSettings();
             base.ApplySettings();
@@ -31,6 +31,24 @@ namespace Yvand.LdapClaimsProvider.Tests
         public void TestValidation(ValidateEntityData registrationData)
         {
             base.TestValidationOperation(registrationData);
+        }
+
+        /// <summary>
+        /// Tests if the augmentation works as expected.
+        /// </summary>
+        /// <param name="registrationData"></param>
+        [Test, TestCaseSource(typeof(ValidateEntityDataSource), nameof(ValidateEntityDataSource.GetTestData), new object[] { EntityDataSourceType.AllAccounts })]
+        [Repeat(UnitTestsHelper.TestRepeatCount)]
+        public virtual void TestAugmentationOperation(ValidateEntityData registrationData)
+        {
+            TestAugmentationOperation(registrationData.ClaimValue, registrationData.IsMemberOfTrustedGroup, UnitTestsHelper.TrustedGroupToAdd_ClaimValue);
+        }
+
+        [TestCase("FakeAccount", false)]
+        [TestCase("yvand@contoso.local", true)]
+        public void TestAugmentationOperation(string claimValue, bool isMemberOfTrustedGroup)
+        {
+            base.TestAugmentationOperation(claimValue, isMemberOfTrustedGroup, UnitTestsHelper.TrustedGroupToAdd_ClaimValue);
         }
 
 #if DEBUG

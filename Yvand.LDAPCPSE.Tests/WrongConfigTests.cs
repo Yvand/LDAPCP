@@ -7,9 +7,7 @@ namespace Yvand.LdapClaimsProvider.Tests
     [TestFixture]
     public class WrongConfigNoIdentityClaimTypeTests : ClaimsProviderTestsBase
     {
-        protected override bool DoAugmentationTest => false;
-
-        public override void InitializeSettings()
+        protected override void InitializeSettings()
         {
             base.InitializeSettings();
             ClaimTypeConfig randomClaimTypeConfig = new ClaimTypeConfig
@@ -32,9 +30,7 @@ namespace Yvand.LdapClaimsProvider.Tests
     [TestFixture]
     public class WrongConfigMultipleGroupClaimTypesTests : ClaimsProviderTestsBase
     {
-        protected override bool DoAugmentationTest => false;
-
-        public override void InitializeSettings()
+        protected override void InitializeSettings()
         {
             base.InitializeSettings();
         }
@@ -56,9 +52,7 @@ namespace Yvand.LdapClaimsProvider.Tests
     [TestFixture]
     public class WrongUpdatesOnClaimTypesTests : ClaimsProviderTestsBase
     {
-        protected override bool DoAugmentationTest => false;
-
-        public override void InitializeSettings()
+        protected override void InitializeSettings()
         {
             base.InitializeSettings();
         }

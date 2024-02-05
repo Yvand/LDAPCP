@@ -9,7 +9,7 @@ namespace Yvand.LdapClaimsProvider.Tests
     [Parallelizable(ParallelScope.Children)]
     public class UseSidAttributeAsUserIdentifierPermissionTests : ClaimsProviderTestsBase
     {
-        public override void InitializeSettings()
+        protected override void InitializeSettings()
         {
             base.InitializeSettings();
             base.Settings.ClaimTypes.UpdateUserIdentifier("user", "objectSid");
@@ -37,7 +37,7 @@ namespace Yvand.LdapClaimsProvider.Tests
     [Parallelizable(ParallelScope.Children)]
     public class UseSidAsSearchAttributeForUserIdentifierTests : ClaimsProviderTestsBase
     {
-        public override void InitializeSettings()
+        protected override void InitializeSettings()
         {
             base.InitializeSettings();
             ClaimTypeConfig ctConfigPgidAttribute = new ClaimTypeConfig
@@ -74,7 +74,7 @@ namespace Yvand.LdapClaimsProvider.Tests
     [Parallelizable(ParallelScope.Children)]
     public class UseSidAttributeForUserPermissionTests : ClaimsProviderTestsBase
     {
-        public override void InitializeSettings()
+        protected override void InitializeSettings()
         {
             base.InitializeSettings();
             ClaimTypeConfig ctConfigPgidAttribute = new ClaimTypeConfig
@@ -110,7 +110,7 @@ namespace Yvand.LdapClaimsProvider.Tests
     [Parallelizable(ParallelScope.Children)]
     public class UseSidAttributeAsGroupIdentifierTests : ClaimsProviderTestsBase
     {
-        public override void InitializeSettings()
+        protected override void InitializeSettings()
         {
             base.InitializeSettings();
             base.Settings.ClaimTypes.UpdateGroupIdentifier("group", "objectSid");
@@ -144,9 +144,9 @@ namespace Yvand.LdapClaimsProvider.Tests
 
         [TestCase("FakeAccount", false)]
         [TestCase("yvand@contoso.local", true)]
-        public override void TestAugmentationOperation(string claimValue, bool isMemberOfTrustedGroup)
+        public void TestAugmentationOperation(string claimValue, bool isMemberOfTrustedGroup)
         {
-            base.TestAugmentationOperation(claimValue, isMemberOfTrustedGroup);
+            base.TestAugmentationOperation(claimValue, isMemberOfTrustedGroup, UnitTestsHelper.ValidTrustedGroupSid);
         }
     }
 }

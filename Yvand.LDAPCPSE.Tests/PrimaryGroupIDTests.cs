@@ -7,7 +7,7 @@ namespace Yvand.LdapClaimsProvider.Tests
     [Parallelizable(ParallelScope.Children)]
     internal class PrimaryGroupIdTests : ClaimsProviderTestsBase
     {
-        public override void InitializeSettings()
+        protected override void InitializeSettings()
         {
             base.InitializeSettings();
             ClaimTypeConfig ctConfigPgidAttribute = new ClaimTypeConfig
@@ -37,6 +37,20 @@ namespace Yvand.LdapClaimsProvider.Tests
         {
             base.TestSearchOperation(inputValue, expectedResultCount, expectedEntityClaimValue);
             base.TestValidationOperation(TestContext.Parameters["MultiPurposeCustomClaimType"], expectedEntityClaimValue, expectedResultCount == 0 ? false : true);
+        }
+
+        [Test, TestCaseSource(typeof(ValidateEntityDataSource), nameof(ValidateEntityDataSource.GetTestData), new object[] { EntityDataSourceType.AllAccounts })]
+        [Repeat(UnitTestsHelper.TestRepeatCount)]
+        public virtual void TestAugmentationOperation(ValidateEntityData registrationData)
+        {
+            TestAugmentationOperation(registrationData.ClaimValue, registrationData.IsMemberOfTrustedGroup, UnitTestsHelper.TrustedGroupToAdd_ClaimValue);
+        }
+
+        [TestCase("FakeAccount", false)]
+        [TestCase("yvand@contoso.local", true)]
+        public void TestAugmentationOperation(string claimValue, bool isMemberOfTrustedGroup)
+        {
+            base.TestAugmentationOperation(claimValue, isMemberOfTrustedGroup, UnitTestsHelper.TrustedGroupToAdd_ClaimValue);
         }
     }
 }

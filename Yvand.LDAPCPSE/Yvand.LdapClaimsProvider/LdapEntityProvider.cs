@@ -155,7 +155,7 @@ namespace Yvand.LdapClaimsProvider
                             {
                                 string groupDomainName, groupDomainFqdn;
 
-                                // https://github.com/Yvand/LDAPCP/issues/148 - the group property used for the group groupValueInDistinguishedName should be based on the LDAPCP configuration
+                                // https://github.com/Yvand/LDAPCP/issues/148 - the group property used for the group groupValueDistinguishedName should be based on the LDAPCP configuration
                                 // By default it should be the SamAccountName, since it's also the default attribute set in LDAPCP configuration
                                 string claimValue = adGroup.SamAccountName;
                                 switch (this.Settings.GroupIdentifierClaimTypeConfig.DirectoryObjectAttribute.ToLower())
@@ -179,7 +179,7 @@ namespace Yvand.LdapClaimsProvider
 
                                 if (!String.IsNullOrEmpty(this.Settings.GroupIdentifierClaimTypeConfig.ClaimValueLeadingToken))
                                 {
-                                    // Principal.DistinguishedName is used to build the domain name / FQDN of the current group. Example of groupValueInDistinguishedName: CN=group1,CN=Users,DC=contoso,DC=local
+                                    // Principal.DistinguishedName is used to build the domain name / FQDN of the current group. Example of groupValueDistinguishedName: CN=group1,CN=Users,DC=contoso,DC=local
                                     string groupDN = adGroup.DistinguishedName;
                                     if (String.IsNullOrEmpty(groupDN)) { continue; }
 
@@ -226,7 +226,8 @@ namespace Yvand.LdapClaimsProvider
         }
 
         /// <summary>
-        /// Get group membership with a LDAP query
+        /// Returns the name of the groups the user is directly member of.
+        /// Current limitations: It does not include nested groups, and it does not support using the objectSid as the GroupIdentifierClaimTypeConfig.DirectoryObjectAttribute
         /// </summary>
         /// <param name="ldapConnection">LDAP server to query</param>
         /// <param name="currentContext">Information about current context and operation</param>
@@ -252,10 +253,7 @@ namespace Yvand.LdapClaimsProvider
                         {
                             searcher.PropertiesToLoad.Add(memberOfPropertyName);
                         }
-                        foreach (ClaimTypeConfig groupCTConfig in currentContext.CurrentClaimTypeConfigList)
-                        {
-                            searcher.PropertiesToLoad.Add(groupCTConfig.DirectoryObjectAttribute);
-                        }
+                        searcher.PropertiesToLoad.Add(this.Settings.GroupIdentifierClaimTypeConfig.DirectoryObjectAttribute);
 
                         SearchResult result;
                         using (new SPMonitoredScope($"[{ClaimsProviderName}] Get group membership of user \"{currentContext.IncomingEntity.Value}\" {directoryDetails}", 1000))
@@ -271,7 +269,6 @@ namespace Yvand.LdapClaimsProvider
 
                         using (new SPMonitoredScope($"[{ClaimsProviderName}] Process LDAP groups of user \"{currentContext.IncomingEntity.Value}\" returned {directoryDetails}", 1000))
                         {
-                            ClaimTypeConfig groupCTConfig = this.Settings.GroupIdentifierClaimTypeConfig;
                             int propertyCount = 0;
                             ResultPropertyValueCollection groupValues = null;
 
@@ -286,24 +283,24 @@ namespace Yvand.LdapClaimsProvider
                             }
                             if (groupValues == null) { return new List<string>(); }
 
-                            string groupValueInDistinguishedName;
+                            string groupValueDistinguishedName;
                             for (int propertyCounter = 0; propertyCounter < propertyCount; propertyCounter++)
                             {
-                                groupValueInDistinguishedName = groupValues[propertyCounter].ToString();
+                                groupValueDistinguishedName = groupValues[propertyCounter].ToString();
                                 string groupName;
                                 // Assume the value of a "memberOf" attribute is always going to be like "CN=groupName,CN=Users,DC=contoso,DC=local"
-                                groupName = Utils.GetNameFromDistinguishedName(groupValueInDistinguishedName);
+                                groupName = Utils.GetNameFromDistinguishedName(groupValueDistinguishedName);
                                 if (String.IsNullOrEmpty(groupName)) { continue; }
 
                                 string groupDomainName, groupDomainFqdn;
-                                Utils.GetDomainInformation(groupValueInDistinguishedName, out groupDomainName, out groupDomainFqdn);
-                                if (!String.IsNullOrEmpty(groupCTConfig.ClaimValueLeadingToken) && groupCTConfig.ClaimValueLeadingToken.Contains(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINNAME))
+                                Utils.GetDomainInformation(groupValueDistinguishedName, out groupDomainName, out groupDomainFqdn);
+                                if (!String.IsNullOrEmpty(this.Settings.GroupIdentifierClaimTypeConfig.ClaimValueLeadingToken) && this.Settings.GroupIdentifierClaimTypeConfig.ClaimValueLeadingToken.Contains(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINNAME))
                                 {
-                                    groupName = groupCTConfig.ClaimValueLeadingToken.Replace(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINNAME, groupDomainName) + groupName;
+                                    groupName = this.Settings.GroupIdentifierClaimTypeConfig.ClaimValueLeadingToken.Replace(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINNAME, groupDomainName) + groupName;
                                 }
-                                else if (!String.IsNullOrEmpty(groupCTConfig.ClaimValueLeadingToken) && groupCTConfig.ClaimValueLeadingToken.Contains(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINFQDN))
+                                else if (!String.IsNullOrEmpty(this.Settings.GroupIdentifierClaimTypeConfig.ClaimValueLeadingToken) && this.Settings.GroupIdentifierClaimTypeConfig.ClaimValueLeadingToken.Contains(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINFQDN))
                                 {
-                                    groupName = groupCTConfig.ClaimValueLeadingToken.Replace(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINFQDN, groupDomainFqdn) + groupName;
+                                    groupName = this.Settings.GroupIdentifierClaimTypeConfig.ClaimValueLeadingToken.Replace(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINFQDN, groupDomainFqdn) + groupName;
                                 }
                                 groups.Add(groupName);
                             }

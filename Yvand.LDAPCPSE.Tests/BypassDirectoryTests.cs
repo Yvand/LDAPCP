@@ -7,7 +7,7 @@ namespace Yvand.LdapClaimsProvider.Tests
     [Parallelizable(ParallelScope.Children)]
     public class BypassDirectoryOnClaimTypesTests : ClaimsProviderTestsBase
     {
-        public override void InitializeSettings()
+        protected override void InitializeSettings()
         {
             base.InitializeSettings();
             Settings.ClaimTypes.GetMainConfigurationForDirectoryObjectType(DirectoryObjectType.User).LeadingKeywordToBypassDirectory = "bypass-user:";
@@ -36,13 +36,27 @@ namespace Yvand.LdapClaimsProvider.Tests
                 TestValidationOperation(UnitTestsHelper.SPTrust.IdentityClaimTypeInformation.MappedClaimType, expectedClaimValue, true);
             }
         }
+
+        [Test, TestCaseSource(typeof(ValidateEntityDataSource), nameof(ValidateEntityDataSource.GetTestData), new object[] { EntityDataSourceType.AllAccounts })]
+        [Repeat(UnitTestsHelper.TestRepeatCount)]
+        public virtual void TestAugmentationOperation(ValidateEntityData registrationData)
+        {
+            TestAugmentationOperation(registrationData.ClaimValue, registrationData.IsMemberOfTrustedGroup, UnitTestsHelper.TrustedGroupToAdd_ClaimValue);
+        }
+
+        [TestCase("FakeAccount", false)]
+        [TestCase("yvand@contoso.local", true)]
+        public void TestAugmentationOperation(string claimValue, bool isMemberOfTrustedGroup)
+        {
+            base.TestAugmentationOperation(claimValue, isMemberOfTrustedGroup, UnitTestsHelper.TrustedGroupToAdd_ClaimValue);
+        }
     }
 
     [TestFixture]
     [Parallelizable(ParallelScope.Children)]
     public class BypassDirectoryGloballyTests : ClaimsProviderTestsBase
     {
-        public override void InitializeSettings()
+        protected override void InitializeSettings()
         {
             base.InitializeSettings();
             Settings.AlwaysResolveUserInput = true;
@@ -61,6 +75,20 @@ namespace Yvand.LdapClaimsProvider.Tests
             TestSearchOperation(UnitTestsHelper.RandomClaimValue, 2, UnitTestsHelper.RandomClaimValue);
             TestValidationOperation(base.UserIdentifierClaimType, UnitTestsHelper.RandomClaimValue, true);
             TestValidationOperation(base.GroupIdentifierClaimType, UnitTestsHelper.RandomClaimValue, true);
+        }
+
+        [Test, TestCaseSource(typeof(ValidateEntityDataSource), nameof(ValidateEntityDataSource.GetTestData), new object[] { EntityDataSourceType.AllAccounts })]
+        [Repeat(UnitTestsHelper.TestRepeatCount)]
+        public virtual void TestAugmentationOperation(ValidateEntityData registrationData)
+        {
+            TestAugmentationOperation(registrationData.ClaimValue, registrationData.IsMemberOfTrustedGroup, UnitTestsHelper.TrustedGroupToAdd_ClaimValue);
+        }
+
+        [TestCase("FakeAccount", false)]
+        [TestCase("yvand@contoso.local", true)]
+        public void TestAugmentationOperation(string claimValue, bool isMemberOfTrustedGroup)
+        {
+            base.TestAugmentationOperation(claimValue, isMemberOfTrustedGroup, UnitTestsHelper.TrustedGroupToAdd_ClaimValue);
         }
     }
 }

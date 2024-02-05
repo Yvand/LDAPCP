@@ -453,7 +453,6 @@ namespace Yvand.LdapClaimsProvider.Configuration
 
         private void InitializeAugmentation(List<ClaimTypeConfig> runtimeClaimTypesList)
         {
-            CurrentClaimTypeConfigList = runtimeClaimTypesList.FindAll(x => x.DirectoryObjectType == DirectoryObjectType.Group);
         }
     }
 }
