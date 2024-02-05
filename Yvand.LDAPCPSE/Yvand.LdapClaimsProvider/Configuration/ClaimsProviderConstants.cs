@@ -308,17 +308,10 @@ namespace Yvand.LdapClaimsProvider.Configuration
         /// </summary>
         public string Input { get; private set; }
 
-        public bool InputHasKeyword { get; private set; }
-
         /// <summary>
         /// Indicates if search operation should return only results that exactly match the Input
         /// </summary>
         public bool ExactSearch { get; private set; }
-
-        /// <summary>
-        /// Set only if request is a validation or an augmentation, to the ClaimTypeConfig that matches the ClaimType of the incoming entity
-        /// </summary>
-        public ClaimTypeConfig IncomingEntityClaimTypeConfig { get; private set; }
 
         /// <summary>
         /// Contains the relevant list of ClaimTypeConfig for every type of request. In case of validation or augmentation, it will contain only 1 item.
@@ -398,32 +391,33 @@ namespace Yvand.LdapClaimsProvider.Configuration
         private void InitializeValidation(List<ClaimTypeConfig> runtimeClaimTypesList)
         {
             if (this.IncomingEntity == null) { throw new ArgumentNullException(nameof(this.IncomingEntity)); }
-            this.IncomingEntityClaimTypeConfig = runtimeClaimTypesList.FirstOrDefault(x =>
+            
+            // FirstOrDefault returns null if no result, while First throws an exception
+            ClaimTypeConfig incomingEntityClaimTypeConfig = runtimeClaimTypesList.FirstOrDefault(x =>
                String.Equals(x.ClaimType, this.IncomingEntity.ClaimType, StringComparison.InvariantCultureIgnoreCase) &&
                !x.IsAdditionalLdapSearchAttribute);
-
-            if (this.IncomingEntityClaimTypeConfig == null)
+            if (incomingEntityClaimTypeConfig == null)
             {
                 Logger.Log($"[{LDAPCPSE.ClaimsProviderName}] Unable to validate entity \"{this.IncomingEntity.Value}\" because its claim type \"{this.IncomingEntity.ClaimType}\" was not found in the ClaimTypes list of current configuration.", TraceSeverity.Unexpected, EventSeverity.Error, TraceCategory.Configuration);
                 throw new InvalidOperationException($"[{LDAPCPSE.ClaimsProviderName}] Unable validate entity \"{this.IncomingEntity.Value}\" because its claim type \"{this.IncomingEntity.ClaimType}\" was not found in the ClaimTypes list of current configuration.");
             }
-
             this.CurrentClaimTypeConfigList = new List<ClaimTypeConfig>(1)
             {
-                this.IncomingEntityClaimTypeConfig
+                incomingEntityClaimTypeConfig,
             };
+
             this.ExactSearch = true;
             this.Input = this.IncomingEntity.Value;
-            this.InputHasKeyword = false;
-            if (!String.IsNullOrEmpty(IncomingEntityClaimTypeConfig.ClaimValueLeadingToken))
+
+            if (!String.IsNullOrEmpty(incomingEntityClaimTypeConfig.ClaimValueLeadingToken))
             {
-                if (this.IncomingEntity.Value.StartsWith(IncomingEntityClaimTypeConfig.ClaimValueLeadingToken, StringComparison.InvariantCultureIgnoreCase))
+                if (this.IncomingEntity.Value.StartsWith(incomingEntityClaimTypeConfig.ClaimValueLeadingToken, StringComparison.InvariantCultureIgnoreCase))
                 {
-                    this.Input = this.IncomingEntity.Value.Substring(IncomingEntityClaimTypeConfig.ClaimValueLeadingToken.Length);
+                    this.Input = this.IncomingEntity.Value.Substring(incomingEntityClaimTypeConfig.ClaimValueLeadingToken.Length);
                 }
 
-                if (IncomingEntityClaimTypeConfig.ClaimValueLeadingToken.Contains(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINNAME) ||
-                    IncomingEntityClaimTypeConfig.ClaimValueLeadingToken.Contains(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINFQDN))
+                if (incomingEntityClaimTypeConfig.ClaimValueLeadingToken.Contains(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINNAME) ||
+                    incomingEntityClaimTypeConfig.ClaimValueLeadingToken.Contains(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINFQDN))
                 {
                     this.Input = Utils.GetAccountFromFullAccountName(this.Input);
                 }

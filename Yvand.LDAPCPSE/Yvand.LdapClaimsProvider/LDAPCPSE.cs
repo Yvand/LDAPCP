@@ -615,18 +615,18 @@ namespace Yvand.LdapClaimsProvider
                     // Exactly 1 PickerEntity is expected by SharePoint
 
                     // Check if config corresponding to current claim type has a config to bypass LDAP lookup
-                    if (!String.IsNullOrWhiteSpace(currentContext.IncomingEntityClaimTypeConfig.LeadingKeywordToBypassDirectory))
+                    if (!String.IsNullOrWhiteSpace(currentContext.CurrentClaimTypeConfigList.First().LeadingKeywordToBypassDirectory))
                     {
                         // At this stage, it is impossible to know if entity was originally created with the keyword that bypass query to Microsoft Entra ID
                         // But it should be always validated since property LeadingKeywordToBypassDirectory is set for current ClaimTypeConfig, so create entity manually
                         pickerEntityList = CreatePickerEntityForSpecificClaimTypes(
                             currentContext,
                             currentContext.IncomingEntity.Value,
-                            new List<ClaimTypeConfig>() { currentContext.IncomingEntityClaimTypeConfig });
+                            currentContext.CurrentClaimTypeConfigList);
                         if (pickerEntityList?.Count == 1)
                         {
                             PickerEntity entity = pickerEntityList.FirstOrDefault();
-                            Logger.Log($"[{Name}] Validated entity without contacting Microsoft Entra ID tenant(s) because its claim type ('{currentContext.IncomingEntityClaimTypeConfig.ClaimType}') has property 'LeadingKeywordToBypassDirectory' set in EntraCPConfig.ClaimTypes. Claim value: '{entity.Claim.Value}', claim type: '{entity.Claim.ClaimType}'",
+                            Logger.Log($"[{Name}] Validated entity without contacting Microsoft Entra ID tenant(s) because its claim type ('{currentContext.CurrentClaimTypeConfigList.First().ClaimType}') has property 'LeadingKeywordToBypassDirectory' set in EntraCPConfig.ClaimTypes. Claim value: '{entity.Claim.Value}', claim type: '{entity.Claim.ClaimType}'",
                                 TraceSeverity.VerboseEx, EventSeverity.Information, TraceCategory.Claims_Picking);
                         }
                     }
