@@ -15,7 +15,7 @@ namespace Yvand.LdapClaimsProvider
 {
     public interface ILDAPCPSettings : ILdapProviderSettings
     {
-        List<ClaimTypeConfig> RuntimeClaimTypesList { get; }
+        //List<ClaimTypeConfig> RuntimeClaimTypesList { get; }
         IEnumerable<ClaimTypeConfig> RuntimeMetadataConfig { get; }
         ClaimTypeConfig UserIdentifierClaimTypeConfig { get; }
         ClaimTypeConfig GroupIdentifierClaimTypeConfig { get; }
@@ -36,7 +36,11 @@ namespace Yvand.LdapClaimsProvider
             return copy;
         }
 
-        public List<ClaimTypeConfig> RuntimeClaimTypesList { get; set; }
+        /// <summary>
+        /// This list reflects the up to date settings and is used to initialize the list to use based on the current context.
+        /// It is not intended to be used directly
+        /// </summary>
+        internal List<ClaimTypeConfig> RuntimeClaimTypesList { get; set; }
 
         public IEnumerable<ClaimTypeConfig> RuntimeMetadataConfig { get; set; }
 
@@ -381,7 +385,7 @@ namespace Yvand.LdapClaimsProvider
                     //    return;
                     //}
 
-                    currentContext = new OperationContext(this.Settings, OperationType.Augmentation, String.Empty, decodedEntity, context, null, null, Int32.MaxValue);
+                    currentContext = new OperationContext(this.Settings as LDAPCPSettings, OperationType.Augmentation, String.Empty, decodedEntity, context, null, null, Int32.MaxValue);
                     Stopwatch timer = new Stopwatch();
                     timer.Start();
                     List<string> groups = this.EntityProvider.GetEntityGroups(currentContext);
@@ -435,7 +439,7 @@ namespace Yvand.LdapClaimsProvider
                 this.Lock_LocalConfigurationRefresh.EnterReadLock();
                 try
                 {
-                    OperationContext currentContext = new OperationContext(this.Settings, OperationType.Search, resolveInput, null, context, entityTypes, null, 30);
+                    OperationContext currentContext = new OperationContext(this.Settings as LDAPCPSettings, OperationType.Search, resolveInput, null, context, entityTypes, null, 30);
                     List<PickerEntity> entities = SearchOrValidate(currentContext);
                     if (entities == null || entities.Count == 0) { return; }
                     foreach (PickerEntity entity in entities)
@@ -466,7 +470,7 @@ namespace Yvand.LdapClaimsProvider
                 this.Lock_LocalConfigurationRefresh.EnterReadLock();
                 try
                 {
-                    OperationContext currentContext = new OperationContext(this.Settings, OperationType.Search, searchPattern, null, context, entityTypes, hierarchyNodeID, maxCount);
+                    OperationContext currentContext = new OperationContext(this.Settings as LDAPCPSettings, OperationType.Search, searchPattern, null, context, entityTypes, hierarchyNodeID, maxCount);
                     List<PickerEntity> entities = this.SearchOrValidate(currentContext);
                     if (entities == null || entities.Count == 0) { return; }
                     SPProviderHierarchyNode matchNode = null;
@@ -519,7 +523,7 @@ namespace Yvand.LdapClaimsProvider
                     // Must be made after call to Initialize because SPTrustedLoginProvider name must be known
                     if (!String.Equals(resolveInput.OriginalIssuer, this.OriginalIssuerName, StringComparison.InvariantCultureIgnoreCase)) { return; }
 
-                    OperationContext currentContext = new OperationContext(this.Settings, OperationType.Validation, resolveInput.Value, resolveInput, context, entityTypes, null, 1);
+                    OperationContext currentContext = new OperationContext(this.Settings as LDAPCPSettings, OperationType.Validation, resolveInput.Value, resolveInput, context, entityTypes, null, 1);
                     List<PickerEntity> entities = this.SearchOrValidate(currentContext);
                     if (entities?.Count == 1)
                     {
@@ -1044,7 +1048,7 @@ namespace Yvand.LdapClaimsProvider
                 try
                 {
 
-                    foreach (var claimTypeSettings in this.Settings.RuntimeClaimTypesList)
+                    foreach (var claimTypeSettings in ((LDAPCPSettings)this.Settings).RuntimeClaimTypesList)
                     {
                         claimTypes.Add(claimTypeSettings.ClaimType);
                     }
@@ -1085,7 +1089,7 @@ namespace Yvand.LdapClaimsProvider
                 if (hierarchyNodeID == null)
                 {
                     // Root level
-                    foreach (var azureObject in this.Settings.RuntimeClaimTypesList.FindAll(x => !x.IsAdditionalLdapSearchAttribute && aadEntityTypes.Contains(x.DirectoryObjectType)))
+                    foreach (var azureObject in ((LDAPCPSettings)this.Settings).RuntimeClaimTypesList.FindAll(x => !x.IsAdditionalLdapSearchAttribute && aadEntityTypes.Contains(x.DirectoryObjectType)))
                     {
                         hierarchy.AddChild(
                             new Microsoft.SharePoint.WebControls.SPProviderHierarchyNode(

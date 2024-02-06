@@ -320,7 +320,7 @@ namespace Yvand.LdapClaimsProvider.Configuration
 
         public List<DirectoryConnection> LdapConnections { get; private set; }
 
-        public OperationContext(ILDAPCPSettings settings, OperationType currentRequestType, string input, SPClaim incomingEntity, Uri context, string[] entityTypes, string hierarchyNodeID, int maxCount)
+        public OperationContext(LDAPCPSettings settings, OperationType currentRequestType, string input, SPClaim incomingEntity, Uri context, string[] entityTypes, string hierarchyNodeID, int maxCount)
         {
             this.OperationType = currentRequestType;
             this.Input = input;
