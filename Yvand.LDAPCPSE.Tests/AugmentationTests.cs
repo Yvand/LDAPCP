@@ -35,6 +35,12 @@ namespace Yvand.LdapClaimsProvider.Tests
         {
             base.TestAugmentationOperation(claimValue, isMemberOfTrustedGroup, UnitTestsHelper.ValidGroupName);
         }
+
+        [TestCase("testLdapcpseUser_001@contoso.local", true, @"contoso.local\testLdapcpseGroup_2")]
+        public void TestAugmentationOperationGroupRecursive(string claimValue, bool isMemberOfTrustedGroup, string groupValue)
+        {
+            base.TestAugmentationOperation(claimValue, isMemberOfTrustedGroup, groupValue);
+        }
     }
 
     public class AugmentUsingLdapQueryAndSidAsGroupValueTests : ClaimsProviderTestsBase
@@ -44,6 +50,7 @@ namespace Yvand.LdapClaimsProvider.Tests
             base.InitializeSettings();
             Settings.LdapConnections[0].GetGroupMembershipUsingDotNetHelpers = false;
             base.Settings.ClaimTypes.UpdateGroupIdentifier("group", "objectSid");
+            base.Settings.ClaimTypes.GetMainConfigurationForDirectoryObjectType(Configuration.DirectoryObjectType.Group).ClaimValueLeadingToken = String.Empty;
             base.ApplySettings();
         }
 
@@ -53,12 +60,17 @@ namespace Yvand.LdapClaimsProvider.Tests
             base.CheckSettingsTest();
         }
 
-        // Using the objectSid on groups is not supported if GetGroupMembershipUsingDotNetHelpers == false
-        //[TestCase("FakeAccount", false)]
-        //[TestCase("yvand@contoso.local", true)]
-        //public void TestAugmentationOperation(string claimValue, bool isMemberOfTrustedGroup)
-        //{
-        //    base.TestAugmentationOperation(claimValue, isMemberOfTrustedGroup, UnitTestsHelper.ValidGroupSid);
-        //}
+        [TestCase("FakeAccount", false)]
+        [TestCase("yvand@contoso.local", true)]
+        public void TestAugmentationOperation(string claimValue, bool isMemberOfTrustedGroup)
+        {
+            base.TestAugmentationOperation(claimValue, isMemberOfTrustedGroup, UnitTestsHelper.ValidGroupSid);
+        }
+
+        [TestCase("testLdapcpseUser_001@contoso.local", true, @"S-1-5-21-2647467245-1611586658-188888215-110602")] // testLdapcpseGroup_2
+        public void TestAugmentationOperationGroupRecursive(string claimValue, bool isMemberOfTrustedGroup, string groupValue)
+        {
+            base.TestAugmentationOperation(claimValue, isMemberOfTrustedGroup, groupValue);
+        }
     }
 }

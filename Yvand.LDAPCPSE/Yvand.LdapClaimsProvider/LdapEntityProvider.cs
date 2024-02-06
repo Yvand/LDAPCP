@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.DirectoryServices;
 using System.DirectoryServices.AccountManagement;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -227,7 +228,6 @@ namespace Yvand.LdapClaimsProvider
 
         /// <summary>
         /// Returns the name of the groups the user is directly member of.
-        /// Current limitations: It does not include nested groups, and it does not support using the objectSid as the GroupIdentifierClaimTypeConfig.DirectoryObjectAttribute
         /// </summary>
         /// <param name="ldapConnection">LDAP server to query</param>
         /// <param name="currentContext">Information about current context and operation</param>
@@ -255,54 +255,41 @@ namespace Yvand.LdapClaimsProvider
                         }
                         searcher.PropertiesToLoad.Add(this.Settings.GroupIdentifierClaimTypeConfig.DirectoryObjectAttribute);
 
-                        SearchResult result;
+                        SearchResult ldapResult;
                         using (new SPMonitoredScope($"[{ClaimsProviderName}] Get group membership of user \"{currentContext.IncomingEntity.Value}\" {directoryDetails}", 1000))
                         {
-                            result = searcher.FindOne();
+                            ldapResult = searcher.FindOne();
                         }
 
-                        if (result == null)
+                        if (ldapResult == null)
                         {
                             stopWatch.Stop();
-                            return new List<string>();  // User was not found in this LDAP server
+                            return groups;  // User was not found in this LDAP server
                         }
 
                         using (new SPMonitoredScope($"[{ClaimsProviderName}] Process LDAP groups of user \"{currentContext.IncomingEntity.Value}\" returned {directoryDetails}", 1000))
                         {
-                            int propertyCount = 0;
-                            ResultPropertyValueCollection groupValues = null;
-
+                            // Verify if memberOf attribte is present, and how many values it has
+                            int memberOfValuesCount = 0;
+                            ResultPropertyValueCollection groupValueDistinguishedNameList = null;
                             foreach (string groupMembershipAttributes in ldapConnection.GroupMembershipLdapAttributes)
                             {
-                                if (result.Properties.Contains(groupMembershipAttributes))
+                                if (ldapResult.Properties.Contains(groupMembershipAttributes))
                                 {
-                                    propertyCount = result.Properties[groupMembershipAttributes].Count;
-                                    groupValues = result.Properties[groupMembershipAttributes];
+                                    memberOfValuesCount = ldapResult.Properties[groupMembershipAttributes].Count;
+                                    groupValueDistinguishedNameList = ldapResult.Properties[groupMembershipAttributes];
                                     break;
                                 }
                             }
-                            if (groupValues == null) { return new List<string>(); }
+                            if (groupValueDistinguishedNameList == null) { return groups; } // No memberof attribute found
 
-                            string groupValueDistinguishedName;
-                            for (int propertyCounter = 0; propertyCounter < propertyCount; propertyCounter++)
+                            // Go through each memberOf value
+                            List<string> groupsProcessed = new List<string>();
+                            string memberGroupDistinguishedName;
+                            for (int idx = 0; idx < memberOfValuesCount; idx++)
                             {
-                                groupValueDistinguishedName = groupValues[propertyCounter].ToString();
-                                string groupName;
-                                // Assume the value of a "memberOf" attribute is always going to be like "CN=groupName,CN=Users,DC=contoso,DC=local"
-                                groupName = Utils.GetNameFromDistinguishedName(groupValueDistinguishedName);
-                                if (String.IsNullOrEmpty(groupName)) { continue; }
-
-                                string groupDomainName, groupDomainFqdn;
-                                Utils.GetDomainInformation(groupValueDistinguishedName, out groupDomainName, out groupDomainFqdn);
-                                if (!String.IsNullOrEmpty(this.Settings.GroupIdentifierClaimTypeConfig.ClaimValueLeadingToken) && this.Settings.GroupIdentifierClaimTypeConfig.ClaimValueLeadingToken.Contains(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINNAME))
-                                {
-                                    groupName = this.Settings.GroupIdentifierClaimTypeConfig.ClaimValueLeadingToken.Replace(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINNAME, groupDomainName) + groupName;
-                                }
-                                else if (!String.IsNullOrEmpty(this.Settings.GroupIdentifierClaimTypeConfig.ClaimValueLeadingToken) && this.Settings.GroupIdentifierClaimTypeConfig.ClaimValueLeadingToken.Contains(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINFQDN))
-                                {
-                                    groupName = this.Settings.GroupIdentifierClaimTypeConfig.ClaimValueLeadingToken.Replace(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINFQDN, groupDomainFqdn) + groupName;
-                                }
-                                groups.Add(groupName);
+                                memberGroupDistinguishedName = groupValueDistinguishedNameList[idx].ToString();
+                                groups.AddRange(ProcessGroupAndGetMembersGroupsRecursive(ldapConnection, currentContext, memberGroupDistinguishedName, groupsProcessed));
                             }
                         }
                     }
@@ -323,6 +310,83 @@ namespace Yvand.LdapClaimsProvider
                 }
             }
             return groups;
+        }
+
+        private List<string> ProcessGroupAndGetMembersGroupsRecursive(DirectoryConnection ldapConnection, OperationContext currentContext, string groupValueDistinguishedName, List<string> groupsProcessed)
+        {
+            List<string> memberGroups = new List<string>();
+            if (groupsProcessed.Contains(groupValueDistinguishedName))
+            {
+                return memberGroups;
+            }
+            else
+            {
+                groupsProcessed.Add(groupValueDistinguishedName);
+            }
+
+            DirectoryEntry deCurrentGroup = new DirectoryEntry($"LDAP://{ldapConnection.DomainFQDN}/{groupValueDistinguishedName}");
+            using (DirectorySearcher searcher = new DirectorySearcher())
+            {
+                searcher.SearchRoot = deCurrentGroup;
+                searcher.Filter = "(&(distinguishedName=" + groupValueDistinguishedName + "))";
+                searcher.SearchScope = SearchScope.Base;
+                foreach (string memberOfPropertyName in ldapConnection.GroupMembershipLdapAttributes)
+                {
+                    searcher.PropertiesToLoad.Add(memberOfPropertyName);
+                }
+                searcher.PropertiesToLoad.Add(this.Settings.GroupIdentifierClaimTypeConfig.DirectoryObjectAttribute);
+                SearchResult ldapGroupResult = searcher.FindOne();
+                if (null == ldapGroupResult)
+                {
+                    return memberGroups;
+                }
+
+                // Extract the value to use for the permission
+                if (ldapGroupResult.Properties.Contains(this.Settings.GroupIdentifierClaimTypeConfig.DirectoryObjectAttribute))
+                {
+                    object ldapPermissionValueRaw = ldapGroupResult.Properties[this.Settings.GroupIdentifierClaimTypeConfig.DirectoryObjectAttribute][0];
+                    string ldapPermissionValue = Utils.GetLdapValueAsString(ldapPermissionValueRaw, this.Settings.GroupIdentifierClaimTypeConfig.DirectoryObjectAttribute);
+                    if (!String.IsNullOrEmpty(ldapPermissionValue))
+                    {
+                        string memberGroupDomainName, memberGroupDomainFqdn;
+                        Utils.GetDomainInformation(groupValueDistinguishedName, out memberGroupDomainName, out memberGroupDomainFqdn);
+                        if (!String.IsNullOrEmpty(this.Settings.GroupIdentifierClaimTypeConfig.ClaimValueLeadingToken) && this.Settings.GroupIdentifierClaimTypeConfig.ClaimValueLeadingToken.Contains(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINNAME))
+                        {
+                            ldapPermissionValue = this.Settings.GroupIdentifierClaimTypeConfig.ClaimValueLeadingToken.Replace(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINNAME, memberGroupDomainName) + ldapPermissionValue;
+                        }
+                        else if (!String.IsNullOrEmpty(this.Settings.GroupIdentifierClaimTypeConfig.ClaimValueLeadingToken) && this.Settings.GroupIdentifierClaimTypeConfig.ClaimValueLeadingToken.Contains(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINFQDN))
+                        {
+                            ldapPermissionValue = this.Settings.GroupIdentifierClaimTypeConfig.ClaimValueLeadingToken.Replace(ClaimsProviderConstants.LDAPCPCONFIG_TOKENDOMAINFQDN, memberGroupDomainFqdn) + ldapPermissionValue;
+                        }
+                        memberGroups.Add(ldapPermissionValue);
+                    }
+                }
+
+                // Search the memberOf property in the LDAP attributes of the group returned by LDAP
+                // And count how many values this attribute contains
+                int idx = 0;
+                ResultPropertyValueCollection groupValueDistinguishedNameList = null;
+                foreach (string groupMembershipAttributes in ldapConnection.GroupMembershipLdapAttributes)
+                {
+                    if (ldapGroupResult.Properties.Contains(groupMembershipAttributes))
+                    {
+                        idx = ldapGroupResult.Properties[groupMembershipAttributes].Count;
+                        groupValueDistinguishedNameList = ldapGroupResult.Properties[groupMembershipAttributes];
+                        break;
+                    }
+                }
+                if (groupValueDistinguishedNameList == null) { return memberGroups; } // No memberof attribute found, this is not a group
+
+                // For each value in the memberOf property
+                string memberGroupDistinguishedName;
+                for (int propertyCounter = 0; propertyCounter < idx; propertyCounter++)
+                {
+                    memberGroupDistinguishedName = groupValueDistinguishedNameList[propertyCounter].ToString();
+                    memberGroups.AddRange(ProcessGroupAndGetMembersGroupsRecursive(ldapConnection, currentContext, memberGroupDistinguishedName, groupsProcessed));
+                }
+            }
+
+            return memberGroups;
         }
 
         public override List<LdapEntityProviderResult> SearchOrValidateEntities(OperationContext currentContext)

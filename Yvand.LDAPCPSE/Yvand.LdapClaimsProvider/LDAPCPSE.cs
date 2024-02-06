@@ -4,13 +4,10 @@ using Microsoft.SharePoint.Utilities;
 using Microsoft.SharePoint.WebControls;
 using System;
 using System.Collections.Generic;
-using System.Data.SqlTypes;
 using System.Diagnostics;
 using System.DirectoryServices;
 using System.Linq;
-using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 using Yvand.LdapClaimsProvider.Configuration;
 using WIF4_5 = System.Security.Claims;
 
