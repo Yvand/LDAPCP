@@ -363,10 +363,9 @@ namespace Yvand.LdapClaimsProvider
                 return;
             }
 
-            using (new SPMonitoredScope($"[{ClaimsProviderName}] Augment entity whith value \"{decodedEntity.ClaimType}", 3000))
+            using (new SPMonitoredScope($"[{ClaimsProviderName}] Augmentation for user \"{decodedEntity.Value}", 3000))
             {
                 if (!ValidateSettings(context)) { return; }
-
                 this.Lock_LocalConfigurationRefresh.EnterReadLock();
                 OperationContext currentContext = null;
                 try
@@ -376,15 +375,14 @@ namespace Yvand.LdapClaimsProvider
 
                     if (!this.Settings.EnableAugmentation) { return; }
 
-                    Logger.Log($"[{Name}] Starting augmentation for user '{decodedEntity.Value}'.", TraceSeverity.Verbose, EventSeverity.Information, TraceCategory.Augmentation);
-                    //ClaimTypeConfig groupClaimTypeSettings = this.Settings.RuntimeClaimTypeConfigList.FirstOrDefault(x => x.DirectoryObjectType == DirectoryObjectType.Group);
-                    //if (groupClaimTypeSettings == null)
-                    //{
-                    //    Logger.Log($"[{Name}] No claim type with DirectoryObjectType 'Group' was found, please check claims mapping table.",
-                    //        TraceSeverity.High, EventSeverity.Error, TraceCategory.Augmentation);
-                    //    return;
-                    //}
+                    if (Settings.GroupIdentifierClaimTypeConfig == null)
+                    {
+                        Logger.Log($"[{Name}] No object with DirectoryObjectType 'Group' was found, please check claims mapping table.",
+                            TraceSeverity.High, EventSeverity.Error, TraceCategory.Augmentation);
+                        return;
+                    }
 
+                    Logger.Log($"[{Name}] Starting augmentation for user '{decodedEntity.Value}'.", TraceSeverity.Verbose, EventSeverity.Information, TraceCategory.Augmentation);
                     currentContext = new OperationContext(this.Settings as LDAPCPSettings, OperationType.Augmentation, String.Empty, decodedEntity, context, null, null, Int32.MaxValue);
                     Stopwatch timer = new Stopwatch();
                     timer.Start();
