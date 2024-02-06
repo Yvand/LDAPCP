@@ -329,9 +329,10 @@ namespace Yvand.LdapClaimsProvider
 
             try
             {
+                string groupDnPath = $"LDAP://{ldapConnection.DomainFQDN}/{groupValueDistinguishedName}";
                 DirectoryEntry deCurrentGroup = ldapConnection.UseDefaultADConnection ?
-                    new DirectoryEntry($"LDAP://{ldapConnection.DomainFQDN}/{groupValueDistinguishedName}") :
-                    new DirectoryEntry($"LDAP://{ldapConnection.DomainFQDN}/{groupValueDistinguishedName}", ldapConnection.Username, ldapConnection.Password, ldapConnection.AuthenticationType);
+                    new DirectoryEntry(groupDnPath) :
+                    new DirectoryEntry(groupDnPath, ldapConnection.Username, ldapConnection.Password, ldapConnection.AuthenticationType);
                 using (deCurrentGroup)
                 {
                     using (DirectorySearcher searcher = new DirectorySearcher())
