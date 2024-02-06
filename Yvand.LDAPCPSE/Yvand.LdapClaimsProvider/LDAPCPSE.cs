@@ -15,7 +15,7 @@ namespace Yvand.LdapClaimsProvider
 {
     public interface ILDAPCPSettings : ILdapProviderSettings
     {
-        //List<ClaimTypeConfig> RuntimeClaimTypesList { get; }
+        //List<ClaimTypeConfig> RuntimeClaimTypeConfigList { get; }
         IEnumerable<ClaimTypeConfig> RuntimeMetadataConfig { get; }
         ClaimTypeConfig UserIdentifierClaimTypeConfig { get; }
         ClaimTypeConfig GroupIdentifierClaimTypeConfig { get; }
@@ -40,7 +40,7 @@ namespace Yvand.LdapClaimsProvider
         /// This list reflects the up to date settings and is used to initialize the list to use based on the current context.
         /// It is not intended to be used directly
         /// </summary>
-        internal List<ClaimTypeConfig> RuntimeClaimTypesList { get; set; }
+        internal List<ClaimTypeConfig> RuntimeClaimTypeConfigList { get; set; }
 
         public IEnumerable<ClaimTypeConfig> RuntimeMetadataConfig { get; set; }
 
@@ -294,9 +294,9 @@ namespace Yvand.LdapClaimsProvider
                 additionalClaimTypeConfigList.Add(localClaimTypeConfig);
             }
 
-            settings.RuntimeClaimTypesList = new List<ClaimTypeConfig>(claimTypesSetInTrust.Count + additionalClaimTypeConfigList.Count);
-            settings.RuntimeClaimTypesList.AddRange(claimTypesSetInTrust);
-            settings.RuntimeClaimTypesList.AddRange(additionalClaimTypeConfigList);
+            settings.RuntimeClaimTypeConfigList = new List<ClaimTypeConfig>(claimTypesSetInTrust.Count + additionalClaimTypeConfigList.Count);
+            settings.RuntimeClaimTypeConfigList.AddRange(claimTypesSetInTrust);
+            settings.RuntimeClaimTypeConfigList.AddRange(additionalClaimTypeConfigList);
 
             // Get all PickerEntity metadata with a DirectoryObjectProperty set
             settings.RuntimeMetadataConfig = settings.ClaimTypes.Where(x =>
@@ -377,7 +377,7 @@ namespace Yvand.LdapClaimsProvider
                     if (!this.Settings.EnableAugmentation) { return; }
 
                     Logger.Log($"[{Name}] Starting augmentation for user '{decodedEntity.Value}'.", TraceSeverity.Verbose, EventSeverity.Information, TraceCategory.Augmentation);
-                    //ClaimTypeConfig groupClaimTypeSettings = this.Settings.RuntimeClaimTypesList.FirstOrDefault(x => x.DirectoryObjectType == DirectoryObjectType.Group);
+                    //ClaimTypeConfig groupClaimTypeSettings = this.Settings.RuntimeClaimTypeConfigList.FirstOrDefault(x => x.DirectoryObjectType == DirectoryObjectType.Group);
                     //if (groupClaimTypeSettings == null)
                     //{
                     //    Logger.Log($"[{Name}] No claim type with DirectoryObjectType 'Group' was found, please check claims mapping table.",
@@ -1048,7 +1048,7 @@ namespace Yvand.LdapClaimsProvider
                 try
                 {
 
-                    foreach (var claimTypeSettings in ((LDAPCPSettings)this.Settings).RuntimeClaimTypesList)
+                    foreach (var claimTypeSettings in ((LDAPCPSettings)this.Settings).RuntimeClaimTypeConfigList)
                     {
                         claimTypes.Add(claimTypeSettings.ClaimType);
                     }
@@ -1089,7 +1089,7 @@ namespace Yvand.LdapClaimsProvider
                 if (hierarchyNodeID == null)
                 {
                     // Root level
-                    foreach (var azureObject in ((LDAPCPSettings)this.Settings).RuntimeClaimTypesList.FindAll(x => !x.IsAdditionalLdapSearchAttribute && aadEntityTypes.Contains(x.DirectoryObjectType)))
+                    foreach (var azureObject in ((LDAPCPSettings)this.Settings).RuntimeClaimTypeConfigList.FindAll(x => !x.IsAdditionalLdapSearchAttribute && aadEntityTypes.Contains(x.DirectoryObjectType)))
                     {
                         hierarchy.AddChild(
                             new Microsoft.SharePoint.WebControls.SPProviderHierarchyNode(

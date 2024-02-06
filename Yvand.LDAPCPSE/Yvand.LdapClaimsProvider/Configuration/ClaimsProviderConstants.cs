@@ -372,15 +372,15 @@ namespace Yvand.LdapClaimsProvider.Configuration
 
             if (currentRequestType == OperationType.Validation)
             {
-                this.InitializeValidation(settings.RuntimeClaimTypesList);
+                this.InitializeValidation(settings.RuntimeClaimTypeConfigList);
             }
             else if (currentRequestType == OperationType.Search)
             {
-                this.InitializeSearch(settings.RuntimeClaimTypesList, settings.FilterExactMatchOnly);
+                this.InitializeSearch(settings.RuntimeClaimTypeConfigList, settings.FilterExactMatchOnly);
             }
             else if (currentRequestType == OperationType.Augmentation)
             {
-                this.InitializeAugmentation(settings.RuntimeClaimTypesList);
+                this.InitializeAugmentation(settings.RuntimeClaimTypeConfigList);
             }
         }
 
