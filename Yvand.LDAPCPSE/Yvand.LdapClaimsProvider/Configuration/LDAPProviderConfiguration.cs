@@ -514,6 +514,14 @@ namespace Yvand.LdapClaimsProvider.Configuration
         {
             LdapProviderConfiguration defaultConfig = new LdapProviderConfiguration();
             defaultConfig.ClaimsProviderName = claimsProviderName;
+            defaultConfig.LdapConnections = new List<DirectoryConnection>
+            {
+                new DirectoryConnection
+                {
+                    UseDefaultADConnection = true,
+                        EnableAugmentation = true,
+                },
+            };
             defaultConfig.ClaimTypes = LdapProviderSettings.ReturnDefaultClaimTypesConfig(claimsProviderName);
             return defaultConfig;
         }

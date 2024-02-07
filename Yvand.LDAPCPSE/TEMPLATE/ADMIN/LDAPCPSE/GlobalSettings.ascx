@@ -222,7 +222,7 @@
             var entityPermissionValue = $("#" + inputIdentifierAttributeId).val();
 
             // Set the label control to preview a group's value
-            var entityPermissionValuePreview = leadingTokenValue + "<" + entityPermissionValue + "_value>";
+            var entityPermissionValuePreview = leadingTokenValue + "<" + entityPermissionValue + "_from_ldap>";
             $("#" + lblResultId).text(entityPermissionValuePreview);
         }
     };
@@ -347,7 +347,7 @@
             <br />
             <sharepoint:encodedliteral runat="server" text="Preview of a user permission's encoded value returned by LDAPCP, based on current settings:" encodemethod='HtmlEncodeAllowSimpleTextFormatting' />
             <br />
-            <b><span>"<%= UserIdentifierEncodedValuePrefix %><span id="lblUserPermissionValuePreview"></span>"</span></b>
+            <b><span><%= UserIdentifierEncodedValuePrefix %><span id="lblUserPermissionValuePreview"></span></span></b>
             <br />
             <br />
             <sharepoint:encodedliteral runat="server" text="- &quot;Leading token&quot;: Specify a static or dynnamic token to add to the permission's value. Possible dynamic tokens are &quot;{domain}&quot; and &quot;{fqdn}&quot;" encodemethod='HtmlEncodeAllowSimpleTextFormatting' />
@@ -431,7 +431,7 @@
             <br />
             <sharepoint:encodedliteral runat="server" text="Preview of a group permission's encoded value returned by LDAPCP, based on current settings:" encodemethod='HtmlEncodeAllowSimpleTextFormatting' />
             <br />
-            <b><span>"<%= GroupIdentifierEncodedValuePrefix %><span id="lblGroupPermissionValuePreview"></span>"</span></b>
+            <b><span><%= GroupIdentifierEncodedValuePrefix %><span id="lblGroupPermissionValuePreview"></span></span></b>
             <br />
             <br />
             <sharepoint:encodedliteral runat="server" text="- &quot;Leading token&quot;: Specify a static or dynnamic token to add to the permission's value. Possible dynamic tokens are &quot;{domain}&quot; and &quot;{fqdn}&quot;" encodemethod='HtmlEncodeAllowSimpleTextFormatting' />
