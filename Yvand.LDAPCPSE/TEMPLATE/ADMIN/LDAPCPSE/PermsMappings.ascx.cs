@@ -116,11 +116,11 @@ namespace Yvand.LdapClaimsProvider.Administration
             tr.Cells.Add(th);
             th = GetTableHeaderCell("LDAP attribute to display");
             tr.Cells.Add(th);
-            th = GetTableHeaderCell("<a href='http://msdn.microsoft.com/en-us/library/office/microsoft.sharepoint.webcontrols.peopleeditorentitydatakeys_members(v=office.15).aspx' target='_blank'>PickerEntity metadata</a>");
+            th = GetTableHeaderCell("<a href='http://msdn.microsoft.com/en-us/library/office/microsoft.sharepoint.webcontrols.peopleeditorentitydatakeys_members(v=office.15).aspx' target='_blank'>PickerEntity property</a>");
             tr.Cells.Add(th);
             th = GetTableHeaderCell("Additional LDAP filter");
             tr.Cells.Add(th);
-            th = GetTableHeaderCell("Leading keyword to bypass LDAP during search");
+            th = GetTableHeaderCell("Leading keyword to bypass request to LDAP");
             tr.Cells.Add(th);
             th = GetTableHeaderCell("Leading token in claim value");
             tr.Cells.Add(th);
@@ -200,11 +200,11 @@ namespace Yvand.LdapClaimsProvider.Administration
                     {
                         if (!attr.Value.IsAdditionalLdapSearchAttribute)
                         {
-                            c = GetTableCell("LDAP attribute linked to a PickerEntity metadata");
+                            c = GetTableCell($"PickerEntity property for the {attr.Value.DirectoryObjectType} identifier");
                         }
                         else
                         {
-                            c = GetTableCell($"LDAP attribute linked to the main mapping for object {attr.Value.DirectoryObjectType}");
+                            c = GetTableCell($"Additional LDAP search attribute for the {attr.Value.DirectoryObjectType} identifier");
                             if (attr.Value.DirectoryObjectType == DirectoryObjectType.User)
                             {
                                 tr.CssClass = "ldapcp-rowUserProperty";
