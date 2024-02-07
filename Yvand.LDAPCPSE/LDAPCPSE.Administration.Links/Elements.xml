@@ -1,0 +1,37 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Elements xmlns="http://schemas.microsoft.com/sharepoint/">
+  <CustomActionGroup
+    Id = "LDAPCPSE"
+    Location = "Microsoft.SharePoint.Administration.Security"
+    Sequence = "500"
+    Title = "LDAPCP Second Edition - Claims provider for LDAP and Active Directory"
+    ImageUrl="/_layouts/15/LDAPCPSE/LDAPCP_logo_small.png">
+  </CustomActionGroup>
+
+  <CustomAction
+      Id="LdapcpseAdminLink"
+      GroupId="LDAPCPSE"
+      Location="Microsoft.SharePoint.Administration.Security"
+      Title="Global configuration"
+      Sequence="10">
+    <UrlAction Url="/_admin/LDAPCPSE/GlobalSettings.aspx" />
+  </CustomAction>
+
+  <CustomAction
+      Id="LdapcpsePermssMappings"
+      GroupId="LDAPCPSE"
+      Location="Microsoft.SharePoint.Administration.Security"
+      Title="Mapping of permissions"
+      Sequence="20">
+    <UrlAction Url="/_admin/LDAPCPSE/PermsMappings.aspx" />
+  </CustomAction>
+
+  <CustomAction
+      Id="LdapcpseSite"
+      GroupId="LDAPCPSE"
+      Location="Microsoft.SharePoint.Administration.Security"
+      Title="Updates and documentation"
+      Sequence="30">
+    <UrlAction Url="https://www.ldapcp.com/" />
+  </CustomAction>
+</Elements>

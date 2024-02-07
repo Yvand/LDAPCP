@@ -9,9 +9,10 @@ on:
 
 jobs:
   call-build:
-    uses: Yvand/AzureCP/.github/workflows/reusable-build.yml@master
+    uses: Yvand/EntraCP/.github/workflows/reusable-build.yml@master
     with:
       project-name: ${{ vars.PROJECT_NAME }}
       version-major-minor: ${{ vars.VERSION_MAJOR_MINOR }}
+      is-production-release: false
     secrets:
       base64-encoded-signingkey: ${{ secrets.BASE64_ENCODED_SIGNINGKEY }}
