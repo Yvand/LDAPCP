@@ -668,7 +668,7 @@ namespace Yvand.LdapClaimsProvider
                 // objectclass attribute should never be missing because it is explicitely requested in LDAP query
                 if (!ldapResultProperties.Contains("objectclass"))
                 {
-                    Logger.Log($"[{Name}] Property \"objectclass\" is missing in LDAP result, this may be due to insufficient entities of the account connecting to LDAP server '{ldapResult.AuthorityMatch.DomainFQDN}'. Skipping result.", TraceSeverity.Unexpected, EventSeverity.Error, TraceCategory.GraphRequests);
+                    Logger.Log($"[{Name}] Property \"objectclass\" is missing in LDAP result, this may be due to insufficient permissions of the account connecting to LDAP server '{ldapResult.AuthorityMatch.DomainFQDN}'. Skipping result.", TraceSeverity.Unexpected, EventSeverity.Error, TraceCategory.Core);
                     continue;
                 }
 
@@ -789,7 +789,7 @@ namespace Yvand.LdapClaimsProvider
                     uniqueDirectoryResults.Add(uniqueLdapResult);
                 }
             }
-            Logger.Log($"[{Name}] Created {spEntities.Count} entity(ies) after filtering directory results", TraceSeverity.Verbose, EventSeverity.Information, TraceCategory.Lookup);
+            Logger.Log($"[{Name}] Created {spEntities.Count} entity(ies) after filtering directory results", TraceSeverity.Verbose, EventSeverity.Information, TraceCategory.Core);
             return spEntities;
         }
         #endregion

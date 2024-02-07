@@ -514,13 +514,13 @@ namespace Yvand.LdapClaimsProvider
                     {
                         try
                         {
-                            Logger.Log(loggMessage, TraceSeverity.Verbose, EventSeverity.Information, TraceCategory.GraphRequests);
+                            Logger.Log(loggMessage, TraceSeverity.Verbose, EventSeverity.Information, TraceCategory.Ldap_Request);
                             Stopwatch stopWatch = new Stopwatch();
                             stopWatch.Start();
                             using (SearchResultCollection directoryResults = ds.FindAll())
                             {
                                 stopWatch.Stop();
-                                Logger.Log($"[{ClaimsProviderName}] Got {directoryResults.Count} result(s) in {stopWatch.ElapsedMilliseconds}ms from \"{directory.Path}\" with input \"{currentContext.Input}\" and LDAP filter \"{ds.Filter}\"", TraceSeverity.Medium, EventSeverity.Information, TraceCategory.GraphRequests);
+                                Logger.Log($"[{ClaimsProviderName}] Got {directoryResults.Count} result(s) in {stopWatch.ElapsedMilliseconds} ms from \"{directory.Path}\" with input \"{currentContext.Input}\" and LDAP filter \"{ds.Filter}\"", TraceSeverity.Medium, EventSeverity.Information, TraceCategory.Ldap_Request);
                                 if (directoryResults.Count > 0)
                                 {
                                     lock (lockResults)
@@ -535,7 +535,7 @@ namespace Yvand.LdapClaimsProvider
                         }
                         catch (Exception ex)
                         {
-                            Logger.LogException(ClaimsProviderName, $"while connecting to \"{directory.Path}\" with filter '{ds.Filter}'", TraceCategory.GraphRequests, ex);
+                            Logger.LogException(ClaimsProviderName, $"while connecting to \"{directory.Path}\" with LDAP filter \"{ds.Filter}\"", TraceCategory.Ldap_Request, ex);
                         }
                         finally
                         {
@@ -545,10 +545,8 @@ namespace Yvand.LdapClaimsProvider
                     }
                 }
             });
-
-
             globalStopWatch.Stop();
-            Logger.Log(String.Format("[{0}] Got {1} result(s) in {2}ms from all directories with input \"{3}\" and LDAP filter \"{4}\"", ClaimsProviderName, results.Count, globalStopWatch.ElapsedMilliseconds, currentContext.Input, ldapFilter), TraceSeverity.Verbose, EventSeverity.Information, TraceCategory.GraphRequests);
+            Logger.Log(String.Format("[{0}] Got {1} result(s) in {2} ms from all directories with input \"{3}\" and LDAP filter \"{4}\"", ClaimsProviderName, results.Count, globalStopWatch.ElapsedMilliseconds, currentContext.Input, ldapFilter), TraceSeverity.Verbose, EventSeverity.Information, TraceCategory.Ldap_Request);
             return results;
         }
     }

@@ -21,10 +21,10 @@ namespace Yvand.LdapClaimsProvider
          DefaultTraceSeverity(TraceSeverity.Medium),
         DefaultEventSeverity(EventSeverity.Error)]
         Configuration,
-        [CategoryName("Lookup"),
+        [CategoryName("LDAP Request"),
          DefaultTraceSeverity(TraceSeverity.Medium),
          DefaultEventSeverity(EventSeverity.Error)]
-        Lookup,
+        Ldap_Request,
         [CategoryName("Claims Picking"),
          DefaultTraceSeverity(TraceSeverity.Medium),
          DefaultEventSeverity(EventSeverity.Error)]
@@ -45,14 +45,6 @@ namespace Yvand.LdapClaimsProvider
          DefaultTraceSeverity(TraceSeverity.Medium),
          DefaultEventSeverity(EventSeverity.Error)]
         Custom,
-        [CategoryName("Azure Identity"),
-         DefaultTraceSeverity(TraceSeverity.Medium),
-         DefaultEventSeverity(EventSeverity.Error)]
-        AzureIdentity,
-        [CategoryName("Graph Requests"),
-         DefaultTraceSeverity(TraceSeverity.Medium),
-         DefaultEventSeverity(EventSeverity.Error)]
-        GraphRequests,
     }
 
     public class Logger : SPDiagnosticsServiceBase
@@ -62,25 +54,25 @@ namespace Yvand.LdapClaimsProvider
         public Logger() : base(DiagnosticsAreaName, SPFarm.Local) { }
         public Logger(string name, SPFarm farm) : base(name, farm) { }
 
-        private static Logger _current;
+        private static Logger _Local;
         public static Logger Local
         {
             get
             {
-                if (_current == null)
+                if (_Local == null)
                 {
-                    _current = SPDiagnosticsServiceBase.GetLocal<Logger>();
-                    if (_current == null)
+                    _Local = SPDiagnosticsServiceBase.GetLocal<Logger>();
+                    if (_Local == null)
                     {
                         SPSecurity.RunWithElevatedPrivileges(delegate ()
                         {
                             // otherwise instantiate and register the new instance, which requires farm administrator privileges
-                            _current = new Logger();
+                            _Local = new Logger();
                             //svc.Update();
                         });
                     }
                 }
-                return _current;
+                return _Local;
             }
         }
 
@@ -222,14 +214,12 @@ namespace Yvand.LdapClaimsProvider
                     {
                         CreateCategory(TraceCategory.Claims_Picking),
                         CreateCategory(TraceCategory.Configuration),
-                        CreateCategory(TraceCategory.Lookup),
+                        CreateCategory(TraceCategory.Ldap_Request),
                         CreateCategory(TraceCategory.Core),
                         CreateCategory(TraceCategory.Augmentation),
                         CreateCategory(TraceCategory.Rehydration),
                         CreateCategory(TraceCategory.Debug),
                         CreateCategory(TraceCategory.Custom),
-                        CreateCategory(TraceCategory.AzureIdentity),
-                        CreateCategory(TraceCategory.GraphRequests),
                     }
                 );
             }
