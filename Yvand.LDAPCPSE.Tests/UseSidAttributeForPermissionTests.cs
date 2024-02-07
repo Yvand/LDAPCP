@@ -23,6 +23,7 @@ namespace Yvand.LdapClaimsProvider.Tests
             base.CheckSettingsTest();
         }
 
+#if DEBUG
         [TestCase(UnitTestsHelper.ValidUserSid, 1, UnitTestsHelper.ValidUserSid)]
         [TestCase(@"testLdapcpseUser_001", 1, UnitTestsHelper.ValidUserSid)]
         [TestCase(@"S-1-5-21-0000000000-1611586658-188888215-107206", 0, @"")]
@@ -31,6 +32,7 @@ namespace Yvand.LdapClaimsProvider.Tests
             base.TestSearchOperation(inputValue, expectedResultCount, expectedEntityClaimValue);
             base.TestValidationOperation(base.UserIdentifierClaimType, expectedEntityClaimValue, expectedResultCount == 0 ? false : true);
         }
+#endif
     }
 
     [TestFixture]
@@ -61,6 +63,7 @@ namespace Yvand.LdapClaimsProvider.Tests
             base.CheckSettingsTest();
         }
 
+#if DEBUG
         [TestCase(UnitTestsHelper.ValidUserSid, 1, @"testLdapcpseUser_001@contoso.local")]
         [TestCase(@"testLdapcpseUser_001", 1, @"testLdapcpseUser_001@contoso.local")]
         public void TestSidAttribute(string inputValue, int expectedResultCount, string expectedEntityClaimValue)
@@ -68,6 +71,7 @@ namespace Yvand.LdapClaimsProvider.Tests
             base.TestSearchOperation(inputValue, expectedResultCount, expectedEntityClaimValue);
             base.TestValidationOperation(base.UserIdentifierClaimType, expectedEntityClaimValue, expectedResultCount == 0 ? false : true);
         }
+#endif
     }
 
     [TestFixture]
@@ -97,6 +101,7 @@ namespace Yvand.LdapClaimsProvider.Tests
             base.CheckSettingsTest();
         }
 
+#if DEBUG
         [TestCase(UnitTestsHelper.ValidUserSid, 1, UnitTestsHelper.ValidUserSid)]
         [TestCase(@"S-1-5-21-0000000000-1611586658-188888215-107206", 0, @"")]
         public void TestSidAttribute(string inputValue, int expectedResultCount, string expectedEntityClaimValue)
@@ -104,6 +109,7 @@ namespace Yvand.LdapClaimsProvider.Tests
             base.TestSearchOperation(inputValue, expectedResultCount, expectedEntityClaimValue);
             base.TestValidationOperation(TestContext.Parameters["MultiPurposeCustomClaimType"], inputValue, expectedResultCount == 0 ? false : true);
         }
+#endif
     }
 
     [TestFixture]
@@ -134,6 +140,7 @@ namespace Yvand.LdapClaimsProvider.Tests
             base.CheckSettingsTest();
         }
 
+#if DEBUG
         [TestCase(UnitTestsHelper.ValidGroupSid, 1, UnitTestsHelper.ValidGroupSid)]
         [TestCase("group1", 1, UnitTestsHelper.ValidGroupSid)]
         public void TestGroupSidAttribute(string inputValue, int expectedResultCount, string expectedEntityClaimValue)
@@ -148,5 +155,6 @@ namespace Yvand.LdapClaimsProvider.Tests
         {
             base.TestAugmentationOperation(claimValue, isMemberOfTrustedGroup, UnitTestsHelper.ValidGroupSid);
         }
+#endif
     }
 }

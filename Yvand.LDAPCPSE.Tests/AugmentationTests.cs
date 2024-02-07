@@ -36,11 +36,13 @@ namespace Yvand.LdapClaimsProvider.Tests
             base.TestAugmentationOperation(claimValue, isMemberOfTrustedGroup, UnitTestsHelper.ValidGroupName);
         }
 
+#if DEBUG
         [TestCase("testLdapcpseUser_001@contoso.local", true, @"contoso.local\testLdapcpseGroup_2")]
         public void TestAugmentationOperationGroupRecursive(string claimValue, bool isMemberOfTrustedGroup, string groupValue)
         {
             base.TestAugmentationOperation(claimValue, isMemberOfTrustedGroup, groupValue);
         }
+#endif
     }
 
     public class AugmentUsingLdapQueryAndSidAsGroupValueTests : ClaimsProviderTestsBase
@@ -67,10 +69,12 @@ namespace Yvand.LdapClaimsProvider.Tests
             base.TestAugmentationOperation(claimValue, isMemberOfTrustedGroup, UnitTestsHelper.ValidGroupSid);
         }
 
+#if DEBUG
         [TestCase("testLdapcpseUser_001@contoso.local", true, @"S-1-5-21-2647467245-1611586658-188888215-110602")] // testLdapcpseGroup_2
         public void TestAugmentationOperationGroupRecursive(string claimValue, bool isMemberOfTrustedGroup, string groupValue)
         {
             base.TestAugmentationOperation(claimValue, isMemberOfTrustedGroup, groupValue);
         }
+#endif
     }
 }
