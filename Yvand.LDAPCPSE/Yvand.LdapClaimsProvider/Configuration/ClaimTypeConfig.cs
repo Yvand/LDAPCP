@@ -276,12 +276,12 @@ namespace Yvand.LdapClaimsProvider.Configuration
                 {
                     return null;
                 }
-                ClaimTypeConfig ctConfig = GetMainConfigurationForDirectoryObjectType(DirectoryObjectType.User);
+                ClaimTypeConfig ctConfig = GetIdentifierConfiguration(DirectoryObjectType.User);
                 return ctConfig;
             }
             set
             {
-                ClaimTypeConfig ctConfig = GetMainConfigurationForDirectoryObjectType(DirectoryObjectType.User);
+                ClaimTypeConfig ctConfig = GetIdentifierConfiguration(DirectoryObjectType.User);
                 ctConfig = value;
             }
         }
@@ -507,7 +507,7 @@ namespace Yvand.LdapClaimsProvider.Configuration
             bool identifierConfigUpdated = false;
             if (SPTrust == null) { return identifierConfigUpdated; }
 
-            ClaimTypeConfig groupIdentifierConfig = GetMainConfigurationForDirectoryObjectType(DirectoryObjectType.Group);
+            ClaimTypeConfig groupIdentifierConfig = GetIdentifierConfiguration(DirectoryObjectType.Group);
             if (groupIdentifierConfig == null)
             { 
                 return identifierConfigUpdated;
@@ -648,7 +648,12 @@ namespace Yvand.LdapClaimsProvider.Configuration
             return new ClaimTypeConfigEnumerator(this);
         }
 
-        public ClaimTypeConfig GetMainConfigurationForDirectoryObjectType(DirectoryObjectType objectType)
+        /// <summary>
+        /// Returns the configuration for the given <paramref name="objectType"/>
+        /// </summary>
+        /// <param name="objectType"></param>
+        /// <returns></returns>
+        public ClaimTypeConfig GetIdentifierConfiguration(DirectoryObjectType objectType)
         {
             if (objectType == DirectoryObjectType.User)
             {
@@ -669,6 +674,12 @@ namespace Yvand.LdapClaimsProvider.Configuration
             }
         }
 
+        /// <summary>
+        /// Returns the configuration for the given <paramref name="claimType"/>
+        /// </summary>
+        /// <param name="claimType"></param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentNullException"></exception>
         public ClaimTypeConfig GetByClaimType(string claimType)
         {
             if (String.IsNullOrEmpty(claimType)) { throw new ArgumentNullException(nameof(claimType)); }
@@ -676,6 +687,11 @@ namespace Yvand.LdapClaimsProvider.Configuration
             return ctConfig;
         }
 
+        /// <summary>
+        /// Returns all configuration objects, excluding the identifier configuration, corresponding to the given <paramref name="entityType"/>
+        /// </summary>
+        /// <param name="entityType"></param>
+        /// <returns></returns>
         public IEnumerable<ClaimTypeConfig> GetAdditionalConfigurationsForEntity(DirectoryObjectType entityType)
         {
             return innerCol
@@ -684,16 +700,27 @@ namespace Yvand.LdapClaimsProvider.Configuration
                     x.IsAdditionalLdapSearchAttribute == true);
         }
 
+        /// <summary>
+        /// Returns the list of LDAP attributes used to search LDAP objects corresponding to the given <paramref name="entityType"/>
+        /// </summary>
+        /// <param name="entityType"></param>
+        /// <returns></returns>
         public IEnumerable<string> GetSearchAttributesForEntity(DirectoryObjectType entityType)
         {
             var existingAdditionalUserConfigs = GetAdditionalConfigurationsForEntity(entityType);
             return existingAdditionalUserConfigs.Select(x => x.DirectoryObjectAttribute);
         }
 
+        /// <summary>
+        /// Updates the list of LDAP attributes used to search LDAP objects corresponding to the given <paramref name="entityType"/>
+        /// </summary>
+        /// <param name="newSearchAttributesList">The new list of LDAP attributes</param>
+        /// <param name="ldapClass">The new LDAP class</param>
+        /// <param name="entityType">The entity type for which this update applies</param>
         public void SetSearchAttributesForEntity(string newSearchAttributesList, string ldapClass, DirectoryObjectType entityType)
         {
             string[] newSearchAttributes = String.IsNullOrWhiteSpace(newSearchAttributesList) ? new string[] { } : newSearchAttributesList.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
-            ClaimTypeConfig mainConfig = GetMainConfigurationForDirectoryObjectType(entityType);
+            ClaimTypeConfig mainConfig = GetIdentifierConfiguration(entityType);
             var existingSearchAttributes = GetSearchAttributesForEntity(entityType);
 
             // Step 1: Add new search attributes
@@ -727,9 +754,14 @@ namespace Yvand.LdapClaimsProvider.Configuration
             RemoveAll(existingSearchAttributesToRemove);
         }
 
+        /// <summary>
+        /// Updates the additional LDAP filter used to search LDAP objects corresponding to the given <paramref name="entityType"/>
+        /// </summary>
+        /// <param name="newAdditionalLdapFilter"></param>
+        /// <param name="entityType"></param>
         public void SetAdditionalLdapFilterForEntity(string newAdditionalLdapFilter, DirectoryObjectType entityType)
         {
-            ClaimTypeConfig mainConfig = GetMainConfigurationForDirectoryObjectType(entityType);
+            ClaimTypeConfig mainConfig = GetIdentifierConfiguration(entityType);
             mainConfig.DirectoryObjectAdditionalFilter = newAdditionalLdapFilter;
             IEnumerable<ClaimTypeConfig> additionalConfigurations = GetAdditionalConfigurationsForEntity(entityType);
             foreach (ClaimTypeConfig additionalConfiguration in additionalConfigurations)

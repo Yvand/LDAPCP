@@ -155,7 +155,7 @@ namespace Yvand.LdapClaimsProvider.Administration
                 this.DdlGroupClaimType.Items.Add(possibleGroupClaimTypeItem);
             }
 
-            ClaimTypeConfig groupCtc = Settings.ClaimTypes.GetMainConfigurationForDirectoryObjectType(DirectoryObjectType.Group);
+            ClaimTypeConfig groupCtc = Settings.ClaimTypes.GetIdentifierConfiguration(DirectoryObjectType.Group);
             if (groupCtc != null)
             {
                 this.DdlGroupClaimType.SelectedValue = groupCtc.ClaimType;
@@ -228,7 +228,7 @@ namespace Yvand.LdapClaimsProvider.Administration
             Settings.ClaimTypes.SetAdditionalLdapFilterForEntity(this.TxtUserIdAdditionalLdapAttributes.Text, DirectoryObjectType.User);
 
             // Group identifier settings
-            ClaimTypeConfig groupConfig = Settings.ClaimTypes.GetMainConfigurationForDirectoryObjectType(DirectoryObjectType.Group);
+            ClaimTypeConfig groupConfig = Settings.ClaimTypes.GetIdentifierConfiguration(DirectoryObjectType.Group);
             bool newGroupConfigObject = false;
             if (groupConfig == null)
             {

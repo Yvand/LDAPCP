@@ -50,7 +50,7 @@ namespace Yvand.LdapClaimsProvider.Tests
             base.InitializeSettings();
             Settings.LdapConnections[0].GetGroupMembershipUsingDotNetHelpers = false;
             base.Settings.ClaimTypes.UpdateGroupIdentifier("group", "objectSid");
-            base.Settings.ClaimTypes.GetMainConfigurationForDirectoryObjectType(Configuration.DirectoryObjectType.Group).ClaimValueLeadingToken = String.Empty;
+            base.Settings.ClaimTypes.GetIdentifierConfiguration(Configuration.DirectoryObjectType.Group).ClaimValueLeadingToken = String.Empty;
             base.ApplySettings();
         }
 

@@ -52,7 +52,7 @@ namespace Yvand.LdapClaimsProvider.Administration
             }
 
             TrustName = base.SPTrust.Name;
-            groupCtc = base.Settings.ClaimTypes.GetMainConfigurationForDirectoryObjectType(DirectoryObjectType.Group);
+            groupCtc = base.Settings.ClaimTypes.GetIdentifierConfiguration(DirectoryObjectType.Group);
             if (!this.IsPostBack)
             {
                 // NEW ITEM FORM

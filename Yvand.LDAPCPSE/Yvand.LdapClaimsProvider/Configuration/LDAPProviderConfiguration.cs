@@ -412,7 +412,7 @@ namespace Yvand.LdapClaimsProvider.Configuration
             }
 
             // Ensure identity claim type is present and valid
-            ClaimTypeConfig identityClaimTypeConfig = this.ClaimTypes.GetMainConfigurationForDirectoryObjectType(DirectoryObjectType.User);
+            ClaimTypeConfig identityClaimTypeConfig = this.ClaimTypes.GetIdentifierConfiguration(DirectoryObjectType.User);
             if (identityClaimTypeConfig == null)
             {
                 throw new InvalidOperationException($"The configuration is invalid because the identity claim type configuration is missing in the collection {nameof(ClaimTypes)}, so changes cannot be committed to the configuration database.");
