@@ -3,6 +3,7 @@ using Microsoft.SharePoint.Administration;
 using Microsoft.SharePoint.Administration.Claims;
 using Microsoft.SharePoint.Utilities;
 using System;
+using System.Security.Claims;
 using System.Web.UI;
 using Yvand.LdapClaimsProvider.Configuration;
 
@@ -58,18 +59,7 @@ namespace Yvand.LdapClaimsProvider.Administration
         /// Gets or sets the settings used by EntraCP to run
         /// </summary>
         protected LdapProviderSettings Settings { get; set; }
-        //private ClaimTypeConfig _IdentityCTConfig;
-        //protected ClaimTypeConfig IdentityCTConfig
-        //{
-        //    get
-        //    {
-        //        if (_IdentityCTConfig == null)
-        //        {
-        //            _IdentityCTConfig = Utils.IdentifyIdentityClaimTypeConfigFromClaimTypeConfigCollection(Settings.ClaimTypes, SPTrust.IdentityClaimTypeInformation.MappedClaimType);
-        //        }
-        //        return _IdentityCTConfig;
-        //    }
-        //}
+
         protected ConfigStatus Status;
 
         protected long ConfigurationVersion
@@ -93,6 +83,34 @@ namespace Yvand.LdapClaimsProvider.Administration
                     this._SPTrust = Utils.GetSPTrustAssociatedWithClaimsProvider(this.ClaimsProviderName);
                 }
                 return this._SPTrust;
+            }
+        }
+
+        protected string UserIdentifierEncodedValuePrefix
+        {
+            get
+            {
+                SPClaimProviderManager claimMgr = SPClaimProviderManager.Local;
+                ClaimTypeConfig idConfig = Settings.ClaimTypes.GetMainConfigurationForDirectoryObjectType(DirectoryObjectType.User);
+                if (idConfig == null)
+                {
+                    return String.Empty;
+                }
+                return claimMgr.EncodeClaim(new SPClaim(idConfig.ClaimType, String.Empty, ClaimValueTypes.String, SPOriginalIssuers.Format(SPOriginalIssuerType.TrustedProvider, SPTrust.Name)));
+            }
+        }
+
+        protected string GroupIdentifierEncodedValuePrefix
+        {
+            get
+            {
+                SPClaimProviderManager claimMgr = SPClaimProviderManager.Local;
+                ClaimTypeConfig idConfig = Settings.ClaimTypes.GetMainConfigurationForDirectoryObjectType(DirectoryObjectType.Group);
+                if (idConfig == null)
+                {
+                    return String.Empty;
+                }
+                return claimMgr.EncodeClaim(new SPClaim(idConfig.ClaimType, String.Empty, ClaimValueTypes.String, SPOriginalIssuers.Format(SPOriginalIssuerType.TrustedProvider, SPTrust.Name)));
             }
         }
 
@@ -201,7 +219,7 @@ namespace Yvand.LdapClaimsProvider.Administration
             {
                 Status |= ConfigStatus.PersistedObjectNotFound;
                 return Status;
-            }            
+            }
 
             if (Status != ConfigStatus.AllGood)
             {

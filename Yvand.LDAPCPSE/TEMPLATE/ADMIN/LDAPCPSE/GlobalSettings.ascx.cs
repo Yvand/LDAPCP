@@ -14,6 +14,9 @@ namespace Yvand.LdapClaimsProvider.Administration
 {
     public partial class GlobalSettingsUserControl : LDAPCPSEUserControl
     {
+        public new string UserIdentifierEncodedValuePrefix = String.Empty; // This must be a member to be accessible from marup code, it cannot be a property
+        public new string GroupIdentifierEncodedValuePrefix = String.Empty; // This must be a member to be accessible from marup code, it cannot be a property
+
         readonly string TextConnectionSuccessful = "Connection successful.";
         readonly string TextSummaryPersistedObjectInformation = "Found configuration '{0}' v{1} (Persisted Object ID: '{2}')";
         readonly string TextSharePointDomain = "Connect to SharePoint domain";
@@ -44,6 +47,8 @@ namespace Yvand.LdapClaimsProvider.Administration
             }
 
             LabelMessage.Text = String.Format(TextSummaryPersistedObjectInformation, Configuration.Name, Configuration.Version, Configuration.Id);
+            UserIdentifierEncodedValuePrefix = base.UserIdentifierEncodedValuePrefix;
+            GroupIdentifierEncodedValuePrefix = base.GroupIdentifierEncodedValuePrefix;
             PopulateConnectionsGrid();
             if (!this.IsPostBack)
             {

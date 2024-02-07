@@ -219,11 +219,11 @@
             });
 
             // Get the TxtGroupLdapAttribute value
-            var groupValue = $("#" + inputIdentifierAttributeId).val();
+            var entityPermissionValue = $("#" + inputIdentifierAttributeId).val();
 
             // Set the label control to preview a group's value
-            var groupValuePreview = "\"" + leadingTokenValue + "<" + groupValue + "_value>\"";
-            $("#" + lblResultId).text(groupValuePreview);
+            var entityPermissionValuePreview = leadingTokenValue + "<" + entityPermissionValue + "_value>";
+            $("#" + lblResultId).text(entityPermissionValuePreview);
         }
     };
 
@@ -345,16 +345,16 @@
             <sharepoint:encodedliteral runat="server" text="Specify the settings to search, create and display the permissions for users." encodemethod='HtmlEncodeAllowSimpleTextFormatting' />
             <br />
             <br />
-            <sharepoint:encodedliteral runat="server" text="Preview of a user permission's value returned by LDAPCP, based on current settings:" encodemethod='HtmlEncodeAllowSimpleTextFormatting' />
+            <sharepoint:encodedliteral runat="server" text="Preview of a user permission's encoded value returned by LDAPCP, based on current settings:" encodemethod='HtmlEncodeAllowSimpleTextFormatting' />
             <br />
-            <label id="lblUserPermissionValuePreview"></label>
+            <b><span>"<%= UserIdentifierEncodedValuePrefix %><span id="lblUserPermissionValuePreview"></span>"</span></b>
             <br />
             <br />
             <sharepoint:encodedliteral runat="server" text="- &quot;Additional LDAP filter&quot;: Specify a custom LDAP filter to restrict the users that may be returned." encodemethod='HtmlEncodeAllowSimpleTextFormatting' />
             <br />
             <sharepoint:encodedliteral runat="server" text="This filter is applied by default: to exclude computer accounts: &quot;(!(objectClass=computer))&quot;." encodemethod='HtmlEncodeAllowSimpleTextFormatting' />
             <br />
-            <sharepoint:encodedliteral runat="server" text="Be mindful that a wrong filter may break the search and validation of users." encodemethod='HtmlEncodeAllowSimpleTextFormatting' />
+            <sharepoint:encodedliteral runat="server" text="Be mindful that an invalid filter may break the LDAP requests." encodemethod='HtmlEncodeAllowSimpleTextFormatting' />
         </template_description>
         <template_inputformcontrols>
             <tr>
@@ -430,14 +430,14 @@
             <sharepoint:encodedliteral runat="server" text="Specify the settings to search, create and display the permissions for groups." encodemethod='HtmlEncodeAllowSimpleTextFormatting' />
             <br />
             <br />
-            <sharepoint:encodedliteral runat="server" text="Preview of a group permission's value returned by LDAPCP, based on current settings:" encodemethod='HtmlEncodeAllowSimpleTextFormatting' />
+            <sharepoint:encodedliteral runat="server" text="Preview of a group permission's encoded value returned by LDAPCP, based on current settings:" encodemethod='HtmlEncodeAllowSimpleTextFormatting' />
             <br />
-            <label id="lblGroupPermissionValuePreview"></label>
+            <b><span>"<%= GroupIdentifierEncodedValuePrefix %><span id="lblGroupPermissionValuePreview"></span>"</span></b>
             <br />
             <br />
             <sharepoint:encodedliteral runat="server" text="- &quot;Additional LDAP filter&quot;: Specify a custom LDAP filter to restrict the groups that may be returned." encodemethod='HtmlEncodeAllowSimpleTextFormatting' />
             <br />
-            <sharepoint:encodedliteral runat="server" text="Be mindful that a wrong filter may break the search and validation of groups." encodemethod='HtmlEncodeAllowSimpleTextFormatting' />
+            <sharepoint:encodedliteral runat="server" text="Be mindful that an invalid filter may break the LDAP requests." encodemethod='HtmlEncodeAllowSimpleTextFormatting' />
         </template_description>
         <template_inputformcontrols>
             <p class="ms-error">
