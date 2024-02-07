@@ -350,11 +350,10 @@
             <b><span>"<%= UserIdentifierEncodedValuePrefix %><span id="lblUserPermissionValuePreview"></span>"</span></b>
             <br />
             <br />
-            <sharepoint:encodedliteral runat="server" text="- &quot;Additional LDAP filter&quot;: Specify a custom LDAP filter to restrict the users that may be returned." encodemethod='HtmlEncodeAllowSimpleTextFormatting' />
+            <sharepoint:encodedliteral runat="server" text="- &quot;Leading token&quot;: Specify a static or dynnamic token to add to the permission's value. Possible dynamic tokens are &quot;{domain}&quot; and &quot;{fqdn}&quot;" encodemethod='HtmlEncodeAllowSimpleTextFormatting' />
             <br />
-            <sharepoint:encodedliteral runat="server" text="This filter is applied by default: to exclude computer accounts: &quot;(!(objectClass=computer))&quot;." encodemethod='HtmlEncodeAllowSimpleTextFormatting' />
             <br />
-            <sharepoint:encodedliteral runat="server" text="Be mindful that an invalid filter may break the LDAP requests." encodemethod='HtmlEncodeAllowSimpleTextFormatting' />
+            <sharepoint:encodedliteral runat="server" text="- &quot;Additional LDAP filter&quot;: Specify a custom LDAP filter to restrict the users that may be returned. Be mindful that an invalid filter may break the LDAP requests." encodemethod='HtmlEncodeAllowSimpleTextFormatting' />
         </template_description>
         <template_inputformcontrols>
             <tr>
@@ -409,7 +408,7 @@
                                     <wssawc:InputFormTextBox title="" class="ms-input" ID="TxtUserIdAdditionalLdapAttributes" Columns="50" runat="server" MaxLength="255" />
                                 </li>
                                 <li>
-                                    <label for="<%= TxtUserIdLeadingToken.ClientID %>" title="Static or dynnamic token that LDAPCP will include in the value returned by LDAP">Leading token &#9432;</label>
+                                    <label for="<%= TxtUserIdLeadingToken.ClientID %>" title="Static or dynnamic token to add to the permission's value">Leading token &#9432;</label>
                                     <wssawc:InputFormTextBox title="" class="ms-input" ID="TxtUserIdLeadingToken" Columns="50" runat="server" MaxLength="255" />
                                 </li>
                                 <li>
@@ -435,9 +434,10 @@
             <b><span>"<%= GroupIdentifierEncodedValuePrefix %><span id="lblGroupPermissionValuePreview"></span>"</span></b>
             <br />
             <br />
-            <sharepoint:encodedliteral runat="server" text="- &quot;Additional LDAP filter&quot;: Specify a custom LDAP filter to restrict the groups that may be returned." encodemethod='HtmlEncodeAllowSimpleTextFormatting' />
+            <sharepoint:encodedliteral runat="server" text="- &quot;Leading token&quot;: Specify a static or dynnamic token to add to the permission's value. Possible dynamic tokens are &quot;{domain}&quot; and &quot;{fqdn}&quot;" encodemethod='HtmlEncodeAllowSimpleTextFormatting' />
             <br />
-            <sharepoint:encodedliteral runat="server" text="Be mindful that an invalid filter may break the LDAP requests." encodemethod='HtmlEncodeAllowSimpleTextFormatting' />
+            <br />
+            <sharepoint:encodedliteral runat="server" text="- &quot;Additional LDAP filter&quot;: Specify a custom LDAP filter to restrict the groups that may be returned. Be mindful that an invalid filter may break the LDAP requests." encodemethod='HtmlEncodeAllowSimpleTextFormatting' />
         </template_description>
         <template_inputformcontrols>
             <p class="ms-error">
@@ -479,7 +479,7 @@
                                         <wssawc:InputFormTextBox title="" class="ms-input" ID="TxtGroupAdditionalLdapAttributes" Columns="50" runat="server" MaxLength="255" />
                                     </li>
                                     <li>
-                                        <label for="<%= TxtGroupLeadingToken.ClientID %>" title="Static or dynnamic token that LDAPCP will include in the value returned by LDAP">Leading token &#9432;</label>
+                                        <label for="<%= TxtGroupLeadingToken.ClientID %>" title="Static or dynnamic token to add to the permission's value">Leading token &#9432;</label>
                                         <wssawc:InputFormTextBox title="" class="ms-input" ID="TxtGroupLeadingToken" Columns="50" runat="server" MaxLength="255" />
                                     </li>
                                     <li>
