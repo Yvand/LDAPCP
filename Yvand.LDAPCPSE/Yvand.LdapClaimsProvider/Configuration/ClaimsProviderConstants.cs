@@ -220,12 +220,6 @@ namespace Yvand.LdapClaimsProvider.Configuration
             this.DirectoryAttributeValueMatch = directoryAttributeValueMatch;
             this.PermissionClaimValue = permissionClaimValue;
         }
-
-        public ClaimsProviderEntity(ClaimTypeConfig claimTypeConfigMatch, string permissionClaimValue)
-        {
-            this.ClaimTypeConfigMatch = claimTypeConfigMatch;
-            this.PermissionClaimValue = permissionClaimValue;
-        }
     }
 
     /// <summary>
