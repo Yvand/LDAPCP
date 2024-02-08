@@ -448,8 +448,18 @@ namespace Yvand.LdapClaimsProvider
 
         protected string AddLdapAttributeToFilter(OperationContext currentContext, string input, ClaimTypeConfig attributeConfig)
         {
-            string inputFormatted;
+            // Prevent use of wildcard for LDAP attributes which do not support it
+            if (String.Equals(attributeConfig.DirectoryObjectAttribute, "objectSid", StringComparison.InvariantCultureIgnoreCase))
+            {
+                attributeConfig.DirectoryObjectAttributeSupportsWildcard = false; // For objectSid, no wildcard possible
+            }
+            else if (String.Equals(attributeConfig.DirectoryObjectAttribute, "primaryGroupID", StringComparison.InvariantCultureIgnoreCase))
+            {
+                attributeConfig.DirectoryObjectAttributeSupportsWildcard = false; // For primaryGroupID, no wildcard possible
+            }
+
             // Test if wildcard(s) should be added to the input
+            string inputFormatted;
             if (currentContext.ExactSearch || !attributeConfig.DirectoryObjectAttributeSupportsWildcard)
             {
                 inputFormatted = input;

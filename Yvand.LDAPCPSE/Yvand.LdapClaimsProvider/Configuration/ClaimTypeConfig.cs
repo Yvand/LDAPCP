@@ -388,17 +388,6 @@ namespace Yvand.LdapClaimsProvider.Configuration
                     }
                 }
             }
-
-            // Enforce some settings for specific LDAP attributes
-            if (String.Equals(item.DirectoryObjectAttribute, "objectSid", StringComparison.InvariantCultureIgnoreCase))
-            {
-                item.DirectoryObjectAttributeSupportsWildcard = false; // For objectSid, no wildcard possible
-            }
-            else if (String.Equals(item.DirectoryObjectAttribute, "primaryGroupID", StringComparison.InvariantCultureIgnoreCase))
-            {
-                item.DirectoryObjectAttributeSupportsWildcard = false; // For primaryGroupID, no wildcard possible
-            }
-
             innerCol.Add(item);
         }
 
