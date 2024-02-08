@@ -606,7 +606,10 @@ namespace Yvand.LdapClaimsProvider
                     else
                     {
                         SearchOrValidateInLdap();
-                        pickerEntityList = this.ProcessLdapResults(currentContext, ldapSearchResults);
+                        if (ldapSearchResults?.Count > 0)
+                        {
+                            pickerEntityList = this.ProcessLdapResults(currentContext, ldapSearchResults);
+                        }
                     }
                 }
                 else if (currentContext.OperationType == OperationType.Validation)

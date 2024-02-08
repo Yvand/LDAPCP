@@ -406,6 +406,11 @@ namespace Yvand.LdapClaimsProvider
 
         public override List<LdapEntityProviderResult> SearchOrValidateEntities(OperationContext currentContext)
         {
+            if (String.IsNullOrWhiteSpace(currentContext.Input))
+            {
+                return new List<LdapEntityProviderResult>(0);
+            }
+
             string ldapFilter = this.BuildFilter(currentContext);
             List<LdapEntityProviderResult> LdapSearchResult = null;
             SPSecurity.RunWithElevatedPrivileges(delegate ()
