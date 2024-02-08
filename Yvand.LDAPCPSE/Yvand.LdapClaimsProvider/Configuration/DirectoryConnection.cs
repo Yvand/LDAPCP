@@ -114,45 +114,13 @@ namespace Yvand.LdapClaimsProvider.Configuration
                 {
                     return this._LdapEntry;
                 }
-                // Do these operations using the application pool account privileges to avoid COMException due to lack of permissions
-                SPSecurity.RunWithElevatedPrivileges(delegate ()
+
+                this._LdapEntry = GetDirectoryEntry();
+                if (this.UseDefaultADConnection)
                 {
-                    if (!this.UseDefaultADConnection)
-                    {
-                        this._LdapEntry = new DirectoryEntry(this.LdapPath, this.Username, this.Password, this.AuthenticationType);
-                    }
-                    else
-                    {
-                        try
-                        {
-
-                            // This try block is to get domain name information about AD domain of current computer
-                            // If this fails, execution should still continue as:
-                            // - It will be attempted again in a different way in OperationContext.GetDomainInformation(), so it should be given a chance
-                            // - It often (only) fails with COMException, which tend to occur only in some code path, but finally works depending on how LDAPCP is called
-                            // - It's not essential, even though it can have serious impacts, for example, value of role claims miss the domain name
-                            Domain computerDomain = Domain.GetComputerDomain();
-                            this._LdapEntry = computerDomain.GetDirectoryEntry();
-
-                            // Set properties LDAPConnection.DomainFQDN and LDAPConnection.DomainName here as a workaround to issue https://github.com/Yvand/LDAPCP/issues/87
-                            this.DomainFQDN = computerDomain.Name;
-                            this.DomainName = Utils.GetDomainName(this.DomainFQDN);
-
-                            // Property LDAPConnection.AuthenticationType must be set, in order to build the PrincipalContext correctly in GetGroupsFromActiveDirectory()
-                            this.AuthenticationType = this._LdapEntry.AuthenticationType;
-                        }
-                        catch (System.Runtime.InteropServices.COMException ex)
-                        {
-                            // Domain.GetDomain() may fail with the following error: System.Runtime.InteropServices.COMException: Retrieving the COM class factory for component with CLSID {080D0D78-F421-11D0-A36E-00C04FB950DC} failed due to the following error: 800703fa Illegal operation attempted on a registry key that has been marked for deletion. (Exception from HRESULT: 0x800703FA).
-                            Logger.LogException("", $"while getting domain names information about AD domain of current computer (COMException)", TraceCategory.Configuration, ex);
-                        }
-                        catch (Exception ex)
-                        {
-                            // Domain.GetDomain() may fail with the following error: System.Runtime.InteropServices.COMException: Retrieving the COM class factory for component with CLSID {080D0D78-F421-11D0-A36E-00C04FB950DC} failed due to the following error: 800703fa Illegal operation attempted on a registry key that has been marked for deletion. (Exception from HRESULT: 0x800703FA).
-                            Logger.LogException("", $"while getting domain names information about AD domain of current computer", TraceCategory.Configuration, ex);
-                        }
-                    }
-                });
+                    // Property LDAPConnection.AuthenticationType must be set, in order to build the PrincipalContext correctly in GetGroupsFromActiveDirectory()
+                    this.AuthenticationType = this._LdapEntry.AuthenticationType;
+                }
                 this._LdapEntry.Disposed += _DirectoryConnection_Disposed;
                 return this._LdapEntry;
             }
@@ -165,11 +133,6 @@ namespace Yvand.LdapClaimsProvider.Configuration
 
         private DirectoryEntry _LdapEntry;
 
-        /// <summary>
-        /// LDAP filter
-        /// </summary>
-        //public string Filter { get; private set; }
-
         public bool InitializationSuccessful { get; private set; } = false;
 
         /// <summary>
@@ -181,11 +144,6 @@ namespace Yvand.LdapClaimsProvider.Configuration
         /// Fully qualified domain name, for example "contoso.local"
         /// </summary>
         public string DomainFQDN { get; private set; }
-
-        /// <summary>
-        /// Root container to connect to, for example "DC=contoso,DC=local"
-        /// </summary>
-        //public string RootContainer { get; private set; }
 
         /// <summary>
         /// Root container to connect to, for example "DC=contoso,DC=local"
@@ -203,48 +161,48 @@ namespace Yvand.LdapClaimsProvider.Configuration
                 return InitializationSuccessful;
             }
 
-
-
             // This block does LDAP operations
             using (new SPMonitoredScope($"[{LDAPCPSE.ClaimsProviderName}] Get domain names / root container information about LDAP server \"{this.LdapEntry.Path}\"", 2000))
             {
-                try
+                // Do these operations using the application pool account privileges to avoid a DirectoryServicesCOMException due to lack of permissions
+                SPSecurity.RunWithElevatedPrivileges(delegate ()
                 {
+                    try
+                    {
 #if DEBUG
-                    this.AuthenticationType = AuthenticationTypes.None;
-                    Logger.LogDebug($"Hardcoded property DirectoryEntry.AuthenticationType to {AuthenticationType} for \"{this.LdapEntry.Path}\"");
+                        this.AuthenticationType = AuthenticationTypes.None;
+                        Logger.LogDebug($"Hardcoded property DirectoryEntry.AuthenticationType to {AuthenticationType} for \"{this.LdapEntry.Path}\"");
 #endif
-
-                    // Method PropertyCollection.Contains("distinguishedName") does a LDAP bind
-                    // In AD LDS: property "distinguishedName" = "CN=LDSInstance2,DC=ADLDS,DC=local", properties "name" and "cn" = "LDSInstance2"
-                    if (this.LdapEntry.Properties.Contains("distinguishedName"))
-                    {
-                        DomaindistinguishedName = this.LdapEntry.Properties["distinguishedName"].Value.ToString();
-                        string domainName;
-                        string domainFQDN;
-                        Utils.GetDomainInformation(DomaindistinguishedName, out domainName, out domainFQDN);
-                        this.DomainName = domainName;
-                        this.DomainFQDN = domainFQDN;
+                        // Method PropertyCollection.Contains("distinguishedName") does a LDAP bind
+                        // In AD LDS: property "distinguishedName" = "CN=LDSInstance2,DC=ADLDS,DC=local", properties "name" and "cn" = "LDSInstance2"
+                        if (this.LdapEntry.Properties.Contains("distinguishedName"))
+                        {
+                            this.DomaindistinguishedName = this.LdapEntry.Properties["distinguishedName"].Value.ToString();
+                            string domainName, domainFQDN;
+                            Utils.GetDomainInformation(this.DomaindistinguishedName, out domainName, out domainFQDN);
+                            this.DomainName = domainName;
+                            this.DomainFQDN = domainFQDN;
+                        }
+                        else if (this.LdapEntry.Properties.Contains("name"))
+                        {
+                            this.DomainName = this.LdapEntry.Properties["name"].Value.ToString();
+                        }
+                        else if (this.LdapEntry.Properties.Contains("cn"))
+                        {
+                            // Tivoli stores domain name in property "cn" (properties "distinguishedName" and "name" don't exist)
+                            this.DomainName = this.LdapEntry.Properties["cn"].Value.ToString();
+                        }
+                        InitializationSuccessful = true;
                     }
-                    else if (this.LdapEntry.Properties.Contains("name"))
+                    catch (DirectoryServicesCOMException ex)
                     {
-                        DomainName = this.LdapEntry.Properties["name"].Value.ToString();
+                        Logger.LogException("", $"while getting domain names information for LDAP connection {this.LdapEntry.Path} (DirectoryServicesCOMException)", TraceCategory.Configuration, ex);
                     }
-                    else if (this.LdapEntry.Properties.Contains("cn"))
+                    catch (Exception ex)
                     {
-                        // Tivoli stores domain name in property "cn" (properties "distinguishedName" and "name" don't exist)
-                        DomainName = this.LdapEntry.Properties["cn"].Value.ToString();
+                        Logger.LogException("", $"while getting domain names information for LDAP connection {this.LdapEntry.Path} (Exception)", TraceCategory.Configuration, ex);
                     }
-                    InitializationSuccessful = true;
-                }
-                catch (DirectoryServicesCOMException ex)
-                {
-                    Logger.LogException("", $"while getting domain names information for LDAP connection {this.LdapEntry.Path} (DirectoryServicesCOMException)", TraceCategory.Configuration, ex);
-                }
-                catch (Exception ex)
-                {
-                    Logger.LogException("", $"while getting domain names information for LDAP connection {this.LdapEntry.Path} (Exception)", TraceCategory.Configuration, ex);
-                }
+                });
             }
             return InitializationSuccessful;
         }
@@ -268,6 +226,27 @@ namespace Yvand.LdapClaimsProvider.Configuration
                 }
             }
             return copy;
+        }
+
+        public DirectoryEntry GetDirectoryEntry(string customLdapPath = "")
+        {
+            DirectoryEntry directoryEntry;
+            if (!this.UseDefaultADConnection)
+            {
+                string ldapPath = String.IsNullOrWhiteSpace(customLdapPath) ?
+                    this.LdapPath :
+                    customLdapPath;
+                directoryEntry = new DirectoryEntry(ldapPath, this.Username, this.Password, this.AuthenticationType);
+            }
+            else
+            {
+                directoryEntry = Domain.GetComputerDomain().GetDirectoryEntry();
+                if (!String.IsNullOrWhiteSpace(customLdapPath))
+                {
+                    directoryEntry.Path = customLdapPath;
+                }
+            }
+            return directoryEntry;
         }
     }
 }

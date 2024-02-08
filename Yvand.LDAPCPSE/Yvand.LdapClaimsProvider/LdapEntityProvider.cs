@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.DirectoryServices;
 using System.DirectoryServices.AccountManagement;
+using System.DirectoryServices.ActiveDirectory;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -332,10 +333,7 @@ namespace Yvand.LdapClaimsProvider
             try
             {
                 string groupDnPath = $"LDAP://{ldapConnection.DomainFQDN}/{groupValueDistinguishedName}";
-                DirectoryEntry deCurrentGroup = ldapConnection.UseDefaultADConnection ?
-                    new DirectoryEntry(groupDnPath) :
-                    new DirectoryEntry(groupDnPath, ldapConnection.Username, ldapConnection.Password, ldapConnection.AuthenticationType);
-                using (deCurrentGroup)
+                using (DirectoryEntry deCurrentGroup = ldapConnection.GetDirectoryEntry(groupDnPath))
                 {
                     using (DirectorySearcher searcher = new DirectorySearcher())
                     {
