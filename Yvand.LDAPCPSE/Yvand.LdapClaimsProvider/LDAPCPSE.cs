@@ -815,7 +815,11 @@ namespace Yvand.LdapClaimsProvider
             SPClaim claim = CreateClaim(directoryObjectIdentifierConfig.ClaimType, permissionValue, directoryObjectIdentifierConfig.ClaimValueType);
             PickerEntity entity = CreatePickerEntity();
             entity.Claim = claim;
-            entity.EntityType = directoryObjectIdentifierConfig.DirectoryObjectType == DirectoryObjectType.User ? SPClaimEntityTypes.User : ClaimsProviderConstants.GroupClaimEntityType;
+            entity.EntityType = directoryObjectIdentifierConfig.SPEntityType;
+            if (String.IsNullOrWhiteSpace(entity.EntityType))
+            {
+                entity.EntityType = directoryObjectIdentifierConfig.DirectoryObjectType == DirectoryObjectType.User ? SPClaimEntityTypes.User : ClaimsProviderConstants.GroupClaimEntityType;
+            }
             entity.IsResolved = true;
             entity.EntityGroupName = this.Name;
             entity.Description = String.Format(PickerEntityOnMouseOver, result.ClaimTypeConfigMatch.DirectoryObjectAttribute, result.DirectoryAttributeValueMatch);
@@ -849,21 +853,19 @@ namespace Yvand.LdapClaimsProvider
                 entity.Claim = claim;
                 entity.IsResolved = true;
                 entity.EntityType = ctConfig.SPEntityType;
-                if (String.IsNullOrEmpty(entity.EntityType))
+                if (String.IsNullOrWhiteSpace(entity.EntityType))
                 {
                     entity.EntityType = ctConfig.DirectoryObjectType == DirectoryObjectType.User ? SPClaimEntityTypes.User : ClaimsProviderConstants.GroupClaimEntityType;
                 }
                 entity.EntityGroupName = this.Name;
                 entity.Description = String.Format(PickerEntityOnMouseOver, ctConfig.DirectoryObjectAttribute, claimValue);
+                entity.DisplayText = FormatPermissionDisplayText(null, ctConfig, claimValue);
 
-                if (!String.IsNullOrEmpty(ctConfig.SPEntityDataKey))
+                if (!String.IsNullOrWhiteSpace(ctConfig.SPEntityDataKey))
                 {
                     entity.EntityData[ctConfig.SPEntityDataKey] = entity.Claim.Value;
                     Logger.Log($"[{Name}] Added metadata '{ctConfig.SPEntityDataKey}' with value '{entity.EntityData[ctConfig.SPEntityDataKey]}' to new entity", TraceSeverity.VerboseEx, EventSeverity.Information, TraceCategory.Claims_Picking);
                 }
-
-                //ClaimsProviderEntity fakeLdapResult = new ClaimsProviderEntity(ctConfig, claimValue);
-                entity.DisplayText = FormatPermissionDisplayText(null, ctConfig, claimValue);
 
                 entities.Add(entity);
                 Logger.Log($"[{Name}] Created entity: display text: '{entity.DisplayText}', claim value: '{entity.Claim.Value}', claim type: '{entity.Claim.ClaimType}'.", TraceSeverity.VerboseEx, EventSeverity.Information, TraceCategory.Claims_Picking);
