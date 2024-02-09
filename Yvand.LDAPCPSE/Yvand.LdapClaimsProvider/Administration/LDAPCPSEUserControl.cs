@@ -240,7 +240,7 @@ namespace Yvand.LdapClaimsProvider.Administration
                 Status |= ConfigStatus.ConfigurationInvalid;
                 return Status;
             }
-            if (Configuration.ClaimTypes.IdentityClaim == null)
+            if (Configuration.ClaimTypes.UserIdentifierConfig == null)
             {
                 Status |= ConfigStatus.NoIdentityClaimType;
             }
