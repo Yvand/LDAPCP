@@ -673,7 +673,7 @@ namespace Yvand.LdapClaimsProvider
                 }
 
                 // Cast collection to be able to use StringComparer.InvariantCultureIgnoreCase for case insensitive search of ldap properties
-                IEnumerable<string> LDAPResultPropertyNames = ldapResultProperties.PropertyNames.Cast<string>();
+                IEnumerable<string> ldapResultPropertyNames = ldapResultProperties.PropertyNames.Cast<string>();
 
                 foreach (ClaimTypeConfig ctConfig in ctConfigs)
                 {
@@ -684,14 +684,14 @@ namespace Yvand.LdapClaimsProvider
                     }
 
                     // Skip if: DirectoryObjectAttribute of current config is not found in LDAP result
-                    if (!LDAPResultPropertyNames.Contains(ctConfig.DirectoryObjectAttribute, StringComparer.InvariantCultureIgnoreCase))
+                    if (!ldapResultPropertyNames.Contains(ctConfig.DirectoryObjectAttribute, StringComparer.InvariantCultureIgnoreCase))
                     {
                         continue;
                     }
 
                     // Get the LDAP attribute value of the current ClaimTypeConfig
                     // Fix https://github.com/Yvand/LDAPCP/issues/43: properly test the type of the LDAP attribute's value, and always get it as a string
-                    string directoryObjectPropertyValue = Utils.GetLdapValueAsString(ldapResultProperties[LDAPResultPropertyNames.First(x => String.Equals(x, ctConfig.DirectoryObjectAttribute, StringComparison.InvariantCultureIgnoreCase))][0], ctConfig.DirectoryObjectAttribute);
+                    string directoryObjectPropertyValue = Utils.GetLdapValueAsString(ldapResultProperties[ldapResultPropertyNames.First(x => String.Equals(x, ctConfig.DirectoryObjectAttribute, StringComparison.InvariantCultureIgnoreCase))][0], ctConfig.DirectoryObjectAttribute);
                     string permissionClaimValue = directoryObjectPropertyValue;
                     if (String.IsNullOrWhiteSpace(directoryObjectPropertyValue))
                     {
@@ -736,13 +736,13 @@ namespace Yvand.LdapClaimsProvider
                                 ctConfigToUseForDuplicateCheck = this.Settings.UserIdentifierClaimTypeConfig;
 
                                 // Get the permission value using the LDAP attribute of the identifier config, if it exists, and skip current LDAP result if it does not exist
-                                if (!LDAPResultPropertyNames.Contains(this.Settings.UserIdentifierClaimTypeConfig.DirectoryObjectAttribute, StringComparer.InvariantCultureIgnoreCase))
+                                if (!ldapResultPropertyNames.Contains(this.Settings.UserIdentifierClaimTypeConfig.DirectoryObjectAttribute, StringComparer.InvariantCultureIgnoreCase))
                                 {
                                     continue;
                                 }
                                 else
                                 {
-                                    permissionClaimValue = Utils.GetLdapValueAsString(ldapResultProperties[LDAPResultPropertyNames.First(x => String.Equals(x, this.Settings.UserIdentifierClaimTypeConfig.DirectoryObjectAttribute, StringComparison.InvariantCultureIgnoreCase))][0], this.Settings.UserIdentifierClaimTypeConfig.DirectoryObjectAttribute);
+                                    permissionClaimValue = Utils.GetLdapValueAsString(ldapResultProperties[ldapResultPropertyNames.First(x => String.Equals(x, this.Settings.UserIdentifierClaimTypeConfig.DirectoryObjectAttribute, StringComparison.InvariantCultureIgnoreCase))][0], this.Settings.UserIdentifierClaimTypeConfig.DirectoryObjectAttribute);
                                 }
                             }
                             else
@@ -757,13 +757,13 @@ namespace Yvand.LdapClaimsProvider
                                 ctConfigToUseForDuplicateCheck = this.Settings.GroupIdentifierClaimTypeConfig;
 
                                 // Get the permission value using the LDAP attribute of the identifier config, if it exists, and skip current LDAP result if it does not exist
-                                if (!LDAPResultPropertyNames.Contains(this.Settings.GroupIdentifierClaimTypeConfig.DirectoryObjectAttribute, StringComparer.InvariantCultureIgnoreCase))
+                                if (!ldapResultPropertyNames.Contains(this.Settings.GroupIdentifierClaimTypeConfig.DirectoryObjectAttribute, StringComparer.InvariantCultureIgnoreCase))
                                 {
                                     continue;
                                 }
                                 else
                                 {
-                                    permissionClaimValue = Utils.GetLdapValueAsString(ldapResultProperties[LDAPResultPropertyNames.First(x => String.Equals(x, this.Settings.GroupIdentifierClaimTypeConfig.DirectoryObjectAttribute, StringComparison.InvariantCultureIgnoreCase))][0], this.Settings.GroupIdentifierClaimTypeConfig.DirectoryObjectAttribute);
+                                    permissionClaimValue = Utils.GetLdapValueAsString(ldapResultProperties[ldapResultPropertyNames.First(x => String.Equals(x, this.Settings.GroupIdentifierClaimTypeConfig.DirectoryObjectAttribute, StringComparison.InvariantCultureIgnoreCase))][0], this.Settings.GroupIdentifierClaimTypeConfig.DirectoryObjectAttribute);
                                 }
                             }
                             else
