@@ -91,7 +91,7 @@ namespace Yvand.LdapClaimsProvider.Administration
             get
             {
                 SPClaimProviderManager claimMgr = SPClaimProviderManager.Local;
-                ClaimTypeConfig idConfig = Settings.ClaimTypes.GetIdentifierConfiguration(DirectoryObjectType.User);
+                ClaimTypeConfig idConfig = Settings.ClaimTypes.UserIdentifierConfig;
                 if (idConfig == null)
                 {
                     return String.Empty;
@@ -105,7 +105,7 @@ namespace Yvand.LdapClaimsProvider.Administration
             get
             {
                 SPClaimProviderManager claimMgr = SPClaimProviderManager.Local;
-                ClaimTypeConfig idConfig = Settings.ClaimTypes.GetIdentifierConfiguration(DirectoryObjectType.Group);
+                ClaimTypeConfig idConfig = Settings.ClaimTypes.GroupIdentifierConfig;
                 if (idConfig == null)
                 {
                     return String.Empty;

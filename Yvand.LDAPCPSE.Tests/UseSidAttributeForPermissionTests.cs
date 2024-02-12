@@ -120,7 +120,7 @@ namespace Yvand.LdapClaimsProvider.Tests
         {
             base.InitializeSettings();
             base.Settings.ClaimTypes.UpdateGroupIdentifier("group", "objectSid");
-            base.Settings.ClaimTypes.GetIdentifierConfiguration(DirectoryObjectType.Group).ClaimValueLeadingToken = String.Empty;
+            base.Settings.ClaimTypes.GroupIdentifierConfig.ClaimValueLeadingToken = String.Empty;
             ClaimTypeConfig ctConfigPgidAttribute = new ClaimTypeConfig
             {
                 ClaimType = String.Empty,

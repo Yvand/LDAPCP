@@ -15,7 +15,7 @@ namespace Yvand.LdapClaimsProvider.Administration
     {
         public string TrustName = String.Empty; // This must be a member to be accessible from marup code, it cannot be a property
         List<KeyValuePair<int, ClaimTypeConfig>> ClaimsMapping;
-        ClaimTypeConfig groupCtc;
+        ClaimTypeConfig groupIdConfig;
         protected bool ShowNewItemForm = false;
         protected bool HideAllContent = false;
 
@@ -52,7 +52,7 @@ namespace Yvand.LdapClaimsProvider.Administration
             }
 
             TrustName = base.SPTrust.Name;
-            groupCtc = base.Settings.ClaimTypes.GetIdentifierConfiguration(DirectoryObjectType.Group);
+            groupIdConfig = base.Settings.ClaimTypes.GroupIdentifierConfig;
             if (!this.IsPostBack)
             {
                 // NEW ITEM FORM
@@ -191,7 +191,7 @@ namespace Yvand.LdapClaimsProvider.Administration
                         {
                             tr.CssClass = "ldapcp-rowClaimTypeNotUsedInTrust";
                         }
-                        else if (attr.Value.DirectoryObjectType == DirectoryObjectType.Group && String.Equals(this.groupCtc.ClaimType, attr.Value.ClaimType, StringComparison.InvariantCultureIgnoreCase))
+                        else if (attr.Value.DirectoryObjectType == DirectoryObjectType.Group && String.Equals(this.groupIdConfig.ClaimType, attr.Value.ClaimType, StringComparison.InvariantCultureIgnoreCase))
                         {
                             tr.CssClass = "ldapcp-rowMainGroupClaimType";
                         }

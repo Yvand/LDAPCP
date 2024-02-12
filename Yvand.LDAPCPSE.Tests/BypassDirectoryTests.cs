@@ -10,8 +10,8 @@ namespace Yvand.LdapClaimsProvider.Tests
         protected override void InitializeSettings()
         {
             base.InitializeSettings();
-            Settings.ClaimTypes.GetIdentifierConfiguration(DirectoryObjectType.User).LeadingKeywordToBypassDirectory = "bypass-user:";
-            Settings.ClaimTypes.GetIdentifierConfiguration(DirectoryObjectType.Group).LeadingKeywordToBypassDirectory = "bypass-group:";
+            Settings.ClaimTypes.UserIdentifierConfig.LeadingKeywordToBypassDirectory = "bypass-user:";
+            Settings.ClaimTypes.GroupIdentifierConfig.LeadingKeywordToBypassDirectory = "bypass-group:";
             base.ApplySettings();
         }
 

@@ -228,23 +228,23 @@ namespace Yvand.LdapClaimsProvider.Administration
             Settings.ClaimTypes.SetAdditionalLdapFilterForEntity(this.TxtUserIdAdditionalLdapFilter.Text, DirectoryObjectType.User);
 
             // Group identifier settings
-            ClaimTypeConfig groupConfig = Settings.ClaimTypes.GetIdentifierConfiguration(DirectoryObjectType.Group);
+            ClaimTypeConfig groupIdConfig = Settings.ClaimTypes.GroupIdentifierConfig;
             bool newGroupConfigObject = false;
-            if (groupConfig == null)
+            if (groupIdConfig == null)
             {
-                groupConfig = new ClaimTypeConfig { DirectoryObjectType = DirectoryObjectType.Group };
+                groupIdConfig = new ClaimTypeConfig { DirectoryObjectType = DirectoryObjectType.Group };
                 newGroupConfigObject = true;
             }
-            groupConfig.ClaimType = this.DdlGroupClaimType.SelectedValue;
-            groupConfig.DirectoryObjectClass = this.TxtGroupLdapClass.Text;
-            groupConfig.DirectoryObjectAttribute = this.TxtGroupLdapAttribute.Text;
-            groupConfig.DirectoryObjectAttributeForDisplayText = this.TxtGroupDisplayTextAttribute.Text;
-            groupConfig.ClaimValueLeadingToken = this.TxtGroupLeadingToken.Text;
-            Settings.ClaimTypes.SetSearchAttributesForEntity(this.TxtGroupAdditionalLdapAttributes.Text, groupConfig.DirectoryObjectClass, DirectoryObjectType.Group);
+            groupIdConfig.ClaimType = this.DdlGroupClaimType.SelectedValue;
+            groupIdConfig.DirectoryObjectClass = this.TxtGroupLdapClass.Text;
+            groupIdConfig.DirectoryObjectAttribute = this.TxtGroupLdapAttribute.Text;
+            groupIdConfig.DirectoryObjectAttributeForDisplayText = this.TxtGroupDisplayTextAttribute.Text;
+            groupIdConfig.ClaimValueLeadingToken = this.TxtGroupLeadingToken.Text;
+            Settings.ClaimTypes.SetSearchAttributesForEntity(this.TxtGroupAdditionalLdapAttributes.Text, groupIdConfig.DirectoryObjectClass, DirectoryObjectType.Group);
             Settings.ClaimTypes.SetAdditionalLdapFilterForEntity(this.TxtGroupAdditionalLdapFilter.Text, DirectoryObjectType.Group);
             if (newGroupConfigObject)
             {
-                Settings.ClaimTypes.Add(groupConfig);
+                Settings.ClaimTypes.Add(groupIdConfig);
             }
 
             // Augmentation settings
