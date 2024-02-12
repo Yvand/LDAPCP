@@ -13,7 +13,7 @@ using WIF4_5 = System.Security.Claims;
 
 namespace Yvand.LdapClaimsProvider
 {
-    public interface ILDAPCPSettings : ILdapProviderSettings
+    public interface IClaimsProviderSettings : ILdapProviderSettings
     {
         //List<ClaimTypeConfig> RuntimeClaimTypeConfigList { get; }
         IEnumerable<ClaimTypeConfig> RuntimeMetadataConfig { get; }
@@ -21,17 +21,17 @@ namespace Yvand.LdapClaimsProvider
         ClaimTypeConfig GroupIdentifierClaimTypeConfig { get; }
     }
 
-    public class LDAPCPSettings : LdapProviderSettings, ILDAPCPSettings
+    public class ClaimsProviderSettings : LdapProviderSettings, IClaimsProviderSettings
     {
-        public static new LDAPCPSettings GetDefaultSettings(string claimsProviderName)
+        public static new ClaimsProviderSettings GetDefaultSettings(string claimsProviderName)
         {
             LdapProviderSettings entraIDProviderSettings = LdapProviderSettings.GetDefaultSettings(claimsProviderName);
             return GenerateFromEntraIDProviderSettings(entraIDProviderSettings);
         }
 
-        public static LDAPCPSettings GenerateFromEntraIDProviderSettings(ILdapProviderSettings settings)
+        public static ClaimsProviderSettings GenerateFromEntraIDProviderSettings(ILdapProviderSettings settings)
         {
-            LDAPCPSettings copy = new LDAPCPSettings();
+            ClaimsProviderSettings copy = new ClaimsProviderSettings();
             Utils.CopyPublicProperties(typeof(LdapProviderSettings), settings, copy);
             return copy;
         }
@@ -66,12 +66,12 @@ namespace Yvand.LdapClaimsProvider
         /// <summary>
         /// Gets the settings that contain the configuration for EntraCP
         /// </summary>
-        public ILDAPCPSettings Settings { get; protected set; }
+        public IClaimsProviderSettings Settings { get; protected set; }
 
         /// <summary>
         /// Gets custom settings that will be used instead of the settings from the persisted object
         /// </summary>
-        private ILDAPCPSettings CustomSettings { get; }
+        private IClaimsProviderSettings CustomSettings { get; }
 
         /// <summary>
         /// Gets the version of the settings, used to refresh the settings if the persisted object is updated
@@ -103,7 +103,7 @@ namespace Yvand.LdapClaimsProvider
         {
         }
 
-        public LDAPCPSE(string displayName, ILDAPCPSettings customSettings) : base(displayName)
+        public LDAPCPSE(string displayName, IClaimsProviderSettings customSettings) : base(displayName)
         {
             this.CustomSettings = customSettings;
         }
@@ -173,7 +173,7 @@ namespace Yvand.LdapClaimsProvider
                     return true;
                 }
 
-                this.Settings = LDAPCPSettings.GenerateFromEntraIDProviderSettings(settings);
+                this.Settings = ClaimsProviderSettings.GenerateFromEntraIDProviderSettings(settings);
                 Logger.Log($"[{this.Name}] Settings have new version {this.Settings.Version}, refreshing local copy",
                     TraceSeverity.Medium, EventSeverity.Information, TraceCategory.Core);
                 success = this.InitializeInternalRuntimeSettings();
@@ -223,7 +223,7 @@ namespace Yvand.LdapClaimsProvider
         /// <returns>True if successful, false if not</returns>
         private bool InitializeInternalRuntimeSettings()
         {
-            LDAPCPSettings settings = (LDAPCPSettings)this.Settings;
+            ClaimsProviderSettings settings = (ClaimsProviderSettings)this.Settings;
             if (settings.ClaimTypes?.Count <= 0)
             {
                 Logger.Log($"[{this.Name}] Cannot continue because configuration has 0 claim configured.",
@@ -383,7 +383,7 @@ namespace Yvand.LdapClaimsProvider
                     }
 
                     Logger.Log($"[{Name}] Starting augmentation for user '{decodedEntity.Value}'.", TraceSeverity.Verbose, EventSeverity.Information, TraceCategory.Augmentation);
-                    currentContext = new OperationContext(this.Settings as LDAPCPSettings, OperationType.Augmentation, String.Empty, decodedEntity, context, null, null, Int32.MaxValue);
+                    currentContext = new OperationContext(this.Settings as ClaimsProviderSettings, OperationType.Augmentation, String.Empty, decodedEntity, context, null, null, Int32.MaxValue);
                     Stopwatch timer = new Stopwatch();
                     timer.Start();
                     List<string> groups = this.EntityProvider.GetEntityGroups(currentContext);
@@ -437,7 +437,7 @@ namespace Yvand.LdapClaimsProvider
                 this.Lock_LocalConfigurationRefresh.EnterReadLock();
                 try
                 {
-                    OperationContext currentContext = new OperationContext(this.Settings as LDAPCPSettings, OperationType.Search, resolveInput, null, context, entityTypes, null, 30);
+                    OperationContext currentContext = new OperationContext(this.Settings as ClaimsProviderSettings, OperationType.Search, resolveInput, null, context, entityTypes, null, 30);
                     List<PickerEntity> entities = SearchOrValidate(currentContext);
                     if (entities == null || entities.Count == 0) { return; }
                     foreach (PickerEntity entity in entities)
@@ -468,7 +468,7 @@ namespace Yvand.LdapClaimsProvider
                 this.Lock_LocalConfigurationRefresh.EnterReadLock();
                 try
                 {
-                    OperationContext currentContext = new OperationContext(this.Settings as LDAPCPSettings, OperationType.Search, searchPattern, null, context, entityTypes, hierarchyNodeID, maxCount);
+                    OperationContext currentContext = new OperationContext(this.Settings as ClaimsProviderSettings, OperationType.Search, searchPattern, null, context, entityTypes, hierarchyNodeID, maxCount);
                     List<PickerEntity> entities = this.SearchOrValidate(currentContext);
                     if (entities == null || entities.Count == 0) { return; }
                     SPProviderHierarchyNode matchNode = null;
@@ -521,7 +521,7 @@ namespace Yvand.LdapClaimsProvider
                     // Must be made after call to Initialize because SPTrustedLoginProvider name must be known
                     if (!String.Equals(resolveInput.OriginalIssuer, this.OriginalIssuerName, StringComparison.InvariantCultureIgnoreCase)) { return; }
 
-                    OperationContext currentContext = new OperationContext(this.Settings as LDAPCPSettings, OperationType.Validation, resolveInput.Value, resolveInput, context, entityTypes, null, 1);
+                    OperationContext currentContext = new OperationContext(this.Settings as ClaimsProviderSettings, OperationType.Validation, resolveInput.Value, resolveInput, context, entityTypes, null, 1);
                     List<PickerEntity> entities = this.SearchOrValidate(currentContext);
                     if (entities?.Count == 1)
                     {
@@ -1019,7 +1019,7 @@ namespace Yvand.LdapClaimsProvider
                 try
                 {
 
-                    foreach (var claimTypeSettings in ((LDAPCPSettings)this.Settings).RuntimeClaimTypeConfigList)
+                    foreach (var claimTypeSettings in ((ClaimsProviderSettings)this.Settings).RuntimeClaimTypeConfigList)
                     {
                         claimTypes.Add(claimTypeSettings.ClaimType);
                     }
@@ -1060,7 +1060,7 @@ namespace Yvand.LdapClaimsProvider
                 if (hierarchyNodeID == null)
                 {
                     // Root level
-                    foreach (var azureObject in ((LDAPCPSettings)this.Settings).RuntimeClaimTypeConfigList.FindAll(x => !x.IsAdditionalLdapSearchAttribute && aadEntityTypes.Contains(x.DirectoryObjectType)))
+                    foreach (var azureObject in ((ClaimsProviderSettings)this.Settings).RuntimeClaimTypeConfigList.FindAll(x => !x.IsAdditionalLdapSearchAttribute && aadEntityTypes.Contains(x.DirectoryObjectType)))
                     {
                         hierarchy.AddChild(
                             new Microsoft.SharePoint.WebControls.SPProviderHierarchyNode(

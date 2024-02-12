@@ -18,8 +18,8 @@ namespace Yvand.LdapClaimsProvider
 {
     public class LdapEntityProvider : EntityProviderBase
     {
-        private ILDAPCPSettings Settings { get; }
-        public LdapEntityProvider(string claimsProviderName, ILDAPCPSettings settings) : base(claimsProviderName)
+        private IClaimsProviderSettings Settings { get; }
+        public LdapEntityProvider(string claimsProviderName, IClaimsProviderSettings settings) : base(claimsProviderName)
         {
             this.Settings = settings;
         }
