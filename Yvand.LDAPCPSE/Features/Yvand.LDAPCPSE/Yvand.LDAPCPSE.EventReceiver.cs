@@ -2,8 +2,8 @@ using Microsoft.SharePoint;
 using Microsoft.SharePoint.Administration;
 using Microsoft.SharePoint.Administration.Claims;
 using System;
-using System.Collections.Generic;
 using System.Runtime.InteropServices;
+using Yvand.LdapClaimsProvider.Logging;
 
 namespace Yvand.LdapClaimsProvider
 {

@@ -9,7 +9,7 @@ using System.DirectoryServices;
 using System.Linq;
 using System.Reflection;
 using System.Web;
-using Yvand.LdapClaimsProvider.Configuration;
+using Yvand.LdapClaimsProvider.Logging;
 using WIF4_5 = System.Security.Claims;
 
 namespace Yvand.LdapClaimsProvider.Configuration

@@ -6,6 +6,7 @@ using System;
 using System.Security.Claims;
 using System.Web.UI;
 using Yvand.LdapClaimsProvider.Configuration;
+using Yvand.LdapClaimsProvider.Logging;
 
 namespace Yvand.LdapClaimsProvider.Administration
 {

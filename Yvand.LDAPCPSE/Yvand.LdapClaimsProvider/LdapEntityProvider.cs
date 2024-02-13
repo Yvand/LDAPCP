@@ -7,11 +7,11 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.DirectoryServices;
 using System.DirectoryServices.AccountManagement;
-using System.DirectoryServices.ActiveDirectory;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Yvand.LdapClaimsProvider.Configuration;
+using Yvand.LdapClaimsProvider.Logging;
 using WIF4_5 = System.Security.Claims;
 
 namespace Yvand.LdapClaimsProvider

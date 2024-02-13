@@ -6,10 +6,9 @@ using System.Diagnostics;
 using System.DirectoryServices;
 using System.IO;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Text;
 
-namespace Yvand.LdapClaimsProvider
+namespace Yvand.LdapClaimsProvider.Logging
 {
     public enum TraceCategory
     {
