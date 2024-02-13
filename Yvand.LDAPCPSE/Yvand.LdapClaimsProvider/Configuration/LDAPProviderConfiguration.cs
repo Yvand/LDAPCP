@@ -5,8 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
-using System.Security.Cryptography.X509Certificates;
-using WIF4_5 = System.Security.Claims;
+using Yvand.LdapClaimsProvider.Logging;
 
 namespace Yvand.LdapClaimsProvider.Configuration
 {

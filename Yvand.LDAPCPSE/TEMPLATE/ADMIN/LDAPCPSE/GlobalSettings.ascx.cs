@@ -7,6 +7,7 @@ using System.DirectoryServices;
 using System.Linq;
 using System.Web.UI.WebControls;
 using Yvand.LdapClaimsProvider.Configuration;
+using Yvand.LdapClaimsProvider.Logging;
 using AuthenticationTypes = System.DirectoryServices.AuthenticationTypes;
 using DirectoryConnection = Yvand.LdapClaimsProvider.Configuration.DirectoryConnection;
 

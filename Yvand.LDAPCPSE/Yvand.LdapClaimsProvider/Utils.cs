@@ -1,7 +1,5 @@
 ﻿using Microsoft.SharePoint.Administration;
 using Microsoft.SharePoint.Administration.Claims;
-using Microsoft.SharePoint.WebControls;
-using Microsoft.Web.Hosting.Administration;
 using System;
 using System.Collections.Generic;
 using System.DirectoryServices;
@@ -10,6 +8,7 @@ using System.Reflection;
 using System.Security.Principal;
 using System.Text;
 using System.Text.RegularExpressions;
+using Yvand.LdapClaimsProvider.Logging;
 
 namespace Yvand.LdapClaimsProvider.Configuration
 {

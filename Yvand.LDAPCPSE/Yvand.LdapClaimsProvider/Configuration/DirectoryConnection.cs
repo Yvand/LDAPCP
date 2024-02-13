@@ -5,6 +5,7 @@ using System;
 using System.DirectoryServices;
 using System.DirectoryServices.ActiveDirectory;
 using System.Reflection;
+using Yvand.LdapClaimsProvider.Logging;
 
 namespace Yvand.LdapClaimsProvider.Configuration
 {
