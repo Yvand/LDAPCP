@@ -23,8 +23,8 @@ namespace Yvand.LdapClaimsProvider.Configuration
         ClaimTypeConfigCollection ClaimTypes { get; }
 
         /// <summary>
-        /// Gets or sets whether to skip Microsoft Entra ID lookup and consider any input as valid.
-        /// This can be useful to keep people picker working even if connectivity with the Azure server is lost.
+        /// Gets or sets whether to skip the requests to LDAP and consider any input as valid.
+        /// This can be useful to keep people picker working even if connectivity with the directory is lost.
         /// </summary>
         bool AlwaysResolveUserInput { get; }
 
@@ -34,7 +34,7 @@ namespace Yvand.LdapClaimsProvider.Configuration
         bool FilterExactMatchOnly { get; }
 
         /// <summary>
-        /// Gets or sets whether to return the Microsoft Entra ID groups that the user is a member of.
+        /// Gets or sets whether to return the trusted groups that the user is a member of.
         /// </summary>
         bool EnableAugmentation { get; }
 
@@ -44,17 +44,17 @@ namespace Yvand.LdapClaimsProvider.Configuration
         string EntityDisplayTextPrefix { get; }
 
         /// <summary>
-        /// Gets or sets the timeout in milliseconds before an operation to Microsoft Entra ID is canceled.
+        /// Gets or sets the timeout in seconds before an operation to LDAP directory is canceled.
         /// </summary>
         int Timeout { get; }
 
         /// <summary>
-        /// This property is not used by EntraCP and is available to developers for their own needs
+        /// This property is not used by LDAPCP and is available to developers for their own needs
         /// </summary>
         string CustomData { get; }
         #endregion
 
-        #region EntraID specific settings
+        #region LDAP specific settings
         /// <summary>
         /// Gets the list of Azure tenants to use to get entities
         /// </summary>
@@ -78,7 +78,7 @@ namespace Yvand.LdapClaimsProvider.Configuration
         public string CustomData { get; set; }
         #endregion
 
-        #region EntraID specific settings
+        #region LDAP specific settings
         public List<DirectoryConnection> LdapConnections { get; set; } = new List<DirectoryConnection>();
         public bool FilterEnabledUsersOnly { get; set; } = true;
         public bool FilterSecurityGroupsOnly { get; set; } = true;
