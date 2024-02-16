@@ -5,7 +5,7 @@ using System;
 using System.Runtime.InteropServices;
 using Yvand.LdapClaimsProvider.Logging;
 
-namespace Yvand.LdapClaimsProvider
+namespace Yvand.LdapClaimsProvider.Administration
 {
     /// <summary>
     /// This class handles events raised during feature activation, deactivation, installation, uninstallation, and upgrade.
@@ -14,7 +14,7 @@ namespace Yvand.LdapClaimsProvider
     /// The GUID attached to this class may be used during packaging and should not be modified.
     /// </remarks>
     [Guid("91e8e631-b3be-4d05-84c4-8653bddac278")]
-    public class LDAPCPSEEventReceiver : SPClaimProviderFeatureReceiver
+    public class FarmFeatureEventReceiver : SPClaimProviderFeatureReceiver
     {
         public override string ClaimProviderAssembly => typeof(LDAPCPSE).Assembly.FullName;
 
