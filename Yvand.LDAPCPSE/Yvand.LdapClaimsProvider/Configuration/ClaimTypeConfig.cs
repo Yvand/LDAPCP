@@ -7,6 +7,7 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.Remoting.Metadata;
+using Yvand.LdapClaimsProvider.Logging;
 using WIF4_5 = System.Security.Claims;
 
 namespace Yvand.LdapClaimsProvider.Configuration
@@ -506,7 +507,7 @@ namespace Yvand.LdapClaimsProvider.Configuration
 
             ClaimTypeConfig groupIdentifierConfig = GetIdentifierConfiguration(DirectoryObjectType.Group);
             if (groupIdentifierConfig == null)
-            { 
+            {
                 return identifierConfigUpdated;
             }
 
@@ -740,7 +741,15 @@ namespace Yvand.LdapClaimsProvider.Configuration
                         DirectoryObjectClass = ldapClass,
                         SPEntityDataKey = ClaimsProviderConstants.EntityMetadataPerLdapAttributes.ContainsKey(newAttribute) ? ClaimsProviderConstants.EntityMetadataPerLdapAttributes[newAttribute] : String.Empty,
                     };
-                    Add(newSearchAttributeConfig);
+                    try
+                    {
+                        Add(newSearchAttributeConfig);
+                    }
+                    catch (InvalidOperationException ex) 
+                    {
+                        // A InvalidOperationException is thrown if the LDAP attribute already exists as metadata
+                        Logger.LogException(String.Empty, $"while trying to set the LDAP attribute {newAttribute} for entity type {entityType} as a search attribute", TraceCategory.Core, ex);
+                    }
                 }
             }
 
