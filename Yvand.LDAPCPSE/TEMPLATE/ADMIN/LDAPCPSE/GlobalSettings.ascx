@@ -408,7 +408,7 @@
                                     <wssawc:InputFormTextBox title="" class="ms-input" ID="TxtUserIdAdditionalLdapAttributes" Columns="50" runat="server" MaxLength="255" />
                                 </li>
                                 <li>
-                                    <label for="<%= TxtUserIdLeadingToken.ClientID %>" title="Static or dynnamic token to add to the permission's value">Leading token &#9432;</label>
+                                    <label for="<%= TxtUserIdLeadingToken.ClientID %>" title="Static or dynnamic token to add to the permission's value">Leading token in claim value &#9432;</label>
                                     <wssawc:InputFormTextBox title="" class="ms-input" ID="TxtUserIdLeadingToken" Columns="50" runat="server" MaxLength="255" />
                                 </li>
                                 <li>
@@ -479,7 +479,7 @@
                                         <wssawc:InputFormTextBox title="" class="ms-input" ID="TxtGroupAdditionalLdapAttributes" Columns="50" runat="server" MaxLength="255" />
                                     </li>
                                     <li>
-                                        <label for="<%= TxtGroupLeadingToken.ClientID %>" title="Static or dynnamic token to add to the permission's value">Leading token &#9432;</label>
+                                        <label for="<%= TxtGroupLeadingToken.ClientID %>" title="Static or dynnamic token to add to the permission's value">Leading token in claim value &#9432;</label>
                                         <wssawc:InputFormTextBox title="" class="ms-input" ID="TxtGroupLeadingToken" Columns="50" runat="server" MaxLength="255" />
                                     </li>
                                     <li>
