@@ -46,11 +46,6 @@ namespace Yvand.LdapClaimsProvider.Tests
         {
             Settings = new LdapProviderSettings();
             Settings.ClaimTypes = LdapProviderSettings.ReturnDefaultClaimTypesConfig(UnitTestsHelper.ClaimsProvider.Name);
-
-#if DEBUG
-            Settings.Timeout = 99999;
-#endif
-
             string json = File.ReadAllText(UnitTestsHelper.AzureTenantsJsonFile);
             List<DirectoryConnection> azureTenants = JsonConvert.DeserializeObject<List<DirectoryConnection>>(json);
             Settings.LdapConnections = azureTenants;
