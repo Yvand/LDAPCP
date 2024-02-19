@@ -57,7 +57,7 @@ namespace Yvand.LdapClaimsProvider.Administration
         }
 
         /// <summary>
-        /// Gets or sets the settings used by EntraCP to run
+        /// Gets or sets the settings used by LDAPCP to run
         /// </summary>
         protected LdapProviderSettings Settings { get; set; }
 
@@ -171,7 +171,7 @@ namespace Yvand.LdapClaimsProvider.Administration
         protected static readonly string ViewStatePersistedObjectVersionKey = "PersistedObjectVersion";
         protected static readonly string TextErrorPersistedObjectNotFound = "PersistedObject cannot be found.";
         protected static readonly string TextErrorPersistedObjectStale = "Modifications were not applied because the persisted object was modified after this page was loaded. Please refresh the page and try again.";
-        protected static readonly string TextErrorNoSPTrustAssociation = "{0} is currently not associated with any SPTrustedLoginProvider, which is required to create entities.<br/>Visit <a href=\"" + ClaimsProviderConstants.PUBLICSITEURL + "\" target=\"_blank\">EntraCP site</a> for more information.<br/>Refresh this page once '{0}' is associated with a SPTrustedLoginProvider.";
+        protected static readonly string TextErrorNoSPTrustAssociation = "{0} is currently not associated with any SPTrustedLoginProvider, which is required to create entities.<br/>Visit <a href=\"" + ClaimsProviderConstants.PUBLICSITEURL + "\" target=\"_blank\">LDAPCP site</a> for more information.<br/>Refresh this page once '{0}' is associated with a SPTrustedLoginProvider.";
         protected static readonly string TextErrorNoIdentityClaimType = "The SPTrustedLoginProvider '{0}' is set with identity claim type '{1}', but is not set in claim types configuration list.<br/>Please visit claim types configuration page to add it.";
         protected static readonly string TextErrorClaimsProviderNameNotSet = "The attribute 'ClaimsProviderName' must be set in the user control.";
         protected static readonly string TextErrorPersistedObjectNameNotSet = "The attribute 'PersistedObjectName' must be set in the user control.";

@@ -155,6 +155,16 @@ namespace Yvand.LdapClaimsProvider.Configuration
         {
         }
 
+        public DirectoryConnection(bool useDefaultADConnection)
+        {
+            this.UseDefaultADConnection = useDefaultADConnection;
+            if (useDefaultADConnection == true)
+            {
+                this.EnableAugmentation = true;
+                this.GetGroupMembershipUsingDotNetHelpers = true;
+            }
+        }
+
         public bool Initialize()
         {
             if (InitializationSuccessful)

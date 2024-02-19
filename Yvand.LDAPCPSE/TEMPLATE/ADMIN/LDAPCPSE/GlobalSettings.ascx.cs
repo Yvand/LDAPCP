@@ -209,7 +209,7 @@ namespace Yvand.LdapClaimsProvider.Administration
             {
                 Settings.LdapConnections.Remove(tenantToRemove);
                 CommitChanges();
-                Logger.Log($"Microsoft Entra ID tenant '{tenantToRemove.LdapPath}' was successfully removed from configuration '{ConfigurationName}'", TraceSeverity.Medium, EventSeverity.Information, TraceCategory.Configuration);
+                Logger.Log($"Directory '{tenantToRemove.LdapPath}' was successfully removed from configuration '{ConfigurationName}'", TraceSeverity.Medium, EventSeverity.Information, TraceCategory.Configuration);
                 LabelMessage.Text = String.Format(TextSummaryPersistedObjectInformation, Configuration.Name, Configuration.Version, Configuration.Id);
                 PopulateConnectionsGrid();
                 InitializeAugmentation();
@@ -346,7 +346,7 @@ namespace Yvand.LdapClaimsProvider.Administration
         }
 
         /// <summary>
-        /// Add new Microsoft Entra ID tenant in persisted object
+        /// Add new Directory in persisted object
         /// </summary>
         void AddTenantConnection()
         {
@@ -360,21 +360,14 @@ namespace Yvand.LdapClaimsProvider.Administration
 
             if (this.RbUseServerDomain.Checked)
             {
-                Settings.LdapConnections.Add(
-                    new DirectoryConnection
-                    {
-                        UseDefaultADConnection = true,
-                        EnableAugmentation = true,
-                    }
-                );
+                Settings.LdapConnections.Add(new DirectoryConnection(true));
             }
             else
             {
                 AuthenticationTypes authNType = GetSelectedAuthenticationTypes(true);
                 Settings.LdapConnections.Add(
-                    new DirectoryConnection
+                    new DirectoryConnection(false)
                     {
-                        UseDefaultADConnection = false,
                         LdapPath = this.TxtLdapConnectionString.Text,
                         Username = this.TxtLdapUsername.Text,
                         Password = this.TxtLdapPassword.Text,

@@ -93,6 +93,10 @@ namespace Yvand.LdapClaimsProvider.Configuration
             LdapProviderSettings entityProviderSettings = new LdapProviderSettings
             {
                 ClaimTypes = LdapProviderSettings.ReturnDefaultClaimTypesConfig(claimsProviderName),
+                LdapConnections = new List<DirectoryConnection>()
+                {
+                    new DirectoryConnection(true),
+                }
             };
             return entityProviderSettings;
         }
@@ -503,26 +507,6 @@ namespace Yvand.LdapClaimsProvider.Configuration
         public virtual ILdapProviderSettings GetDefaultSettings()
         {
             return LdapProviderSettings.GetDefaultSettings(this.ClaimsProviderName);
-        }
-
-        /// <summary>
-        /// Generate and return default configuration
-        /// </summary>
-        /// <returns></returns>
-        public static LdapProviderConfiguration ReturnDefaultConfiguration(string claimsProviderName)
-        {
-            LdapProviderConfiguration defaultConfig = new LdapProviderConfiguration();
-            defaultConfig.ClaimsProviderName = claimsProviderName;
-            defaultConfig.LdapConnections = new List<DirectoryConnection>
-            {
-                new DirectoryConnection
-                {
-                    UseDefaultADConnection = true,
-                        EnableAugmentation = true,
-                },
-            };
-            defaultConfig.ClaimTypes = LdapProviderSettings.ReturnDefaultClaimTypesConfig(claimsProviderName);
-            return defaultConfig;
         }
 
         public virtual ClaimTypeConfigCollection ReturnDefaultClaimTypesConfig()
