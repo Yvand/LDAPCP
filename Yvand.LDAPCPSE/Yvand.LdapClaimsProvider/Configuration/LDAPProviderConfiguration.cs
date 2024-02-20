@@ -136,6 +136,9 @@ namespace Yvand.LdapClaimsProvider.Configuration
                 ctConfig = new ClaimTypeConfig { ClaimType = spTrust.IdentityClaimTypeInformation.MappedClaimType };
                 newCTConfigCollection.Add(ctConfig);
             }
+            // By default, do the same as AD claims provider: Show the displayName of users in the people picker list
+            newCTConfigCollection.UserIdentifierConfig.DirectoryObjectAttributeForDisplayText = "displayName";
+
 
             //// Not adding those as additional attributes to avoid having too many LDAP attributes to search users in the LDAP filter
             var nonIdentityClaimTypes = ClaimsProviderConstants.GetDefaultSettingsPerUserClaimType().Where(x => x.Key != spTrust.IdentityClaimTypeInformation.MappedClaimType);
