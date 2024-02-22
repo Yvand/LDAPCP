@@ -10,9 +10,6 @@ jobs:
   strategy:
     maxParallel: 4
     matrix:
-      OnSharePoint2013:
-        deployThisSharePointVersion: variables['Deployment.ProvisionSharePoint2013']
-        sharePointVersion: 2013
       OnSharePoint2016:
         deployThisSharePointVersion: variables['Deployment.ProvisionSharePoint2016']
         sharePointVersion: 2016
@@ -26,7 +23,7 @@ jobs:
   #condition: eq(variables['deployThisSharePointVersion'], 'yes') # Not working: variables['deployThisSharePointVersion'] is evaluated to Null
   timeoutInMinutes: 30
   pool:
-    name: $(System.TeamProject)-Tests-$(sharePointVersion)
+    name: $(Tests.ProjectName)-Tests-$(sharePointVersion)
   steps:
   - checkout: none #skip checking out the default repository resource
   - task: VisualStudioTestPlatformInstaller@1
@@ -35,14 +32,14 @@ jobs:
   - task: VSTest@3
     displayName: 'Run Visual Studio tests'
     inputs:
-      searchFolder: '$(RootLocalPath)/$(TestsPathName)/$(System.TeamProject)-unit-tests/release'
+      searchFolder: '$(RootLocalPath)/$(TestsPathName)/$(Tests.ProjectName)-unit-tests/release'
       vsTestVersion: toolsInstaller
       runSettingsFile: '$(RootLocalPath)/$(TestsPathName)/DTLServer.runsettings'
       overrideTestrunParameters: '$(Tests.OverrideTestrunParameters)'
       codeCoverageEnabled: $(Tests.CodeCoverageEnabled)
       otherConsoleOptions: '/Platform:x64'
-      testRunTitle: '$(System.TeamProject)-Tests-SP$(sharePointVersion)'
+      testRunTitle: '$(Tests.ProjectName)-Tests-SP$(sharePointVersion)'
       platform: '$(BuildPlatform)'
       configuration: $(Tests.BuildConfiguration)
       testAssemblyVer2: |
-        **\$(System.TeamProject)*test*.dll
+        **\$(Tests.ProjectName)*test*.dll
