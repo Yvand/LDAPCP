@@ -48,6 +48,7 @@ namespace Yvand.LdapClaimsProvider.Tests
 
         [TestCase("FakeAccount", false)]
         [TestCase("yvand@contoso.local", true)]
+        [TestCase("testLdapcpseUser_001@contoso.local", true)]
         public void TestAugmentationOperation(string claimValue, bool isMemberOfTrustedGroup)
         {
             base.TestAugmentationOperation(claimValue, isMemberOfTrustedGroup, UnitTestsHelper.ValidGroupName);
