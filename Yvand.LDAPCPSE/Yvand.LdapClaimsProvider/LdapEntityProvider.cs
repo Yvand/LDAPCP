@@ -332,7 +332,7 @@ namespace Yvand.LdapClaimsProvider
 
             try
             {
-                string groupDnPath = $"{ldapConnection.GetLdapBasePath()}/{groupValueDistinguishedName}";
+                string groupDnPath = $"{ldapConnection.LdapEntryServerAndPort}/{groupValueDistinguishedName}";
                 using (DirectoryEntry deCurrentGroup = ldapConnection.GetDirectoryEntry(groupDnPath))
                 {
                     using (DirectorySearcher searcher = new DirectorySearcher())

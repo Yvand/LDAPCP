@@ -127,13 +127,42 @@ namespace Yvand.LdapClaimsProvider.Configuration
                 return this._LdapEntry;
             }
         }
+        private DirectoryEntry _LdapEntry;
 
         private void _DirectoryConnection_Disposed(object sender, EventArgs e)
         {
             _LdapEntry = null;
+            _LdapEntryServerAndPort = String.Empty;
         }
 
-        private DirectoryEntry _LdapEntry;
+        /// <summary>
+        /// Returns only the LDAP server and port (without the distinguished name) from the value in LdapEntry.Path, for exampple LDAP://contoso.local:636 or LDAP://contoso.local
+        /// </summary>
+        /// <returns>The LDAP path in format LDAP://contoso.local:636 or LDAP://contoso.local</returns>
+        public string LdapEntryServerAndPort
+        {
+            get
+            {
+                if (!String.IsNullOrWhiteSpace(_LdapEntryServerAndPort)) { return _LdapEntryServerAndPort; }
+                if (LdapEntry == null || String.IsNullOrWhiteSpace(LdapEntry.Path))
+                {
+                    return String.Empty;
+                }
+                string patternDetectDistinguishedName = @"\/\w\w=";
+                Match m = Regex.Match(LdapEntry.Path, patternDetectDistinguishedName, RegexOptions.IgnoreCase);
+                if (m.Success)
+                {
+                    return LdapEntry.Path.Substring(0, m.Index);
+                }
+                else
+                {
+                    // Remove the trailing '/' if it is present
+                    return LdapEntry.Path.TrimEnd('/');
+                }
+            }
+        }
+        private string _LdapEntryServerAndPort;
+
 
         public bool InitializationSuccessful { get; private set; } = false;
 
@@ -259,29 +288,6 @@ namespace Yvand.LdapClaimsProvider.Configuration
                 }
             }
             return directoryEntry;
-        }
-
-        /// <summary>
-        /// Returns only the LDAP base (without the distinguished name) from the value in LdapEntry.Path, in format LDAP://contoso.local:636/DC=contoso,DC=local
-        /// </summary>
-        /// <returns>The LDAP path in format: LDAP://contoso.local:636</returns>
-        public string GetLdapBasePath()
-        {
-            if (LdapEntry == null || String.IsNullOrWhiteSpace(LdapEntry.Path))
-            {
-                return String.Empty;
-            }
-            string patternDetectDistinguishedName = @"\/\w\w=";
-            Match m = Regex.Match(LdapEntry.Path, patternDetectDistinguishedName, RegexOptions.IgnoreCase);
-            if (m.Success)
-            {
-                return LdapEntry.Path.Substring(0, m.Index);
-            }
-            else
-            {
-                // Remove the trailing '/' if it is present
-                return LdapEntry.Path.TrimEnd('/');
-            }
         }
     }
 }
