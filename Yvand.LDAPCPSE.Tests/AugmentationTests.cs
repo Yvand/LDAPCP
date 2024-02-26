@@ -180,6 +180,7 @@ namespace Yvand.LdapClaimsProvider.Tests
             base.CheckSettingsTest();
         }
 
+#if DEBUG
         [TestCase("FakeAccount", false)]
         [TestCase("yvand@contoso.local", true)]
         public void TestAugmentationOperation(string claimValue, bool isMemberOfTrustedGroup)
@@ -187,7 +188,6 @@ namespace Yvand.LdapClaimsProvider.Tests
             base.TestAugmentationOperation(claimValue, isMemberOfTrustedGroup, UnitTestsHelper.ValidGroupSid);
         }
 
-#if DEBUG
         [TestCase("testLdapcpseUser_001@contoso.local", true, @"S-1-5-21-2647467245-1611586658-188888215-110602")] // testLdapcpseGroup_2
         public void TestAugmentationOperationGroupRecursive(string claimValue, bool isMemberOfTrustedGroup, string groupValue)
         {

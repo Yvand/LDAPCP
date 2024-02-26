@@ -1,6 +1,8 @@
 ﻿using NUnit.Framework;
 using Yvand.LdapClaimsProvider.Configuration;
 
+// No custom additional claim type available in the trust
+#if DEBUG
 namespace Yvand.LdapClaimsProvider.Tests
 {
     [TestFixture]
@@ -55,3 +57,4 @@ namespace Yvand.LdapClaimsProvider.Tests
         }
     }
 }
+#endif
