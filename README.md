@@ -1,4 +1,4 @@
-# LDAPCP for SharePoint Subscription / 2019 / 2016 / 2013
+# LDAPCP for SharePoint Subscription / 2019 / 2016
 
 **Please visit [ldapcp.com](https://ldapcp.com) to download LDAPCP and find documentation.**
 
@@ -20,4 +20,3 @@
 ![GitHub issues](https://img.shields.io/github/issues/Yvand/LDAPCP.svg)
 ![GitHub](https://img.shields.io/github/license/Yvand/LDAPCP.svg)
 ![GitHub code size in bytes](https://img.shields.io/github/languages/code-size/Yvand/LDAPCP.svg)
-[![Codacy Badge](https://api.codacy.com/project/badge/Grade/1217edec4c2c47b680064b826109af19)](https://www.codacy.com/app/Yvand/LDAPCP?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=Yvand/LDAPCP&amp;utm_campaign=Badge_Grade)
