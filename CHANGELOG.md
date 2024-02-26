@@ -1,5 +1,9 @@
 # Change log for LDAPCP
 
+## LDAPCP Second Edition v17.0 - Unreleased
+
+* Initial release of LDAPCP Second Edition, a complete rewrite of current project
+
 ## LDAPCP v16.0.20230824.1 enhancements & bug-fixes - Published in August 24, 2023
 
 * IMPORTANT: due to the move to GitHub Actions and the configuration of the builtin Windows VM, LDAPCP now requires at least .NET 4.6.2
