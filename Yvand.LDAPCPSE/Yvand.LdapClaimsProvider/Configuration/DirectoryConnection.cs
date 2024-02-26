@@ -5,6 +5,7 @@ using System;
 using System.DirectoryServices;
 using System.DirectoryServices.ActiveDirectory;
 using System.Reflection;
+using System.Text.RegularExpressions;
 using Yvand.LdapClaimsProvider.Logging;
 
 namespace Yvand.LdapClaimsProvider.Configuration
@@ -180,7 +181,7 @@ namespace Yvand.LdapClaimsProvider.Configuration
                 {
                     try
                     {
-#if DEBUG
+#if DEBUGx
                         this.AuthenticationType = AuthenticationTypes.None;
                         Logger.LogDebug($"Hardcoded property DirectoryEntry.AuthenticationType to {AuthenticationType} for \"{this.LdapEntry.Path}\"");
 #endif
@@ -258,6 +259,29 @@ namespace Yvand.LdapClaimsProvider.Configuration
                 }
             }
             return directoryEntry;
+        }
+
+        /// <summary>
+        /// Returns only the LDAP base (without the distinguished name) from the value in LdapEntry.Path, in format LDAP://contoso.local:636/DC=contoso,DC=local
+        /// </summary>
+        /// <returns>The LDAP path in format: LDAP://contoso.local:636</returns>
+        public string GetLdapBasePath()
+        {
+            if (LdapEntry == null || String.IsNullOrWhiteSpace(LdapEntry.Path))
+            {
+                return String.Empty;
+            }
+            string patternDetectDistinguishedName = @"\/\w\w=";
+            Match m = Regex.Match(LdapEntry.Path, patternDetectDistinguishedName, RegexOptions.IgnoreCase);
+            if (m.Success)
+            {
+                return LdapEntry.Path.Substring(0, m.Index);
+            }
+            else
+            {
+                // Remove the trailing '/' if it is present
+                return LdapEntry.Path.TrimEnd('/');
+            }
         }
     }
 }
