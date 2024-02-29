@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
+  <metadata>
+    <id>Yvand.LDAPCPSE</id>
+    <version>$fileversion$</version>
+    <authors>Yvan Duhamel</authors>
+    <title>LDAPCP</title>
+    <description>"A claims provider to connect SharePoint Subscription / 2019 / 2016 with Active Directory and LDAP directories in federated authentication"</description>
+    <requireLicenseAcceptance>true</requireLicenseAcceptance>
+    <license type="expression">Apache-2.0</license>
+    <projectUrl>https://ldapcp.com</projectUrl>
+    <copyright>Yvan Duhamel</copyright>
+    <tags>SharePoint ClaimsProvider</tags>
+    <releaseNotes>https://github.com/Yvand/LDAPCP/blob/master/CHANGELOG.md</releaseNotes>
+    <repository type="git" url="https://github.com/Yvand/LDAPCP" commit="$commit$" />
+    <contentFiles>
+      <files include="**/*.ascx" buildAction="None" copyToOutput="true" />
+    </contentFiles>
+  </metadata>
+  <files>
+  </files>
+</package>
