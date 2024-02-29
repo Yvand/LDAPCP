@@ -7,11 +7,11 @@ using System.Security;
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
 [assembly: AssemblyTitle("LDAPCP")]
-[assembly: AssemblyDescription("")]
+[assembly: AssemblyDescription("A claims provider to connect SharePoint Subscription / 2019 / 2016 with Active Directory and LDAP directories in federated authentication")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("GitHub.com/Yvand - Yvan Duhamel")]
+[assembly: AssemblyCompany("Yvan Duhamel - GitHub.com/Yvand")]
 [assembly: AssemblyProduct("LDAPCP")]
-[assembly: AssemblyCopyright("Copyright © 2019, Yvan Duhamel, All rights reserved")]
+[assembly: AssemblyCopyright("Copyright © 2024, Yvan Duhamel, All rights reserved")]
 [assembly: AssemblyTrademark("LDAPCP")]
 [assembly: AssemblyCulture("")]
 
