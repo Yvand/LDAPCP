@@ -249,17 +249,17 @@
     </tr>
 </table>
 <table border="0" cellspacing="0" cellpadding="0" width="100%">
-    <wssuc:buttonsection runat="server">
-        <template_buttons>
+    <wssuc:ButtonSection runat="server">
+        <Template_Buttons>
             <asp:Button UseSubmitBehavior="false" runat="server" class="ms-ButtonHeightWidth" OnClick="BtnOK_Click" Text="<%$Resources:wss,multipages_okbutton_text%>" ID="BtnOKTop" AccessKey="<%$Resources:wss,okbutton_accesskey%>" />
-        </template_buttons>
-    </wssuc:buttonsection>
+        </Template_Buttons>
+    </wssuc:ButtonSection>
 
     <wssuc:InputFormSection ID="CurrentLdapConnectionSection" Title="Registered LDAP connections" runat="server">
-        <template_description>
+        <Template_Description>
             <wssawc:EncodedLiteral runat="server" Text="LDAP connections currently registered in LDAPCP configuration." EncodeMethod='HtmlEncodeAllowSimpleTextFormatting' />
-        </template_description>
-        <template_inputformcontrols>
+        </Template_Description>
+        <Template_InputFormControls>
             <tr>
                 <td>
                     <wssawc:SPGridView runat="server" ID="grdLDAPConnections" AutoGenerateColumns="false" OnRowDeleting="grdLDAPConnections_RowDeleting">
@@ -272,14 +272,14 @@
                     </wssawc:SPGridView>
                 </td>
             </tr>
-        </template_inputformcontrols>
+        </Template_InputFormControls>
     </wssuc:InputFormSection>
 
     <wssuc:InputFormSection ID="NewLdapConnectionSection" Title="Register a new LDAP connection" runat="server">
-        <template_description>
+        <Template_Description>
             <wssawc:EncodedLiteral runat="server" Text="By default, LDAPCP connects to the Active Directory domain of the SharePoint servers using the application pool identity. This connection is labelled 'Connect to SharePoint domain'." EncodeMethod='HtmlEncodeAllowSimpleTextFormatting' />
-        </template_description>
-        <template_inputformcontrols>
+        </Template_Description>
+        <Template_InputFormControls>
             <tr>
                 <td>
                     <table>
@@ -337,11 +337,11 @@
                     </p>
                 </td>
             </tr>
-        </template_inputformcontrols>
+        </Template_InputFormControls>
     </wssuc:InputFormSection>
 
-    <wssuc:inputformsection runat="server" Title="Configuration for the user identifier claim type">
-        <template_description>
+    <wssuc:InputFormSection runat="server" Title="Configuration for the user identifier claim type">
+        <Template_Description>
             <sharepoint:encodedliteral runat="server" text="Specify the settings to search, create and display the permissions for users." encodemethod='HtmlEncodeAllowSimpleTextFormatting' />
             <br />
             <br />
@@ -354,8 +354,8 @@
             <br />
             <br />
             <sharepoint:encodedliteral runat="server" text="- &quot;Additional LDAP filter&quot;: Specify a custom LDAP filter to restrict the users that may be returned. Be mindful that an invalid filter may break the LDAP requests." encodemethod='HtmlEncodeAllowSimpleTextFormatting' />
-        </template_description>
-        <template_inputformcontrols>
+        </Template_Description>
+        <Template_InputFormControls>
             <tr>
                 <td colspan="2">
                     <div class="divfieldset">
@@ -421,11 +421,11 @@
                     </div>
                 </td>
             </tr>
-        </template_inputformcontrols>
-    </wssuc:inputformsection>
+        </Template_InputFormControls>
+    </wssuc:InputFormSection>
 
-    <wssuc:inputformsection ID="AugmentationSection" runat="server" title="Configuration for the group claim type">
-        <template_description>
+    <wssuc:InputFormSection ID="AugmentationSection" runat="server" Title="Configuration for the group claim type">
+        <Template_Description>
             <sharepoint:encodedliteral runat="server" text="Specify the settings to search, create and display the permissions for groups." encodemethod='HtmlEncodeAllowSimpleTextFormatting' />
             <br />
             <br />
@@ -438,8 +438,8 @@
             <br />
             <br />
             <sharepoint:encodedliteral runat="server" text="- &quot;Additional LDAP filter&quot;: Specify a custom LDAP filter to restrict the groups that may be returned. Be mindful that an invalid filter may break the LDAP requests." encodemethod='HtmlEncodeAllowSimpleTextFormatting' />
-        </template_description>
-        <template_inputformcontrols>
+        </Template_Description>
+        <Template_InputFormControls>
             <p class="ms-error">
                 <asp:Label ID="Label1" runat="server" EnableViewState="False" />
             </p>
@@ -492,18 +492,16 @@
                     </td>
                 </tr>
             </div>
-        </template_inputformcontrols>
-    </wssuc:inputformsection>
+        </Template_InputFormControls>
+    </wssuc:InputFormSection>
 
     <wssuc:InputFormSection runat="server" Title="Augmentation">
-        <template_description>
-            <sharepoint:encodedliteral runat="server" text="When enabled, LDAPCP returns the group membership of the trusted users to SharePoint." encodemethod='HtmlEncodeAllowSimpleTextFormatting' />
-            <sharepoint:encodedliteral runat="server" text="It is required for some features to work correctly, like the &quot;check permissions&quot; dialog." encodemethod='HtmlEncodeAllowSimpleTextFormatting' />
+        <Template_Description>
+            <sharepoint:encodedliteral runat="server" text="If enabled, LDAPCP gets the group membership of the trusted users when they sign-in, or whenever SharePoint asks for it." encodemethod='HtmlEncodeAllowSimpleTextFormatting' />
             <br />
-            <br />
-            <wssawc:EncodedLiteral runat="server" Text="Augmentation can be controlled per LDAP connection.<br />If possible, you should use the <a href='https://docs.microsoft.com/en-us/dotnet/api/system.directoryservices.accountmanagement.userprincipal.getauthorizationgroups' target='_blank'>.NET helper</a>, otherwise LDAPCP only gets the groups the user is directly member of, not the nested groups." EncodeMethod='NoEncode' />
-        </template_description>
-        <template_inputformcontrols>
+            <sharepoint:encodedliteral runat="server" text="If not enabled, some features and permissions granted to trusted groups may not work." encodemethod='HtmlEncodeAllowSimpleTextFormatting' />
+        </Template_Description>
+        <Template_InputFormControls>
             <tr>
                 <td>
                     <asp:CheckBox Checked="false" runat="server" Name="ChkEnableAugmentation" ID="ChkEnableAugmentation" OnClick="window.Ldapcp.AdminGlobalSettingsControl.InitAugmentationControls();" Text="Enable augmentation" />
@@ -525,58 +523,61 @@
                     </div>
                 </td>
             </tr>
-        </template_inputformcontrols>
+        </Template_InputFormControls>
     </wssuc:InputFormSection>
 
     <wssuc:InputFormSection runat="server" Title="Active Directory specific settings" Description="Enable or disable LDAP filters specific to Active Directory.">
-        <template_inputformcontrols>
+        <Template_InputFormControls>
             <asp:CheckBox Checked="false" runat="server" Name="ChkFilterEnabledUsersOnly" ID="ChkFilterEnabledUsersOnly" Text="Exclude disabled users" />
             <br />
             <br />
             <asp:CheckBox Checked="false" runat="server" Name="ChkFilterSecurityGroupsOnly" ID="ChkFilterSecurityGroupsOnly" Text="Exclude distribution lists" />
-        </template_inputformcontrols>
+        </Template_InputFormControls>
     </wssuc:InputFormSection>
 
     <wssuc:InputFormSection runat="server" Title="LDAP requests timeout" Description="Specify the timeout for the requests to the LDAP servers, in seconds.">
-        <template_inputformcontrols>
+        <Template_InputFormControls>
             <wssawc:InputFormTextBox title="Set the timeout value in seconds." class="ms-input" ID="txtTimeout" Columns="5" runat="server" MaxLength="3" />
             <wssawc:EncodedLiteral runat="server" Text="&nbsp;second(s)" EncodeMethod='HtmlEncodeAllowSimpleTextFormatting' />
-        </template_inputformcontrols>
+        </Template_InputFormControls>
     </wssuc:InputFormSection>
 
-    <wssuc:InputFormSection runat="server" Title="Bypass requests to LDAP server(s)">
-        <template_description>
-            <sharepoint:encodedliteral runat="server" text="Bypass the LDAP server(s) and, depending on the context:" encodemethod='HtmlEncodeAllowSimpleTextFormatting' />
+    <wssuc:InputFormSection runat="server" Title="Bypass the LDAP server(s)">
+        <Template_Description>
+            <sharepoint:encodedliteral runat="server" text="Bypass the LDAP server(s) registered and, depending on the context:" encodemethod='HtmlEncodeAllowSimpleTextFormatting' />
             <br />
-            <sharepoint:encodedliteral runat="server" text="- Search: Use the input as the claim's value, and return 1 entity per claim type." encodemethod='HtmlEncodeAllowSimpleTextFormatting' />
+            <sharepoint:encodedliteral runat="server" text="- Search: Uses the input as the claim's value, and return 1 entity per claim type." encodemethod='HtmlEncodeAllowSimpleTextFormatting' />
             <br />
-            <sharepoint:encodedliteral runat="server" text="- Validation: Validate the incoming entity, as if it matched an object in LDAP." encodemethod='HtmlEncodeAllowSimpleTextFormatting' />
+            <sharepoint:encodedliteral runat="server" text="- Validation: Validates the incoming entity as-is." encodemethod='HtmlEncodeAllowSimpleTextFormatting' />
             <br />
             <sharepoint:encodedliteral runat="server" text="This setting does not affect the augmentation." encodemethod='HtmlEncodeAllowSimpleTextFormatting' />
-        </template_description>
-        <template_inputformcontrols>
+            <br />
+            <br />
+            <sharepoint:encodedliteral runat="server" text="It can be used as a mitigation if one or more SharePoint server(s) lost the connection with a LDAP server(s), until it is restored." encodemethod='HtmlEncodeAllowSimpleTextFormatting' />
+        </Template_Description>
+        <Template_InputFormControls>
             <asp:CheckBox Checked="false" runat="server" Name="ChkAlwaysResolveUserInput" ID="ChkAlwaysResolveUserInput" Text="Bypass requests to LDAP server(s)" />
-        </template_inputformcontrols>
+        </Template_InputFormControls>
     </wssuc:InputFormSection>
 
     <wssuc:InputFormSection runat="server" Title="Require exact match when typing in the people picker">
-        <template_description>
+        <Template_Description>
             <sharepoint:encodedliteral runat="server" text="Enable this to return results in the people picker, only if the user input matches exactly the value of the LDAP object attribute (case-insensitive)." encodemethod='HtmlEncodeAllowSimpleTextFormatting' />
-        </template_description>
-        <template_inputformcontrols>
+        </Template_Description>
+        <Template_InputFormControls>
             <asp:CheckBox Checked="false" runat="server" Name="ChkFilterExactMatchOnly" ID="ChkFilterExactMatchOnly" Text="Require exact match when typing in the people picker" />
-        </template_inputformcontrols>
+        </Template_InputFormControls>
     </wssuc:InputFormSection>
 
-    <wssuc:InputFormSection runat="server" Title="Reset LDAPCP configuration" description="Restore configuration to its default values. All changes, including in claim types mappings, will be lost.">
-        <template_inputformcontrols>
+    <wssuc:InputFormSection runat="server" Title="Reset LDAPCP configuration" Description="Restore configuration to its default values. All changes, including in claim types mappings, will be lost.">
+        <Template_InputFormControls>
             <asp:Button runat="server" ID="BtnResetConfig" Text="Reset LDAPCP configuration" OnClick="BtnResetConfig_Click" class="ms-ButtonHeightWidth" OnClientClick="return confirm('Do you really want to reset LDAPCP configuration?');" />
-        </template_inputformcontrols>
+        </Template_InputFormControls>
     </wssuc:InputFormSection>
 
-    <wssuc:buttonsection runat="server">
-        <template_buttons>
+    <wssuc:ButtonSection runat="server">
+        <Template_Buttons>
             <asp:Button UseSubmitBehavior="false" runat="server" class="ms-ButtonHeightWidth" OnClick="BtnOK_Click" Text="<%$Resources:wss,multipages_okbutton_text%>" ID="BtnOK" AccessKey="<%$Resources:wss,okbutton_accesskey%>" />
-        </template_buttons>
-    </wssuc:buttonsection>
+        </Template_Buttons>
+    </wssuc:ButtonSection>
 </table>
