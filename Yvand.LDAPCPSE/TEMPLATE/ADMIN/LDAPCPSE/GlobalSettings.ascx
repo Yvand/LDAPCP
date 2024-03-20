@@ -499,7 +499,7 @@
         <Template_Description>
             <sharepoint:encodedliteral runat="server" text="If enabled, LDAPCP gets the group membership of the trusted users when they sign-in, or whenever SharePoint asks for it." encodemethod='HtmlEncodeAllowSimpleTextFormatting' />
             <br />
-            <sharepoint:encodedliteral runat="server" text="If not enabled, some features and permissions granted to trusted groups may not work." encodemethod='HtmlEncodeAllowSimpleTextFormatting' />
+            <sharepoint:encodedliteral runat="server" text="If disabled, some SharePoint features, and permissions granted to trusted groups, may not work or not work reliably." encodemethod='HtmlEncodeAllowSimpleTextFormatting' />
         </Template_Description>
         <Template_InputFormControls>
             <tr>
