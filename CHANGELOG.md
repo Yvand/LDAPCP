@@ -1,8 +1,10 @@
 # Change log for LDAPCP
 
+## Unreleased
+
 ## LDAPCP Second Edition v17.0.20240226.2 - Published in February 26, 2024
 
-* Initial release of LDAPCP Second Edition, a complete rewrite of current project
+* Ignore case when comparing claim types, to avoid errors when creating the configuration - https://github.com/Yvand/LDAPCP/pull/205
 
 ## LDAPCP v16.0.20230824.1 enhancements & bug-fixes - Published in August 24, 2023
 
