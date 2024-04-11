@@ -3,6 +3,7 @@ using Microsoft.SharePoint.Administration;
 using Microsoft.SharePoint.Administration.Claims;
 using Microsoft.SharePoint.Utilities;
 using System;
+using System.Linq;
 using System.Security.Claims;
 using System.Web.UI;
 using Yvand.LdapClaimsProvider.Configuration;
@@ -107,11 +108,13 @@ namespace Yvand.LdapClaimsProvider.Administration
             {
                 SPClaimProviderManager claimMgr = SPClaimProviderManager.Local;
                 ClaimTypeConfig idConfig = Settings.ClaimTypes.GroupIdentifierConfig;
-                if (idConfig == null)
+                string accountPrefix = String.Empty;
+                // https://github.com/Yvand/LDAPCP/issues/203 group claim type may not exist in the trust
+                if (idConfig != null && SPTrust.ClaimTypes.Contains(idConfig.ClaimType))
                 {
-                    return String.Empty;
+                    accountPrefix = claimMgr.EncodeClaim(new SPClaim(idConfig.ClaimType, String.Empty, ClaimValueTypes.String, SPOriginalIssuers.Format(SPOriginalIssuerType.TrustedProvider, SPTrust.Name)));
                 }
-                return claimMgr.EncodeClaim(new SPClaim(idConfig.ClaimType, String.Empty, ClaimValueTypes.String, SPOriginalIssuers.Format(SPOriginalIssuerType.TrustedProvider, SPTrust.Name)));
+                return accountPrefix;
             }
         }
 
