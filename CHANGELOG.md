@@ -1,5 +1,9 @@
 # Change log for LDAPCP
 
+## Unreleased
+
+* Fix the error when loading the global configuration page, if the group claim type set in the LDAPCP configuration does not exist in the trust. https://github.com/Yvand/LDAPCP/issues/203
+
 ## LDAPCP Second Edition v17.0.20240226.2 - Published in February 26, 2024
 
 * Initial release of LDAPCP Second Edition, a complete rewrite of current project
