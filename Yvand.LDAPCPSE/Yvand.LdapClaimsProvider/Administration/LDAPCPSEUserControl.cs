@@ -110,7 +110,8 @@ namespace Yvand.LdapClaimsProvider.Administration
                 ClaimTypeConfig idConfig = Settings.ClaimTypes.GroupIdentifierConfig;
                 string accountPrefix = String.Empty;
                 // https://github.com/Yvand/LDAPCP/issues/203 group claim type may not exist in the trust
-                if (idConfig != null && SPTrust.ClaimTypes.Contains(idConfig.ClaimType))
+                if (!String.IsNullOrWhiteSpace(idConfig?.ClaimType) && 
+                    SPTrust.ClaimTypeInformation.Count(x => String.Equals(x.MappedClaimType, idConfig.ClaimType, StringComparison.OrdinalIgnoreCase)) > 0)
                 {
                     accountPrefix = claimMgr.EncodeClaim(new SPClaim(idConfig.ClaimType, String.Empty, ClaimValueTypes.String, SPOriginalIssuers.Format(SPOriginalIssuerType.TrustedProvider, SPTrust.Name)));
                 }
