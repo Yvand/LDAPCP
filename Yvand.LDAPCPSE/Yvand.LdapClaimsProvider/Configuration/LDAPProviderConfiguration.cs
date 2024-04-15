@@ -141,7 +141,7 @@ namespace Yvand.LdapClaimsProvider.Configuration
 
 
             //// Not adding those as additional attributes to avoid having too many LDAP attributes to search users in the LDAP filter
-            var nonIdentityClaimTypes = ClaimsProviderConstants.GetDefaultSettingsPerUserClaimType().Where(x => x.Key != spTrust.IdentityClaimTypeInformation.MappedClaimType);
+            var nonIdentityClaimTypes = ClaimsProviderConstants.GetDefaultSettingsPerUserClaimType().Where(x => !String.Equals(x.Key, spTrust.IdentityClaimTypeInformation.MappedClaimType, StringComparison.OrdinalIgnoreCase));
             foreach (var nonIdentityClaimType in nonIdentityClaimTypes)
             {
                 ctConfig = nonIdentityClaimType.Value;
