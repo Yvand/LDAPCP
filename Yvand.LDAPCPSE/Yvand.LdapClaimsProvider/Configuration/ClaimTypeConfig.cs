@@ -745,7 +745,7 @@ namespace Yvand.LdapClaimsProvider.Configuration
                     {
                         Add(newSearchAttributeConfig);
                     }
-                    catch (InvalidOperationException ex) 
+                    catch (InvalidOperationException ex)
                     {
                         // A InvalidOperationException is thrown if the LDAP attribute already exists as metadata
                         Logger.LogException(String.Empty, $"while trying to set the LDAP attribute {newAttribute} for entity type {entityType} as a search attribute", TraceCategory.Core, ex);
@@ -770,11 +770,14 @@ namespace Yvand.LdapClaimsProvider.Configuration
         public void SetAdditionalLdapFilterForEntity(string newAdditionalLdapFilter, DirectoryObjectType entityType)
         {
             ClaimTypeConfig mainConfig = GetIdentifierConfiguration(entityType);
-            mainConfig.DirectoryObjectAdditionalFilter = newAdditionalLdapFilter;
-            IEnumerable<ClaimTypeConfig> additionalConfigurations = GetAdditionalConfigurationsForEntity(entityType);
-            foreach (ClaimTypeConfig additionalConfiguration in additionalConfigurations)
+            if (mainConfig != null)
             {
-                additionalConfiguration.DirectoryObjectAdditionalFilter = newAdditionalLdapFilter;
+                mainConfig.DirectoryObjectAdditionalFilter = newAdditionalLdapFilter;
+                IEnumerable<ClaimTypeConfig> additionalConfigurations = GetAdditionalConfigurationsForEntity(entityType);
+                foreach (ClaimTypeConfig additionalConfiguration in additionalConfigurations)
+                {
+                    additionalConfiguration.DirectoryObjectAdditionalFilter = newAdditionalLdapFilter;
+                }
             }
         }
     }

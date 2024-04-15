@@ -229,23 +229,34 @@ namespace Yvand.LdapClaimsProvider.Administration
             Settings.ClaimTypes.SetAdditionalLdapFilterForEntity(this.TxtUserIdAdditionalLdapFilter.Text, DirectoryObjectType.User);
 
             // Group identifier settings
-            ClaimTypeConfig groupIdConfig = Settings.ClaimTypes.GroupIdentifierConfig;
-            bool newGroupConfigObject = false;
-            if (groupIdConfig == null)
+            if (!String.Equals(this.DdlGroupClaimType.SelectedValue, "None", StringComparison.OrdinalIgnoreCase))
             {
-                groupIdConfig = new ClaimTypeConfig { DirectoryObjectType = DirectoryObjectType.Group };
-                newGroupConfigObject = true;
+                ClaimTypeConfig groupIdConfig = Settings.ClaimTypes.GroupIdentifierConfig;
+                bool newGroupConfigObject = false;
+                if (groupIdConfig == null)
+                {
+                    groupIdConfig = new ClaimTypeConfig { DirectoryObjectType = DirectoryObjectType.Group };
+                    newGroupConfigObject = true;
+                }
+                groupIdConfig.ClaimType = this.DdlGroupClaimType.SelectedValue;
+                groupIdConfig.DirectoryObjectClass = this.TxtGroupLdapClass.Text;
+                groupIdConfig.DirectoryObjectAttribute = this.TxtGroupLdapAttribute.Text;
+                groupIdConfig.DirectoryObjectAttributeForDisplayText = this.TxtGroupDisplayTextAttribute.Text;
+                groupIdConfig.ClaimValueLeadingToken = this.TxtGroupLeadingToken.Text;
+                Settings.ClaimTypes.SetSearchAttributesForEntity(this.TxtGroupAdditionalLdapAttributes.Text, groupIdConfig.DirectoryObjectClass, DirectoryObjectType.Group);
+                Settings.ClaimTypes.SetAdditionalLdapFilterForEntity(this.TxtGroupAdditionalLdapFilter.Text, DirectoryObjectType.Group);
+                if (newGroupConfigObject)
+                {
+                    Settings.ClaimTypes.Add(groupIdConfig);
+                }
             }
-            groupIdConfig.ClaimType = this.DdlGroupClaimType.SelectedValue;
-            groupIdConfig.DirectoryObjectClass = this.TxtGroupLdapClass.Text;
-            groupIdConfig.DirectoryObjectAttribute = this.TxtGroupLdapAttribute.Text;
-            groupIdConfig.DirectoryObjectAttributeForDisplayText = this.TxtGroupDisplayTextAttribute.Text;
-            groupIdConfig.ClaimValueLeadingToken = this.TxtGroupLeadingToken.Text;
-            Settings.ClaimTypes.SetSearchAttributesForEntity(this.TxtGroupAdditionalLdapAttributes.Text, groupIdConfig.DirectoryObjectClass, DirectoryObjectType.Group);
-            Settings.ClaimTypes.SetAdditionalLdapFilterForEntity(this.TxtGroupAdditionalLdapFilter.Text, DirectoryObjectType.Group);
-            if (newGroupConfigObject)
+            else
             {
-                Settings.ClaimTypes.Add(groupIdConfig);
+                ClaimTypeConfig groupIdConfig = Settings.ClaimTypes.GroupIdentifierConfig;
+                if (groupIdConfig != null)
+                {
+                    Settings.ClaimTypes.Remove(groupIdConfig);
+                }
             }
 
             // Augmentation settings
