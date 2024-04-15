@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+* Fix error when creating the configuration, due to case-sensitive test in the claim types - https://github.com/Yvand/LDAPCP/issues/204
+
 ## LDAPCP Second Edition v17.0.20240226.2 - Published in February 26, 2024
 
 * Ignore case when comparing claim types, to avoid errors when creating the configuration - https://github.com/Yvand/LDAPCP/pull/205
