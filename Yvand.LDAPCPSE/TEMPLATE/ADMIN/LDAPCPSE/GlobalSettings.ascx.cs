@@ -18,6 +18,7 @@ namespace Yvand.LdapClaimsProvider.Administration
         public new string UserIdentifierEncodedValuePrefix = String.Empty; // This must be a member to be accessible from marup code, it cannot be a property
         public new string GroupIdentifierEncodedValuePrefix = String.Empty; // This must be a member to be accessible from marup code, it cannot be a property
 
+        readonly string NoValueSelected = "None";
         readonly string TextConnectionSuccessful = "Connection successful.";
         readonly string TextSummaryPersistedObjectInformation = "Found configuration '{0}' v{1} (Persisted Object ID: '{2}')";
         readonly string TextSharePointDomain = "Connect to SharePoint domain";
@@ -149,6 +150,8 @@ namespace Yvand.LdapClaimsProvider.Administration
             this.TxtUserIdAdditionalLdapFilter.Text = Settings.ClaimTypes.UserIdentifierConfig.DirectoryObjectAdditionalFilter;
 
             // Group identifier settings
+            this.DdlGroupClaimType.Items.Add(NoValueSelected);
+            this.DdlGroupClaimType.Items[0].Selected = true;
             var possibleGroupClaimTypes = Utils.GetNonWellKnownUserClaimTypesFromTrust(base.ClaimsProviderName);
             foreach (string possibleGroupClaimType in possibleGroupClaimTypes)
             {
@@ -229,7 +232,7 @@ namespace Yvand.LdapClaimsProvider.Administration
             Settings.ClaimTypes.SetAdditionalLdapFilterForEntity(this.TxtUserIdAdditionalLdapFilter.Text, DirectoryObjectType.User);
 
             // Group identifier settings
-            if (!String.Equals(this.DdlGroupClaimType.SelectedValue, "None", StringComparison.OrdinalIgnoreCase))
+            if (!String.Equals(this.DdlGroupClaimType.SelectedValue, NoValueSelected, StringComparison.OrdinalIgnoreCase))
             {
                 ClaimTypeConfig groupIdConfig = Settings.ClaimTypes.GroupIdentifierConfig;
                 bool newGroupConfigObject = false;

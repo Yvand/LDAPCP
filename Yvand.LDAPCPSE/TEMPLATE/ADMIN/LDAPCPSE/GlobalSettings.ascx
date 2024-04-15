@@ -453,9 +453,7 @@
                                     <li>
                                         <label title="This liste is based on the claim types registered in your SharePoint trust">
                                             <wssawc:EncodedLiteral runat="server" Text="Claim type &#9432;" EncodeMethod='HtmlEncodeAllowSimpleTextFormatting' /><em>*</em></label>
-                                        <asp:DropDownList ID="DdlGroupClaimType" runat="server">
-                                            <asp:ListItem Selected="True" Value="None"></asp:ListItem>
-                                        </asp:DropDownList>
+                                        <asp:DropDownList ID="DdlGroupClaimType" runat="server" />
                                     </li>
                                     <li>
                                         <label for="<%= TxtGroupLdapClass.ClientID %>">LDAP object class <em>*</em></label>
