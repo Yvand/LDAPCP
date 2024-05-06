@@ -227,7 +227,7 @@ namespace Yvand.LdapClaimsProvider.Configuration
             private set => _AlwaysResolveUserInput = value;
         }
         [Persisted]
-        private bool _AlwaysResolveUserInput;
+        private bool _AlwaysResolveUserInput = false;
 
         public bool FilterExactMatchOnly
         {
@@ -235,7 +235,7 @@ namespace Yvand.LdapClaimsProvider.Configuration
             private set => _FilterExactMatchOnly = value;
         }
         [Persisted]
-        private bool _FilterExactMatchOnly;
+        private bool _FilterExactMatchOnly = false;
 
         public bool EnableAugmentation
         {
@@ -300,7 +300,7 @@ namespace Yvand.LdapClaimsProvider.Configuration
             private set => _FilterEnabledUsersOnly = value;
         }
         [Persisted]
-        private bool _FilterEnabledUsersOnly;
+        private bool _FilterEnabledUsersOnly = true;
 
         public bool FilterSecurityGroupsOnly
         {
@@ -308,7 +308,7 @@ namespace Yvand.LdapClaimsProvider.Configuration
             private set => _FilterSecurityGroupsOnly = value;
         }
         [Persisted]
-        private bool _FilterSecurityGroupsOnly;
+        private bool _FilterSecurityGroupsOnly = true;
 
         public bool AddWildcardAsPrefixOfInput
         {
@@ -316,7 +316,7 @@ namespace Yvand.LdapClaimsProvider.Configuration
             private set => _AddWildcardAsPrefixOfInput = value;
         }
         [Persisted]
-        private bool _AddWildcardAsPrefixOfInput;
+        private bool _AddWildcardAsPrefixOfInput = false;
         #endregion
 
         #region "Other properties"
@@ -382,11 +382,14 @@ namespace Yvand.LdapClaimsProvider.Configuration
                 FilterExactMatchOnly = this.FilterExactMatchOnly,
                 Timeout = this.Timeout,
                 MaxSearchResultsCount = this.MaxSearchResultsCount,
-                
+
                 Version = this.Version,
 
                 // Properties specific to type IEntraSettings
                 LdapConnections = this.LdapConnections,
+                FilterEnabledUsersOnly = this.FilterEnabledUsersOnly,
+                FilterSecurityGroupsOnly = this.FilterSecurityGroupsOnly,
+                AddWildcardAsPrefixOfInput = this.AddWildcardAsPrefixOfInput,
             };
             return (ILdapProviderSettings)entityProviderSettings;
         }
@@ -525,6 +528,9 @@ namespace Yvand.LdapClaimsProvider.Configuration
             this.MaxSearchResultsCount = settings.MaxSearchResultsCount;
 
             this.LdapConnections = settings.LdapConnections;
+            this.FilterEnabledUsersOnly = settings.FilterEnabledUsersOnly;
+            this.FilterSecurityGroupsOnly = settings.FilterSecurityGroupsOnly;
+            this.AddWildcardAsPrefixOfInput = settings.AddWildcardAsPrefixOfInput;
 
             if (commitIfValid)
             {
