@@ -52,6 +52,11 @@ namespace Yvand.LdapClaimsProvider.Configuration
         /// This property is not used by LDAPCP and is available to developers for their own needs
         /// </summary>
         string CustomData { get; }
+
+        /// <summary>
+        /// Gets how many results maximum can be returned to the people picker during a search operation
+        /// </summary>
+        int MaxSearchResultsCount { get; }
         #endregion
 
         #region LDAP specific settings
@@ -76,6 +81,7 @@ namespace Yvand.LdapClaimsProvider.Configuration
         public string EntityDisplayTextPrefix { get; set; }
         public int Timeout { get; set; } = ClaimsProviderConstants.DEFAULT_TIMEOUT;
         public string CustomData { get; set; }
+        public int MaxSearchResultsCount { get; set; } = -1;
         #endregion
 
         #region LDAP specific settings
@@ -265,6 +271,17 @@ namespace Yvand.LdapClaimsProvider.Configuration
         }
         [Persisted]
         private string _CustomData;
+
+        public int MaxSearchResultsCount
+        {
+            get
+            {
+                return _MaxSearchResultsCount;
+            }
+            private set => _MaxSearchResultsCount = value;
+        }
+        [Persisted]
+        private int _MaxSearchResultsCount = -1;
         #endregion
 
 
@@ -364,6 +381,8 @@ namespace Yvand.LdapClaimsProvider.Configuration
                 EntityDisplayTextPrefix = this.EntityDisplayTextPrefix,
                 FilterExactMatchOnly = this.FilterExactMatchOnly,
                 Timeout = this.Timeout,
+                MaxSearchResultsCount = this.MaxSearchResultsCount,
+                
                 Version = this.Version,
 
                 // Properties specific to type IEntraSettings
@@ -449,6 +468,11 @@ namespace Yvand.LdapClaimsProvider.Configuration
                     }
                 }
             }
+
+            if (MaxSearchResultsCount < -1)
+            {
+                throw new InvalidOperationException($"The configuration is invalid because the value of property {nameof(MaxSearchResultsCount)} is < -1");
+            }
         }
 
         /// <summary>
@@ -498,6 +522,7 @@ namespace Yvand.LdapClaimsProvider.Configuration
             this.EntityDisplayTextPrefix = settings.EntityDisplayTextPrefix;
             this.Timeout = settings.Timeout;
             this.CustomData = settings.CustomData;
+            this.MaxSearchResultsCount = settings.MaxSearchResultsCount;
 
             this.LdapConnections = settings.LdapConnections;
 
