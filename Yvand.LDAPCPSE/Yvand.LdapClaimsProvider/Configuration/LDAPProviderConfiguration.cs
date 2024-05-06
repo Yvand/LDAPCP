@@ -468,6 +468,11 @@ namespace Yvand.LdapClaimsProvider.Configuration
                     }
                 }
             }
+
+            if (MaxSearchResultsCount < -1)
+            {
+                throw new InvalidOperationException($"The configuration is invalid because the value of property {nameof(MaxSearchResultsCount)} is < -1");
+            }
         }
 
         /// <summary>

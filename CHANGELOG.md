@@ -3,7 +3,8 @@
 ## Unreleased
 
 * Fix error when creating the configuration, due to case-sensitive test in the claim types - https://github.com/Yvand/LDAPCP/issues/204
-* Fix the error when loading the global configuration page, if the group claim type set in the LDAPCP configuration does not exist in the trust. https://github.com/Yvand/LDAPCP/issues/203
+* Fix the error when loading the global configuration page, if the group claim type set in the LDAPCP configuration does not exist in the trust - https://github.com/Yvand/LDAPCP/issues/203
+* Add the property MaxSearchResultsCount, to override the SharePoint limit of the maximum number of objects that the LDAP server returns - https://github.com/Yvand/LDAPCP/issues/209
 
 ## LDAPCP Second Edition v17.0.20240226.2 - Published in February 26, 2024
 
