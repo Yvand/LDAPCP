@@ -23,33 +23,33 @@ namespace Yvand.LdapClaimsProvider.Configuration
         ClaimTypeConfigCollection ClaimTypes { get; }
 
         /// <summary>
-        /// Gets or sets whether to skip the requests to LDAP and consider any input as valid.
+        /// Gets whether to skip the requests to LDAP and consider any input as valid.
         /// This can be useful to keep people picker working even if connectivity with the directory is lost.
         /// </summary>
         bool AlwaysResolveUserInput { get; }
 
         /// <summary>
-        /// Gets or sets whether to return only results that match exactly the user input (case-insensitive).
+        /// Gets whether to return only results that match exactly the user input (case-insensitive).
         /// </summary>
         bool FilterExactMatchOnly { get; }
 
         /// <summary>
-        /// Gets or sets whether to return the trusted groups that the user is a member of.
+        /// Gets whether to return the groups the user is a member of.
         /// </summary>
         bool EnableAugmentation { get; }
 
         /// <summary>
-        /// Gets or sets a string that will appear as a prefix of the text of each result, in the people picker.
+        /// Gets the string that will appear as a prefix of the text of each result, in the people picker.
         /// </summary>
         string EntityDisplayTextPrefix { get; }
 
         /// <summary>
-        /// Gets or sets the timeout in seconds before an operation to LDAP directory is canceled.
+        /// Gets the timeout in seconds, before an operation to LDAP directory is canceled.
         /// </summary>
         int Timeout { get; }
 
         /// <summary>
-        /// This property is not used by LDAPCP and is available to developers for their own needs
+        /// Gets this property, not used by LDAPCP and available to developers for their own needs
         /// </summary>
         string CustomData { get; }
 
@@ -59,9 +59,9 @@ namespace Yvand.LdapClaimsProvider.Configuration
         int MaxSearchResultsCount { get; }
         #endregion
 
-        #region LDAP specific settings
+        #region LDAP-specific settings
         /// <summary>
-        /// Gets the list of Azure tenants to use to get entities
+        /// Gets the list of LDAP directories
         /// </summary>
         List<DirectoryConnection> LdapConnections { get; }
         bool FilterEnabledUsersOnly { get; }
@@ -183,8 +183,9 @@ namespace Yvand.LdapClaimsProvider.Configuration
     public class LdapProviderConfiguration : SPPersistedObject, ILdapProviderSettings
     {
         public string LocalAssemblyVersion => ClaimsProviderConstants.ClaimsProviderVersion;
+        
         /// <summary>
-        /// Gets the settings, based on the configuration stored in this persisted object
+        /// Gets or sets the version of the settings
         /// </summary>
         public ILdapProviderSettings Settings
         {
@@ -201,6 +202,9 @@ namespace Yvand.LdapClaimsProvider.Configuration
 
         #region "Base settings implemented from IEntraIDEntityProviderSettings"
 
+        /// <summary>
+        /// Gets or sets the claim types and their mapping with a DirectoryObject property
+        /// </summary>
         public ClaimTypeConfigCollection ClaimTypes
         {
             get
@@ -221,6 +225,10 @@ namespace Yvand.LdapClaimsProvider.Configuration
         private Collection<ClaimTypeConfig> _ClaimTypesCollection;
         private ClaimTypeConfigCollection _ClaimTypes;
 
+        /// <summary>
+        /// Gets or sets whether to skip the requests to LDAP and consider any input as valid.
+        /// This can be useful to keep people picker working even if connectivity with the directory is lost.
+        /// </summary>
         public bool AlwaysResolveUserInput
         {
             get => _AlwaysResolveUserInput;
@@ -229,6 +237,9 @@ namespace Yvand.LdapClaimsProvider.Configuration
         [Persisted]
         private bool _AlwaysResolveUserInput = false;
 
+        /// <summary>
+        /// Gets or sets whether to return only results that match exactly the user input (case-insensitive).
+        /// </summary>
         public bool FilterExactMatchOnly
         {
             get => _FilterExactMatchOnly;
@@ -237,6 +248,9 @@ namespace Yvand.LdapClaimsProvider.Configuration
         [Persisted]
         private bool _FilterExactMatchOnly = false;
 
+        /// <summary>
+        /// Gets or sets whether to return the groups the user is a member of.
+        /// </summary>
         public bool EnableAugmentation
         {
             get => _EnableAugmentation;
@@ -245,6 +259,9 @@ namespace Yvand.LdapClaimsProvider.Configuration
         [Persisted]
         private bool _EnableAugmentation = true;
 
+        /// <summary>
+        /// Gets or sets the string that will appear as a prefix of the text of each result, in the people picker.
+        /// </summary>
         public string EntityDisplayTextPrefix
         {
             get => _EntityDisplayTextPrefix;
@@ -253,6 +270,9 @@ namespace Yvand.LdapClaimsProvider.Configuration
         [Persisted]
         private string _EntityDisplayTextPrefix;
 
+        /// <summary>
+        /// Gets or sets the timeout in seconds, before an operation to LDAP directory is canceled.
+        /// </summary>
         public int Timeout
         {
             get
@@ -264,6 +284,9 @@ namespace Yvand.LdapClaimsProvider.Configuration
         [Persisted]
         private int _Timeout = ClaimsProviderConstants.DEFAULT_TIMEOUT;
 
+        /// <summary>
+        /// Gets or sets this property, not used by LDAPCP and available to developers for their own needs
+        /// </summary>
         public string CustomData
         {
             get => _CustomData;
@@ -272,6 +295,9 @@ namespace Yvand.LdapClaimsProvider.Configuration
         [Persisted]
         private string _CustomData;
 
+        /// <summary>
+        /// Gets or sets how many results maximum can be returned to the people picker during a search operation
+        /// </summary>
         public int MaxSearchResultsCount
         {
             get
@@ -285,7 +311,10 @@ namespace Yvand.LdapClaimsProvider.Configuration
         #endregion
 
 
-        #region "EntraID settings implemented from IEntraIDEntityProviderSettings"
+        #region "LDAP-specific settings implemented from IEntraIDEntityProviderSettings"
+        /// <summary>
+        /// Gets or sets the list of LDAP directories
+        /// </summary>
         public List<DirectoryConnection> LdapConnections
         {
             get => _LdapServers;
