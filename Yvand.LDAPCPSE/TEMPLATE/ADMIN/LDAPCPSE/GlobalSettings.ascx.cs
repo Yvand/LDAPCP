@@ -51,9 +51,9 @@ namespace Yvand.LdapClaimsProvider.Administration
             LabelMessage.Text = String.Format(TextSummaryPersistedObjectInformation, Configuration.Name, Configuration.Version, Configuration.Id);
             UserIdentifierEncodedValuePrefix = base.UserIdentifierEncodedValuePrefix;
             GroupIdentifierEncodedValuePrefix = base.GroupIdentifierEncodedValuePrefix;
-            PopulateConnectionsGrid();
             if (!this.IsPostBack)
             {
+                PopulateConnectionsGrid();
                 PopulateCblAuthenticationTypes();
                 PopulateFields();
                 InitializeAugmentation();
@@ -400,6 +400,19 @@ namespace Yvand.LdapClaimsProvider.Administration
             this.TxtLdapConnectionString.Text = "LDAP://";
             this.TxtLdapUsername.Text = String.Empty;
             this.TxtLdapPassword.Text = String.Empty;
+        }
+
+        protected void grdLDAPConnections_RowDataBound(object sender, GridViewRowEventArgs e)
+        {
+            // Ask user for confirmation when cliking on button Delete - https://stackoverflow.com/questions/9026884/asp-net-gridview-delete-row-only-on-confirmation
+            if (e.Row.RowType == DataControlRowType.DataRow)
+            {
+                Button deleteButton = (Button)e.Row.Cells[3].Controls[0];
+                if (deleteButton != null && String.Equals(deleteButton.Text, "Delete", StringComparison.OrdinalIgnoreCase))
+                {
+                    deleteButton.OnClientClick = "if(!confirm('Are you sure you want to delete this directory?')) return;";
+                }
+            }
         }
     }
 

@@ -262,12 +262,12 @@
         <Template_InputFormControls>
             <tr>
                 <td>
-                    <wssawc:SPGridView runat="server" ID="grdLDAPConnections" AutoGenerateColumns="false" OnRowDeleting="grdLDAPConnections_RowDeleting">
+                    <wssawc:SPGridView runat="server" ID="grdLDAPConnections" AutoGenerateColumns="false" OnRowDeleting="grdLDAPConnections_RowDeleting" OnRowDataBound="grdLDAPConnections_RowDataBound">
                         <Columns>
                             <asp:BoundField DataField="Id" ItemStyle-CssClass="ldapcp-HideCol" HeaderStyle-CssClass="ldapcp-HideCol" />
                             <asp:BoundField HeaderText="LDAP Path" DataField="Path" />
                             <asp:BoundField HeaderText="Username" DataField="Username" />
-                            <asp:CommandField HeaderText="Action" ButtonType="Button" DeleteText="Remove" ShowDeleteButton="True" />
+                            <asp:CommandField HeaderText="Action" ButtonType="Button" DeleteText="Delete" ShowDeleteButton="True" />
                         </Columns>
                     </wssawc:SPGridView>
                 </td>
