@@ -4,6 +4,7 @@ using Microsoft.SharePoint.WebControls;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.DirectoryServices.Protocols;
 using System.Linq;
 using Yvand.LdapClaimsProvider.Logging;
 
@@ -421,6 +422,39 @@ namespace Yvand.LdapClaimsProvider.Configuration
                 AddWildcardAsPrefixOfInput = this.AddWildcardAsPrefixOfInput,
             };
             return (ILdapProviderSettings)entityProviderSettings;
+        }
+
+        /// <summary>
+        /// Gets the directory configuration
+        /// </summary>
+        /// <param name="directoryConnectionPath">Directory path</param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentNullException"></exception>
+        public DirectoryConnection GetLdapConnection(string directoryConnectionPath)
+        {
+            if (String.IsNullOrWhiteSpace(directoryConnectionPath))
+            {
+                throw new ArgumentNullException(nameof(directoryConnectionPath));
+            }
+            return this.LdapConnections.FirstOrDefault(x => x.LdapPath.Equals(directoryConnectionPath, StringComparison.OrdinalIgnoreCase));
+        }
+
+        /// <summary>
+        /// Deletes the directory configuration
+        /// </summary>
+        /// <param name="directoryConnectionPath">Directory path</param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentNullException"></exception>
+        public bool DeleteLdapConnection(string directoryConnectionPath)
+        {
+            if (String.IsNullOrWhiteSpace(directoryConnectionPath))
+            {
+                throw new ArgumentNullException(nameof(directoryConnectionPath));
+            }
+
+            DirectoryConnection directory = GetLdapConnection(directoryConnectionPath);
+            if (directory == null) { return false; }
+            return this.LdapConnections.Remove(directory);
         }
 
         /// <summary>
