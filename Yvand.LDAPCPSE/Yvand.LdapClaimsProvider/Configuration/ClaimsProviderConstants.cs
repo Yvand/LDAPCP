@@ -351,7 +351,7 @@ namespace Yvand.LdapClaimsProvider.Configuration
             if (httpctx != null)
             {
                 WIF4_5.ClaimsPrincipal cp = httpctx.User as WIF4_5.ClaimsPrincipal;
-                if (cp != null)
+                if (cp != null && cp.Identity != null)
                 {
                     if (SPClaimProviderManager.IsEncodedClaim(cp.Identity.Name))
                     {

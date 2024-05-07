@@ -6,6 +6,7 @@
 * Fix the error when loading the global configuration page, if the group claim type set in the LDAPCP configuration does not exist in the trust - https://github.com/Yvand/LDAPCP/issues/203
 * Add the property MaxSearchResultsCount, to override the SharePoint limit of the maximum number of objects that the LDAP server returns - https://github.com/Yvand/LDAPCP/issues/209
 * Correctly initialize LDAP-specific properties with their actual value, instead of the default value of the type - https://github.com/Yvand/LDAPCP/pull/212
+* Fix an NullReferenceException in a very rare scenario where ClaimsPrincipal.Identity is null
 
 ## LDAPCP Second Edition v17.0.20240226.2 - Published in February 26, 2024
 
