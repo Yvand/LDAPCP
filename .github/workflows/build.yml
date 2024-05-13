@@ -1,11 +1,13 @@
-name: Verify PRs and commits
+name: Build code
 
 on:
   workflow_dispatch:
   push:
-    branches: [ "master", "dev" ]
+    branches:
+    - master
+    - 'releases/**'
   pull_request:
-    branches: [ "master", "dev" ]
+    branches: [ "master", "releases/**" ]
 
 jobs:
   call-build:

@@ -16,7 +16,7 @@ on:
 
 jobs:
   call-workflow-prepare-dtl-env:
-    uses: Yvand/AzureCP/.github/workflows/reusable-prepare-dtl-env.yml@master
+    uses: Yvand/EntraCP/.github/workflows/reusable-prepare-dtl-env.yml@master
     with:
       project-name: ${{ vars.PROJECT_NAME }}
       sharepoint-versions: ${{ inputs.sharepoint_versions }}

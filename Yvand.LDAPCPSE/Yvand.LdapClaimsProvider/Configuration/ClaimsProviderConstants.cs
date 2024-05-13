@@ -321,7 +321,8 @@ namespace Yvand.LdapClaimsProvider.Configuration
             this.IncomingEntity = incomingEntity;
             this.UriContext = context;
             this.HierarchyNodeID = hierarchyNodeID;
-            this.MaxCount = maxCount;
+            this.MaxCount = settings.MaxSearchResultsCount == -1 || currentRequestType != OperationType.Search ? maxCount : settings.MaxSearchResultsCount;
+
 
             // settings.LdapConnections must be cloned locally to ensure its properties ($select / $filter) won't be updated by multiple threads
             this.LdapConnections = new List<DirectoryConnection>(settings.LdapConnections.Count);
@@ -350,7 +351,7 @@ namespace Yvand.LdapClaimsProvider.Configuration
             if (httpctx != null)
             {
                 WIF4_5.ClaimsPrincipal cp = httpctx.User as WIF4_5.ClaimsPrincipal;
-                if (cp != null)
+                if (cp != null && cp.Identity != null)
                 {
                     if (SPClaimProviderManager.IsEncodedClaim(cp.Identity.Name))
                     {

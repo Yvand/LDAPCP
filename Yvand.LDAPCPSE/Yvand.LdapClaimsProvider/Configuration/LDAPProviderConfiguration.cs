@@ -4,6 +4,7 @@ using Microsoft.SharePoint.WebControls;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.DirectoryServices.Protocols;
 using System.Linq;
 using Yvand.LdapClaimsProvider.Logging;
 
@@ -23,40 +24,45 @@ namespace Yvand.LdapClaimsProvider.Configuration
         ClaimTypeConfigCollection ClaimTypes { get; }
 
         /// <summary>
-        /// Gets or sets whether to skip the requests to LDAP and consider any input as valid.
+        /// Gets whether to skip the requests to LDAP and consider any input as valid.
         /// This can be useful to keep people picker working even if connectivity with the directory is lost.
         /// </summary>
         bool AlwaysResolveUserInput { get; }
 
         /// <summary>
-        /// Gets or sets whether to return only results that match exactly the user input (case-insensitive).
+        /// Gets whether to return only results that match exactly the user input (case-insensitive).
         /// </summary>
         bool FilterExactMatchOnly { get; }
 
         /// <summary>
-        /// Gets or sets whether to return the trusted groups that the user is a member of.
+        /// Gets whether to return the groups the user is a member of.
         /// </summary>
         bool EnableAugmentation { get; }
 
         /// <summary>
-        /// Gets or sets a string that will appear as a prefix of the text of each result, in the people picker.
+        /// Gets the string that will appear as a prefix of the text of each result, in the people picker.
         /// </summary>
         string EntityDisplayTextPrefix { get; }
 
         /// <summary>
-        /// Gets or sets the timeout in seconds before an operation to LDAP directory is canceled.
+        /// Gets the timeout in seconds, before an operation to LDAP directory is canceled.
         /// </summary>
         int Timeout { get; }
 
         /// <summary>
-        /// This property is not used by LDAPCP and is available to developers for their own needs
+        /// Gets this property, not used by LDAPCP and available to developers for their own needs
         /// </summary>
         string CustomData { get; }
+
+        /// <summary>
+        /// Gets how many results maximum can be returned to the people picker during a search operation
+        /// </summary>
+        int MaxSearchResultsCount { get; }
         #endregion
 
-        #region LDAP specific settings
+        #region LDAP-specific settings
         /// <summary>
-        /// Gets the list of Azure tenants to use to get entities
+        /// Gets the list of LDAP directories
         /// </summary>
         List<DirectoryConnection> LdapConnections { get; }
         bool FilterEnabledUsersOnly { get; }
@@ -76,6 +82,7 @@ namespace Yvand.LdapClaimsProvider.Configuration
         public string EntityDisplayTextPrefix { get; set; }
         public int Timeout { get; set; } = ClaimsProviderConstants.DEFAULT_TIMEOUT;
         public string CustomData { get; set; }
+        public int MaxSearchResultsCount { get; set; } = -1;
         #endregion
 
         #region LDAP specific settings
@@ -141,7 +148,7 @@ namespace Yvand.LdapClaimsProvider.Configuration
 
 
             //// Not adding those as additional attributes to avoid having too many LDAP attributes to search users in the LDAP filter
-            var nonIdentityClaimTypes = ClaimsProviderConstants.GetDefaultSettingsPerUserClaimType().Where(x => x.Key != spTrust.IdentityClaimTypeInformation.MappedClaimType);
+            var nonIdentityClaimTypes = ClaimsProviderConstants.GetDefaultSettingsPerUserClaimType().Where(x => !String.Equals(x.Key, spTrust.IdentityClaimTypeInformation.MappedClaimType, StringComparison.OrdinalIgnoreCase));
             foreach (var nonIdentityClaimType in nonIdentityClaimTypes)
             {
                 ctConfig = nonIdentityClaimType.Value;
@@ -177,8 +184,9 @@ namespace Yvand.LdapClaimsProvider.Configuration
     public class LdapProviderConfiguration : SPPersistedObject, ILdapProviderSettings
     {
         public string LocalAssemblyVersion => ClaimsProviderConstants.ClaimsProviderVersion;
+        
         /// <summary>
-        /// Gets the settings, based on the configuration stored in this persisted object
+        /// Gets or sets the version of the settings
         /// </summary>
         public ILdapProviderSettings Settings
         {
@@ -195,6 +203,9 @@ namespace Yvand.LdapClaimsProvider.Configuration
 
         #region "Base settings implemented from IEntraIDEntityProviderSettings"
 
+        /// <summary>
+        /// Gets or sets the claim types and their mapping with a DirectoryObject property
+        /// </summary>
         public ClaimTypeConfigCollection ClaimTypes
         {
             get
@@ -215,22 +226,32 @@ namespace Yvand.LdapClaimsProvider.Configuration
         private Collection<ClaimTypeConfig> _ClaimTypesCollection;
         private ClaimTypeConfigCollection _ClaimTypes;
 
+        /// <summary>
+        /// Gets or sets whether to skip the requests to LDAP and consider any input as valid.
+        /// This can be useful to keep people picker working even if connectivity with the directory is lost.
+        /// </summary>
         public bool AlwaysResolveUserInput
         {
             get => _AlwaysResolveUserInput;
             private set => _AlwaysResolveUserInput = value;
         }
         [Persisted]
-        private bool _AlwaysResolveUserInput;
+        private bool _AlwaysResolveUserInput = false;
 
+        /// <summary>
+        /// Gets or sets whether to return only results that match exactly the user input (case-insensitive).
+        /// </summary>
         public bool FilterExactMatchOnly
         {
             get => _FilterExactMatchOnly;
             private set => _FilterExactMatchOnly = value;
         }
         [Persisted]
-        private bool _FilterExactMatchOnly;
+        private bool _FilterExactMatchOnly = false;
 
+        /// <summary>
+        /// Gets or sets whether to return the groups the user is a member of.
+        /// </summary>
         public bool EnableAugmentation
         {
             get => _EnableAugmentation;
@@ -239,6 +260,9 @@ namespace Yvand.LdapClaimsProvider.Configuration
         [Persisted]
         private bool _EnableAugmentation = true;
 
+        /// <summary>
+        /// Gets or sets the string that will appear as a prefix of the text of each result, in the people picker.
+        /// </summary>
         public string EntityDisplayTextPrefix
         {
             get => _EntityDisplayTextPrefix;
@@ -247,6 +271,9 @@ namespace Yvand.LdapClaimsProvider.Configuration
         [Persisted]
         private string _EntityDisplayTextPrefix;
 
+        /// <summary>
+        /// Gets or sets the timeout in seconds, before an operation to LDAP directory is canceled.
+        /// </summary>
         public int Timeout
         {
             get
@@ -258,6 +285,9 @@ namespace Yvand.LdapClaimsProvider.Configuration
         [Persisted]
         private int _Timeout = ClaimsProviderConstants.DEFAULT_TIMEOUT;
 
+        /// <summary>
+        /// Gets or sets this property, not used by LDAPCP and available to developers for their own needs
+        /// </summary>
         public string CustomData
         {
             get => _CustomData;
@@ -265,10 +295,27 @@ namespace Yvand.LdapClaimsProvider.Configuration
         }
         [Persisted]
         private string _CustomData;
+
+        /// <summary>
+        /// Gets or sets how many results maximum can be returned to the people picker during a search operation
+        /// </summary>
+        public int MaxSearchResultsCount
+        {
+            get
+            {
+                return _MaxSearchResultsCount;
+            }
+            private set => _MaxSearchResultsCount = value;
+        }
+        [Persisted]
+        private int _MaxSearchResultsCount = -1;
         #endregion
 
 
-        #region "EntraID settings implemented from IEntraIDEntityProviderSettings"
+        #region "LDAP-specific settings implemented from IEntraIDEntityProviderSettings"
+        /// <summary>
+        /// Gets or sets the list of LDAP directories
+        /// </summary>
         public List<DirectoryConnection> LdapConnections
         {
             get => _LdapServers;
@@ -283,7 +330,7 @@ namespace Yvand.LdapClaimsProvider.Configuration
             private set => _FilterEnabledUsersOnly = value;
         }
         [Persisted]
-        private bool _FilterEnabledUsersOnly;
+        private bool _FilterEnabledUsersOnly = true;
 
         public bool FilterSecurityGroupsOnly
         {
@@ -291,7 +338,7 @@ namespace Yvand.LdapClaimsProvider.Configuration
             private set => _FilterSecurityGroupsOnly = value;
         }
         [Persisted]
-        private bool _FilterSecurityGroupsOnly;
+        private bool _FilterSecurityGroupsOnly = true;
 
         public bool AddWildcardAsPrefixOfInput
         {
@@ -299,7 +346,7 @@ namespace Yvand.LdapClaimsProvider.Configuration
             private set => _AddWildcardAsPrefixOfInput = value;
         }
         [Persisted]
-        private bool _AddWildcardAsPrefixOfInput;
+        private bool _AddWildcardAsPrefixOfInput = false;
         #endregion
 
         #region "Other properties"
@@ -364,12 +411,50 @@ namespace Yvand.LdapClaimsProvider.Configuration
                 EntityDisplayTextPrefix = this.EntityDisplayTextPrefix,
                 FilterExactMatchOnly = this.FilterExactMatchOnly,
                 Timeout = this.Timeout,
+                MaxSearchResultsCount = this.MaxSearchResultsCount,
+
                 Version = this.Version,
 
                 // Properties specific to type IEntraSettings
                 LdapConnections = this.LdapConnections,
+                FilterEnabledUsersOnly = this.FilterEnabledUsersOnly,
+                FilterSecurityGroupsOnly = this.FilterSecurityGroupsOnly,
+                AddWildcardAsPrefixOfInput = this.AddWildcardAsPrefixOfInput,
             };
             return (ILdapProviderSettings)entityProviderSettings;
+        }
+
+        /// <summary>
+        /// Gets the directory configuration
+        /// </summary>
+        /// <param name="directoryConnectionPath">Directory path</param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentNullException"></exception>
+        public DirectoryConnection GetLdapConnection(string directoryConnectionPath)
+        {
+            if (String.IsNullOrWhiteSpace(directoryConnectionPath))
+            {
+                throw new ArgumentNullException(nameof(directoryConnectionPath));
+            }
+            return this.LdapConnections.FirstOrDefault(x => x.LdapPath.Equals(directoryConnectionPath, StringComparison.OrdinalIgnoreCase));
+        }
+
+        /// <summary>
+        /// Deletes the directory configuration
+        /// </summary>
+        /// <param name="directoryConnectionPath">Directory path</param>
+        /// <returns></returns>
+        /// <exception cref="ArgumentNullException"></exception>
+        public bool DeleteLdapConnection(string directoryConnectionPath)
+        {
+            if (String.IsNullOrWhiteSpace(directoryConnectionPath))
+            {
+                throw new ArgumentNullException(nameof(directoryConnectionPath));
+            }
+
+            DirectoryConnection directory = GetLdapConnection(directoryConnectionPath);
+            if (directory == null) { return false; }
+            return this.LdapConnections.Remove(directory);
         }
 
         /// <summary>
@@ -449,6 +534,11 @@ namespace Yvand.LdapClaimsProvider.Configuration
                     }
                 }
             }
+
+            if (MaxSearchResultsCount < -1)
+            {
+                throw new InvalidOperationException($"The configuration is invalid because the value of property {nameof(MaxSearchResultsCount)} is < -1");
+            }
         }
 
         /// <summary>
@@ -498,8 +588,12 @@ namespace Yvand.LdapClaimsProvider.Configuration
             this.EntityDisplayTextPrefix = settings.EntityDisplayTextPrefix;
             this.Timeout = settings.Timeout;
             this.CustomData = settings.CustomData;
+            this.MaxSearchResultsCount = settings.MaxSearchResultsCount;
 
             this.LdapConnections = settings.LdapConnections;
+            this.FilterEnabledUsersOnly = settings.FilterEnabledUsersOnly;
+            this.FilterSecurityGroupsOnly = settings.FilterSecurityGroupsOnly;
+            this.AddWildcardAsPrefixOfInput = settings.AddWildcardAsPrefixOfInput;
 
             if (commitIfValid)
             {

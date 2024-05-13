@@ -502,7 +502,7 @@ namespace Yvand.LdapClaimsProvider
                     using (DirectorySearcher ds = new DirectorySearcher(ldapFilter))
                     {
                         ds.SearchRoot = directory;
-                        ds.SizeLimit = currentContext.MaxCount;
+                        ds.SizeLimit = currentContext.MaxCount; // Property SizeLimit is ignored if it is set to 0 (tested), and ArgumentException an exception is < 0 - https://learn.microsoft.com/en-us/dotnet/api/system.directoryservices.directorysearcher.sizelimit?view=netframework-4.8.1
                         ds.ClientTimeout = new TimeSpan(0, 0, this.Settings.Timeout); // Set the timeout in seconds
                         ds.PropertiesToLoad.Add("objectclass");
                         ds.PropertiesToLoad.Add("nETBIOSName");

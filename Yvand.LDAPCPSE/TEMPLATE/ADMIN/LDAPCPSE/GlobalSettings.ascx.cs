@@ -18,6 +18,7 @@ namespace Yvand.LdapClaimsProvider.Administration
         public new string UserIdentifierEncodedValuePrefix = String.Empty; // This must be a member to be accessible from marup code, it cannot be a property
         public new string GroupIdentifierEncodedValuePrefix = String.Empty; // This must be a member to be accessible from marup code, it cannot be a property
 
+        readonly string NoValueSelected = "None";
         readonly string TextConnectionSuccessful = "Connection successful.";
         readonly string TextSummaryPersistedObjectInformation = "Found configuration '{0}' v{1} (Persisted Object ID: '{2}')";
         readonly string TextSharePointDomain = "Connect to SharePoint domain";
@@ -50,9 +51,9 @@ namespace Yvand.LdapClaimsProvider.Administration
             LabelMessage.Text = String.Format(TextSummaryPersistedObjectInformation, Configuration.Name, Configuration.Version, Configuration.Id);
             UserIdentifierEncodedValuePrefix = base.UserIdentifierEncodedValuePrefix;
             GroupIdentifierEncodedValuePrefix = base.GroupIdentifierEncodedValuePrefix;
-            PopulateConnectionsGrid();
             if (!this.IsPostBack)
             {
+                PopulateConnectionsGrid();
                 PopulateCblAuthenticationTypes();
                 PopulateFields();
                 InitializeAugmentation();
@@ -149,6 +150,8 @@ namespace Yvand.LdapClaimsProvider.Administration
             this.TxtUserIdAdditionalLdapFilter.Text = Settings.ClaimTypes.UserIdentifierConfig.DirectoryObjectAdditionalFilter;
 
             // Group identifier settings
+            this.DdlGroupClaimType.Items.Add(NoValueSelected);
+            this.DdlGroupClaimType.Items[0].Selected = true;
             var possibleGroupClaimTypes = Utils.GetNonWellKnownUserClaimTypesFromTrust(base.ClaimsProviderName);
             foreach (string possibleGroupClaimType in possibleGroupClaimTypes)
             {
@@ -229,23 +232,34 @@ namespace Yvand.LdapClaimsProvider.Administration
             Settings.ClaimTypes.SetAdditionalLdapFilterForEntity(this.TxtUserIdAdditionalLdapFilter.Text, DirectoryObjectType.User);
 
             // Group identifier settings
-            ClaimTypeConfig groupIdConfig = Settings.ClaimTypes.GroupIdentifierConfig;
-            bool newGroupConfigObject = false;
-            if (groupIdConfig == null)
+            if (!String.Equals(this.DdlGroupClaimType.SelectedValue, NoValueSelected, StringComparison.OrdinalIgnoreCase))
             {
-                groupIdConfig = new ClaimTypeConfig { DirectoryObjectType = DirectoryObjectType.Group };
-                newGroupConfigObject = true;
+                ClaimTypeConfig groupIdConfig = Settings.ClaimTypes.GroupIdentifierConfig;
+                bool newGroupConfigObject = false;
+                if (groupIdConfig == null)
+                {
+                    groupIdConfig = new ClaimTypeConfig { DirectoryObjectType = DirectoryObjectType.Group };
+                    newGroupConfigObject = true;
+                }
+                groupIdConfig.ClaimType = this.DdlGroupClaimType.SelectedValue;
+                groupIdConfig.DirectoryObjectClass = this.TxtGroupLdapClass.Text;
+                groupIdConfig.DirectoryObjectAttribute = this.TxtGroupLdapAttribute.Text;
+                groupIdConfig.DirectoryObjectAttributeForDisplayText = this.TxtGroupDisplayTextAttribute.Text;
+                groupIdConfig.ClaimValueLeadingToken = this.TxtGroupLeadingToken.Text;
+                Settings.ClaimTypes.SetSearchAttributesForEntity(this.TxtGroupAdditionalLdapAttributes.Text, groupIdConfig.DirectoryObjectClass, DirectoryObjectType.Group);
+                Settings.ClaimTypes.SetAdditionalLdapFilterForEntity(this.TxtGroupAdditionalLdapFilter.Text, DirectoryObjectType.Group);
+                if (newGroupConfigObject)
+                {
+                    Settings.ClaimTypes.Add(groupIdConfig);
+                }
             }
-            groupIdConfig.ClaimType = this.DdlGroupClaimType.SelectedValue;
-            groupIdConfig.DirectoryObjectClass = this.TxtGroupLdapClass.Text;
-            groupIdConfig.DirectoryObjectAttribute = this.TxtGroupLdapAttribute.Text;
-            groupIdConfig.DirectoryObjectAttributeForDisplayText = this.TxtGroupDisplayTextAttribute.Text;
-            groupIdConfig.ClaimValueLeadingToken = this.TxtGroupLeadingToken.Text;
-            Settings.ClaimTypes.SetSearchAttributesForEntity(this.TxtGroupAdditionalLdapAttributes.Text, groupIdConfig.DirectoryObjectClass, DirectoryObjectType.Group);
-            Settings.ClaimTypes.SetAdditionalLdapFilterForEntity(this.TxtGroupAdditionalLdapFilter.Text, DirectoryObjectType.Group);
-            if (newGroupConfigObject)
+            else
             {
-                Settings.ClaimTypes.Add(groupIdConfig);
+                ClaimTypeConfig groupIdConfig = Settings.ClaimTypes.GroupIdentifierConfig;
+                if (groupIdConfig != null)
+                {
+                    Settings.ClaimTypes.Remove(groupIdConfig);
+                }
             }
 
             // Augmentation settings
@@ -386,6 +400,19 @@ namespace Yvand.LdapClaimsProvider.Administration
             this.TxtLdapConnectionString.Text = "LDAP://";
             this.TxtLdapUsername.Text = String.Empty;
             this.TxtLdapPassword.Text = String.Empty;
+        }
+
+        protected void grdLDAPConnections_RowDataBound(object sender, GridViewRowEventArgs e)
+        {
+            // Ask user for confirmation when cliking on button Delete - https://stackoverflow.com/questions/9026884/asp-net-gridview-delete-row-only-on-confirmation
+            if (e.Row.RowType == DataControlRowType.DataRow)
+            {
+                Button deleteButton = (Button)e.Row.Cells[3].Controls[0];
+                if (deleteButton != null && String.Equals(deleteButton.Text, "Delete", StringComparison.OrdinalIgnoreCase))
+                {
+                    deleteButton.OnClientClick = "if(!confirm('Are you sure you want to delete this directory?')) return;";
+                }
+            }
         }
     }
 
