@@ -1,6 +1,6 @@
 # Change log for LDAPCP
 
-## Unreleased
+## LDAPCP Second Edition v18.0.20240513.3 - Published in May 13, 2024
 
 * Fix error when creating the configuration, due to case-sensitive test in the claim types - https://github.com/Yvand/LDAPCP/issues/204
 * Fix the error when loading the global configuration page, if the group claim type set in the LDAPCP configuration does not exist in the trust - https://github.com/Yvand/LDAPCP/issues/203
