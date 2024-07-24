@@ -80,6 +80,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="local.runsettings" />
+    <None Include="Setup\Populate-ActiveDirectory.ps1" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

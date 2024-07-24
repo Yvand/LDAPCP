@@ -61,9 +61,10 @@ namespace Yvand.LdapClaimsProvider.Tests
         //}
 
         //[TestCase(@"group\ch", 1, @"contoso.local\group\chartest")]
-        [TestCase(@"test_special)", 1, @"test_special_char@contoso.local")]
+        [TestCase(@"test_special)", 1, @"testLdapcpUser_003@contoso.local")]
+        [TestCase(@"firstname_002", 1, @"testLdapcpUser_002@contoso.local")]
         //[TestCase(@"group\ch", 1, @"group\chartest")]
-        [TestCase(@"testLdapcpseUser_001", 1, @"testLdapcpseUser_001@contoso.local")]
+        [TestCase(@"testLdapcpUser_001", 1, @"testLdapcpUser_001@contoso.local")]
         public void TestSearch(string inputValue, int expectedResultCount, string expectedEntityClaimValue)
         {
             base.TestSearchOperation(inputValue, expectedResultCount, expectedEntityClaimValue);

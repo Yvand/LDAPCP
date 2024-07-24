@@ -9,6 +9,7 @@
     https://github.com/Yvand/LDAPCP/
 #>
 
+
 $domainFqdn = (Get-ADDomain -Current LocalComputer).DNSRoot
 $domainDN = (Get-ADDomain -Current LocalComputer).DistinguishedName
 $ouName = "ldapcp"
@@ -27,6 +28,7 @@ $groupNamePrefix = "testLdapcpGroup_"
 $usersWithSpecificSettings = @( 
     @{ UserPrincipalName = "$($memberUsersNamePrefix)001@$($domainFqdn)"; IsMemberOfAllGroups = $true }
     @{ UserPrincipalName = "$($memberUsersNamePrefix)002@$($domainFqdn)"; UserAttributes = @{ "GivenName" = "firstname 002" } }
+    @{ UserPrincipalName = "$($memberUsersNamePrefix)003@$($domainFqdn)"; UserAttributes = @{ "GivenName" = "test_special)" } }
     @{ UserPrincipalName = "$($memberUsersNamePrefix)010@$($domainFqdn)"; IsMemberOfAllGroups = $true }
     @{ UserPrincipalName = "$($memberUsersNamePrefix)011@$($domainFqdn)"; IsMemberOfAllGroups = $true }
     @{ UserPrincipalName = "$($memberUsersNamePrefix)012@$($domainFqdn)"; IsMemberOfAllGroups = $true }
@@ -48,7 +50,7 @@ $temporaryPassword = @(
 ) -Join ''
 
 # Bulk add users if they do not already exist
-$totalUsers = 3
+$totalUsers = 50
 for ($i = 1; $i -le $totalUsers; $i++) {
     $accountName = "$($memberUsersNamePrefix)$("{0:D3}" -f $i)"
     $user = $(try {Get-ADUser $accountName} catch {$null})
@@ -66,4 +68,3 @@ for ($i = 1; $i -le $totalUsers; $i++) {
         Write-Host "Created user $accountName" -ForegroundColor Green
     }
 }
-
