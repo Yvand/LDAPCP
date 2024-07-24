@@ -179,15 +179,6 @@ namespace Yvand.LdapClaimsProvider.Tests
         }
     }
 
-    //public class SearchEntityDataSourceCollection : IEnumerable
-    //{
-    //    public IEnumerator GetEnumerator()
-    //    {
-    //        yield return new[] { "AADGroup1", "1", "5b0f6c56-c87f-44c3-9354-56cba03da433" };
-    //        yield return new[] { "AADGroupTes", "1", "99abdc91-e6e0-475c-a0ba-5014f91de853" };
-    //    }
-    //}
-
     public enum ResultEntityType
     {
         None,
@@ -196,79 +187,125 @@ namespace Yvand.LdapClaimsProvider.Tests
         Group,
     }
 
-    public enum EntityDataSourceType
+    public abstract class EntityScenario : ICloneable
     {
-        AllAccounts,
-        UPNB2BGuestAccounts
+        public object Clone()
+        {
+            return this.MemberwiseClone();
+        }
+
+        public abstract void SetEntityFromDataSourceRow(Row row);
     }
 
-    public class SearchEntityData
+    public class SearchEntityScenario : EntityScenario
     {
         public string Input;
         public int SearchResultCount;
         public string SearchResultSingleEntityClaimValue;
         public ResultEntityType SearchResultEntityTypes;
         public bool ExactMatch;
-    }
 
-    public class SearchEntityDataSource
-    {
-        public static IEnumerable<TestCaseData> GetTestData(EntityDataSourceType entityDataSourceType)
+        public override void SetEntityFromDataSourceRow(Row row)
         {
-            string csvPath = UnitTestsHelper.DataFile_AllAccounts_Search;
-            DataTable dt = DataTable.New.ReadCsv(csvPath);
-            foreach (Row row in dt.Rows)
-            {
-                var registrationData = new SearchEntityData();
-                registrationData.Input = row["Input"];
-                registrationData.SearchResultCount = Convert.ToInt32(row["SearchResultCount"]);
-                registrationData.SearchResultSingleEntityClaimValue = row["SearchResultSingleEntityClaimValue"];
-                registrationData.SearchResultEntityTypes = (ResultEntityType)Enum.Parse(typeof(ResultEntityType), row["SearchResultEntityTypes"]);
-                registrationData.ExactMatch = Convert.ToBoolean(row["ExactMatch"]);
-                yield return new TestCaseData(new object[] { registrationData });
-            }
-        }
-
-        //public class ReadCSV
-        //{
-        //    public void GetValue()
-        //    {
-        //        TextReader tr1 = new StreamReader(@"c:\pathtofile\filename", true);
-
-        //        var Data = tr1.ReadToEnd().Split('\n')
-        //        .Where(l => l.Length > 0)  //nonempty strings
-        //        .Skip(1)               // skip header 
-        //        .Select(s => s.Trim())   // delete whitespace
-        //        .Select(l => l.Split(',')) // get arrays of values
-        //        .Select(l => new { Field1 = l[0], Field2 = l[1], Field3 = l[2] });
-        //    }
-        //}
-    }
-
-    public class ValidateEntityDataSource
-    {
-        public static IEnumerable<TestCaseData> GetTestData(EntityDataSourceType entityDataSourceType)
-        {
-            string csvPath = UnitTestsHelper.DataFile_AllAccounts_Validate;
-            DataTable dt = DataTable.New.ReadCsv(csvPath);
-
-            foreach (Row row in dt.Rows)
-            {
-                var registrationData = new ValidateEntityData();
-                registrationData.ClaimValue = row["ClaimValue"];
-                registrationData.ShouldValidate = Convert.ToBoolean(row["ShouldValidate"]);
-                registrationData.IsMemberOfTrustedGroup = Convert.ToBoolean(row["IsMemberOfTrustedGroup"]);
-                registrationData.EntityType = (ResultEntityType)Enum.Parse(typeof(ResultEntityType), row["EntityType"]);
-                yield return new TestCaseData(new object[] { registrationData });
-            }
+            Input = row["Input"];
+            SearchResultCount = Convert.ToInt32(row["SearchResultCount"]);
+            SearchResultSingleEntityClaimValue = row["SearchResultSingleEntityClaimValue"];
+            SearchResultEntityTypes = (ResultEntityType)Enum.Parse(typeof(ResultEntityType), row["SearchResultEntityTypes"]);
+            ExactMatch = Convert.ToBoolean(row["ExactMatch"]);
         }
     }
 
-    public class ValidateEntityData
+    public class ValidateEntityScenario : EntityScenario
     {
         public string ClaimValue;
         public bool ShouldValidate;
         public bool IsMemberOfTrustedGroup;
         public ResultEntityType EntityType;
+
+        public override void SetEntityFromDataSourceRow(Row row)
+        {
+            ClaimValue = row["ClaimValue"];
+            ShouldValidate = Convert.ToBoolean(row["ShouldValidate"]);
+            IsMemberOfTrustedGroup = Convert.ToBoolean(row["IsMemberOfTrustedGroup"]);
+            EntityType = (ResultEntityType)Enum.Parse(typeof(ResultEntityType), row["EntityType"]);
+        }
+    }
+
+    public class TestEntitySource<T> where T : EntityScenario, new()
+    {
+        private object _LockInitEntitiesList = new object();
+        private List<T> _Entities;
+        public List<T> Entities
+        {
+            get
+            {
+                if (_Entities != null) { return _Entities; }
+                lock (_LockInitEntitiesList)
+                {
+                    if (_Entities != null) { return _Entities; }
+                    _Entities = new List<T>();
+                    foreach (T entity in ReadDataSource())
+                    {
+                        _Entities.Add(entity);
+                    }
+                    Trace.TraceInformation($"{DateTime.Now:s} [{typeof(T).Name}] Initialized List of {nameof(Entities)} with {Entities.Count} items.");
+                    return _Entities;
+                }
+            }
+        }
+
+        private Random RandomNumber = new Random();
+        private string DataSourceFilePath;
+
+        public TestEntitySource(string dataSourceFilePath)
+        {
+            DataSourceFilePath = dataSourceFilePath;
+        }
+
+        private IEnumerable<T> ReadDataSource()
+        {
+            DataTable dt = DataTable.New.ReadCsv(DataSourceFilePath);
+            foreach (Row row in dt.Rows)
+            {
+                T entity = new T();
+                entity.SetEntityFromDataSourceRow(row);
+                yield return entity;
+            }
+        }
+
+        public IEnumerable<T> GetSomeEntities(int count, Func<T, bool> filter = null)
+        {
+            if (count > Entities.Count)
+            {
+                count = Entities.Count;
+            }
+
+            List<int> entitiesIdxs = new List<int>(count);
+            for (int i = 0; i < count; i++)
+            {
+                entitiesIdxs.Add(RandomNumber.Next(0, Entities.Where(filter ?? (x => true)).Count() - 1));
+            }
+
+            foreach (int userIdx in entitiesIdxs)
+            {
+                yield return Entities[userIdx].Clone() as T;
+            }
+        }
+    }
+
+    public class TestEntitySourceManager
+    {
+        private static TestEntitySource<SearchEntityScenario> SearchTestsSource = new TestEntitySource<SearchEntityScenario>(UnitTestsHelper.DataFile_AllAccounts_Search);
+        public static List<SearchEntityScenario> AllSearchEntities
+        {
+            get => SearchTestsSource.Entities;
+        }
+        private static TestEntitySource<ValidateEntityScenario> ValidationTestsSource = new TestEntitySource<ValidateEntityScenario>(UnitTestsHelper.DataFile_AllAccounts_Validate);
+        public static List<ValidateEntityScenario> AllValidationEntities
+        {
+            get => ValidationTestsSource.Entities;
+        }
+        public const int MaxNumberOfUsersToTest = 100;
+        public const int MaxNumberOfGroupsToTest = 100;
     }
 }

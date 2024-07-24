@@ -146,7 +146,7 @@ namespace Yvand.LdapClaimsProvider.Tests
             Assert.That(entities.Count, Is.EqualTo(expectedCount), $"Input \"{input}\" should have returned {expectedCount} entities, but it returned {entities.Count} instead. {detailedLog}");
         }
 
-        protected void TestValidationOperation(ValidateEntityData registrationData)
+        protected void TestValidationOperation(ValidateEntityScenario registrationData)
         {
             bool shouldValidate = registrationData.ShouldValidate;
             string claimType = registrationData.EntityType == ResultEntityType.User ?
