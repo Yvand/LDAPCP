@@ -1,4 +1,5 @@
 ﻿using DataAccess;
+using Microsoft.Office.Audit.Schema;
 using Microsoft.SharePoint;
 using Microsoft.SharePoint.Administration;
 using Microsoft.SharePoint.Administration.Claims;
@@ -187,7 +188,7 @@ namespace Yvand.LdapClaimsProvider.Tests
         Group,
     }
 
-    public abstract class EntityScenario : ICloneable
+    public abstract class TestEntity : ICloneable
     {
         public object Clone()
         {
@@ -197,7 +198,45 @@ namespace Yvand.LdapClaimsProvider.Tests
         public abstract void SetEntityFromDataSourceRow(Row row);
     }
 
-    public class SearchEntityScenario : EntityScenario
+    public class TestUser : TestEntity
+    {
+        public string UserPrincipalName;
+        public string Mail;
+        public string GivenName;
+        public string DisplayName;
+        public string DistinguishedName;
+        public string SID;
+        public bool IsMemberOfAllGroups;
+
+        public override void SetEntityFromDataSourceRow(Row row)
+        {
+            UserPrincipalName = row["userPrincipalName"];
+            Mail = row["mail"];
+            GivenName = row["givenName"];
+            DisplayName = row["displayName"];
+            DistinguishedName = row["DistinguishedName"];
+            SID = row["SID"];
+            IsMemberOfAllGroups = Convert.ToBoolean(row["IsMemberOfAllGroups"]);
+        }
+    }
+
+    public class TestGroup : TestEntity
+    {
+        public string SamAccountName;
+        public string DistinguishedName;
+        public string SID;
+        public bool EveryoneIsMember;
+
+        public override void SetEntityFromDataSourceRow(Row row)
+        {
+            SamAccountName = row["SamAccountName"];
+            DistinguishedName = row["DistinguishedName"];
+            SID = row["SID"];
+            EveryoneIsMember = Convert.ToBoolean(row["EveryoneIsMember"]);
+        }
+    }
+
+    public class SearchEntityScenario : TestEntity
     {
         public string Input;
         public int SearchResultCount;
@@ -215,7 +254,7 @@ namespace Yvand.LdapClaimsProvider.Tests
         }
     }
 
-    public class ValidateEntityScenario : EntityScenario
+    public class ValidateEntityScenario : TestEntity
     {
         public string ClaimValue;
         public bool ShouldValidate;
@@ -231,7 +270,7 @@ namespace Yvand.LdapClaimsProvider.Tests
         }
     }
 
-    public class TestEntitySource<T> where T : EntityScenario, new()
+    public class TestEntitySource<T> where T : TestEntity, new()
     {
         private object _LockInitEntitiesList = new object();
         private List<T> _Entities;
