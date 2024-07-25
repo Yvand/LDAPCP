@@ -21,7 +21,8 @@ $exportedGroupsFullFilePath = "C:\YvanData\dev\LDAPCP_Tests_Groups.csv"
 
 try {
     Get-ADOrganizationalUnit -Identity $ouDN | Out-Null
-} catch {
+}
+catch {
     Write-Warning "Could not get the OU $ouDN : $($_.Exception.Message)"
     return
 }
@@ -51,23 +52,23 @@ $usersWithSpecificSettings = @(
 
 $groupsWithSpecificSettings = @(
     @{
-        GroupName              = "$($groupNamePrefix)001"
+        GroupName        = "$($groupNamePrefix)001"
         EveryoneIsMember = $true
     },
     @{
-        GroupName              = "$($groupNamePrefix)005"
+        GroupName        = "$($groupNamePrefix)005"
         EveryoneIsMember = $true
     },
     @{
-        GroupName              = "$($groupNamePrefix)018"
+        GroupName        = "$($groupNamePrefix)018"
         EveryoneIsMember = $true
     },
     @{
-        GroupName              = "$($groupNamePrefix)025"
+        GroupName        = "$($groupNamePrefix)025"
         EveryoneIsMember = $true
     },
     @{
-        GroupName              = "$($groupNamePrefix)038"
+        GroupName        = "$($groupNamePrefix)038"
         EveryoneIsMember = $true
     }
 )
@@ -91,7 +92,7 @@ $allUsersAccountNames = @()
 for ($i = 1; $i -le $totalUsers; $i++) {
     $accountName = "$($userNamePrefix)$("{0:D3}" -f $i)"
     $allUsersAccountNames += $accountName
-    $user = $(try {Get-ADUser $accountName} catch {$null})
+    $user = $(try { Get-ADUser $accountName } catch { $null })
     if ($null -eq $user) {
         $userPrincipalName = "$($accountName)@$($domainFqdn)"
         $additionalUserAttributes = New-Object -TypeName HashTable
@@ -111,12 +112,12 @@ for ($i = 1; $i -le $totalUsers; $i++) {
 
 # Bulk add groups if they do not already exist AND add members with EveryoneIsMember = true
 $usersMemberOfAllGroups = [System.Linq.Enumerable]::Where($usersWithSpecificSettings, [Func[object, bool]] { param($x) $x.IsMemberOfAllGroups -eq $true })
-$usersMemberOfAllGroups2 = $usersMemberOfAllGroups | Select-Object -Property  @{ Name="AccountName"; Expression={ $_.UserPrincipalName.Split("@")[0] } }
+$usersMemberOfAllGroups2 = $usersMemberOfAllGroups | Select-Object -Property @{ Name = "AccountName"; Expression = { $_.UserPrincipalName.Split("@")[0] } }
 $totalGroups = 50
 $allGroups = @()
 for ($i = 1; $i -le $totalGroups; $i++) {
     $accountName = "$($groupNamePrefix)$("{0:D3}" -f $i)"
-    $group = $(try {Get-ADGroup -Identity $accountName} catch {$null})
+    $group = $(try { Get-ADGroup -Identity $accountName } catch { $null })
     if ($null -eq $group) {
         New-ADGroup -Name $accountName -DisplayName $accountName -GroupCategory Security -GroupScope Global -Path $ouDN
         Write-Host "Created group $accountName" -ForegroundColor Green
@@ -131,10 +132,10 @@ for ($i = 1; $i -le $totalGroups; $i++) {
 # Set group membership
 $groupsEveryoneIsMember = [System.Linq.Enumerable]::Where($groupsWithSpecificSettings, [Func[object, bool]] { param($x) $x.EveryoneIsMember -eq $true })
 foreach ($groupEveryoneIsMember in $groupsEveryoneIsMember) {
-    $group = $(try {Get-ADGroup -Identity $groupEveryoneIsMember.GroupName} catch {$null})
+    $group = $(try { Get-ADGroup -Identity $groupEveryoneIsMember.GroupName } catch { $null })
     if ($null -ne $group) {
         # Remove and re-add all group members
-        Get-ADGroupMember $groupEveryoneIsMember.GroupName | ForEach-Object {Remove-ADGroupMember $groupEveryoneIsMember.GroupName $_ -Confirm:$false}
+        Get-ADGroupMember $groupEveryoneIsMember.GroupName | ForEach-Object { Remove-ADGroupMember $groupEveryoneIsMember.GroupName $_ -Confirm:$false }
         Add-ADGroupMember -Identity $groupEveryoneIsMember.GroupName -Members $allUsersAccountNames
         Write-Host "(Re-)added all test users as members of group $($groupEveryoneIsMember.GroupName)" -ForegroundColor Green
     }
@@ -142,11 +143,13 @@ foreach ($groupEveryoneIsMember in $groupsEveryoneIsMember) {
 
 # export users and groups to their CSV file
 $allUsers | 
-    Select-Object -Property UserPrincipalName, Mail, GivenName, DisplayName, DistinguishedName, SID, @{ Name="IsMemberOfAllGroups"; Expression={ if ([System.Linq.Enumerable]::FirstOrDefault($usersWithSpecificSettings, [Func[object, bool]] { param($x) $x.UserPrincipalName -like $_.UserPrincipalName }).IsMemberOfAllGroups) { $true} else { $false } } } |
-    Export-Csv -Path $exportedUsersFullFilePath -NoTypeInformation
+Select-Object -Property UserPrincipalName, Mail, GivenName, DisplayName, DistinguishedName, SID, @{ Name = "IsMemberOfAllGroups"; Expression = { if ([System.Linq.Enumerable]::FirstOrDefault($usersWithSpecificSettings, [Func[object, bool]] { param($x) $x.UserPrincipalName -like $_.UserPrincipalName }).IsMemberOfAllGroups) { $true } else { $false } } } |
+Export-Csv -Path $exportedUsersFullFilePath -NoTypeInformation
 Write-Host "Exported test users to CSV file $($exportedUsersFullFilePath)" -ForegroundColor Green
 
 $allGroups | 
-    Select-Object -Property SamAccountName, DistinguishedName, SID, @{ Name="EveryoneIsMember"; Expression={ if ([System.Linq.Enumerable]::FirstOrDefault($groupsWithSpecificSettings, [Func[object, bool]] { param($x) $x.GroupName -like $_.SamAccountName }).EveryoneIsMember) { $true} else { $false } } } |
-    Export-Csv -Path $exportedGroupsFullFilePath -NoTypeInformation
+Select-Object -Property SamAccountName, DistinguishedName, SID, 
+@{ Name = "EveryoneIsMember"; Expression = { if ([System.Linq.Enumerable]::FirstOrDefault($groupsWithSpecificSettings, [Func[object, bool]] { param($x) $x.GroupName -like $_.SamAccountName }).EveryoneIsMember) { $true } else { $false } } },
+@{ Name = "AccountNameFqdn"; Expression = { "$($domainFqdn)\$($_.SamAccountName)" } } |
+Export-Csv -Path $exportedGroupsFullFilePath -NoTypeInformation
 Write-Host "Exported test groups to CSV file $($exportedGroupsFullFilePath)" -ForegroundColor Green

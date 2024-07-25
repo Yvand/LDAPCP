@@ -44,6 +44,8 @@ namespace Yvand.LdapClaimsProvider.Tests
         public static string AzureTenantsJsonFile => TestContext.Parameters["LdapConnections"];
         public static string DataFile_AllAccounts_Search => TestContext.Parameters["DataFile_AllAccounts_Search"];
         public static string DataFile_AllAccounts_Validate => TestContext.Parameters["DataFile_AllAccounts_Validate"];
+        public static string DataFile_TestUsers => TestContext.Parameters["DataFile_TestUsers"];
+        public static string DataFile_TestGroups => TestContext.Parameters["DataFile_TestGroups"];
         static TextWriterTraceListener Logger { get; set; }
         public static LdapProviderConfiguration PersistedConfiguration;
         private static ILdapProviderSettings OriginalSettings;
@@ -226,6 +228,7 @@ namespace Yvand.LdapClaimsProvider.Tests
         public string DistinguishedName;
         public string SID;
         public bool EveryoneIsMember;
+        public string AccountNameFqdn;
 
         public override void SetEntityFromDataSourceRow(Row row)
         {
@@ -233,6 +236,7 @@ namespace Yvand.LdapClaimsProvider.Tests
             DistinguishedName = row["DistinguishedName"];
             SID = row["SID"];
             EveryoneIsMember = Convert.ToBoolean(row["EveryoneIsMember"]);
+            AccountNameFqdn = row["AccountNameFqdn"];
         }
     }
 
@@ -319,10 +323,11 @@ namespace Yvand.LdapClaimsProvider.Tests
                 count = Entities.Count;
             }
 
+            int randomNumberMaxValue = Entities.Where(filter ?? (x => true)).Count() - 1;
             List<int> entitiesIdxs = new List<int>(count);
             for (int i = 0; i < count; i++)
             {
-                entitiesIdxs.Add(RandomNumber.Next(0, Entities.Where(filter ?? (x => true)).Count() - 1));
+                entitiesIdxs.Add(RandomNumber.Next(0, randomNumberMaxValue));
             }
 
             foreach (int userIdx in entitiesIdxs)
@@ -344,7 +349,44 @@ namespace Yvand.LdapClaimsProvider.Tests
         {
             get => ValidationTestsSource.Entities;
         }
+        private static TestEntitySource<TestUser> TestUsersSource = new TestEntitySource<TestUser>(UnitTestsHelper.DataFile_TestUsers);
+        public static List<TestUser> AllTestUsers
+        {
+            get => TestUsersSource.Entities;
+        }
+        private static TestEntitySource<TestGroup> TestGroupsSource = new TestEntitySource<TestGroup>(UnitTestsHelper.DataFile_TestGroups);
+        public static List<TestGroup> AllTestGroups
+        {
+            get => TestGroupsSource.Entities;
+        }
         public const int MaxNumberOfUsersToTest = 100;
         public const int MaxNumberOfGroupsToTest = 100;
+
+        public static IEnumerable<TestUser> GetSomeUsers(int count)
+        {
+            return TestUsersSource.GetSomeEntities(count, null);
+        }
+
+        public static IEnumerable<TestUser> GetSomeUsers2(int count, bool onlyMembersOfAllGroups)
+        {
+            Func<TestUser, bool> onlyMembersOfAllGroupsFilter = x => x.IsMemberOfAllGroups == onlyMembersOfAllGroups;
+            return TestUsersSource.GetSomeEntities(count, onlyMembersOfAllGroupsFilter);
+        }
+
+        public static TestUser FindUser(string upnPrefix)
+        {
+            return TestUsersSource.Entities.First(x => x.UserPrincipalName.StartsWith(upnPrefix)).Clone() as TestUser;
+        }
+
+        public static IEnumerable<TestGroup> GetSomeGroups(int count)
+        {
+            return TestGroupsSource.GetSomeEntities(count);
+        }
+
+        //public static TestGroup GetOneGroup(bool securityEnabledOnly)
+        //{
+        //    Func<TestGroup, bool> securityEnabledOnlyFilter = x => x.SecurityEnabled == securityEnabledOnly;
+        //    return TestGroupsSource.GetSomeEntities(1, securityEnabledOnlyFilter).First();
+        //}
     }
 }

@@ -685,6 +685,12 @@ namespace Yvand.LdapClaimsProvider.Configuration
             return ctConfig;
         }
 
+        public IEnumerable<ClaimTypeConfig> GetConfigsMappedToClaimType()
+        {
+            return innerCol.Where(x =>
+                !String.IsNullOrWhiteSpace(x.ClaimType));
+        }
+
         /// <summary>
         /// Returns all configuration objects, excluding the identifier configuration, corresponding to the given <paramref name="entityType"/>
         /// </summary>

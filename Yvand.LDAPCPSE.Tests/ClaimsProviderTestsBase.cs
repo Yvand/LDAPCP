@@ -1,4 +1,5 @@
-﻿using Microsoft.SharePoint.Administration.Claims;
+﻿using Microsoft.Office.Audit.Schema;
+using Microsoft.SharePoint.Administration.Claims;
 using Microsoft.SharePoint.WebControls;
 using Newtonsoft.Json;
 using NUnit.Framework;
@@ -84,6 +85,48 @@ namespace Yvand.LdapClaimsProvider.Tests
         protected void Cleanup()
         {
             Trace.TraceInformation($"{DateTime.Now:s} [{this.GetType().Name}] Cleanup.");
+        }
+
+        public void TestSearchAndValidateForTestUser(TestUser entity)
+        {
+            int expectedCount = 1;
+            string inputValue = entity.UserPrincipalName;
+            string claimValue = entity.UserPrincipalName;
+            bool shouldValidate = true;
+
+            if (Settings.AlwaysResolveUserInput)
+            {
+                inputValue = entity.UserPrincipalName;
+                claimValue = entity.UserPrincipalName;
+                expectedCount = Settings.ClaimTypes.GetConfigsMappedToClaimType().Count();
+            }
+            
+            // If shouldValidate is false, user should not be found anyway so no need to do additional checks
+            if (shouldValidate)
+            {
+                //claimValue = String.Equals(Settings.ClaimTypes.UserIdentifierConfig.DirectoryObjectAttribute, "userPrincipalName", StringComparison.OrdinalIgnoreCase) ?
+                //    entity.UserPrincipalName :
+                //    entity.SID;
+                expectedCount = 1;
+            }
+            TestSearchOperation(inputValue, expectedCount, claimValue);
+            TestValidationOperation(UserIdentifierClaimType, claimValue, shouldValidate);
+        }
+
+        public void TestSearchAndValidateForETestGroup(TestGroup entity)
+        {
+            string inputValue = entity.SamAccountName;
+            string claimValue = entity.AccountNameFqdn;
+            int expectedCount = 1;
+            bool shouldValidate = true;
+
+            if (Settings.AlwaysResolveUserInput)
+            {
+                expectedCount = Settings.ClaimTypes.GetConfigsMappedToClaimType().Count();
+            }
+
+            TestSearchOperation(inputValue, expectedCount, claimValue);
+            TestValidationOperation(GroupIdentifierClaimType, claimValue, shouldValidate);
         }
 
         /// <summary>

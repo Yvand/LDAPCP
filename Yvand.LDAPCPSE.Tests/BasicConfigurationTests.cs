@@ -1,4 +1,5 @@
 ﻿using NUnit.Framework;
+using System.Linq;
 
 namespace Yvand.LdapClaimsProvider.Tests
 {
@@ -16,6 +17,18 @@ namespace Yvand.LdapClaimsProvider.Tests
         public override void CheckSettingsTest()
         {
             base.CheckSettingsTest();
+        }
+
+        [Test, TestCaseSource(typeof(TestEntitySourceManager), nameof(TestEntitySourceManager.GetSomeUsers), new object[] { TestEntitySourceManager.MaxNumberOfUsersToTest })]
+        public void TestUsers(TestUser user)
+        {
+            base.TestSearchAndValidateForTestUser(user);
+        }
+
+        [Test, TestCaseSource(typeof(TestEntitySourceManager), nameof(TestEntitySourceManager.GetSomeGroups), new object[] { TestEntitySourceManager.MaxNumberOfGroupsToTest })]
+        public void TestGroups(TestGroup group)
+        {
+            TestSearchAndValidateForETestGroup(group);
         }
 
         [Test, TestCaseSource(typeof(TestEntitySourceManager), nameof(TestEntitySourceManager.AllSearchEntities), null)]
@@ -52,6 +65,14 @@ namespace Yvand.LdapClaimsProvider.Tests
         }
 
 #if DEBUG
+        [TestCase("testLdapcpUser_001")]
+        [TestCase("testLdapcpUser_007")]
+        public void DebugTestUser(string upnPrefix)
+        {
+            TestUser user = TestEntitySourceManager.AllTestUsers.First(x => x.UserPrincipalName.StartsWith(upnPrefix));
+            base.TestSearchAndValidateForTestUser(user);
+        }
+
         ////[TestCaseSource(typeof(SearchEntityDataSourceCollection))]
         //public void DEBUG_SearchEntitiesFromCollection(string inputValue, string expectedCount, string expectedClaimValue)
         //{

@@ -11,6 +11,8 @@
     <Parameter name="Domain" value="contoso" />
     <Parameter name="DataFile_AllAccounts_Search" value="C:\YvanData\Dev\LDAPCP_Tests_AllAccounts_Search.csv" />
     <Parameter name="DataFile_AllAccounts_Validate" value="C:\YvanData\Dev\LDAPCP_Tests_AllAccounts_Validate.csv" />
+    <Parameter name="DataFile_TestUsers" value="C:\YvanData\dev\LDAPCP_Tests_Users.csv" />
+    <Parameter name="DataFile_TestGroups" value="C:\YvanData\dev\LDAPCP_Tests_Groups.csv" />
     <Parameter name="FarmAdmin" value="i:0#.w|contoso\yvand" />
     <Parameter name="ValidGroupClaimType" value="http://schemas.microsoft.com/ws/2008/06/identity/claims/role" />
     <Parameter name="ValidGroupName" value="contoso.local\testLdapcpseGroup_1" />
