@@ -25,6 +25,12 @@ try {
 $memberUsersNamePrefix = "testLdapcpUser_"
 $groupNamePrefix = "testLdapcpGroup_"
 
+$confirmation = Read-Host "Connected to domain '$domainFqdn' and about to process users starting with '$memberUsersNamePrefix' and groups starting with '$groupNamePrefix'. Are you sure you want to proceed? [y/n]"
+if ($confirmation -ne 'y') {
+    Write-Warning -Message "Aborted."
+    return
+}
+
 # Set specific attributes for some users
 $usersWithSpecificSettings = @( 
     @{ UserPrincipalName = "$($memberUsersNamePrefix)001@$($domainFqdn)"; IsMemberOfAllGroups = $true }
