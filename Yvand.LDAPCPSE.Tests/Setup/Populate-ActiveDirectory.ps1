@@ -86,7 +86,7 @@ $temporaryPassword = @(
 ) -Join ''
 
 # Bulk add users if they do not already exist
-$totalUsers = 50
+$totalUsers = 100
 $allUsers = @()
 $allUsersAccountNames = @()
 for ($i = 1; $i -le $totalUsers; $i++) {

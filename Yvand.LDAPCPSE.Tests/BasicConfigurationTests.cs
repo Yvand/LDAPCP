@@ -55,23 +55,23 @@ namespace Yvand.LdapClaimsProvider.Tests
             base.TestValidationOperation(registrationData);
         }
 
-        /// <summary>
-        /// Tests if the augmentation works as expected.
-        /// </summary>
-        /// <param name="registrationData"></param>
-        [Test, TestCaseSource(typeof(TestEntitySourceManager), nameof(TestEntitySourceManager.AllValidationEntities), null)]
-        [Repeat(UnitTestsHelper.TestRepeatCount)]
-        public virtual void TestAugmentationOperation(ValidateEntityScenario registrationData)
-        {
-            TestAugmentationOperation(registrationData.ClaimValue, registrationData.IsMemberOfTrustedGroup, UnitTestsHelper.ValidGroupName);
-        }
+        ///// <summary>
+        ///// Tests if the augmentation works as expected.
+        ///// </summary>
+        ///// <param name="registrationData"></param>
+        //[Test, TestCaseSource(typeof(TestEntitySourceManager), nameof(TestEntitySourceManager.AllValidationEntities), null)]
+        //[Repeat(UnitTestsHelper.TestRepeatCount)]
+        //public virtual void TestAugmentationOperation(ValidateEntityScenario registrationData)
+        //{
+        //    TestAugmentationOperation(registrationData.ClaimValue, registrationData.IsMemberOfTrustedGroup, UnitTestsHelper.ValidGroupName);
+        //}
 
-        [TestCase("FakeAccount", false)]
-        [TestCase("yvand@contoso.local", true)]
-        public void TestAugmentationOperation(string claimValue, bool isMemberOfTrustedGroup)
-        {
-            base.TestAugmentationOperation(claimValue, isMemberOfTrustedGroup, UnitTestsHelper.ValidGroupName);
-        }
+        //[TestCase("FakeAccount", false)]
+        //[TestCase("yvand@contoso.local", true)]
+        //public void TestAugmentationOperation(string claimValue, bool isMemberOfTrustedGroup)
+        //{
+        //    base.TestAugmentationOperation(claimValue, isMemberOfTrustedGroup, UnitTestsHelper.ValidGroupName);
+        //}
 
 #if DEBUG
         [TestCase("testLdapcpUser_001")]

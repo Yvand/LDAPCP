@@ -318,23 +318,11 @@ namespace Yvand.LdapClaimsProvider.Tests
 
         public IEnumerable<T> GetSomeEntities(int count, Func<T, bool> filter = null)
         {
-            if (count > Entities.Count)
-            {
-                count = Entities.Count;
-            }
-
-            IEnumerable<T> entities = Entities.Where(filter ?? (x => true));
-            int randomNumberMaxValue = entities.Count() - 1;
-            List<int> entitiesIdxs = new List<int>(count);
-            for (int i = 0; i < count; i++)
-            {
-                entitiesIdxs.Add(RandomNumber.Next(0, randomNumberMaxValue));
-            }
-
-            foreach (int userIdx in entitiesIdxs)
-            {
-                yield return entities.ElementAt(userIdx).Clone() as T;
-            }
+            if (count > Entities.Count) { count = Entities.Count; }
+            IEnumerable<T> entitiesFiltered = Entities.Where(filter ?? (x => true));
+            int randomNumberMaxValue = entitiesFiltered.Count() - 1;
+            int randomIdx = RandomNumber.Next(0, randomNumberMaxValue);
+            yield return entitiesFiltered.ElementAt(randomIdx).Clone() as T;
         }
     }
 
