@@ -104,7 +104,7 @@ for ($i = 1; $i -le $totalUsers; $i++) {
         New-ADUser -Name "$accountName" -UserPrincipalName $userPrincipalName -OtherAttributes $additionalUserAttributes -Accountpassword $securePassword -Enabled $true -Path $ouDN
         Write-Host "Created user $accountName" -ForegroundColor Green
     }
-    $user = Get-ADUser $accountName -Properties displayName
+    $user = Get-ADUser $accountName -Properties displayName, mail
     $allUsers += $user
 }
 
@@ -136,7 +136,7 @@ foreach ($groupEveryoneIsMember in $groupsEveryoneIsMember) {
 
 # export users and groups to their CSV file
 $allUsers | 
-    Select-Object -Property UserPrincipalName, DistinguishedName, DisplayName, SID, GivenName |
+    Select-Object -Property UserPrincipalName, Mail, GivenName, DisplayName, DistinguishedName, SID, @{ Name="IsMemberOfAllGroups"; Expression={ if ([System.Linq.Enumerable]::FirstOrDefault($usersWithSpecificSettings, [Func[object, bool]] { param($x) $x.UserPrincipalName -like $_.UserPrincipalName }).IsMemberOfAllGroups) { $true} else { $false } } } |
     Export-Csv -Path $exportedUsersFullFilePath -NoTypeInformation
 Write-Host "Exported test users to CSV file $($exportedUsersFullFilePath)" -ForegroundColor Green
 
