@@ -4,7 +4,8 @@
 .SYNOPSIS
     Creates the users and groups in Active Directory, required to run the unit tests in LDAPCP project
 .DESCRIPTION
-    It creates the objects only if they do not exist (no overwrite)
+    It creates the objects only if they do not exist (no overwrite).
+    Group membership is always re-applied.
 .LINK
     https://github.com/Yvand/LDAPCP/
 #>
@@ -108,7 +109,9 @@ for ($i = 1; $i -le $totalUsers; $i++) {
     $allUsers += $user
 }
 
-# Bulk add groups if they do not already exist
+# Bulk add groups if they do not already exist AND add members with EveryoneIsMember = true
+$usersMemberOfAllGroups = [System.Linq.Enumerable]::Where($usersWithSpecificSettings, [Func[object, bool]] { param($x) $x.IsMemberOfAllGroups -eq $true })
+$usersMemberOfAllGroups2 = $usersMemberOfAllGroups | Select-Object -Property  @{ Name="AccountName"; Expression={ $_.UserPrincipalName.Split("@")[0] } }
 $totalGroups = 50
 $allGroups = @()
 for ($i = 1; $i -le $totalGroups; $i++) {
@@ -120,6 +123,9 @@ for ($i = 1; $i -le $totalGroups; $i++) {
     }
     $group = Get-ADGroup -Identity $accountName
     $allGroups += $group
+    
+    $group | Add-ADGroupMember -Members $usersMemberOfAllGroups2.AccountName
+    Write-Host "(Re-)added users with EveryoneIsMember = true as members of group $($group.Name)" -ForegroundColor Green
 }
 
 # Set group membership
@@ -141,6 +147,6 @@ $allUsers |
 Write-Host "Exported test users to CSV file $($exportedUsersFullFilePath)" -ForegroundColor Green
 
 $allGroups | 
-    Select-Object -Property SamAccountName, DistinguishedName, SID |
+    Select-Object -Property SamAccountName, DistinguishedName, SID, @{ Name="EveryoneIsMember"; Expression={ if ([System.Linq.Enumerable]::FirstOrDefault($groupsWithSpecificSettings, [Func[object, bool]] { param($x) $x.GroupName -like $_.SamAccountName }).EveryoneIsMember) { $true} else { $false } } } |
     Export-Csv -Path $exportedGroupsFullFilePath -NoTypeInformation
 Write-Host "Exported test groups to CSV file $($exportedGroupsFullFilePath)" -ForegroundColor Green
