@@ -15,6 +15,9 @@ $domainDN = (Get-ADDomain -Current LocalComputer).DistinguishedName
 $ouName = "ldapcp"
 $ouDN = "OU=$($ouName),$($domainDN)"
 
+$exportedUsersFullFilePath = "C:\YvanData\dev\LDAPCP_Tests_Users.csv"
+$exportedGroupsFullFilePath = "C:\YvanData\dev\LDAPCP_Tests_Groups.csv"
+
 try {
     Get-ADOrganizationalUnit -Identity $ouDN | Out-Null
 } catch {
@@ -22,10 +25,10 @@ try {
     return
 }
 
-$memberUsersNamePrefix = "testLdapcpUser_"
+$userNamePrefix = "testLdapcpUser_"
 $groupNamePrefix = "testLdapcpGroup_"
 
-$confirmation = Read-Host "Connected to domain '$domainFqdn' and about to process users starting with '$memberUsersNamePrefix' and groups starting with '$groupNamePrefix'. Are you sure you want to proceed? [y/n]"
+$confirmation = Read-Host "Connected to domain '$domainFqdn' and about to process users starting with '$userNamePrefix' and groups starting with '$groupNamePrefix'. Are you sure you want to proceed? [y/n]"
 if ($confirmation -ne 'y') {
     Write-Warning -Message "Aborted."
     return
@@ -33,15 +36,16 @@ if ($confirmation -ne 'y') {
 
 # Set specific attributes for some users
 $usersWithSpecificSettings = @( 
-    @{ UserPrincipalName = "$($memberUsersNamePrefix)001@$($domainFqdn)"; IsMemberOfAllGroups = $true }
-    @{ UserPrincipalName = "$($memberUsersNamePrefix)002@$($domainFqdn)"; UserAttributes = @{ "GivenName" = "firstname_002" } }
-    @{ UserPrincipalName = "$($memberUsersNamePrefix)003@$($domainFqdn)"; UserAttributes = @{ "GivenName" = "test_special)" } }
-    @{ UserPrincipalName = "$($memberUsersNamePrefix)010@$($domainFqdn)"; IsMemberOfAllGroups = $true }
-    @{ UserPrincipalName = "$($memberUsersNamePrefix)011@$($domainFqdn)"; IsMemberOfAllGroups = $true }
-    @{ UserPrincipalName = "$($memberUsersNamePrefix)012@$($domainFqdn)"; IsMemberOfAllGroups = $true }
-    @{ UserPrincipalName = "$($memberUsersNamePrefix)013@$($domainFqdn)"; IsMemberOfAllGroups = $true }
-    @{ UserPrincipalName = "$($memberUsersNamePrefix)014@$($domainFqdn)"; IsMemberOfAllGroups = $true }
-    @{ UserPrincipalName = "$($memberUsersNamePrefix)015@$($domainFqdn)"; IsMemberOfAllGroups = $true }
+    @{ UserPrincipalName = "$($userNamePrefix)001@$($domainFqdn)"; IsMemberOfAllGroups = $true }
+    @{ UserPrincipalName = "$($userNamePrefix)002@$($domainFqdn)"; UserAttributes = @{ "GivenName" = "firstname_002" } }
+    @{ UserPrincipalName = "$($userNamePrefix)003@$($domainFqdn)"; UserAttributes = @{ "GivenName" = "test_special)" } }
+    @{ UserPrincipalName = "$($userNamePrefix)007@$($domainFqdn)"; UserAttributes = @{ "GivenName" = "James"; "displayName" = "James Bond" } }
+    @{ UserPrincipalName = "$($userNamePrefix)010@$($domainFqdn)"; IsMemberOfAllGroups = $true }
+    @{ UserPrincipalName = "$($userNamePrefix)011@$($domainFqdn)"; IsMemberOfAllGroups = $true }
+    @{ UserPrincipalName = "$($userNamePrefix)012@$($domainFqdn)"; IsMemberOfAllGroups = $true }
+    @{ UserPrincipalName = "$($userNamePrefix)013@$($domainFqdn)"; IsMemberOfAllGroups = $true }
+    @{ UserPrincipalName = "$($userNamePrefix)014@$($domainFqdn)"; IsMemberOfAllGroups = $true }
+    @{ UserPrincipalName = "$($userNamePrefix)015@$($domainFqdn)"; IsMemberOfAllGroups = $true }
 )
 
 $groupsWithSpecificSettings = @(
@@ -80,10 +84,11 @@ $temporaryPassword = @(
 ) -Join ''
 
 # Bulk add users if they do not already exist
-$totalUsers = 999
+$totalUsers = 50
+$allUsers = @()
 $allUsersAccountNames = @()
 for ($i = 1; $i -le $totalUsers; $i++) {
-    $accountName = "$($memberUsersNamePrefix)$("{0:D3}" -f $i)"
+    $accountName = "$($userNamePrefix)$("{0:D3}" -f $i)"
     $allUsersAccountNames += $accountName
     $user = $(try {Get-ADUser $accountName} catch {$null})
     if ($null -eq $user) {
@@ -99,10 +104,13 @@ for ($i = 1; $i -le $totalUsers; $i++) {
         New-ADUser -Name "$accountName" -UserPrincipalName $userPrincipalName -OtherAttributes $additionalUserAttributes -Accountpassword $securePassword -Enabled $true -Path $ouDN
         Write-Host "Created user $accountName" -ForegroundColor Green
     }
+    $user = Get-ADUser $accountName -Properties displayName
+    $allUsers += $user
 }
 
 # Bulk add groups if they do not already exist
 $totalGroups = 50
+$allGroups = @()
 for ($i = 1; $i -le $totalGroups; $i++) {
     $accountName = "$($groupNamePrefix)$("{0:D3}" -f $i)"
     $group = $(try {Get-ADGroup -Identity $accountName} catch {$null})
@@ -110,6 +118,8 @@ for ($i = 1; $i -le $totalGroups; $i++) {
         New-ADGroup -Name $accountName -DisplayName $accountName -GroupCategory Security -GroupScope Global -Path $ouDN
         Write-Host "Created group $accountName" -ForegroundColor Green
     }
+    $group = Get-ADGroup -Identity $accountName
+    $allGroups += $group
 }
 
 # Set group membership
@@ -120,6 +130,17 @@ foreach ($groupEveryoneIsMember in $groupsEveryoneIsMember) {
         # Remove and re-add all group members
         Get-ADGroupMember $groupEveryoneIsMember.GroupName | ForEach-Object {Remove-ADGroupMember $groupEveryoneIsMember.GroupName $_ -Confirm:$false}
         Add-ADGroupMember -Identity $groupEveryoneIsMember.GroupName -Members $allUsersAccountNames
-        Write-Host "Added all test users as members of group $($groupEveryoneIsMember.GroupName)" -ForegroundColor Green
+        Write-Host "(Re-)added all test users as members of group $($groupEveryoneIsMember.GroupName)" -ForegroundColor Green
     }
 }
+
+# export users and groups to their CSV file
+$allUsers | 
+    Select-Object -Property UserPrincipalName, DistinguishedName, DisplayName, SID, GivenName |
+    Export-Csv -Path $exportedUsersFullFilePath -NoTypeInformation
+Write-Host "Exported test users to CSV file $($exportedUsersFullFilePath)" -ForegroundColor Green
+
+$allGroups | 
+    Select-Object -Property SamAccountName, DistinguishedName, SID |
+    Export-Csv -Path $exportedGroupsFullFilePath -NoTypeInformation
+Write-Host "Exported test groups to CSV file $($exportedGroupsFullFilePath)" -ForegroundColor Green
