@@ -100,7 +100,7 @@ namespace Yvand.LdapClaimsProvider.Tests
                 claimValue = entity.UserPrincipalName;
                 expectedCount = Settings.ClaimTypes.GetConfigsMappedToClaimType().Count();
             }
-            
+
             // If shouldValidate is false, user should not be found anyway so no need to do additional checks
             if (shouldValidate)
             {
@@ -127,6 +127,25 @@ namespace Yvand.LdapClaimsProvider.Tests
 
             TestSearchOperation(inputValue, expectedCount, claimValue);
             TestValidationOperation(GroupIdentifierClaimType, claimValue, shouldValidate);
+        }
+
+        /// <summary>
+        /// Gold users are the test users who are members of all the test groups
+        /// </summary>
+        public virtual void TestAugmentationOfGoldUsersAgainstRandomGroups()
+        {
+            foreach (TestUser user in TestEntitySourceManager.GetUsersMembersOfAllGroups())
+            {
+                TestAugmentationAgainstRandomGroups(user);
+            }
+        }
+
+        public void TestAugmentationAgainstRandomGroups(TestUser user)
+        {
+            TestGroup randomGroup = TestEntitySourceManager.GetOneGroup();
+            bool userShouldBeMember = user.IsMemberOfAllGroups || randomGroup.EveryoneIsMember ? true : false;
+            Trace.TraceInformation($"{DateTime.Now:s} [{this.GetType().Name}] TestAugmentationAgainstRandomGroups for user \"{user.UserPrincipalName}\", IsMemberOfAllGroupsp: {user.IsMemberOfAllGroups} against group \"{randomGroup.SamAccountName}\" EveryoneIsMember: {randomGroup.EveryoneIsMember}. userShouldBeMember: {userShouldBeMember}");
+            TestAugmentationOperation(user.UserPrincipalName, userShouldBeMember, randomGroup.AccountNameFqdn);
         }
 
         /// <summary>

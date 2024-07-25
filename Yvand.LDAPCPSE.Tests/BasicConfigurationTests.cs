@@ -23,6 +23,7 @@ namespace Yvand.LdapClaimsProvider.Tests
         public void TestUsers(TestUser user)
         {
             base.TestSearchAndValidateForTestUser(user);
+            base.TestAugmentationAgainstRandomGroups(user);
         }
 
         [Test, TestCaseSource(typeof(TestEntitySourceManager), nameof(TestEntitySourceManager.GetSomeGroups), new object[] { TestEntitySourceManager.MaxNumberOfGroupsToTest })]
@@ -30,6 +31,14 @@ namespace Yvand.LdapClaimsProvider.Tests
         {
             TestSearchAndValidateForETestGroup(group);
         }
+
+        [Test]
+        [Repeat(2)]
+        public override void TestAugmentationOfGoldUsersAgainstRandomGroups()
+        {
+            base.TestAugmentationOfGoldUsersAgainstRandomGroups();
+        }
+
 
         [Test, TestCaseSource(typeof(TestEntitySourceManager), nameof(TestEntitySourceManager.AllSearchEntities), null)]
         [Repeat(UnitTestsHelper.TestRepeatCount)]

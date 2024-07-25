@@ -323,7 +323,8 @@ namespace Yvand.LdapClaimsProvider.Tests
                 count = Entities.Count;
             }
 
-            int randomNumberMaxValue = Entities.Where(filter ?? (x => true)).Count() - 1;
+            IEnumerable<T> entities = Entities.Where(filter ?? (x => true));
+            int randomNumberMaxValue = entities.Count() - 1;
             List<int> entitiesIdxs = new List<int>(count);
             for (int i = 0; i < count; i++)
             {
@@ -332,7 +333,7 @@ namespace Yvand.LdapClaimsProvider.Tests
 
             foreach (int userIdx in entitiesIdxs)
             {
-                yield return Entities[userIdx].Clone() as T;
+                yield return entities.ElementAt(userIdx).Clone() as T;
             }
         }
     }
@@ -367,10 +368,10 @@ namespace Yvand.LdapClaimsProvider.Tests
             return TestUsersSource.GetSomeEntities(count, null);
         }
 
-        public static IEnumerable<TestUser> GetSomeUsers2(int count, bool onlyMembersOfAllGroups)
+        public static IEnumerable<TestUser> GetUsersMembersOfAllGroups()
         {
-            Func<TestUser, bool> onlyMembersOfAllGroupsFilter = x => x.IsMemberOfAllGroups == onlyMembersOfAllGroups;
-            return TestUsersSource.GetSomeEntities(count, onlyMembersOfAllGroupsFilter);
+            Func<TestUser, bool> onlyMembersOfAllGroupsFilter = x => x.IsMemberOfAllGroups == true;
+            return TestUsersSource.GetSomeEntities(Int16.MaxValue, onlyMembersOfAllGroupsFilter);
         }
 
         public static TestUser FindUser(string upnPrefix)
@@ -381,6 +382,11 @@ namespace Yvand.LdapClaimsProvider.Tests
         public static IEnumerable<TestGroup> GetSomeGroups(int count)
         {
             return TestGroupsSource.GetSomeEntities(count);
+        }
+
+        public static TestGroup GetOneGroup()
+        {
+            return TestGroupsSource.GetSomeEntities(1, null).First();
         }
 
         //public static TestGroup GetOneGroup(bool securityEnabledOnly)
