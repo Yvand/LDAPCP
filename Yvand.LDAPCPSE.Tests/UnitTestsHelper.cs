@@ -203,6 +203,7 @@ namespace Yvand.LdapClaimsProvider.Tests
     public class TestUser : TestEntity
     {
         public string UserPrincipalName;
+        public string SamAccountName;
         public string Mail;
         public string GivenName;
         public string DisplayName;
@@ -213,6 +214,7 @@ namespace Yvand.LdapClaimsProvider.Tests
         public override void SetEntityFromDataSourceRow(Row row)
         {
             UserPrincipalName = row["userPrincipalName"];
+            SamAccountName = row["SamAccountName"];
             Mail = row["mail"];
             GivenName = row["givenName"];
             DisplayName = row["displayName"];

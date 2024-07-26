@@ -90,25 +90,38 @@ namespace Yvand.LdapClaimsProvider.Tests
         public void TestSearchAndValidateForTestUser(TestUser entity)
         {
             int expectedCount = 1;
-            string inputValue = entity.UserPrincipalName;
-            string claimValue = entity.UserPrincipalName;
+            string inputValue = entity.SamAccountName;
             bool shouldValidate = true;
+
+            string claimValue = String.Empty;
+            switch (Settings.ClaimTypes.UserIdentifierConfig.DirectoryObjectAttribute.ToLower())
+            {
+                case "distinguishedname":
+                    claimValue = entity.DistinguishedName;
+                    break;
+
+                case "userprincipalname":
+                    claimValue = entity.UserPrincipalName;
+                    break;
+
+                case "mail":
+                    claimValue = entity.Mail;
+                    break;
+
+                case "samaccountname":
+                    claimValue = entity.SamAccountName;
+                    break;
+
+                case "objectsid":
+                    claimValue = entity.SID;
+                    break;
+            }
 
             if (Settings.AlwaysResolveUserInput)
             {
-                inputValue = entity.UserPrincipalName;
-                claimValue = entity.UserPrincipalName;
                 expectedCount = Settings.ClaimTypes.GetConfigsMappedToClaimType().Count();
             }
 
-            // If shouldValidate is false, user should not be found anyway so no need to do additional checks
-            if (shouldValidate)
-            {
-                //claimValue = String.Equals(Settings.ClaimTypes.UserIdentifierConfig.DirectoryObjectAttribute, "userPrincipalName", StringComparison.OrdinalIgnoreCase) ?
-                //    entity.UserPrincipalName :
-                //    entity.SID;
-                expectedCount = 1;
-            }
             TestSearchOperation(inputValue, expectedCount, claimValue);
             TestValidationOperation(UserIdentifierClaimType, claimValue, shouldValidate);
         }
@@ -136,15 +149,19 @@ namespace Yvand.LdapClaimsProvider.Tests
         {
             foreach (TestUser user in TestEntitySourceManager.GetUsersMembersOfAllGroups())
             {
-                TestAugmentationAgainstRandomGroups(user);
+                TestAugmentationAgainst1RandomGroup(user);
             }
         }
 
-        public void TestAugmentationAgainstRandomGroups(TestUser user)
+        /// <summary>
+        /// Pick a random group, and check if the claims provider returns the expected membership (should or should not be member) for this group
+        /// </summary>
+        /// <param name="user"></param>
+        public void TestAugmentationAgainst1RandomGroup(TestUser user)
         {
             TestGroup randomGroup = TestEntitySourceManager.GetOneGroup();
             bool userShouldBeMember = user.IsMemberOfAllGroups || randomGroup.EveryoneIsMember ? true : false;
-            Trace.TraceInformation($"{DateTime.Now:s} [{this.GetType().Name}] TestAugmentationAgainstRandomGroups for user \"{user.UserPrincipalName}\", IsMemberOfAllGroupsp: {user.IsMemberOfAllGroups} against group \"{randomGroup.SamAccountName}\" EveryoneIsMember: {randomGroup.EveryoneIsMember}. userShouldBeMember: {userShouldBeMember}");
+            Trace.TraceInformation($"{DateTime.Now:s} [{this.GetType().Name}] TestAugmentationAgainst1RandomGroup for user \"{user.UserPrincipalName}\", IsMemberOfAllGroupsp: {user.IsMemberOfAllGroups} against group \"{randomGroup.SamAccountName}\" EveryoneIsMember: {randomGroup.EveryoneIsMember}. userShouldBeMember: {userShouldBeMember}");
             TestAugmentationOperation(user.UserPrincipalName, userShouldBeMember, randomGroup.AccountNameFqdn);
         }
 

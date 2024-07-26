@@ -23,7 +23,7 @@ namespace Yvand.LdapClaimsProvider.Tests
         public void TestUsers(TestUser user)
         {
             base.TestSearchAndValidateForTestUser(user);
-            base.TestAugmentationAgainstRandomGroups(user);
+            base.TestAugmentationAgainst1RandomGroup(user);
         }
 
         [Test, TestCaseSource(typeof(TestEntitySourceManager), nameof(TestEntitySourceManager.GetSomeGroups), new object[] { TestEntitySourceManager.MaxNumberOfGroupsToTest })]

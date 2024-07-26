@@ -23,16 +23,12 @@ namespace Yvand.LdapClaimsProvider.Tests
             base.CheckSettingsTest();
         }
 
-#if DEBUG
-        [TestCase(UnitTestsHelper.ValidUserSid, 1, UnitTestsHelper.ValidUserSid)]
-        [TestCase(@"testLdapcpseUser_001", 1, UnitTestsHelper.ValidUserSid)]
-        [TestCase(@"S-1-5-21-0000000000-1611586658-188888215-107206", 0, @"")]
-        public void TestSidAttribute(string inputValue, int expectedResultCount, string expectedEntityClaimValue)
+        [Test, TestCaseSource(typeof(TestEntitySourceManager), nameof(TestEntitySourceManager.GetSomeUsers), new object[] { TestEntitySourceManager.MaxNumberOfUsersToTest })]
+        public void TestUsers(TestUser user)
         {
-            base.TestSearchOperation(inputValue, expectedResultCount, expectedEntityClaimValue);
-            base.TestValidationOperation(base.UserIdentifierClaimType, expectedEntityClaimValue, expectedResultCount == 0 ? false : true);
+            base.TestSearchAndValidateForTestUser(user);
+            base.TestAugmentationAgainst1RandomGroup(user);
         }
-#endif
     }
 
     [TestFixture]
@@ -63,9 +59,24 @@ namespace Yvand.LdapClaimsProvider.Tests
             base.CheckSettingsTest();
         }
 
+        [Test, TestCaseSource(typeof(TestEntitySourceManager), nameof(TestEntitySourceManager.GetSomeUsers), new object[] { TestEntitySourceManager.MaxNumberOfUsersToTest })]
+        public void TestUsers(TestUser user)
+        {
+            base.TestSearchAndValidateForTestUser(user);
+            base.TestAugmentationAgainst1RandomGroup(user);
+        }
+
+        [Test, TestCaseSource(typeof(TestEntitySourceManager), nameof(TestEntitySourceManager.GetSomeUsers), new object[] { TestEntitySourceManager.MaxNumberOfUsersToTest })]
+        public void TestUsersUsingSidAsInput(TestUser user)
+        {
+            string searchInput = user.SID;
+            string claimValue = user.UserPrincipalName;
+            base.TestSearchOperation(searchInput, 1, claimValue);
+            base.TestValidationOperation(base.UserIdentifierClaimType, claimValue, true);
+        }
+
 #if DEBUG
-        [TestCase(UnitTestsHelper.ValidUserSid, 1, @"testLdapcpseUser_001@contoso.local")]
-        [TestCase(@"testLdapcpseUser_001", 1, @"testLdapcpseUser_001@contoso.local")]
+        [TestCase(@"testLdapcpUser_001", 1, @"testLdapcpUser_001@contoso.local")]
         public void TestSidAttribute(string inputValue, int expectedResultCount, string expectedEntityClaimValue)
         {
             base.TestSearchOperation(inputValue, expectedResultCount, expectedEntityClaimValue);
