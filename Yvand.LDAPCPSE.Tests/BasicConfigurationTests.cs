@@ -29,16 +29,15 @@ namespace Yvand.LdapClaimsProvider.Tests
         [Test, TestCaseSource(typeof(TestEntitySourceManager), nameof(TestEntitySourceManager.GetSomeGroups), new object[] { TestEntitySourceManager.MaxNumberOfGroupsToTest })]
         public void TestGroups(TestGroup group)
         {
-            TestSearchAndValidateForETestGroup(group);
+            TestSearchAndValidateForTestGroup(group);
         }
 
         [Test]
-        [Repeat(2)]
+        [Repeat(5)]
         public override void TestAugmentationOfGoldUsersAgainstRandomGroups()
         {
             base.TestAugmentationOfGoldUsersAgainstRandomGroups();
         }
-
 
         [Test, TestCaseSource(typeof(TestEntitySourceManager), nameof(TestEntitySourceManager.AllSearchEntities), null)]
         [Repeat(UnitTestsHelper.TestRepeatCount)]

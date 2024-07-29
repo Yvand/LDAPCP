@@ -7,11 +7,13 @@ namespace Yvand.LdapClaimsProvider.Tests
     [Parallelizable(ParallelScope.Children)]
     public class BypassDirectoryOnClaimTypesTests : ClaimsProviderTestsBase
     {
+        const string PrefixBypassUserSearch = "bypass-user:";
+        const string PrefixBypassGroupSearch = "bypass-group:";
         protected override void InitializeSettings()
         {
             base.InitializeSettings();
-            Settings.ClaimTypes.UserIdentifierConfig.LeadingKeywordToBypassDirectory = "bypass-user:";
-            Settings.ClaimTypes.GroupIdentifierConfig.LeadingKeywordToBypassDirectory = "bypass-group:";
+            Settings.ClaimTypes.UserIdentifierConfig.LeadingKeywordToBypassDirectory = PrefixBypassUserSearch;
+            Settings.ClaimTypes.GroupIdentifierConfig.LeadingKeywordToBypassDirectory = PrefixBypassGroupSearch;
             base.ApplySettings();
         }
 
@@ -19,6 +21,26 @@ namespace Yvand.LdapClaimsProvider.Tests
         public override void CheckSettingsTest()
         {
             base.CheckSettingsTest();
+        }
+
+        [Test, TestCaseSource(typeof(TestEntitySourceManager), nameof(TestEntitySourceManager.GetSomeUsers), new object[] { TestEntitySourceManager.MaxNumberOfUsersToTest })]
+        public void TestUsers(TestUser user)
+        {
+            // Normal scenario
+            base.TestSearchAndValidateForTestUser(user);
+            base.TestAugmentationAgainst1RandomGroup(user);
+
+            // Scenario with bypass keyword passed
+            // TestSearchAndValidateForTestUser() uses the SamAccountName is used as the input so it should be set with the expected claim value
+            user.SamAccountName = $"{PrefixBypassUserSearch}{user.UserPrincipalName}";
+            base.TestSearchAndValidateForTestUser(user);
+        }
+
+        [Test]
+        [Repeat(5)]
+        public override void TestAugmentationOfGoldUsersAgainstRandomGroups()
+        {
+            base.TestAugmentationOfGoldUsersAgainstRandomGroups();
         }
 
         [TestCase("bypass-user:externalUser@contoso.com", 1, "externalUser@contoso.com")]
@@ -35,20 +57,6 @@ namespace Yvand.LdapClaimsProvider.Tests
             {
                 TestValidationOperation(UnitTestsHelper.SPTrust.IdentityClaimTypeInformation.MappedClaimType, expectedClaimValue, true);
             }
-        }
-
-        [Test, TestCaseSource(typeof(TestEntitySourceManager), nameof(TestEntitySourceManager.AllValidationEntities), null)]
-        [Repeat(UnitTestsHelper.TestRepeatCount)]
-        public virtual void TestAugmentationOperation(ValidateEntityScenario registrationData)
-        {
-            TestAugmentationOperation(registrationData.ClaimValue, registrationData.IsMemberOfTrustedGroup, UnitTestsHelper.ValidGroupName);
-        }
-
-        [TestCase("FakeAccount", false)]
-        [TestCase("yvand@contoso.local", true)]
-        public void TestAugmentationOperation(string claimValue, bool isMemberOfTrustedGroup)
-        {
-            base.TestAugmentationOperation(claimValue, isMemberOfTrustedGroup, UnitTestsHelper.ValidGroupName);
         }
     }
 
@@ -77,18 +85,24 @@ namespace Yvand.LdapClaimsProvider.Tests
             TestValidationOperation(base.GroupIdentifierClaimType, UnitTestsHelper.RandomClaimValue, true);
         }
 
-        [Test, TestCaseSource(typeof(TestEntitySourceManager), nameof(TestEntitySourceManager.AllValidationEntities), null)]
-        [Repeat(UnitTestsHelper.TestRepeatCount)]
-        public virtual void TestAugmentationOperation(ValidateEntityScenario registrationData)
+        [Test, TestCaseSource(typeof(TestEntitySourceManager), nameof(TestEntitySourceManager.GetSomeUsers), new object[] { TestEntitySourceManager.MaxNumberOfUsersToTest })]
+        public void TestUsers(TestUser user)
         {
-            TestAugmentationOperation(registrationData.ClaimValue, registrationData.IsMemberOfTrustedGroup, UnitTestsHelper.ValidGroupName);
+            base.TestSearchAndValidateForTestUser(user);
+            base.TestAugmentationAgainst1RandomGroup(user);
         }
 
-        [TestCase("FakeAccount", false)]
-        [TestCase("yvand@contoso.local", true)]
-        public void TestAugmentationOperation(string claimValue, bool isMemberOfTrustedGroup)
+        [Test, TestCaseSource(typeof(TestEntitySourceManager), nameof(TestEntitySourceManager.GetSomeGroups), new object[] { TestEntitySourceManager.MaxNumberOfGroupsToTest })]
+        public void TestGroups(TestGroup group)
         {
-            base.TestAugmentationOperation(claimValue, isMemberOfTrustedGroup, UnitTestsHelper.ValidGroupName);
+            TestSearchAndValidateForTestGroup(group);
+        }
+
+        [Test]
+        [Repeat(5)]
+        public override void TestAugmentationOfGoldUsersAgainstRandomGroups()
+        {
+            base.TestAugmentationOfGoldUsersAgainstRandomGroups();
         }
     }
 }

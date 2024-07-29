@@ -35,8 +35,9 @@ namespace Yvand.LdapClaimsProvider.Tests
         {
             string searchInput = user.SID;
             string claimValue = user.SID;
+            string claimType = base.UserIdentifierClaimType;
             base.TestSearchOperation(searchInput, 1, claimValue);
-            base.TestValidationOperation(base.UserIdentifierClaimType, claimValue, true);
+            base.TestValidationOperation(claimType, claimValue, true);
         }
     }
 
@@ -69,19 +70,33 @@ namespace Yvand.LdapClaimsProvider.Tests
         }
 
         [Test, TestCaseSource(typeof(TestEntitySourceManager), nameof(TestEntitySourceManager.GetSomeUsers), new object[] { TestEntitySourceManager.MaxNumberOfUsersToTest })]
+        public void TestSidAttribute(TestUser user)
+        {
+            string searchInput = user.SID;
+            string claimValue = user.UserPrincipalName;
+            string claimType = base.UserIdentifierClaimType;
+            base.TestSearchOperation(searchInput, 1, claimValue);
+            base.TestValidationOperation(claimType, claimValue, true);
+        }
+
+        [Test, TestCaseSource(typeof(TestEntitySourceManager), nameof(TestEntitySourceManager.GetSomeUsers), new object[] { TestEntitySourceManager.MaxNumberOfUsersToTest })]
         public void TestUsers(TestUser user)
         {
             base.TestSearchAndValidateForTestUser(user);
             base.TestAugmentationAgainst1RandomGroup(user);
         }
 
-        [Test, TestCaseSource(typeof(TestEntitySourceManager), nameof(TestEntitySourceManager.GetSomeUsers), new object[] { TestEntitySourceManager.MaxNumberOfUsersToTest })]
-        public void TestSidAttribute(TestUser user)
+        [Test, TestCaseSource(typeof(TestEntitySourceManager), nameof(TestEntitySourceManager.GetSomeGroups), new object[] { TestEntitySourceManager.MaxNumberOfGroupsToTest })]
+        public void TestGroups(TestGroup group)
         {
-            string searchInput = user.SID;
-            string claimValue = user.UserPrincipalName;
-            base.TestSearchOperation(searchInput, 1, claimValue);
-            base.TestValidationOperation(base.UserIdentifierClaimType, claimValue, true);
+            TestSearchAndValidateForTestGroup(group);
+        }
+
+        [Test]
+        [Repeat(5)]
+        public override void TestAugmentationOfGoldUsersAgainstRandomGroups()
+        {
+            base.TestAugmentationOfGoldUsersAgainstRandomGroups();
         }
 
 #if DEBUG
@@ -121,14 +136,6 @@ namespace Yvand.LdapClaimsProvider.Tests
             base.CheckSettingsTest();
         }
 
-
-        [Test, TestCaseSource(typeof(TestEntitySourceManager), nameof(TestEntitySourceManager.GetSomeUsers), new object[] { TestEntitySourceManager.MaxNumberOfUsersToTest })]
-        public void TestUsers(TestUser user)
-        {
-            base.TestSearchAndValidateForTestUser(user);
-            base.TestAugmentationAgainst1RandomGroup(user);
-        }
-
         [Test, TestCaseSource(typeof(TestEntitySourceManager), nameof(TestEntitySourceManager.GetSomeUsers), new object[] { TestEntitySourceManager.MaxNumberOfUsersToTest })]
         public void TestSidAttribute(TestUser user)
         {
@@ -139,14 +146,25 @@ namespace Yvand.LdapClaimsProvider.Tests
             base.TestValidationOperation(claimType, claimValue, true);
         }
 
-#if DEBUG
-        [TestCase(@"S-1-5-21-0000000000-1611586658-188888215-107206", 0, @"")]
-        public void TestSidAttribute(string inputValue, int expectedResultCount, string expectedEntityClaimValue)
+        [Test, TestCaseSource(typeof(TestEntitySourceManager), nameof(TestEntitySourceManager.GetSomeUsers), new object[] { TestEntitySourceManager.MaxNumberOfUsersToTest })]
+        public void TestUsers(TestUser user)
         {
-            base.TestSearchOperation(inputValue, expectedResultCount, expectedEntityClaimValue);
-            base.TestValidationOperation(TestContext.Parameters["MultiPurposeCustomClaimType"], inputValue, expectedResultCount == 0 ? false : true);
+            base.TestSearchAndValidateForTestUser(user);
+            base.TestAugmentationAgainst1RandomGroup(user);
         }
-#endif
+
+        [Test, TestCaseSource(typeof(TestEntitySourceManager), nameof(TestEntitySourceManager.GetSomeGroups), new object[] { TestEntitySourceManager.MaxNumberOfGroupsToTest })]
+        public void TestGroups(TestGroup group)
+        {
+            TestSearchAndValidateForTestGroup(group);
+        }
+
+        [Test]
+        [Repeat(5)]
+        public override void TestAugmentationOfGoldUsersAgainstRandomGroups()
+        {
+            base.TestAugmentationOfGoldUsersAgainstRandomGroups();
+        }
     }
 
     [TestFixture]
@@ -185,6 +203,26 @@ namespace Yvand.LdapClaimsProvider.Tests
             string claimType = base.Settings.ClaimTypes.GroupIdentifierConfig.ClaimType;
             base.TestSearchOperation(searchInput, 1, claimValue);
             base.TestValidationOperation(claimType, claimValue, true);
+        }
+
+        [Test, TestCaseSource(typeof(TestEntitySourceManager), nameof(TestEntitySourceManager.GetSomeUsers), new object[] { TestEntitySourceManager.MaxNumberOfUsersToTest })]
+        public void TestUsers(TestUser user)
+        {
+            base.TestSearchAndValidateForTestUser(user);
+            base.TestAugmentationAgainst1RandomGroup(user);
+        }
+
+        [Test, TestCaseSource(typeof(TestEntitySourceManager), nameof(TestEntitySourceManager.GetSomeGroups), new object[] { TestEntitySourceManager.MaxNumberOfGroupsToTest })]
+        public void TestGroups(TestGroup group)
+        {
+            TestSearchAndValidateForTestGroup(group);
+        }
+
+        [Test]
+        [Repeat(5)]
+        public override void TestAugmentationOfGoldUsersAgainstRandomGroups()
+        {
+            base.TestAugmentationOfGoldUsersAgainstRandomGroups();
         }
     }
 }
