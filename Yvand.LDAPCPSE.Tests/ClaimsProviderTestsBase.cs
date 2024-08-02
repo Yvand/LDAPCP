@@ -187,15 +187,39 @@ namespace Yvand.LdapClaimsProvider.Tests
             }
         }
 
+        public void TestAugmentationAgainst1RandomGroup(TestUser user)
+        {
+            TestGroup randomGroup = TestEntitySourceManager.GetOneGroup();
+            TestAugmentationAgainstGroup(user, randomGroup);
+        }
+
+        /// <summary>
+        /// Tests augmentation with groups that have nested groups as members
+        /// </summary>
+        /// <param name="user"></param>
+        public void TestAugmentationAgainstGroupsWithNestedGroupsAsMembers(TestUser user)
+        {
+            foreach (TestGroup group in TestEntitySourceManager.GetGroupsWithNestedGroupsAsMembers(100))
+            {
+                TestAugmentationAgainstGroup(user, group);
+            }
+        }
+
         /// <summary>
         /// Pick a random group, and check if the claims provider returns the expected membership (should or should not be member) for this group
         /// </summary>
         /// <param name="user"></param>
-        public void TestAugmentationAgainst1RandomGroup(TestUser user)
+        public void TestAugmentationAgainstGroup(TestUser user, TestGroup group)
         {
-            TestGroup randomGroup = TestEntitySourceManager.GetOneGroup();
-            bool userShouldBeMember = user.IsMemberOfAllGroups || randomGroup.EveryoneIsMember ? true : false;
-            
+            bool userShouldBeMember = user.IsMemberOfAllGroups || group.EveryoneIsMember ? true : false;
+            if (!userShouldBeMember)
+            {
+                if (user.IsMemberOfNestedGroups && (group.IsNestedGroup || group.NestedGroupsAreMembers))
+                {
+                    userShouldBeMember = true;
+                }
+            }
+
             string groupClaimValue = String.Empty;
             ClaimTypeConfig groupIdConfig = Settings.ClaimTypes.GroupIdentifierConfig;
             switch (groupIdConfig.DirectoryObjectAttribute.ToLower())
@@ -203,20 +227,20 @@ namespace Yvand.LdapClaimsProvider.Tests
                 case "samaccountname":
                     if (String.IsNullOrWhiteSpace(groupIdConfig.ClaimValueLeadingToken))
                     {
-                        groupClaimValue = randomGroup.SamAccountName;
+                        groupClaimValue = group.SamAccountName;
                     }
                     else
                     {
                         // This assumes the value is  @"{fqdn}\"
-                        groupClaimValue = randomGroup.AccountNameFqdn;
+                        groupClaimValue = group.AccountNameFqdn;
                     }
                     break;
 
                 case "objectsid":
-                    groupClaimValue = randomGroup.SID;
+                    groupClaimValue = group.SID;
                     break;
             }
-            Trace.TraceInformation($"{DateTime.Now:s} [{this.GetType().Name}] TestAugmentationAgainst1RandomGroup for user \"{user.UserPrincipalName}\", IsMemberOfAllGroupsp: {user.IsMemberOfAllGroups} against group \"{groupClaimValue}\" EveryoneIsMember: {randomGroup.EveryoneIsMember}. userShouldBeMember: {userShouldBeMember}");
+            Trace.TraceInformation($"{DateTime.Now:s} [{this.GetType().Name}] TestAugmentationAgainst1RandomGroup for user \"{user.UserPrincipalName}\", IsMemberOfAllGroupsp: {user.IsMemberOfAllGroups} against group \"{groupClaimValue}\" EveryoneIsMember: {group.EveryoneIsMember}. userShouldBeMember: {userShouldBeMember}");
             TestAugmentationOperation(user.UserPrincipalName, userShouldBeMember, groupClaimValue);
         }
 

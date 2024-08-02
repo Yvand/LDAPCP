@@ -1,5 +1,4 @@
 ﻿using NUnit.Framework;
-using System.Linq;
 
 namespace Yvand.LdapClaimsProvider.Tests
 {
@@ -77,7 +76,7 @@ namespace Yvand.LdapClaimsProvider.Tests
         [TestCase("testLdapcpUser_007")]
         public void DebugTestUser(string upnPrefix)
         {
-            TestUser user = TestEntitySourceManager.AllTestUsers.First(x => x.UserPrincipalName.StartsWith(upnPrefix));
+            TestUser user = TestEntitySourceManager.FindUser(upnPrefix);
             base.TestSearchAndValidateForTestUser(user);
         }
 

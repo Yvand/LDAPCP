@@ -1,9 +1,5 @@
 ﻿using NUnit.Framework;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Yvand.LdapClaimsProvider.Tests
 {
@@ -20,6 +16,12 @@ namespace Yvand.LdapClaimsProvider.Tests
         public override void CheckSettingsTest()
         {
             base.CheckSettingsTest();
+        }
+
+        [Test, TestCaseSource(typeof(TestEntitySourceManager), nameof(TestEntitySourceManager.GetUsersMembersOfNestedGroups), null)]
+        public void TestUsersMembersOfNestedGroups(TestUser user)
+        {
+            base.TestAugmentationAgainstGroupsWithNestedGroupsAsMembers(user);
         }
 
         [Test, TestCaseSource(typeof(TestEntitySourceManager), nameof(TestEntitySourceManager.GetSomeUsers), new object[] { TestEntitySourceManager.MaxNumberOfUsersToTest })]
@@ -68,6 +70,12 @@ namespace Yvand.LdapClaimsProvider.Tests
             base.CheckSettingsTest();
         }
 
+        [Test, TestCaseSource(typeof(TestEntitySourceManager), nameof(TestEntitySourceManager.GetUsersMembersOfNestedGroups), null)]
+        public void TestUsersMembersOfNestedGroups(TestUser user)
+        {
+            base.TestAugmentationAgainstGroupsWithNestedGroupsAsMembers(user);
+        }
+
         [Test, TestCaseSource(typeof(TestEntitySourceManager), nameof(TestEntitySourceManager.GetSomeUsers), new object[] { TestEntitySourceManager.MaxNumberOfUsersToTest })]
         public void TestUsers(TestUser user)
         {
@@ -102,6 +110,12 @@ namespace Yvand.LdapClaimsProvider.Tests
         public override void CheckSettingsTest()
         {
             base.CheckSettingsTest();
+        }
+
+        [Test, TestCaseSource(typeof(TestEntitySourceManager), nameof(TestEntitySourceManager.GetUsersMembersOfNestedGroups), null)]
+        public void TestUsersMembersOfNestedGroups(TestUser user)
+        {
+            base.TestAugmentationAgainstGroupsWithNestedGroupsAsMembers(user);
         }
 
         [Test, TestCaseSource(typeof(TestEntitySourceManager), nameof(TestEntitySourceManager.GetSomeUsers), new object[] { TestEntitySourceManager.MaxNumberOfUsersToTest })]
@@ -142,6 +156,12 @@ namespace Yvand.LdapClaimsProvider.Tests
             base.CheckSettingsTest();
         }
 
+        [Test, TestCaseSource(typeof(TestEntitySourceManager), nameof(TestEntitySourceManager.GetUsersMembersOfNestedGroups), null)]
+        public void TestUsersMembersOfNestedGroups(TestUser user)
+        {
+            base.TestAugmentationAgainstGroupsWithNestedGroupsAsMembers(user);
+        }
+
         [Test, TestCaseSource(typeof(TestEntitySourceManager), nameof(TestEntitySourceManager.GetSomeUsers), new object[] { TestEntitySourceManager.MaxNumberOfUsersToTest })]
         public void TestUsers(TestUser user)
         {
@@ -161,6 +181,16 @@ namespace Yvand.LdapClaimsProvider.Tests
         {
             base.TestAugmentationOfGoldUsersAgainstRandomGroups();
         }
+
+#if DEBUG
+        [TestCase("testLdapcpUser_040", "testLdapcpGroup_022")]
+        public void DebugTestUser(string upnPrefix, string groupName)
+        {
+            TestUser user = TestEntitySourceManager.FindUser(upnPrefix);
+            TestGroup group = TestEntitySourceManager.FindGroup(groupName);
+            TestAugmentationAgainstGroup(user, group);
+        }
+#endif
     }
 
     public class AugmentUsingLdapQueryAndSidAsGroupValueTests : ClaimsProviderTestsBase
@@ -178,6 +208,12 @@ namespace Yvand.LdapClaimsProvider.Tests
         public override void CheckSettingsTest()
         {
             base.CheckSettingsTest();
+        }
+
+        [Test, TestCaseSource(typeof(TestEntitySourceManager), nameof(TestEntitySourceManager.GetUsersMembersOfNestedGroups), null)]
+        public void TestUsersMembersOfNestedGroups(TestUser user)
+        {
+            base.TestAugmentationAgainstGroupsWithNestedGroupsAsMembers(user);
         }
 
         [Test, TestCaseSource(typeof(TestEntitySourceManager), nameof(TestEntitySourceManager.GetSomeUsers), new object[] { TestEntitySourceManager.MaxNumberOfUsersToTest })]

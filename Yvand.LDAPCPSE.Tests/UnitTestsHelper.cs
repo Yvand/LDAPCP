@@ -210,6 +210,7 @@ namespace Yvand.LdapClaimsProvider.Tests
         public string DistinguishedName;
         public string SID;
         public bool IsMemberOfAllGroups;
+        public bool IsMemberOfNestedGroups;
 
         public override void SetEntityFromDataSourceRow(Row row)
         {
@@ -221,6 +222,7 @@ namespace Yvand.LdapClaimsProvider.Tests
             DistinguishedName = row["DistinguishedName"];
             SID = row["SID"];
             IsMemberOfAllGroups = Convert.ToBoolean(row["IsMemberOfAllGroups"]);
+            IsMemberOfNestedGroups = Convert.ToBoolean(row["IsMemberOfNestedGroups"]);
         }
     }
 
@@ -231,6 +233,8 @@ namespace Yvand.LdapClaimsProvider.Tests
         public string SID;
         public bool EveryoneIsMember;
         public string AccountNameFqdn;
+        public bool IsNestedGroup;
+        public bool NestedGroupsAreMembers;
 
         public override void SetEntityFromDataSourceRow(Row row)
         {
@@ -239,6 +243,8 @@ namespace Yvand.LdapClaimsProvider.Tests
             SID = row["SID"];
             EveryoneIsMember = Convert.ToBoolean(row["EveryoneIsMember"]);
             AccountNameFqdn = row["AccountNameFqdn"];
+            IsNestedGroup = Convert.ToBoolean(row["IsNestedGroup"]);
+            NestedGroupsAreMembers = Convert.ToBoolean(row["NestedGroupsAreMembers"]);
         }
     }
 
@@ -327,7 +333,7 @@ namespace Yvand.LdapClaimsProvider.Tests
             if (count > entitiesFilteredCount) { count = entitiesFilteredCount; }
             for (int i = 0; i < count; i++)
             {
-                int randomIdx = RandomNumber.Next(0, entitiesFilteredCount - 1);
+                int randomIdx = RandomNumber.Next(0, entitiesFilteredCount);
                 yield return entitiesFiltered.ElementAt(randomIdx).Clone() as T;
             }
         }
@@ -369,6 +375,12 @@ namespace Yvand.LdapClaimsProvider.Tests
             return TestUsersSource.GetSomeEntities(Int16.MaxValue, filter);
         }
 
+        public static IEnumerable<TestUser> GetUsersMembersOfNestedGroups()
+        {
+            Func<TestUser, bool> filter = x => x.IsMemberOfNestedGroups == true;
+            return TestUsersSource.GetSomeEntities(Int16.MaxValue, filter);
+        }
+
         public static TestUser FindUser(string upnPrefix)
         {
             Func<TestUser, bool> filter = x => x.UserPrincipalName.StartsWith(upnPrefix);
@@ -380,9 +392,27 @@ namespace Yvand.LdapClaimsProvider.Tests
             return TestGroupsSource.GetSomeEntities(count);
         }
 
+        public static IEnumerable<TestGroup> GetNestedGroups(int count)
+        {
+            Func<TestGroup, bool> filter = x => x.IsNestedGroup == true;
+            return TestGroupsSource.GetSomeEntities(count, filter);
+        }
+
+        public static IEnumerable<TestGroup> GetGroupsWithNestedGroupsAsMembers(int count)
+        {
+            Func<TestGroup, bool> filter = x => x.NestedGroupsAreMembers == true;
+            return TestGroupsSource.GetSomeEntities(count, filter);
+        }
+
         public static TestGroup GetOneGroup()
         {
             return TestGroupsSource.GetSomeEntities(1, null).First();
+        }
+
+        public static TestGroup FindGroup(string groupName)
+        {
+            Func<TestGroup, bool> filter = x => String.Equals(x.SamAccountName, groupName, StringComparison.OrdinalIgnoreCase);
+            return TestGroupsSource.GetSomeEntities(1, filter).First();
         }
     }
 }
