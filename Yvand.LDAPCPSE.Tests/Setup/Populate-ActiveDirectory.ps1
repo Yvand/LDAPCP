@@ -29,6 +29,8 @@ catch {
 
 $userNamePrefix = "testLdapcpUser_"
 $groupNamePrefix = "testLdapcpGroup_"
+$usersCount = 100
+$groupsCount = 50
 
 $confirmation = Read-Host "Connected to domain '$domainFqdn' and about to process users starting with '$userNamePrefix' and groups starting with '$groupNamePrefix'. Are you sure you want to proceed? [y/n]"
 if ($confirmation -ne 'y') {
@@ -36,7 +38,6 @@ if ($confirmation -ne 'y') {
     return
 }
 
-# Set specific attributes for some users
 $usersWithSpecificSettings = @( 
     @{ UserPrincipalName = "$($userNamePrefix)001@$($domainFqdn)"; IsMemberOfAllGroups = $true }
     @{ UserPrincipalName = "$($userNamePrefix)002@$($domainFqdn)"; UserAttributes = @{ "GivenName" = "firstname_002" } }
@@ -117,10 +118,9 @@ $temporaryPassword = @(
 ) -Join ''
 
 # Bulk add users if they do not already exist
-$totalUsers = 100
 $allUsers = @()
 $allUsersAccountNames = @()
-for ($i = 1; $i -le $totalUsers; $i++) {
+for ($i = 1; $i -le $usersCount; $i++) {
     $accountName = "$($userNamePrefix)$("{0:D3}" -f $i)"
     $allUsersAccountNames += $accountName
     $user = $(try { Get-ADUser $accountName } catch { $null })
@@ -145,9 +145,8 @@ for ($i = 1; $i -le $totalUsers; $i++) {
 $usersMemberOfAllGroups = [System.Linq.Enumerable]::Where($usersWithSpecificSettings, [Func[object, bool]] { param($x) $x.IsMemberOfAllGroups -eq $true }) | Select-Object -Property @{ Name = "AccountName"; Expression = { $_.UserPrincipalName.Split("@")[0] } }
 $usersMemberOfNestedGroups = [System.Linq.Enumerable]::Where($usersWithSpecificSettings, [Func[object, bool]] { param($x) $x.IsMemberOfNestedGroups -eq $true }) | Select-Object -Property @{ Name = "AccountName"; Expression = { $_.UserPrincipalName.Split("@")[0] } }
 $nestedGroups = [System.Linq.Enumerable]::Where($groupsWithSpecificSettings, [Func[object, bool]] { param($x) $x.IsNestedGroup -eq $true })
-$totalGroups = 50
 $allGroups = @()
-for ($i = 1; $i -le $totalGroups; $i++) {
+for ($i = 1; $i -le $groupsCount; $i++) {
     $groupName = "$($groupNamePrefix)$("{0:D3}" -f $i)"
     $group = $(try { Get-ADGroup -Identity $groupName } catch { $null })
     if ($null -eq $group) {
