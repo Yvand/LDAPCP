@@ -48,6 +48,7 @@ $usersWithSpecificSettings = @(
     @{ UserPrincipalName = "$($userNamePrefix)013@$($domainFqdn)"; IsMemberOfAllGroups = $true }
     @{ UserPrincipalName = "$($userNamePrefix)014@$($domainFqdn)"; IsMemberOfAllGroups = $true }
     @{ UserPrincipalName = "$($userNamePrefix)015@$($domainFqdn)"; IsMemberOfAllGroups = $true }
+    @{ UserPrincipalName = "$($userNamePrefix)020@$($domainFqdn)"; IsMemberOfNestedGroups = $true }
 )
 
 $groupsWithSpecificSettings = @(
@@ -62,6 +63,14 @@ $groupsWithSpecificSettings = @(
     @{
         GroupName        = "$($groupNamePrefix)018"
         EveryoneIsMember = $true
+    },
+    @{
+        GroupName     = "$($groupNamePrefix)020"
+        IsNestedGroup = $true
+    },
+    @{
+        GroupName              = "$($groupNamePrefix)025"
+        NestedGroupsAreMembers = $true
     },
     @{
         GroupName        = "$($groupNamePrefix)025"
@@ -110,35 +119,47 @@ for ($i = 1; $i -le $totalUsers; $i++) {
     $allUsers += $user
 }
 
-# Bulk add groups if they do not already exist AND add members with EveryoneIsMember = true
-$usersMemberOfAllGroups = [System.Linq.Enumerable]::Where($usersWithSpecificSettings, [Func[object, bool]] { param($x) $x.IsMemberOfAllGroups -eq $true })
-$usersMemberOfAllGroups2 = $usersMemberOfAllGroups | Select-Object -Property @{ Name = "AccountName"; Expression = { $_.UserPrincipalName.Split("@")[0] } }
+# Bulk add groups if they do not already exist AND set their membership
+$usersMemberOfAllGroups = [System.Linq.Enumerable]::Where($usersWithSpecificSettings, [Func[object, bool]] { param($x) $x.IsMemberOfAllGroups -eq $true }) | Select-Object -Property @{ Name = "AccountName"; Expression = { $_.UserPrincipalName.Split("@")[0] } }
+$usersMemberOfNestedGroups = [System.Linq.Enumerable]::Where($usersWithSpecificSettings, [Func[object, bool]] { param($x) $x.IsMemberOfNestedGroups -eq $true }) | Select-Object -Property @{ Name = "AccountName"; Expression = { $_.UserPrincipalName.Split("@")[0] } }
+$nestedGroups = [System.Linq.Enumerable]::Where($groupsWithSpecificSettings, [Func[object, bool]] { param($x) $x.IsNestedGroup -eq $true })
 $totalGroups = 50
 $allGroups = @()
 for ($i = 1; $i -le $totalGroups; $i++) {
-    $accountName = "$($groupNamePrefix)$("{0:D3}" -f $i)"
-    $group = $(try { Get-ADGroup -Identity $accountName } catch { $null })
+    $groupName = "$($groupNamePrefix)$("{0:D3}" -f $i)"
+    $group = $(try { Get-ADGroup -Identity $groupName } catch { $null })
     if ($null -eq $group) {
-        New-ADGroup -Name $accountName -DisplayName $accountName -GroupCategory Security -GroupScope Global -Path $ouDN
-        Write-Host "Created group $accountName" -ForegroundColor Green
+        New-ADGroup -Name $groupName -DisplayName $groupName -GroupCategory Security -GroupScope Global -Path $ouDN
+        Write-Host "Created group $groupName" -ForegroundColor Green
     }
-    $group = Get-ADGroup -Identity $accountName
+    $group = Get-ADGroup -Identity $groupName
     $allGroups += $group
-    
-    $group | Add-ADGroupMember -Members $usersMemberOfAllGroups2.AccountName
-    Write-Host "(Re-)added users with EveryoneIsMember = true as members of group $($group.Name)" -ForegroundColor Green
-}
 
-# Set group membership
-$groupsEveryoneIsMember = [System.Linq.Enumerable]::Where($groupsWithSpecificSettings, [Func[object, bool]] { param($x) $x.EveryoneIsMember -eq $true })
-foreach ($groupEveryoneIsMember in $groupsEveryoneIsMember) {
-    $group = $(try { Get-ADGroup -Identity $groupEveryoneIsMember.GroupName } catch { $null })
-    if ($null -ne $group) {
-        # Remove and re-add all group members
-        Get-ADGroupMember $groupEveryoneIsMember.GroupName | ForEach-Object { Remove-ADGroupMember $groupEveryoneIsMember.GroupName $_ -Confirm:$false }
-        Add-ADGroupMember -Identity $groupEveryoneIsMember.GroupName -Members $allUsersAccountNames
-        Write-Host "(Re-)added all test users as members of group $($groupEveryoneIsMember.GroupName)" -ForegroundColor Green
+    # Remove and re-add all group members
+    Get-ADGroupMember $groupName | ForEach-Object { Remove-ADGroupMember -Identity $groupName -Members $_ -Confirm:$false }
+    Write-Host "Removed all members of group $groupName" -ForegroundColor Green
+    
+    $groupSettings = [System.Linq.Enumerable]::FirstOrDefault($groupsWithSpecificSettings, [Func[object, bool]] { param($x) $x.GroupName -like $groupName })
+    if ($null -ne $groupSettings -and $groupSettings.ContainsKey("EveryoneIsMember") -and $groupSettings["EveryoneIsMember"] -eq $true) {
+        # Add all users as members
+        Add-ADGroupMember -Identity $groupName -Members $allUsersAccountNames
+        Write-Host "Added all test users as members of group $groupName" -ForegroundColor Green
     }
+    else {
+        # Only users with IsMemberOfAllGroups true are members of this group
+        $group | Add-ADGroupMember -Members $usersMemberOfAllGroups.AccountName
+        Write-Host "Added users with EveryoneIsMember = true as members of group $groupName" -ForegroundColor Green
+    }
+    
+    if ($null -ne $groupSettings -and $groupSettings.ContainsKey("IsNestedGroup") -and $groupSettings["IsNestedGroup"] -eq $true) {
+        # Also add users with IsMemberOfNestedGroups
+        $group | Add-ADGroupMember -Members $usersMemberOfNestedGroups.AccountName
+        Write-Host "Added users with IsMemberOfNestedGroups = true as members of group $groupName" -ForegroundColor Green
+    } elseif ($null -ne $groupSettings -and $groupSettings.ContainsKey("NestedGroupsAreMembers") -and $groupSettings["NestedGroupsAreMembers"] -eq $true) {
+        # Also add nested groups since this group has NestedGroupsAreMembers
+        $group | Add-ADGroupMember -Members $nestedGroups.GroupName
+        Write-Host "Added nested groups to group $groupName because it has property NestedGroupsAreMembers true" -ForegroundColor Green
+    }    
 }
 
 # export users and groups to their CSV file
