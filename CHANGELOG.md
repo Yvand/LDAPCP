@@ -1,5 +1,9 @@
 # Change log for LDAPCP
 
+## Unreleased
+
+* Improve tests
+
 ## LDAPCP Second Edition v18.0.20240513.3 - Published in May 13, 2024
 
 * Fix error when creating the configuration, due to case-sensitive test in the claim types - https://github.com/Yvand/LDAPCP/issues/204
