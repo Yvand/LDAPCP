@@ -279,20 +279,22 @@ namespace Yvand.LdapClaimsProvider.Tests
     public class TestEntitySource<T> where T : TestEntity, new()
     {
         private object _LockInitEntitiesList = new object();
+        private bool EntitiesReady = false;
         private List<T> _Entities;
         public List<T> Entities
         {
             get
             {
-                if (_Entities != null) { return _Entities; }
+                if (EntitiesReady) { return _Entities; }
                 lock (_LockInitEntitiesList)
                 {
-                    if (_Entities != null) { return _Entities; }
+                    if (EntitiesReady) { return _Entities; }
                     _Entities = new List<T>();
                     foreach (T entity in ReadDataSource())
                     {
                         _Entities.Add(entity);
                     }
+                    EntitiesReady = true;
                     Trace.TraceInformation($"{DateTime.Now:s} [{typeof(T).Name}] Initialized List of {nameof(Entities)} with {Entities.Count} items.");
                     return _Entities;
                 }
@@ -320,11 +322,14 @@ namespace Yvand.LdapClaimsProvider.Tests
 
         public IEnumerable<T> GetSomeEntities(int count, Func<T, bool> filter = null)
         {
-            if (count > Entities.Count) { count = Entities.Count; }
             IEnumerable<T> entitiesFiltered = Entities.Where(filter ?? (x => true));
-            int randomNumberMaxValue = entitiesFiltered.Count() - 1;
-            int randomIdx = RandomNumber.Next(0, randomNumberMaxValue);
-            yield return entitiesFiltered.ElementAt(randomIdx).Clone() as T;
+            int entitiesFilteredCount = entitiesFiltered.Count();
+            if (count > entitiesFilteredCount) { count = entitiesFilteredCount; }
+            for (int i = 0; i < count; i++)
+            {
+                int randomIdx = RandomNumber.Next(0, entitiesFilteredCount - 1);
+                yield return entitiesFiltered.ElementAt(randomIdx).Clone() as T;
+            }
         }
     }
 
@@ -351,7 +356,7 @@ namespace Yvand.LdapClaimsProvider.Tests
             get => TestGroupsSource.Entities;
         }
         public const int MaxNumberOfUsersToTest = 100;
-        public const int MaxNumberOfGroupsToTest = 100;
+        public const int MaxNumberOfGroupsToTest = 50;
 
         public static IEnumerable<TestUser> GetSomeUsers(int count)
         {
@@ -360,13 +365,14 @@ namespace Yvand.LdapClaimsProvider.Tests
 
         public static IEnumerable<TestUser> GetUsersMembersOfAllGroups()
         {
-            Func<TestUser, bool> onlyMembersOfAllGroupsFilter = x => x.IsMemberOfAllGroups == true;
-            return TestUsersSource.GetSomeEntities(Int16.MaxValue, onlyMembersOfAllGroupsFilter);
+            Func<TestUser, bool> filter = x => x.IsMemberOfAllGroups == true;
+            return TestUsersSource.GetSomeEntities(Int16.MaxValue, filter);
         }
 
         public static TestUser FindUser(string upnPrefix)
         {
-            return TestUsersSource.Entities.First(x => x.UserPrincipalName.StartsWith(upnPrefix)).Clone() as TestUser;
+            Func<TestUser, bool> filter = x => x.UserPrincipalName.StartsWith(upnPrefix);
+            return TestUsersSource.GetSomeEntities(1, filter).First();
         }
 
         public static IEnumerable<TestGroup> GetSomeGroups(int count)
@@ -378,11 +384,5 @@ namespace Yvand.LdapClaimsProvider.Tests
         {
             return TestGroupsSource.GetSomeEntities(1, null).First();
         }
-
-        //public static TestGroup GetOneGroup(bool securityEnabledOnly)
-        //{
-        //    Func<TestGroup, bool> securityEnabledOnlyFilter = x => x.SecurityEnabled == securityEnabledOnly;
-        //    return TestGroupsSource.GetSomeEntities(1, securityEnabledOnlyFilter).First();
-        //}
     }
 }
