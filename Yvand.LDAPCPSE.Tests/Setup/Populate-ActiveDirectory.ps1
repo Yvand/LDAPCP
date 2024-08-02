@@ -49,6 +49,12 @@ $usersWithSpecificSettings = @(
     @{ UserPrincipalName = "$($userNamePrefix)014@$($domainFqdn)"; IsMemberOfAllGroups = $true }
     @{ UserPrincipalName = "$($userNamePrefix)015@$($domainFqdn)"; IsMemberOfAllGroups = $true }
     @{ UserPrincipalName = "$($userNamePrefix)020@$($domainFqdn)"; IsMemberOfNestedGroups = $true }
+    @{ UserPrincipalName = "$($userNamePrefix)024@$($domainFqdn)"; IsMemberOfNestedGroups = $true }
+    @{ UserPrincipalName = "$($userNamePrefix)028@$($domainFqdn)"; IsMemberOfNestedGroups = $true }
+    @{ UserPrincipalName = "$($userNamePrefix)032@$($domainFqdn)"; IsMemberOfNestedGroups = $true }
+    @{ UserPrincipalName = "$($userNamePrefix)036@$($domainFqdn)"; IsMemberOfNestedGroups = $true }
+    @{ UserPrincipalName = "$($userNamePrefix)040@$($domainFqdn)"; IsMemberOfNestedGroups = $true }
+    @{ UserPrincipalName = "$($userNamePrefix)042@$($domainFqdn)"; IsMemberOfNestedGroups = $true }
 )
 
 $groupsWithSpecificSettings = @(
@@ -69,7 +75,23 @@ $groupsWithSpecificSettings = @(
         IsNestedGroup = $true
     },
     @{
+        GroupName     = "$($groupNamePrefix)021"
+        IsNestedGroup = $true
+    },
+    @{
+        GroupName     = "$($groupNamePrefix)022"
+        IsNestedGroup = $true
+    },
+    @{
+        GroupName     = "$($groupNamePrefix)023"
+        IsNestedGroup = $true
+    },
+    @{
         GroupName              = "$($groupNamePrefix)025"
+        NestedGroupsAreMembers = $true
+    },
+    @{
+        GroupName              = "$($groupNamePrefix)026"
         NestedGroupsAreMembers = $true
     },
     @{
@@ -164,13 +186,17 @@ for ($i = 1; $i -le $totalGroups; $i++) {
 
 # export users and groups to their CSV file
 $allUsers | 
-Select-Object -Property UserPrincipalName, SamAccountName, Mail, GivenName, DisplayName, DistinguishedName, SID, @{ Name = "IsMemberOfAllGroups"; Expression = { if ([System.Linq.Enumerable]::FirstOrDefault($usersWithSpecificSettings, [Func[object, bool]] { param($x) $x.UserPrincipalName -like $_.UserPrincipalName }).IsMemberOfAllGroups) { $true } else { $false } } } |
+Select-Object -Property UserPrincipalName, SamAccountName, Mail, GivenName, DisplayName, DistinguishedName, SID,
+@{ Name = "IsMemberOfAllGroups"; Expression = { if ([System.Linq.Enumerable]::FirstOrDefault($usersWithSpecificSettings, [Func[object, bool]] { param($x) $x.UserPrincipalName -like $_.UserPrincipalName }).IsMemberOfAllGroups) { $true } else { $false } } },
+@{ Name = "IsMemberOfNestedGroups"; Expression = { if ([System.Linq.Enumerable]::FirstOrDefault($usersWithSpecificSettings, [Func[object, bool]] { param($x) $x.UserPrincipalName -like $_.UserPrincipalName }).IsMemberOfNestedGroups) { $true } else { $false } } } |
 Export-Csv -Path $exportedUsersFullFilePath -NoTypeInformation
 Write-Host "Exported test users to CSV file $($exportedUsersFullFilePath)" -ForegroundColor Green
 
 $allGroups | 
 Select-Object -Property SamAccountName, DistinguishedName, SID, 
 @{ Name = "EveryoneIsMember"; Expression = { if ([System.Linq.Enumerable]::FirstOrDefault($groupsWithSpecificSettings, [Func[object, bool]] { param($x) $x.GroupName -like $_.SamAccountName }).EveryoneIsMember) { $true } else { $false } } },
+@{ Name = "IsNestedGroup"; Expression = { if ([System.Linq.Enumerable]::FirstOrDefault($groupsWithSpecificSettings, [Func[object, bool]] { param($x) $x.GroupName -like $_.SamAccountName }).IsNestedGroup) { $true } else { $false } } },
+@{ Name = "NestedGroupsAreMembers"; Expression = { if ([System.Linq.Enumerable]::FirstOrDefault($groupsWithSpecificSettings, [Func[object, bool]] { param($x) $x.GroupName -like $_.SamAccountName }).NestedGroupsAreMembers) { $true } else { $false } } },
 @{ Name = "AccountNameFqdn"; Expression = { "$($domainFqdn)\$($_.SamAccountName)" } } |
 Export-Csv -Path $exportedGroupsFullFilePath -NoTypeInformation
 Write-Host "Exported test groups to CSV file $($exportedGroupsFullFilePath)" -ForegroundColor Green
