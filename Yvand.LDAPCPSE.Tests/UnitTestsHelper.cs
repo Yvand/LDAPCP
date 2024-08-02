@@ -341,6 +341,8 @@ namespace Yvand.LdapClaimsProvider.Tests
 
     public class TestEntitySourceManager
     {
+#if DEBUG
+
         private static TestEntitySource<SearchEntityScenario> SearchTestsSource = new TestEntitySource<SearchEntityScenario>(UnitTestsHelper.DataFile_AllAccounts_Search);
         public static List<SearchEntityScenario> AllSearchEntities
         {
@@ -351,6 +353,7 @@ namespace Yvand.LdapClaimsProvider.Tests
         {
             get => ValidationTestsSource.Entities;
         }
+#endif
         private static TestEntitySource<TestUser> TestUsersSource = new TestEntitySource<TestUser>(UnitTestsHelper.DataFile_TestUsers);
         public static List<TestUser> AllTestUsers
         {

@@ -38,6 +38,7 @@ namespace Yvand.LdapClaimsProvider.Tests
             base.TestAugmentationOfGoldUsersAgainstRandomGroups();
         }
 
+#if DEBUG
         [Test, TestCaseSource(typeof(TestEntitySourceManager), nameof(TestEntitySourceManager.AllSearchEntities), null)]
         [Repeat(UnitTestsHelper.TestRepeatCount)]
         public void TestSearch(SearchEntityScenario registrationData)
@@ -52,6 +53,7 @@ namespace Yvand.LdapClaimsProvider.Tests
         {
             base.TestValidationOperation(registrationData);
         }
+#endif
 
         ///// <summary>
         ///// Tests if the augmentation works as expected.
