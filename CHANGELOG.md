@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+* Fix error when creating the configuration if the trust uses an identifier claim type that is not well-known by LDAPCP - https://github.com/Yvand/LDAPCP/issues/221
 * Improve tests
 
 ## LDAPCP Second Edition v18.0.20240513.3 - Published in May 13, 2024
