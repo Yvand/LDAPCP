@@ -49,7 +49,7 @@ namespace Yvand.LdapClaimsProvider.Tests
         {
             Settings = new LdapProviderSettings();
             Settings.ClaimTypes = LdapProviderSettings.ReturnDefaultClaimTypesConfig(UnitTestsHelper.ClaimsProvider.Name);
-            string json = File.ReadAllText(UnitTestsHelper.AzureTenantsJsonFile);
+            string json = File.ReadAllText(UnitTestsHelper.LdapConnectionsJsonFile);
             List<DirectoryConnection> azureTenants = JsonConvert.DeserializeObject<List<DirectoryConnection>>(json);
             Settings.LdapConnections = azureTenants;
             Settings.EnableAugmentation = true;

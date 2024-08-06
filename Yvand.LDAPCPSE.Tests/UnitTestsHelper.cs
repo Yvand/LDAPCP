@@ -1,5 +1,4 @@
 ﻿using DataAccess;
-using Microsoft.Office.Audit.Schema;
 using Microsoft.SharePoint;
 using Microsoft.SharePoint.Administration;
 using Microsoft.SharePoint.Administration.Claims;
@@ -17,31 +16,24 @@ namespace Yvand.LdapClaimsProvider.Tests
     [SetUpFixture]
     public class UnitTestsHelper
     {
-        public static readonly LDAPCPSE ClaimsProvider = new LDAPCPSE(TestContext.Parameters["ClaimsProviderName"]);
-        public static SPTrustedLoginProvider SPTrust => SPSecurityTokenServiceManager.Local.TrustedLoginProviders.FirstOrDefault(x => String.Equals(x.ClaimProviderName, TestContext.Parameters["ClaimsProviderName"], StringComparison.InvariantCultureIgnoreCase));
+        public static readonly string ClaimsProviderName = TestContext.Parameters["ClaimsProviderName"];
+        public static readonly LDAPCPSE ClaimsProvider = new LDAPCPSE(ClaimsProviderName);
+        public static SPTrustedLoginProvider SPTrust => Utils.GetSPTrustAssociatedWithClaimsProvider(ClaimsProviderName);
         public static Uri TestSiteCollUri;
-        public static string TestSiteRelativePath => $"/sites/{TestContext.Parameters["TestSiteCollectionName"]}";
+        public static string TestSiteRelativePath => $"/sites/{ClaimsProviderName}.UnitTests";
         public const int MaxTime = 50000;
+        public const int TestRepeatCount = 1;
         public static string FarmAdmin => TestContext.Parameters["FarmAdmin"];
         public static string DomainFqdn => TestContext.Parameters["DomainFqdn"];
-        public static string Domain => TestContext.Parameters["Domain"];
-#if DEBUG
-        public const int TestRepeatCount = 1;
-#else
-    public const int TestRepeatCount = 20;
-#endif
 
         public static string RandomClaimType => "http://schemas.yvand.net/ws/claims/random";
         public static string RandomClaimValue => "IDoNotExist";
         public static string RandomDirectoryObjectClass => "randomClass";
         public static string RandomDirectoryObjectAttribute => "randomAttribute";
 
-        public static string ValidGroupClaimType => TestContext.Parameters["ValidGroupClaimType"];
-        public static string ValidGroupName => TestContext.Parameters["ValidGroupName"];
-        public const string ValidGroupSid = "S-1-5-21-2647467245-1611586658-188888215-11601"; //=> TestContext.Parameters["ValidTrustedGroupName"]; // CONTOSO\group1
-        public const string ValidUserSid = "S-1-5-21-2647467245-1611586658-188888215-107206"; // => TestContext.Parameters["ValidUserSid"]; // CONTOSO\testLdapcpseUser_001
+        public static string GroupsClaimType => TestContext.Parameters["GroupsClaimType"];
 
-        public static string AzureTenantsJsonFile => TestContext.Parameters["LdapConnections"];
+        public static string LdapConnectionsJsonFile => TestContext.Parameters["LdapConnectionsJsonFile"];
         public static string DataFile_AllAccounts_Search => TestContext.Parameters["DataFile_AllAccounts_Search"];
         public static string DataFile_AllAccounts_Validate => TestContext.Parameters["DataFile_AllAccounts_Validate"];
         public static string DataFile_TestUsers => TestContext.Parameters["DataFile_TestUsers"];
@@ -50,11 +42,10 @@ namespace Yvand.LdapClaimsProvider.Tests
         public static LdapProviderConfiguration PersistedConfiguration;
         private static ILdapProviderSettings OriginalSettings;
 
-
         [OneTimeSetUp]
         public static void InitializeSiteCollection()
         {
-            Logger = new TextWriterTraceListener(TestContext.Parameters["TestLogFileName"]);
+            Logger = new TextWriterTraceListener($"{ClaimsProviderName}IntegrationTests.log");
             Trace.Listeners.Add(Logger);
             Trace.AutoFlush = true;
             Trace.TraceInformation($"{DateTime.Now.ToString("s")} [SETUP] Start integration tests of {ClaimsProvider.Name} {FileVersionInfo.GetVersionInfo(Assembly.GetAssembly(typeof(LDAPCPSE)).Location).FileVersion}.");
@@ -85,7 +76,7 @@ namespace Yvand.LdapClaimsProvider.Tests
 
 #if DEBUG
             TestSiteCollUri = new Uri($"http://spsites{TestSiteRelativePath}");
-            return; // Uncommented when debugging from unit tests
+            //return; // Uncommented when debugging from unit tests
 #endif
 
             var service = SPFarm.Local.Services.GetValue<SPWebService>(String.Empty);
@@ -113,8 +104,9 @@ namespace Yvand.LdapClaimsProvider.Tests
             Uri waRootAuthority = wa.AlternateUrls[0].Uri;
             TestSiteCollUri = new Uri($"{waRootAuthority.GetLeftPart(UriPartial.Authority)}{TestSiteRelativePath}");
             SPClaimProviderManager claimMgr = SPClaimProviderManager.Local;
-            string encodedGroupClaim = claimMgr.EncodeClaim(new SPClaim(ValidGroupClaimType, ValidGroupName, ClaimValueTypes.String, SPOriginalIssuers.Format(SPOriginalIssuerType.TrustedProvider, UnitTestsHelper.SPTrust.Name)));
-            SPUserInfo groupInfo = new SPUserInfo { LoginName = encodedGroupClaim, Name = ValidGroupName };
+            string trustedGroupName = TestEntitySourceManager.GetOneGroup().AccountNameFqdn;
+            string encodedGroupClaim = claimMgr.EncodeClaim(new SPClaim(GroupsClaimType, trustedGroupName, ClaimValueTypes.String, SPOriginalIssuers.Format(SPOriginalIssuerType.TrustedProvider, UnitTestsHelper.SPTrust.Name)));
+            SPUserInfo groupInfo = new SPUserInfo { LoginName = encodedGroupClaim, Name = trustedGroupName };
 
             FileVersionInfo spAssemblyVersion = FileVersionInfo.GetVersionInfo(Assembly.GetAssembly(typeof(SPSite)).Location);
             string spSiteTemplate = "STS#3"; // modern team site template
