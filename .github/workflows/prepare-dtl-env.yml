@@ -1,4 +1,4 @@
-name: Run integration tests
+name: Prepare test environment
 on:
   repository_dispatch:
     types:
