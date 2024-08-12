@@ -1,0 +1,7 @@
+name: Run Visual Studio tests
+on: workflow_dispatch
+jobs:
+  call-workflow-run-tests:
+    uses: Yvand/EntraCP/.github/workflows/reusaable-run-tests-on-runner.yml@master
+    with:
+      test_project_folder_name: 'Yvand.EntraCP-unit-tests'

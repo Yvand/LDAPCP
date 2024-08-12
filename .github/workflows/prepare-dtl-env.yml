@@ -33,9 +33,11 @@ jobs:
       test-prepareSharePointVmScriptUris: ${{ vars.DTL_PrepareSharePointVmScriptUris }}
       test-claimsProviderPackageUri: ${{ vars.DTL_ClaimsProviderPackageUri }}
       unittestfiles-storageAccountSourceRelativePath: ${{ vars.unittestfiles_storageAccountSourceRelativePath }}
+      test_registerRunner_scriptUrl: ${{ vars.test_registerRunner_scriptUrl }}
     secrets:
       AZURE_CREDENTIALS: ${{ secrets.AZURE_CREDENTIALS }}
       azdevops-pat-registerAgent: ${{ secrets.dtl_azdevopsPassword }}
       dtl-env-accountsPassword: ${{ secrets.dtl_accountsPassword }}
       unittestfiles-storageAccountEndpoint: ${{ secrets.unittestfiles_storageAccountEndpoint }}
       unittestfiles-storageAccountShareName: ${{ secrets.unittestfiles_storageAccountShareName }}
+      GH_TOKEN_ADD_RUNNER: ${{ secrets.GH_TOKEN_ADD_RUNNER }}

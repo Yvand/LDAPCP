@@ -1,13 +1,13 @@
-name: Build code
+name: Build solution
 
 on:
   workflow_dispatch:
   push:
     branches:
-    - master
+    - dev
     - 'releases/**'
   pull_request:
-    branches: [ "master", "releases/**" ]
+    branches: [ "dev", "master", "releases/**" ]
 
 jobs:
   call-build:
