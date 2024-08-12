@@ -32,10 +32,12 @@ jobs:
       dtl-env-addAzureBastion: ${{ vars.dtl_addAzureBastion == 'true' }}
       test-prepareSharePointVmScriptUris: ${{ vars.DTL_PrepareSharePointVmScriptUris }}
       test-claimsProviderPackageUri: ${{ vars.DTL_ClaimsProviderPackageUri }}
-      unittestfiles-storageAccountSourceRelativePath: ${{ vars.unittestfiles_storageAccountSourceRelativePath }}
+      unittestfiles_azure_storage_share_relative_path: ${{ vars.unittestfiles_azure_storage_share_relative_path }}
     secrets:
-      AZURE_CREDENTIALS: ${{ secrets.AZURE_CREDENTIALS }}
-      azdevops-pat-registerAgent: ${{ secrets.dtl_azdevopsPassword }}
-      dtl-env-accountsPassword: ${{ secrets.dtl_accountsPassword }}
-      unittestfiles-storageAccountEndpoint: ${{ secrets.unittestfiles_storageAccountEndpoint }}
-      unittestfiles-storageAccountShareName: ${{ secrets.unittestfiles_storageAccountShareName }}
+      AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+      AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+      ADO_PAT_REGISTERAGENT: ${{ secrets.ADO_PAT_REGISTERAGENT }}
+      DTL_ACCOUNTSPASSWORD: ${{ secrets.DTL_ACCOUNTSPASSWORD }}
+      UNITTESTFILES_AZURE_STORAGE_CONNECTION_STRING: ${{ secrets.UNITTESTFILES_AZURE_STORAGE_CONNECTION_STRING }}
+      UNITTESTFILES_AZURE_STORAGE_SHARE_NAME: ${{ secrets.UNITTESTFILES_AZURE_STORAGE_SHARE_NAME }}
