@@ -109,6 +109,7 @@ namespace Yvand.LdapClaimsProvider.Tests
 #endif
     }
 
+#if DEBUG
     [TestFixture]
     [Parallelizable(ParallelScope.Children)]
     public class UseSidAttributeForUserPermissionTests : ClaimsProviderTestsBase
@@ -166,6 +167,7 @@ namespace Yvand.LdapClaimsProvider.Tests
             base.TestAugmentationOfGoldUsersAgainstRandomGroups();
         }
     }
+#endif
 
     [TestFixture]
     [Parallelizable(ParallelScope.Children)]
