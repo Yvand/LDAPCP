@@ -9,20 +9,18 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Yvand.LDAPCPSE.Tests", "Yva
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
-		Debug|Any CPU = Debug|Any CPU
-		Release|Any CPU = Release|Any CPU
+		Debug|x64 = Debug|x64
+		Release|x64 = Release|x64
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{66F4B88D-7D7E-4435-92DE-94810E2B8F9F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{66F4B88D-7D7E-4435-92DE-94810E2B8F9F}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{66F4B88D-7D7E-4435-92DE-94810E2B8F9F}.Debug|Any CPU.Deploy.0 = Debug|Any CPU
-		{66F4B88D-7D7E-4435-92DE-94810E2B8F9F}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{66F4B88D-7D7E-4435-92DE-94810E2B8F9F}.Release|Any CPU.Build.0 = Release|Any CPU
-		{66F4B88D-7D7E-4435-92DE-94810E2B8F9F}.Release|Any CPU.Deploy.0 = Release|Any CPU
-		{90A764E3-68F7-4E55-B557-E46B98340216}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{90A764E3-68F7-4E55-B557-E46B98340216}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{90A764E3-68F7-4E55-B557-E46B98340216}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{90A764E3-68F7-4E55-B557-E46B98340216}.Release|Any CPU.Build.0 = Release|Any CPU
+		{66F4B88D-7D7E-4435-92DE-94810E2B8F9F}.Debug|x64.ActiveCfg = Debug|x64
+		{66F4B88D-7D7E-4435-92DE-94810E2B8F9F}.Debug|x64.Build.0 = Debug|x64
+		{66F4B88D-7D7E-4435-92DE-94810E2B8F9F}.Release|x64.ActiveCfg = Release|x64
+		{66F4B88D-7D7E-4435-92DE-94810E2B8F9F}.Release|x64.Build.0 = Release|x64
+		{90A764E3-68F7-4E55-B557-E46B98340216}.Debug|x64.ActiveCfg = Debug|x64
+		{90A764E3-68F7-4E55-B557-E46B98340216}.Debug|x64.Build.0 = Debug|x64
+		{90A764E3-68F7-4E55-B557-E46B98340216}.Release|x64.ActiveCfg = Release|x64
+		{90A764E3-68F7-4E55-B557-E46B98340216}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
