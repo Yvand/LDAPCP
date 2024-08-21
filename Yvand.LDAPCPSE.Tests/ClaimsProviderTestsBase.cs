@@ -1,10 +1,13 @@
-﻿using Microsoft.SharePoint.Administration.Claims;
+﻿using Microsoft.Office.Audit.Schema;
+using Microsoft.SharePoint.Administration.Claims;
+using Microsoft.SharePoint.BusinessData.Administration;
 using Microsoft.SharePoint.WebControls;
 using Newtonsoft.Json;
 using NUnit.Framework;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.Eventing.Reader;
 using System.IO;
 using System.Linq;
 using System.Security.Claims;
@@ -46,7 +49,7 @@ namespace Yvand.LdapClaimsProvider.Tests
         {
             Settings = new LdapProviderSettings();
             Settings.ClaimTypes = LdapProviderSettings.ReturnDefaultClaimTypesConfig(UnitTestsHelper.ClaimsProvider.Name);
-            string json = File.ReadAllText(UnitTestsHelper.AzureTenantsJsonFile);
+            string json = File.ReadAllText(UnitTestsHelper.LdapConnectionsJsonFile);
             List<DirectoryConnection> azureTenants = JsonConvert.DeserializeObject<List<DirectoryConnection>>(json);
             Settings.LdapConnections = azureTenants;
             Settings.EnableAugmentation = true;
@@ -84,6 +87,161 @@ namespace Yvand.LdapClaimsProvider.Tests
         protected void Cleanup()
         {
             Trace.TraceInformation($"{DateTime.Now:s} [{this.GetType().Name}] Cleanup.");
+        }
+
+        /// <summary>
+        /// Tests the search and validation operations for the user specified and against the current configuration.
+        /// The property SamAccountName is used as the people picker input
+        /// </summary>
+        /// <param name="entity"></param>
+        public void TestSearchAndValidateForTestUser(TestUser entity)
+        {
+            int expectedCount = 1;
+            string inputValue = entity.SamAccountName;
+            bool shouldValidate = true;
+
+            string claimValue = String.Empty;
+            switch (Settings.ClaimTypes.UserIdentifierConfig.DirectoryObjectAttribute.ToLower())
+            {
+                case "distinguishedname":
+                    claimValue = entity.DistinguishedName;
+                    break;
+
+                case "userprincipalname":
+                    claimValue = entity.UserPrincipalName;
+                    break;
+
+                case "mail":
+                    claimValue = entity.Mail;
+                    break;
+
+                case "samaccountname":
+                    claimValue = entity.SamAccountName;
+                    break;
+
+                case "objectsid":
+                    claimValue = entity.SID;
+                    break;
+            }
+
+            if (Settings.AlwaysResolveUserInput)
+            {
+                expectedCount = Settings.ClaimTypes.GetConfigsMappedToClaimType().Count();
+                claimValue = inputValue;
+            }
+
+            TestSearchOperation(inputValue, expectedCount, claimValue);
+            TestValidationOperation(UserIdentifierClaimType, claimValue, shouldValidate);
+        }
+
+        /// <summary>
+        /// Tests the search and validation operations for the group specified and against the current configuration.
+        /// The property SamAccountName is used as the people picker input
+        /// </summary>
+        /// <param name="entity"></param>
+        public void TestSearchAndValidateForTestGroup(TestGroup entity)
+        {
+            string inputValue = entity.SamAccountName;
+            int expectedCount = 1;
+            bool shouldValidate = true;
+
+            ClaimTypeConfig groupIdConfig = Settings.ClaimTypes.GroupIdentifierConfig;
+            string claimValue = String.Empty;
+            switch (groupIdConfig.DirectoryObjectAttribute.ToLower())
+            {
+                case "samaccountname":
+                    if (String.IsNullOrWhiteSpace(groupIdConfig.ClaimValueLeadingToken))
+                    {
+                        claimValue = entity.SamAccountName;
+                    }
+                    else
+                    {
+                        // This assumes the value is  @"{fqdn}\"
+                        claimValue = entity.AccountNameFqdn;
+                    }
+                    break;
+
+                case "objectsid":
+                    claimValue = entity.SID;
+                    break;
+            }
+
+            if (Settings.AlwaysResolveUserInput)
+            {
+                claimValue = inputValue;
+                expectedCount = Settings.ClaimTypes.GetConfigsMappedToClaimType().Count();
+            }
+
+            TestSearchOperation(inputValue, expectedCount, claimValue);
+            TestValidationOperation(GroupIdentifierClaimType, claimValue, shouldValidate);
+        }
+
+        /// <summary>
+        /// Gold users are the test users who are members of all the test groups
+        /// </summary>
+        public virtual void TestAugmentationOfGoldUsersAgainstRandomGroups()
+        {
+            foreach (TestUser user in TestEntitySourceManager.GetUsersMembersOfAllGroups())
+            {
+                TestAugmentationAgainst1RandomGroup(user);
+            }
+        }
+
+        public void TestAugmentationAgainst1RandomGroup(TestUser user)
+        {
+            TestGroup randomGroup = TestEntitySourceManager.GetOneGroup();
+            TestAugmentationAgainstGroup(user, randomGroup);
+        }
+
+        /// <summary>
+        /// Tests augmentation with groups that have nested groups as members
+        /// </summary>
+        /// <param name="user"></param>
+        public void TestAugmentationAgainstGroupsWithNestedGroupsAsMembers(TestUser user)
+        {
+            foreach (TestGroup group in TestEntitySourceManager.GetGroupsWithNestedGroupsAsMembers(100))
+            {
+                TestAugmentationAgainstGroup(user, group);
+            }
+        }
+
+        /// <summary>
+        /// Pick a random group, and check if the claims provider returns the expected membership (should or should not be member) for this group
+        /// </summary>
+        /// <param name="user"></param>
+        public void TestAugmentationAgainstGroup(TestUser user, TestGroup group)
+        {
+            bool userShouldBeMember = user.IsMemberOfAllGroups || group.EveryoneIsMember ? true : false;
+            if (!userShouldBeMember)
+            {
+                if (user.IsMemberOfNestedGroups && (group.IsNestedGroup || group.NestedGroupsAreMembers))
+                {
+                    userShouldBeMember = true;
+                }
+            }
+
+            string groupClaimValue = String.Empty;
+            ClaimTypeConfig groupIdConfig = Settings.ClaimTypes.GroupIdentifierConfig;
+            switch (groupIdConfig.DirectoryObjectAttribute.ToLower())
+            {
+                case "samaccountname":
+                    if (String.IsNullOrWhiteSpace(groupIdConfig.ClaimValueLeadingToken))
+                    {
+                        groupClaimValue = group.SamAccountName;
+                    }
+                    else
+                    {
+                        // This assumes the value is  @"{fqdn}\"
+                        groupClaimValue = group.AccountNameFqdn;
+                    }
+                    break;
+
+                case "objectsid":
+                    groupClaimValue = group.SID;
+                    break;
+            }
+            Trace.TraceInformation($"{DateTime.Now:s} [{this.GetType().Name}] TestAugmentationAgainst1RandomGroup for user \"{user.UserPrincipalName}\", IsMemberOfAllGroupsp: {user.IsMemberOfAllGroups} against group \"{groupClaimValue}\" EveryoneIsMember: {group.EveryoneIsMember}. userShouldBeMember: {userShouldBeMember}");
+            TestAugmentationOperation(user.UserPrincipalName, userShouldBeMember, groupClaimValue);
         }
 
         /// <summary>
@@ -146,7 +304,7 @@ namespace Yvand.LdapClaimsProvider.Tests
             Assert.That(entities.Count, Is.EqualTo(expectedCount), $"Input \"{input}\" should have returned {expectedCount} entities, but it returned {entities.Count} instead. {detailedLog}");
         }
 
-        protected void TestValidationOperation(ValidateEntityData registrationData)
+        protected void TestValidationOperation(ValidateEntityScenario registrationData)
         {
             bool shouldValidate = registrationData.ShouldValidate;
             string claimType = registrationData.EntityType == ResultEntityType.User ?
@@ -187,12 +345,11 @@ namespace Yvand.LdapClaimsProvider.Tests
         /// </summary>
         /// <param name="claimValue"></param>
         /// <param name="shouldBeMemberOfTheGroupTested"></param>
-        //[TestCase("FakeAccount", false)]
-        //[TestCase("yvand@contoso.local", true)]
-        protected void TestAugmentationOperation(string claimValue, bool shouldBeMemberOfTheGroupTested, string groupNameToTestInGroupMembership)
+        /// <param name="groupClaimValueToTest"></param>
+        protected void TestAugmentationOperation(string claimValue, bool shouldBeMemberOfTheGroupTested, string groupClaimValueToTest)
         {
             string claimType = UserIdentifierClaimType;
-            SPClaim groupClaimToTestInGroupMembership = new SPClaim(GroupIdentifierClaimType, groupNameToTestInGroupMembership, ClaimValueTypes.String, SPOriginalIssuers.Format(SPOriginalIssuerType.TrustedProvider, UnitTestsHelper.SPTrust.Name));
+            SPClaim groupClaimToTestInGroupMembership = new SPClaim(GroupIdentifierClaimType, groupClaimValueToTest, ClaimValueTypes.String, SPOriginalIssuers.Format(SPOriginalIssuerType.TrustedProvider, UnitTestsHelper.SPTrust.Name));
             try
             {
                 Stopwatch timer = new Stopwatch();
@@ -211,11 +368,11 @@ namespace Yvand.LdapClaimsProvider.Tests
                 if (shouldBeMemberOfTheGroupTested)
                 {
 
-                    Assert.That(groupFound, Is.True, $"Entity \"{claimValue}\" should be member of group \"{groupNameToTestInGroupMembership}\", but this group was not found in the claims returned by the claims provider.");
+                    Assert.That(groupFound, Is.True, $"Entity \"{claimValue}\" should be member of group \"{groupClaimValueToTest}\", but this group was not found in the claims returned by the claims provider.");
                 }
                 else
                 {
-                    Assert.That(groupFound, Is.False, $"Entity \"{claimValue}\" should NOT be member of group \"{groupNameToTestInGroupMembership}\", but this group was found in the claims returned by the claims provider.");
+                    Assert.That(groupFound, Is.False, $"Entity \"{claimValue}\" should NOT be member of group \"{groupClaimValueToTest}\", but this group was found in the claims returned by the claims provider.");
                 }
                 timer.Stop();
                 Trace.TraceInformation($"{DateTime.Now:s} [{this.GetType().Name}] TestAugmentationOperation finished in {timer.ElapsedMilliseconds} ms. Parameters: claimType: '{claimType}', claimValue: '{claimValue}', isMemberOfTrustedGroup: '{shouldBeMemberOfTheGroupTested}'.");

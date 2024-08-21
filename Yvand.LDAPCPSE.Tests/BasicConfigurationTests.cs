@@ -18,40 +18,70 @@ namespace Yvand.LdapClaimsProvider.Tests
             base.CheckSettingsTest();
         }
 
-        [Test, TestCaseSource(typeof(SearchEntityDataSource), nameof(SearchEntityDataSource.GetTestData), new object[] { EntityDataSourceType.AllAccounts })]
+        [Test, TestCaseSource(typeof(TestEntitySourceManager), nameof(TestEntitySourceManager.GetSomeUsers), new object[] { TestEntitySourceManager.MaxNumberOfUsersToTest })]
+        public void TestUsers(TestUser user)
+        {
+            base.TestSearchAndValidateForTestUser(user);
+            base.TestAugmentationAgainst1RandomGroup(user);
+        }
+
+        [Test, TestCaseSource(typeof(TestEntitySourceManager), nameof(TestEntitySourceManager.GetSomeGroups), new object[] { TestEntitySourceManager.MaxNumberOfGroupsToTest })]
+        public void TestGroups(TestGroup group)
+        {
+            TestSearchAndValidateForTestGroup(group);
+        }
+
+        [Test]
+        [Repeat(5)]
+        public override void TestAugmentationOfGoldUsersAgainstRandomGroups()
+        {
+            base.TestAugmentationOfGoldUsersAgainstRandomGroups();
+        }
+
+#if DEBUG
+        [Test, TestCaseSource(typeof(TestEntitySourceManager), nameof(TestEntitySourceManager.AllSearchEntities), null)]
         [Repeat(UnitTestsHelper.TestRepeatCount)]
-        public void TestSearch(SearchEntityData registrationData)
+        public void TestSearch(SearchEntityScenario registrationData)
         {
             base.TestSearchOperation(registrationData.Input, registrationData.SearchResultCount, registrationData.SearchResultSingleEntityClaimValue);
         }
 
-        [Test, TestCaseSource(typeof(ValidateEntityDataSource), nameof(ValidateEntityDataSource.GetTestData), new object[] { EntityDataSourceType.AllAccounts })]
+        [Test, TestCaseSource(typeof(TestEntitySourceManager), nameof(TestEntitySourceManager.AllValidationEntities), null)]
         [MaxTime(UnitTestsHelper.MaxTime)]
         [Repeat(UnitTestsHelper.TestRepeatCount)]
-        public void TestValidation(ValidateEntityData registrationData)
+        public void TestValidation(ValidateEntityScenario registrationData)
         {
             base.TestValidationOperation(registrationData);
         }
+#endif
 
-        /// <summary>
-        /// Tests if the augmentation works as expected.
-        /// </summary>
-        /// <param name="registrationData"></param>
-        [Test, TestCaseSource(typeof(ValidateEntityDataSource), nameof(ValidateEntityDataSource.GetTestData), new object[] { EntityDataSourceType.AllAccounts })]
-        [Repeat(UnitTestsHelper.TestRepeatCount)]
-        public virtual void TestAugmentationOperation(ValidateEntityData registrationData)
-        {
-            TestAugmentationOperation(registrationData.ClaimValue, registrationData.IsMemberOfTrustedGroup, UnitTestsHelper.ValidGroupName);
-        }
+        ///// <summary>
+        ///// Tests if the augmentation works as expected.
+        ///// </summary>
+        ///// <param name="registrationData"></param>
+        //[Test, TestCaseSource(typeof(TestEntitySourceManager), nameof(TestEntitySourceManager.AllValidationEntities), null)]
+        //[Repeat(UnitTestsHelper.TestRepeatCount)]
+        //public virtual void TestAugmentationOperation(ValidateEntityScenario registrationData)
+        //{
+        //    TestAugmentationOperation(registrationData.ClaimValue, registrationData.IsMemberOfTrustedGroup, UnitTestsHelper.ValidGroupName);
+        //}
 
-        [TestCase("FakeAccount", false)]
-        [TestCase("yvand@contoso.local", true)]
-        public void TestAugmentationOperation(string claimValue, bool isMemberOfTrustedGroup)
-        {
-            base.TestAugmentationOperation(claimValue, isMemberOfTrustedGroup, UnitTestsHelper.ValidGroupName);
-        }
+        //[TestCase("FakeAccount", false)]
+        //[TestCase("yvand@contoso.local", true)]
+        //public void TestAugmentationOperation(string claimValue, bool isMemberOfTrustedGroup)
+        //{
+        //    base.TestAugmentationOperation(claimValue, isMemberOfTrustedGroup, UnitTestsHelper.ValidGroupName);
+        //}
 
 #if DEBUG
+        [TestCase("testLdapcpUser_001")]
+        [TestCase("testLdapcpUser_007")]
+        public void DebugTestUser(string upnPrefix)
+        {
+            TestUser user = TestEntitySourceManager.FindUser(upnPrefix);
+            base.TestSearchAndValidateForTestUser(user);
+        }
+
         ////[TestCaseSource(typeof(SearchEntityDataSourceCollection))]
         //public void DEBUG_SearchEntitiesFromCollection(string inputValue, string expectedCount, string expectedClaimValue)
         //{
@@ -61,9 +91,10 @@ namespace Yvand.LdapClaimsProvider.Tests
         //}
 
         //[TestCase(@"group\ch", 1, @"contoso.local\group\chartest")]
-        [TestCase(@"test_special)", 1, @"test_special_char@contoso.local")]
+        [TestCase(@"test_special)", 1, @"testLdapcpUser_003@contoso.local")]
+        [TestCase(@"firstname_002", 1, @"testLdapcpUser_002@contoso.local")]
         //[TestCase(@"group\ch", 1, @"group\chartest")]
-        [TestCase(@"testLdapcpseUser_001", 1, @"testLdapcpseUser_001@contoso.local")]
+        [TestCase(@"testLdapcpUser_001", 1, @"testLdapcpUser_001@contoso.local")]
         public void TestSearch(string inputValue, int expectedResultCount, string expectedEntityClaimValue)
         {
             base.TestSearchOperation(inputValue, expectedResultCount, expectedEntityClaimValue);
