@@ -1,6 +1,6 @@
 # Change log for LDAPCP
 
-## LDAPCP Second Edition v19.0 - Published in August 23, 2024
+## LDAPCP Second Edition v19.0.20240823.4 - Published in August 23, 2024
 
 * Fix error when creating the configuration if the trust uses an identifier claim type that is not well-known by LDAPCP - https://github.com/Yvand/LDAPCP/issues/221
 * Improve tests, to make them much easier to replay from a new test environment, and with many more users and groups
