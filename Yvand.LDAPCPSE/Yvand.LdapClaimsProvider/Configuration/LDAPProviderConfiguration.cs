@@ -4,9 +4,9 @@ using Microsoft.SharePoint.WebControls;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.DirectoryServices.Protocols;
 using System.Linq;
 using Yvand.LdapClaimsProvider.Logging;
+using WIF4_5 = System.Security.Claims;
 
 namespace Yvand.LdapClaimsProvider.Configuration
 {
@@ -140,15 +140,26 @@ namespace Yvand.LdapClaimsProvider.Configuration
             else
             {
                 // Unknown identity claim type
-                ctConfig = new ClaimTypeConfig { ClaimType = spTrust.IdentityClaimTypeInformation.MappedClaimType };
+                ctConfig = new ClaimTypeConfig
+                {
+                    // https://github.com/Yvand/LDAPCP/issues/221: Set all required properties to avoid exception when validating config
+                    ClaimType = spTrust.IdentityClaimTypeInformation.MappedClaimType,
+                    DirectoryObjectClass = "user",
+                    DirectoryObjectAttribute = "MUST-BE-SET",
+                };
                 newCTConfigCollection.Add(ctConfig);
             }
             // By default, do the same as AD claims provider: Show the displayName of users in the people picker list
             newCTConfigCollection.UserIdentifierConfig.DirectoryObjectAttributeForDisplayText = "displayName";
 
 
-            //// Not adding those as additional attributes to avoid having too many LDAP attributes to search users in the LDAP filter
-            var nonIdentityClaimTypes = ClaimsProviderConstants.GetDefaultSettingsPerUserClaimType().Where(x => !String.Equals(x.Key, spTrust.IdentityClaimTypeInformation.MappedClaimType, StringComparison.OrdinalIgnoreCase));
+            // Not adding those as additional attributes to avoid having too many LDAP attributes to search users in the LDAP filter
+            var nonIdentityClaimTypes = ClaimsProviderConstants
+                .GetDefaultSettingsPerUserClaimType()
+                .Where(x => 
+                    !String.Equals(x.Key, spTrust.IdentityClaimTypeInformation.MappedClaimType, StringComparison.OrdinalIgnoreCase) &&
+                    !String.Equals(x.Key, WIF4_5.ClaimTypes.PrimarySid, StringComparison.OrdinalIgnoreCase)
+                    );
             foreach (var nonIdentityClaimType in nonIdentityClaimTypes)
             {
                 ctConfig = nonIdentityClaimType.Value;

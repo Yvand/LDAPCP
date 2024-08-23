@@ -5,19 +5,14 @@
   </RunConfiguration>
   <TestRunParameters>
     <Parameter name="ClaimsProviderName" value="LDAPCPSE" />
-    <Parameter name="ClaimsProviderConfigName" value="LDAPCSEPConfig" />
-    <Parameter name="LdapConnections" value="C:\YvanData\Dev\LDAPCP_CustomLDAPConnections.json" />
+    <Parameter name="LdapConnectionsJsonFile" value="C:\YvanData\Dev\LDAPCP_CustomLDAPConnections.json" />
     <Parameter name="DomainFqdn" value="contoso.local" />
-    <Parameter name="Domain" value="contoso" />
     <Parameter name="DataFile_AllAccounts_Search" value="C:\YvanData\Dev\LDAPCP_Tests_AllAccounts_Search.csv" />
     <Parameter name="DataFile_AllAccounts_Validate" value="C:\YvanData\Dev\LDAPCP_Tests_AllAccounts_Validate.csv" />
+    <Parameter name="DataFile_TestUsers" value="C:\YvanData\dev\LDAPCP_Tests_Users.csv" />
+    <Parameter name="DataFile_TestGroups" value="C:\YvanData\dev\LDAPCP_Tests_Groups.csv" />
     <Parameter name="FarmAdmin" value="i:0#.w|contoso\yvand" />
-    <Parameter name="ValidGroupClaimType" value="http://schemas.microsoft.com/ws/2008/06/identity/claims/role" />
-    <Parameter name="ValidGroupName" value="contoso.local\testLdapcpseGroup_1" />
-    <Parameter name="ValidGroupSid" value="S-1-5-21-2647467245-1611586658-188888215-11601" />
-    <Parameter name="ValidUserSid" value="S-1-5-21-2647467245-1611586658-188888215-107206" />
+    <Parameter name="GroupsClaimType" value="http://schemas.microsoft.com/ws/2008/06/identity/claims/role" />
     <Parameter name="MultiPurposeCustomClaimType" value="http://schemas.yvand.org/claims/type1" />
-    <Parameter name="TestSiteCollectionName" value="LDAPCPSE.UnitTests" />
-    <Parameter name="TestLogFileName" value="LDAPCPSEIntegrationTests.log" />
   </TestRunParameters>
 </RunSettings>

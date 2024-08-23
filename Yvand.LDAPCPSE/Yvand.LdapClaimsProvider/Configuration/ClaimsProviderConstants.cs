@@ -132,18 +132,18 @@ namespace Yvand.LdapClaimsProvider.Configuration
                         DirectoryObjectAdditionalFilter = "(!(objectClass=computer))",
                         SPEntityDataKey = EntityMetadataPerLdapAttributes.ContainsKey("sAMAccountName") ? EntityMetadataPerLdapAttributes["sAMAccountName"] : String.Empty,
                     }
-                }
-                //{
-                //    WIF4_5.ClaimTypes.PrimarySid,
-                //    new ClaimTypeConfig
-                //    {
-                //        DirectoryObjectType = DirectoryObjectType.User,
-                //        DirectoryObjectClass = "user",
-                //        DirectoryObjectAttribute = "objectsid",
-                //        DirectoryObjectAttributeSupportsWildcard = false,
-                //        SPEntityDataKey = EntityMetadataPerLdapAttributes.ContainsKey("objectsid") ? EntityMetadataPerLdapAttributes["objectsid"] : String.Empty,
-                //    }
-                //},
+                },
+                {   // https://github.com/Yvand/LDAPCP/issues/221: Automatically configure user SID
+                    WIF4_5.ClaimTypes.PrimarySid,
+                    new ClaimTypeConfig
+                    {
+                        DirectoryObjectType = DirectoryObjectType.User,
+                        DirectoryObjectClass = "user",
+                        DirectoryObjectAttribute = "objectsid",
+                        DirectoryObjectAttributeSupportsWildcard = false,
+                        SPEntityDataKey = EntityMetadataPerLdapAttributes.ContainsKey("objectsid") ? EntityMetadataPerLdapAttributes["objectsid"] : String.Empty,
+                    }
+                },
             };
             // Returns a copy of the Dictionary, not the Dictionary itself, to prevent its members to be modified
             return defaultSettingsPerUserClaimType.ToList();

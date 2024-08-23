@@ -1,9 +1,5 @@
 ﻿using NUnit.Framework;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Yvand.LdapClaimsProvider.Tests
 {
@@ -22,26 +18,38 @@ namespace Yvand.LdapClaimsProvider.Tests
             base.CheckSettingsTest();
         }
 
-        [Test, TestCaseSource(typeof(ValidateEntityDataSource), nameof(ValidateEntityDataSource.GetTestData), new object[] { EntityDataSourceType.AllAccounts })]
-        [Repeat(UnitTestsHelper.TestRepeatCount)]
-        public virtual void TestAugmentationOperation(ValidateEntityData registrationData)
+        [Test, TestCaseSource(typeof(TestEntitySourceManager), nameof(TestEntitySourceManager.GetUsersMembersOfNestedGroups), null)]
+        public void TestUsersMembersOfNestedGroups(TestUser user)
         {
-            TestAugmentationOperation(registrationData.ClaimValue, registrationData.IsMemberOfTrustedGroup, UnitTestsHelper.ValidGroupName);
+            base.TestAugmentationAgainstGroupsWithNestedGroupsAsMembers(user);
         }
 
-        [TestCase("FakeAccount", false)]
-        [TestCase("yvand@contoso.local", true)]
-        public void TestAugmentationOperation(string claimValue, bool isMemberOfTrustedGroup)
+        [Test, TestCaseSource(typeof(TestEntitySourceManager), nameof(TestEntitySourceManager.GetSomeUsers), new object[] { TestEntitySourceManager.MaxNumberOfUsersToTest })]
+        public void TestUsers(TestUser user)
         {
-            base.TestAugmentationOperation(claimValue, isMemberOfTrustedGroup, UnitTestsHelper.ValidGroupName);
+            base.TestSearchAndValidateForTestUser(user);
+            base.TestAugmentationAgainst1RandomGroup(user);
+        }
+
+        [Test, TestCaseSource(typeof(TestEntitySourceManager), nameof(TestEntitySourceManager.GetSomeGroups), new object[] { TestEntitySourceManager.MaxNumberOfGroupsToTest })]
+        public void TestGroups(TestGroup group)
+        {
+            TestSearchAndValidateForTestGroup(group);
+        }
+
+        [Test]
+        [Repeat(5)]
+        public override void TestAugmentationOfGoldUsersAgainstRandomGroups()
+        {
+            base.TestAugmentationOfGoldUsersAgainstRandomGroups();
         }
 
 #if DEBUG
-        [TestCase("testLdapcpseUser_001@contoso.local", true, @"contoso.local\testLdapcpseGroup_2")]
-        public void TestAugmentationOperationGroupRecursive(string claimValue, bool isMemberOfTrustedGroup, string groupValue)
-        {
-            base.TestAugmentationOperation(claimValue, isMemberOfTrustedGroup, groupValue);
-        }
+        //[TestCase("testLdapcpseUser_001@contoso.local", true, @"contoso.local\testLdapcpseGroup_2")]
+        //public void TestAugmentationOperationGroupRecursive(string claimValue, bool isMemberOfTrustedGroup, string groupValue)
+        //{
+        //    base.TestAugmentationOperation(claimValue, isMemberOfTrustedGroup, groupValue);
+        //}
 #endif
     }
 
@@ -62,27 +70,31 @@ namespace Yvand.LdapClaimsProvider.Tests
             base.CheckSettingsTest();
         }
 
-        [Test, TestCaseSource(typeof(ValidateEntityDataSource), nameof(ValidateEntityDataSource.GetTestData), new object[] { EntityDataSourceType.AllAccounts })]
-        [Repeat(UnitTestsHelper.TestRepeatCount)]
-        public virtual void TestAugmentationOperation(ValidateEntityData registrationData)
+        [Test, TestCaseSource(typeof(TestEntitySourceManager), nameof(TestEntitySourceManager.GetUsersMembersOfNestedGroups), null)]
+        public void TestUsersMembersOfNestedGroups(TestUser user)
         {
-            TestAugmentationOperation(registrationData.ClaimValue, registrationData.IsMemberOfTrustedGroup, UnitTestsHelper.ValidGroupName);
+            base.TestAugmentationAgainstGroupsWithNestedGroupsAsMembers(user);
         }
 
-        [TestCase("FakeAccount", false)]
-        [TestCase("yvand@contoso.local", true)]
-        public void TestAugmentationOperation(string claimValue, bool isMemberOfTrustedGroup)
+        [Test, TestCaseSource(typeof(TestEntitySourceManager), nameof(TestEntitySourceManager.GetSomeUsers), new object[] { TestEntitySourceManager.MaxNumberOfUsersToTest })]
+        public void TestUsers(TestUser user)
         {
-            base.TestAugmentationOperation(claimValue, isMemberOfTrustedGroup, UnitTestsHelper.ValidGroupName);
+            base.TestSearchAndValidateForTestUser(user);
+            base.TestAugmentationAgainst1RandomGroup(user);
         }
 
-#if DEBUG
-        [TestCase("testLdapcpseUser_001@contoso.local", true, @"contoso.local\testLdapcpseGroup_2")]
-        public void TestAugmentationOperationGroupRecursive(string claimValue, bool isMemberOfTrustedGroup, string groupValue)
+        [Test, TestCaseSource(typeof(TestEntitySourceManager), nameof(TestEntitySourceManager.GetSomeGroups), new object[] { TestEntitySourceManager.MaxNumberOfGroupsToTest })]
+        public void TestGroups(TestGroup group)
         {
-            base.TestAugmentationOperation(claimValue, isMemberOfTrustedGroup, groupValue);
+            TestSearchAndValidateForTestGroup(group);
         }
-#endif
+
+        [Test]
+        [Repeat(5)]
+        public override void TestAugmentationOfGoldUsersAgainstRandomGroups()
+        {
+            base.TestAugmentationOfGoldUsersAgainstRandomGroups();
+        }
     }
 
     public class AugmentUsingCustomConnectionAndUsingHelperTestss : ClaimsProviderTestsBase
@@ -100,27 +112,31 @@ namespace Yvand.LdapClaimsProvider.Tests
             base.CheckSettingsTest();
         }
 
-        [Test, TestCaseSource(typeof(ValidateEntityDataSource), nameof(ValidateEntityDataSource.GetTestData), new object[] { EntityDataSourceType.AllAccounts })]
-        [Repeat(UnitTestsHelper.TestRepeatCount)]
-        public virtual void TestAugmentationOperation(ValidateEntityData registrationData)
+        [Test, TestCaseSource(typeof(TestEntitySourceManager), nameof(TestEntitySourceManager.GetUsersMembersOfNestedGroups), null)]
+        public void TestUsersMembersOfNestedGroups(TestUser user)
         {
-            TestAugmentationOperation(registrationData.ClaimValue, registrationData.IsMemberOfTrustedGroup, UnitTestsHelper.ValidGroupName);
+            base.TestAugmentationAgainstGroupsWithNestedGroupsAsMembers(user);
         }
 
-        [TestCase("FakeAccount", false)]
-        [TestCase("yvand@contoso.local", true)]
-        public void TestAugmentationOperation(string claimValue, bool isMemberOfTrustedGroup)
+        [Test, TestCaseSource(typeof(TestEntitySourceManager), nameof(TestEntitySourceManager.GetSomeUsers), new object[] { TestEntitySourceManager.MaxNumberOfUsersToTest })]
+        public void TestUsers(TestUser user)
         {
-            base.TestAugmentationOperation(claimValue, isMemberOfTrustedGroup, UnitTestsHelper.ValidGroupName);
+            base.TestSearchAndValidateForTestUser(user);
+            base.TestAugmentationAgainst1RandomGroup(user);
         }
 
-#if DEBUG
-        [TestCase("testLdapcpseUser_001@contoso.local", true, @"contoso.local\testLdapcpseGroup_2")]
-        public void TestAugmentationOperationGroupRecursive(string claimValue, bool isMemberOfTrustedGroup, string groupValue)
+        [Test, TestCaseSource(typeof(TestEntitySourceManager), nameof(TestEntitySourceManager.GetSomeGroups), new object[] { TestEntitySourceManager.MaxNumberOfGroupsToTest })]
+        public void TestGroups(TestGroup group)
         {
-            base.TestAugmentationOperation(claimValue, isMemberOfTrustedGroup, groupValue);
+            TestSearchAndValidateForTestGroup(group);
         }
-#endif
+
+        [Test]
+        [Repeat(5)]
+        public override void TestAugmentationOfGoldUsersAgainstRandomGroups()
+        {
+            base.TestAugmentationOfGoldUsersAgainstRandomGroups();
+        }
     }
 
     public class AugmentUsingDefaultConnectionAndUsingHelperTestss : ClaimsProviderTestsBase
@@ -140,25 +156,39 @@ namespace Yvand.LdapClaimsProvider.Tests
             base.CheckSettingsTest();
         }
 
-        [Test, TestCaseSource(typeof(ValidateEntityDataSource), nameof(ValidateEntityDataSource.GetTestData), new object[] { EntityDataSourceType.AllAccounts })]
-        [Repeat(UnitTestsHelper.TestRepeatCount)]
-        public virtual void TestAugmentationOperation(ValidateEntityData registrationData)
+        [Test, TestCaseSource(typeof(TestEntitySourceManager), nameof(TestEntitySourceManager.GetUsersMembersOfNestedGroups), null)]
+        public void TestUsersMembersOfNestedGroups(TestUser user)
         {
-            TestAugmentationOperation(registrationData.ClaimValue, registrationData.IsMemberOfTrustedGroup, UnitTestsHelper.ValidGroupName);
+            base.TestAugmentationAgainstGroupsWithNestedGroupsAsMembers(user);
         }
 
-        [TestCase("FakeAccount", false)]
-        [TestCase("yvand@contoso.local", true)]
-        public void TestAugmentationOperation(string claimValue, bool isMemberOfTrustedGroup)
+        [Test, TestCaseSource(typeof(TestEntitySourceManager), nameof(TestEntitySourceManager.GetSomeUsers), new object[] { TestEntitySourceManager.MaxNumberOfUsersToTest })]
+        public void TestUsers(TestUser user)
         {
-            base.TestAugmentationOperation(claimValue, isMemberOfTrustedGroup, UnitTestsHelper.ValidGroupName);
+            base.TestSearchAndValidateForTestUser(user);
+            base.TestAugmentationAgainst1RandomGroup(user);
+        }
+
+        [Test, TestCaseSource(typeof(TestEntitySourceManager), nameof(TestEntitySourceManager.GetSomeGroups), new object[] { TestEntitySourceManager.MaxNumberOfGroupsToTest })]
+        public void TestGroups(TestGroup group)
+        {
+            TestSearchAndValidateForTestGroup(group);
+        }
+
+        [Test]
+        [Repeat(5)]
+        public override void TestAugmentationOfGoldUsersAgainstRandomGroups()
+        {
+            base.TestAugmentationOfGoldUsersAgainstRandomGroups();
         }
 
 #if DEBUG
-        [TestCase("testLdapcpseUser_001@contoso.local", true, @"contoso.local\testLdapcpseGroup_2")]
-        public void TestAugmentationOperationGroupRecursive(string claimValue, bool isMemberOfTrustedGroup, string groupValue)
+        [TestCase("testLdapcpUser_040", "testLdapcpGroup_022")]
+        public void DebugTestUser(string upnPrefix, string groupName)
         {
-            base.TestAugmentationOperation(claimValue, isMemberOfTrustedGroup, groupValue);
+            TestUser user = TestEntitySourceManager.FindUser(upnPrefix);
+            TestGroup group = TestEntitySourceManager.FindGroup(groupName);
+            TestAugmentationAgainstGroup(user, group);
         }
 #endif
     }
@@ -180,19 +210,30 @@ namespace Yvand.LdapClaimsProvider.Tests
             base.CheckSettingsTest();
         }
 
-#if DEBUG
-        [TestCase("FakeAccount", false)]
-        [TestCase("yvand@contoso.local", true)]
-        public void TestAugmentationOperation(string claimValue, bool isMemberOfTrustedGroup)
+        [Test, TestCaseSource(typeof(TestEntitySourceManager), nameof(TestEntitySourceManager.GetUsersMembersOfNestedGroups), null)]
+        public void TestUsersMembersOfNestedGroups(TestUser user)
         {
-            base.TestAugmentationOperation(claimValue, isMemberOfTrustedGroup, UnitTestsHelper.ValidGroupSid);
+            base.TestAugmentationAgainstGroupsWithNestedGroupsAsMembers(user);
         }
 
-        [TestCase("testLdapcpseUser_001@contoso.local", true, @"S-1-5-21-2647467245-1611586658-188888215-110602")] // testLdapcpseGroup_2
-        public void TestAugmentationOperationGroupRecursive(string claimValue, bool isMemberOfTrustedGroup, string groupValue)
+        [Test, TestCaseSource(typeof(TestEntitySourceManager), nameof(TestEntitySourceManager.GetSomeUsers), new object[] { TestEntitySourceManager.MaxNumberOfUsersToTest })]
+        public void TestUsers(TestUser user)
         {
-            base.TestAugmentationOperation(claimValue, isMemberOfTrustedGroup, groupValue);
+            base.TestSearchAndValidateForTestUser(user);
+            base.TestAugmentationAgainst1RandomGroup(user);
         }
-#endif
+
+        [Test, TestCaseSource(typeof(TestEntitySourceManager), nameof(TestEntitySourceManager.GetSomeGroups), new object[] { TestEntitySourceManager.MaxNumberOfGroupsToTest })]
+        public void TestGroups(TestGroup group)
+        {
+            TestSearchAndValidateForTestGroup(group);
+        }
+
+        [Test]
+        [Repeat(5)]
+        public override void TestAugmentationOfGoldUsersAgainstRandomGroups()
+        {
+            base.TestAugmentationOfGoldUsersAgainstRandomGroups();
+        }
     }
 }

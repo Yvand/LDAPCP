@@ -1,8 +1,6 @@
 ﻿using NUnit.Framework;
 using Yvand.LdapClaimsProvider.Configuration;
 
-// No custom additional claim type available in the trust
-#if DEBUG
 namespace Yvand.LdapClaimsProvider.Tests
 {
     [TestFixture]
@@ -32,6 +30,8 @@ namespace Yvand.LdapClaimsProvider.Tests
             base.CheckSettingsTest();
         }
 
+// No custom additional claim type available in the trust in live tests
+#if DEBUG
         [TestCase(@"513", 1, @"513")]
         [TestCase(@"51", 0, @"")]
         [TestCase(@"5133", 0, @"")]
@@ -40,21 +40,26 @@ namespace Yvand.LdapClaimsProvider.Tests
             base.TestSearchOperation(inputValue, expectedResultCount, expectedEntityClaimValue);
             base.TestValidationOperation(TestContext.Parameters["MultiPurposeCustomClaimType"], expectedEntityClaimValue, expectedResultCount == 0 ? false : true);
         }
+#endif
 
-        [Test, TestCaseSource(typeof(ValidateEntityDataSource), nameof(ValidateEntityDataSource.GetTestData), new object[] { EntityDataSourceType.AllAccounts })]
-        [Repeat(UnitTestsHelper.TestRepeatCount)]
-        public virtual void TestAugmentationOperation(ValidateEntityData registrationData)
+        [Test, TestCaseSource(typeof(TestEntitySourceManager), nameof(TestEntitySourceManager.GetSomeUsers), new object[] { TestEntitySourceManager.MaxNumberOfUsersToTest })]
+        public void TestUsers(TestUser user)
         {
-            TestAugmentationOperation(registrationData.ClaimValue, registrationData.IsMemberOfTrustedGroup, UnitTestsHelper.ValidGroupName);
+            base.TestSearchAndValidateForTestUser(user);
+            base.TestAugmentationAgainst1RandomGroup(user);
         }
 
-        [TestCase("FakeAccount", false)]
-        [TestCase("yvand@contoso.local", true)]
-        [TestCase("testLdapcpseUser_001@contoso.local", true)]
-        public void TestAugmentationOperation(string claimValue, bool isMemberOfTrustedGroup)
+        [Test, TestCaseSource(typeof(TestEntitySourceManager), nameof(TestEntitySourceManager.GetSomeGroups), new object[] { TestEntitySourceManager.MaxNumberOfGroupsToTest })]
+        public void TestGroups(TestGroup group)
         {
-            base.TestAugmentationOperation(claimValue, isMemberOfTrustedGroup, UnitTestsHelper.ValidGroupName);
+            TestSearchAndValidateForTestGroup(group);
+        }
+
+        [Test]
+        [Repeat(5)]
+        public override void TestAugmentationOfGoldUsersAgainstRandomGroups()
+        {
+            base.TestAugmentationOfGoldUsersAgainstRandomGroups();
         }
     }
 }
-#endif
