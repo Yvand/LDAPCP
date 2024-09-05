@@ -1,0 +1,27 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.10.35013.160
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CustomClaimsProvider", "CustomClaimsProvider.csproj", "{CC278266-3F09-4908-BCE8-725D2AA9153E}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{CC278266-3F09-4908-BCE8-725D2AA9153E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CC278266-3F09-4908-BCE8-725D2AA9153E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CC278266-3F09-4908-BCE8-725D2AA9153E}.Debug|Any CPU.Deploy.0 = Debug|Any CPU
+		{CC278266-3F09-4908-BCE8-725D2AA9153E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CC278266-3F09-4908-BCE8-725D2AA9153E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CC278266-3F09-4908-BCE8-725D2AA9153E}.Release|Any CPU.Deploy.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {75E70229-6D16-4FD1-B776-1D3CF6994E65}
+	EndGlobalSection
+EndGlobal
