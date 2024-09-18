@@ -385,6 +385,7 @@ namespace Yvand.LdapClaimsProvider
 
                     Logger.Log($"[{Name}] Starting augmentation for user '{decodedEntity.Value}'.", TraceSeverity.Verbose, EventSeverity.Information, TraceCategory.Augmentation);
                     currentContext = new OperationContext(this.Settings as ClaimsProviderSettings, OperationType.Augmentation, String.Empty, decodedEntity, context, null, null, Int32.MaxValue);
+                    ValidateRuntimeSettings(currentContext);
                     Stopwatch timer = new Stopwatch();
                     timer.Start();
                     List<string> groups = this.EntityProvider.GetEntityGroups(currentContext);
@@ -439,6 +440,7 @@ namespace Yvand.LdapClaimsProvider
                 try
                 {
                     OperationContext currentContext = new OperationContext(this.Settings as ClaimsProviderSettings, OperationType.Search, resolveInput, null, context, entityTypes, null, 30);
+                    ValidateRuntimeSettings(currentContext);
                     List<PickerEntity> entities = SearchOrValidate(currentContext);
                     if (entities == null || entities.Count == 0) { return; }
                     foreach (PickerEntity entity in entities)
@@ -470,6 +472,7 @@ namespace Yvand.LdapClaimsProvider
                 try
                 {
                     OperationContext currentContext = new OperationContext(this.Settings as ClaimsProviderSettings, OperationType.Search, searchPattern, null, context, entityTypes, hierarchyNodeID, maxCount);
+                    ValidateRuntimeSettings(currentContext);
                     List<PickerEntity> entities = this.SearchOrValidate(currentContext);
                     if (entities == null || entities.Count == 0) { return; }
                     SPProviderHierarchyNode matchNode = null;
@@ -523,6 +526,7 @@ namespace Yvand.LdapClaimsProvider
                     if (!String.Equals(resolveInput.OriginalIssuer, this.OriginalIssuerName, StringComparison.InvariantCultureIgnoreCase)) { return; }
 
                     OperationContext currentContext = new OperationContext(this.Settings as ClaimsProviderSettings, OperationType.Validation, resolveInput.Value, resolveInput, context, entityTypes, null, 1);
+                    ValidateRuntimeSettings(currentContext);
                     List<PickerEntity> entities = this.SearchOrValidate(currentContext);
                     if (entities?.Count == 1)
                     {
@@ -946,6 +950,10 @@ namespace Yvand.LdapClaimsProvider
                 }
             }
             return entityDisplayText;
+        }
+
+        public virtual void ValidateRuntimeSettings(OperationContext operationContext)
+        {
         }
         #endregion
 

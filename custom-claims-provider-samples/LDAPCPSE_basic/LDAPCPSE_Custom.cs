@@ -1,4 +1,5 @@
-﻿using Yvand.LdapClaimsProvider;
+﻿using System;
+using Yvand.LdapClaimsProvider;
 using Yvand.LdapClaimsProvider.Configuration;
 
 namespace LDAPCPSE_basic
@@ -24,6 +25,16 @@ namespace LDAPCPSE_basic
             ClaimsProviderSettings settings = ClaimsProviderSettings.GetDefaultSettings(ClaimsProviderName);
             settings.EntityDisplayTextPrefix = "(custom) ";
             return settings;
+        }
+
+        public override void ValidateRuntimeSettings(OperationContext operationContext)
+        {
+            Uri currentSite = operationContext.UriContext;
+            string currentUser = operationContext.UserInHttpContext?.Value;
+            if (currentSite.Port == 6000)
+            {
+                operationContext.LdapConnections[0].CustomFilter = "(telephoneNumber=00110011)";
+            }
         }
     }
 }
