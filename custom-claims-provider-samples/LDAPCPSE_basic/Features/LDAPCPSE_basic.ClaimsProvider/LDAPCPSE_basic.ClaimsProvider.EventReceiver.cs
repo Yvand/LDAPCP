@@ -5,7 +5,7 @@ using System;
 using System.Runtime.InteropServices;
 using Yvand.LdapClaimsProvider.Logging;
 
-namespace CustomClaimsProvider.Features
+namespace LDAPCPSE_basic.Features
 {
     /// <summary>
     /// This class handles events raised during feature activation, deactivation, installation, uninstallation, and upgrade.
@@ -68,6 +68,5 @@ namespace CustomClaimsProvider.Features
                 }
             });
         }
-
     }
 }

@@ -1,8 +1,7 @@
-﻿using System.Collections.Generic;
-using Yvand.LdapClaimsProvider;
+﻿using Yvand.LdapClaimsProvider;
 using Yvand.LdapClaimsProvider.Configuration;
 
-namespace CustomClaimsProvider
+namespace LDAPCPSE_basic
 {
     public class LDAPCPSE_Custom : LDAPCPSE
     {
@@ -23,14 +22,7 @@ namespace CustomClaimsProvider
         public override ILdapProviderSettings GetSettings()
         {
             ClaimsProviderSettings settings = ClaimsProviderSettings.GetDefaultSettings(ClaimsProviderName);
-            //EntraIDTenant tenant = new EntraIDTenant
-            //{
-            //    AzureCloud = AzureCloudName.AzureGlobal,
-            //    Name = "TENANTNAME.onmicrosoft.com",
-            //    ClientId = "CLIENTID",
-            //    ClientSecret = "CLIENTSECRET",
-            //};
-            //settings.EntraIDTenants = new List<EntraIDTenant>() { tenant };
+            settings.EntityDisplayTextPrefix = "(custom) ";
             return settings;
         }
     }

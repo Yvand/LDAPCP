@@ -6,8 +6,8 @@
     <ProjectGuid>{CC278266-3F09-4908-BCE8-725D2AA9153E}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>CustomClaimsProvider</RootNamespace>
-    <AssemblyName>CustomClaimsProvider</AssemblyName>
+    <RootNamespace>LDAPCPSE_basic</RootNamespace>
+    <AssemblyName>LDAPCPSE_basic</AssemblyName>
     <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
     <TargetOfficeVersion>19.0</TargetOfficeVersion>
     <FileAlignment>512</FileAlignment>
@@ -47,21 +47,23 @@
   <ItemGroup>
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System" />
-    <Reference Include="Microsoft.SharePoint" />
+    <Reference Include="Microsoft.SharePoint">
+      <Private>False</Private>
+    </Reference>
     <Reference Include="Yvand.LDAPCPSE, Version=1.0.0.0, Culture=neutral, PublicKeyToken=80be731bc1a1a740, processorArchitecture=AMD64">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\Yvand.LDAPCPSE.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Features\LDAPCPSE.Custom.ClaimsProvider\LDAPCPSE.Custom.EventReceiver.cs">
-      <DependentUpon>LDAPCPSE.Custom.ClaimsProvider.feature</DependentUpon>
+    <Compile Include="Features\LDAPCPSE_basic.ClaimsProvider\LDAPCPSE_basic.ClaimsProvider.EventReceiver.cs">
+      <DependentUpon>LDAPCPSE_basic.ClaimsProvider.feature</DependentUpon>
     </Compile>
     <Compile Include="LDAPCPSE_Custom.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Features\LDAPCPSE.Custom.ClaimsProvider\LDAPCPSE.Custom.ClaimsProvider.feature">
+    <None Include="Features\LDAPCPSE_basic.ClaimsProvider\LDAPCPSE_basic.ClaimsProvider.feature">
       <FeatureId>{9492009a-e84b-4bcc-a960-e0671966464d}</FeatureId>
     </None>
     <None Include="key.snk" />
@@ -74,8 +76,8 @@
   </ItemGroup>
   <ItemGroup />
   <ItemGroup>
-    <Content Include="Features\LDAPCPSE.Custom.ClaimsProvider\LDAPCPSE.Custom.ClaimsProvider.Template.xml">
-      <DependentUpon>LDAPCPSE.Custom.ClaimsProvider.feature</DependentUpon>
+    <Content Include="Features\LDAPCPSE_basic.ClaimsProvider\LDAPCPSE_basic.ClaimsProvider.Template.xml">
+      <DependentUpon>LDAPCPSE_basic.ClaimsProvider.feature</DependentUpon>
     </Content>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
