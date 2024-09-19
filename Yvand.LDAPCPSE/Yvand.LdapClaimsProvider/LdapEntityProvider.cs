@@ -498,15 +498,15 @@ namespace Yvand.LdapClaimsProvider
 
         protected List<LdapEntityProviderResult> QueryLDAPServers(OperationContext currentContext)
         {
-            if (this.Settings.LdapConnections == null || this.Settings.LdapConnections.Count == 0) { return null; }
+            if (currentContext.LdapConnections == null || currentContext.LdapConnections.Count == 0) { return null; }
             object lockResults = new object();
             List<LdapEntityProviderResult> results = new List<LdapEntityProviderResult>();
             Stopwatch globalStopWatch = new Stopwatch();
             globalStopWatch.Start();
 
             string ldapFilter = this.BuildFilter(currentContext.CurrentClaimTypeConfigList, currentContext.Input, currentContext.ExactSearch, null);
-            //foreach (var ldapConnection in this.Settings.LdapConnections.Where(x => x.LdapEntry != null))
-            Parallel.ForEach(this.Settings.LdapConnections.Where(x => x.LdapEntry != null), ldapConnection =>
+            //foreach (var ldapConnection in currentContext.LdapConnections.Where(x => x.LdapEntry != null))
+            Parallel.ForEach(currentContext.LdapConnections.Where(x => x.LdapEntry != null), ldapConnection =>
             {
                 if (!String.IsNullOrWhiteSpace(ldapConnection.CustomFilter))
                 {
