@@ -312,7 +312,7 @@ namespace Yvand.LdapClaimsProvider.Configuration
         /// </summary>
         public List<ClaimTypeConfig> CurrentClaimTypeConfigList { get; private set; }
 
-        public List<DirectoryConnection> LdapConnections { get; private set; }
+        public List<DirectoryConnection> LdapConnections { get; set; }
 
         public OperationContext(ClaimsProviderSettings settings, OperationType currentRequestType, string input, SPClaim incomingEntity, Uri context, string[] entityTypes, string hierarchyNodeID, int maxCount)
         {

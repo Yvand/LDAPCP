@@ -106,6 +106,17 @@ namespace Yvand.LdapClaimsProvider.Configuration
         private string[] _GroupMembershipLdapAttributes = new string[] { "memberOf", "uniquememberof" };
 
         /// <summary>
+        /// Get or set a LDAP filter specific to this LDAP connection
+        /// </summary>
+        public string CustomFilter
+        {
+            get { return _CustomFilter; }
+            set { _CustomFilter = value; }
+        }
+        [Persisted]
+        private string _CustomFilter;
+
+        /// <summary>
         /// DirectoryEntry used to make LDAP queries
         /// </summary>
         public DirectoryEntry LdapEntry

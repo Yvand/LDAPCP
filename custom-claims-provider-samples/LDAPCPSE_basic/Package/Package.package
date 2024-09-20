@@ -1,0 +1,9 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<package xmlns:dm0="http://schemas.microsoft.com/VisualStudio/2008/DslTools/Core" dslVersion="1.0.0.0" Id="034f2ce9-76ca-4b10-a136-85143ef303c9" solutionId="184186f1-9e4b-4624-9782-21e275751d43" resetWebServer="true" deploymentServerType="ApplicationServer" title="LDAPCPSE_basic" description="Custom LDAPCPSE" sharePointProductVersion="16.0" name="LDAPCPSE_basic" xmlns="http://schemas.microsoft.com/VisualStudio/2008/SharePointTools/PackageModel">
+  <assemblies>
+    <customAssembly location="Yvand.LDAPCPSE.dll" deploymentTarget="GlobalAssemblyCache" sourcePath="bin\Yvand.LDAPCPSE.dll" />
+  </assemblies>
+  <features>
+    <featureReference itemId="9492009a-e84b-4bcc-a960-e0671966464d" />
+  </features>
+</package>
