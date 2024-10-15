@@ -26,6 +26,7 @@ namespace LDAPCPSE_basic
         {
             ClaimsProviderSettings settings = ClaimsProviderSettings.GetDefaultSettings(ClaimsProviderName);
             settings.EntityDisplayTextPrefix = "(custom) ";
+            //settings.UserIdentifierClaimTypeConfig.DirectoryObjectAttributeForDisplayText = "displayName";
             return settings;
         }
 
@@ -34,11 +35,15 @@ namespace LDAPCPSE_basic
             Uri currentSite = operationContext.UriContext;
             string currentUser = operationContext.UserInHttpContext?.Value;
             Logger.Log($"New request with input {operationContext.Input} from URL {currentSite} and user {currentUser}", TraceSeverity.High, EventSeverity.Information, TraceCategory.Custom);
-            if (currentSite.Port == 6000)
-            {
-                Logger.Log($"Apply custom LDAP filter \"(telephoneNumber=00110011)\"", TraceSeverity.High, EventSeverity.Information, TraceCategory.Custom);
-                operationContext.LdapConnections[0].CustomFilter = "(telephoneNumber=00110011)";
-            }
+            // Returns all groups, or only users members of group testLdapcpGroup_002
+            string customFilter = "(|(objectClass=group)(memberOf=CN=testLdapcpGroup_002,OU=ldapcp,DC=contoso,DC=local))";
+            customFilter = "(|(&(objectClass=group)(|(sAMAccountName=testLdapcpGroup_002)(sAMAccountName=testLdapcpGroup_003)))(memberOf=CN=testLdapcpGroup_002,OU=ldapcp,DC=contoso,DC=local))";
+            operationContext.LdapConnections[0].CustomFilter = customFilter;
+            //if (currentSite.Port == 6000)
+            //{
+            //    operationContext.LdapConnections[0].CustomFilter = "(telephoneNumber=00110011)";
+            //}
+            Logger.Log($"Apply custom LDAP filter \"{customFilter}\"", TraceSeverity.High, EventSeverity.Information, TraceCategory.Custom);
         }
     }
 }
