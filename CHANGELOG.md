@@ -1,5 +1,9 @@
 # Change log for LDAPCP
 
+## LDAPCP Second Edition v20.0 - Unreleased
+
+* Fix validation issue when multiple LDAP connections return an identical entity
+
 ## LDAPCP Second Edition v19.0.20240823.4 - Published in August 23, 2024
 
 * Fix error when creating the configuration if the trust uses an identifier claim type that is not well-known by LDAPCP - https://github.com/Yvand/LDAPCP/issues/221
