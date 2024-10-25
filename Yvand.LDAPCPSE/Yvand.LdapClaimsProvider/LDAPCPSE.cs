@@ -637,7 +637,8 @@ namespace Yvand.LdapClaimsProvider
                     else
                     {
                         SearchOrValidateInLdap();
-                        if (ldapSearchResults?.Count == 1)
+                        // Even if >1 it must proceed, becausee multiple LDAP servers may validate the entity, and ProcessLdapResults() will eliminate duplicates
+                        if (ldapSearchResults?.Count >= 1)
                         {
                             pickerEntityList = this.ProcessLdapResults(currentContext, ldapSearchResults);
                         }
