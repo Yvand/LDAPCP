@@ -411,30 +411,42 @@ namespace Yvand.LdapClaimsProvider
                 return new List<LdapEntityProviderResult>(0);
             }
 
-            string ldapFilter = this.BuildFilter(currentContext);
+            //string ldapFilter = this.BuildFilter(currentContext);
             List<LdapEntityProviderResult> LdapSearchResult = null;
             SPSecurity.RunWithElevatedPrivileges(delegate ()
             {
-                LdapSearchResult = this.QueryLDAPServers(currentContext, ldapFilter);
+                LdapSearchResult = this.QueryLDAPServers(currentContext);
             });
             return LdapSearchResult;
         }
 
-        protected string BuildFilter(OperationContext currentContext)
+        protected string BuildFilter(List<ClaimTypeConfig> claimTypeConfigList, string inputText, bool exactSearch, DirectoryConnection ldapConnection)
         {
+            if (ldapConnection != null && String.IsNullOrWhiteSpace(ldapConnection.CustomFilter))
+            {  // In this case, the generic LDAP filter can be used
+                return String.Empty;
+            }
+
             StringBuilder filter = new StringBuilder();
             if (this.Settings.FilterEnabledUsersOnly)
             {
                 filter.Append(ClaimsProviderConstants.LDAPFilterEnabledUsersOnly);
             }
+
+            // A LDAP connection may have a custom filter
+            if (!String.IsNullOrWhiteSpace(ldapConnection?.CustomFilter))
+            {
+                filter.Append(ldapConnection.CustomFilter);
+            }
+
             filter.Append("(| ");   // START OR
 
             // Fix bug https://github.com/Yvand/LDAPCP/issues/53 by escaping special characters with their hex representation as documented in https://ldap.com/ldap-filters/
-            string input = Utils.EscapeSpecialCharacters(currentContext.Input);
+            string input = Utils.EscapeSpecialCharacters(inputText);
 
-            foreach (var ctConfig in currentContext.CurrentClaimTypeConfigList)
+            foreach (var ctConfig in claimTypeConfigList)
             {
-                filter.Append(AddLdapAttributeToFilter(currentContext, input, ctConfig));
+                filter.Append(AddLdapAttributeToFilter(exactSearch, input, ctConfig));
             }
 
             if (this.Settings.FilterEnabledUsersOnly)
@@ -446,7 +458,7 @@ namespace Yvand.LdapClaimsProvider
             return filter.ToString();
         }
 
-        protected string AddLdapAttributeToFilter(OperationContext currentContext, string input, ClaimTypeConfig attributeConfig)
+        protected string AddLdapAttributeToFilter(bool exactSearch, string input, ClaimTypeConfig attributeConfig)
         {
             // Prevent use of wildcard for LDAP attributes which do not support it
             if (String.Equals(attributeConfig.DirectoryObjectAttribute, "objectSid", StringComparison.InvariantCultureIgnoreCase))
@@ -460,7 +472,7 @@ namespace Yvand.LdapClaimsProvider
 
             // Test if wildcard(s) should be added to the input
             string inputFormatted;
-            if (currentContext.ExactSearch || !attributeConfig.DirectoryObjectAttributeSupportsWildcard)
+            if (exactSearch || !attributeConfig.DirectoryObjectAttributeSupportsWildcard)
             {
                 inputFormatted = input;
             }
@@ -484,17 +496,23 @@ namespace Yvand.LdapClaimsProvider
             return filter;
         }
 
-        protected List<LdapEntityProviderResult> QueryLDAPServers(OperationContext currentContext, string ldapFilter)
+        protected List<LdapEntityProviderResult> QueryLDAPServers(OperationContext currentContext)
         {
-            if (this.Settings.LdapConnections == null || this.Settings.LdapConnections.Count == 0) { return null; }
+            if (currentContext.LdapConnections == null || currentContext.LdapConnections.Count == 0) { return null; }
             object lockResults = new object();
             List<LdapEntityProviderResult> results = new List<LdapEntityProviderResult>();
             Stopwatch globalStopWatch = new Stopwatch();
             globalStopWatch.Start();
 
-            //foreach (var ldapConnection in this.Settings.LdapConnections.Where(x => x.LdapEntry != null))
-            Parallel.ForEach(this.Settings.LdapConnections.Where(x => x.LdapEntry != null), ldapConnection =>
+            string ldapFilter = this.BuildFilter(currentContext.CurrentClaimTypeConfigList, currentContext.Input, currentContext.ExactSearch, null);
+            //foreach (var ldapConnection in currentContext.LdapConnections.Where(x => x.LdapEntry != null))
+            Parallel.ForEach(currentContext.LdapConnections.Where(x => x.LdapEntry != null), ldapConnection =>
             {
+                if (!String.IsNullOrWhiteSpace(ldapConnection.CustomFilter))
+                {
+                    // The LDAP filter needs to be entirely rewritten to include the filter specified in current connection
+                    ldapFilter = this.BuildFilter(currentContext.CurrentClaimTypeConfigList, currentContext.Input, currentContext.ExactSearch, ldapConnection);
+                }
                 Debug.WriteLine($"ldapConnection: Path: {ldapConnection.LdapEntry.Path}, UseDefaultADConnection: {ldapConnection.UseDefaultADConnection}");
                 Logger.LogDebug($"ldapConnection: Path: {ldapConnection.LdapEntry.Path}, UseDefaultADConnection: {ldapConnection.UseDefaultADConnection}");
                 using (DirectoryEntry directory = ldapConnection.LdapEntry)

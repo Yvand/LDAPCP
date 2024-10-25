@@ -2,6 +2,8 @@
 
 ## LDAPCP Second Edition v20.0 - Unreleased
 
+* Add property CustomFilter to class DirectoryConnection, to allow setting a custom LDAP filter per LDAP connection
+* Add sample custom claims provider LDAPCPSE_basic
 * Fix validation issue when multiple LDAP connections return an identical entity
 
 ## LDAPCP Second Edition v19.0.20240823.4 - Published in August 23, 2024
