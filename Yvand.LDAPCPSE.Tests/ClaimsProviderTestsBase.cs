@@ -367,12 +367,11 @@ namespace Yvand.LdapClaimsProvider.Tests
 
                 if (shouldBeMemberOfTheGroupTested)
                 {
-
-                    Assert.That(groupFound, Is.True, $"Entity \"{claimValue}\" should be member of group \"{groupClaimValueToTest}\", but this group was not found in the claims returned by the claims provider.");
+                    Assert.That(groupFound, Is.True, $"Entity \"{claimValue}\" should be member of group \"{groupClaimValueToTest}\", but this group was not found in the claims returned by the claims provider. It returned {(groups != null ? groups.Count().ToString() : "null")} groups: \"{String.Join(", ", groups.Select(x => x.Value))}\"");
                 }
                 else
                 {
-                    Assert.That(groupFound, Is.False, $"Entity \"{claimValue}\" should NOT be member of group \"{groupClaimValueToTest}\", but this group was found in the claims returned by the claims provider.");
+                    Assert.That(groupFound, Is.False, $"Entity \"{claimValue}\" should NOT be member of group \"{groupClaimValueToTest}\", but this group was found in the claims returned by the claims provider. It returned {(groups != null ? groups.Count().ToString() : "null")} groups: \"{String.Join(", ", groups.Select(x => x.Value))}\"");
                 }
                 timer.Stop();
                 Trace.TraceInformation($"{DateTime.Now:s} [{this.GetType().Name}] TestAugmentationOperation finished in {timer.ElapsedMilliseconds} ms. Parameters: claimType: '{claimType}', claimValue: '{claimValue}', isMemberOfTrustedGroup: '{shouldBeMemberOfTheGroupTested}'.");

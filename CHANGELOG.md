@@ -1,5 +1,11 @@
 # Change log for LDAPCP
 
+## LDAPCP Second Edition v20.0 - Published in November 5, 2024
+
+* Add property CustomFilter to class DirectoryConnection, to allow setting a custom LDAP filter per LDAP connection
+* Add sample custom claims provider LDAPCPSE_basic
+* Fix validation issue when multiple LDAP connections return an identical entity - https://github.com/Yvand/LDAPCP/issues/231
+
 ## LDAPCP Second Edition v19.0.20240823.4 - Published in August 23, 2024
 
 * Fix error when creating the configuration if the trust uses an identifier claim type that is not well-known by LDAPCP - https://github.com/Yvand/LDAPCP/issues/221
