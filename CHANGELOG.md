@@ -1,6 +1,6 @@
 # Change log for LDAPCP
 
-## LDAPCP Second Edition v20.0 - Unreleased
+## LDAPCP Second Edition v20.0 - Published in November 5, 2024
 
 * Add property CustomFilter to class DirectoryConnection, to allow setting a custom LDAP filter per LDAP connection
 * Add sample custom claims provider LDAPCPSE_basic
