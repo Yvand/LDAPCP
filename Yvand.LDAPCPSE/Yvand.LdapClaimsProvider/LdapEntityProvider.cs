@@ -62,24 +62,32 @@ namespace Yvand.LdapClaimsProvider
         protected virtual List<string> GetGroupsFromActiveDirectory(DirectoryConnection ldapConnection, OperationContext currentContext)
         {
             // Convert AuthenticationTypes to ContextOptions, slightly inspired by https://stackoverflow.com/questions/17451277/what-equivalent-of-authenticationtypes-secure-in-principalcontexts-contextoptio
+            // Update the mapping based on https://github.com/Yvand/LDAPCP/issues/232
             // AuthenticationTypes Enum: https://learn.microsoft.com/en-us/dotnet/api/system.directoryservices.authenticationtypes?view=netframework-4.8.1
             // ContextOptions Enum: https://learn.microsoft.com/en-us/dotnet/api/system.directoryservices.accountmanagement.contextoptions?view=netframework-4.8.1
             ContextOptions contextOptions = new ContextOptions();
-            if (ldapConnection.AuthenticationType == AuthenticationTypes.None)
+            // Step 1: set the authentication protocol
+            if (ldapConnection.AuthenticationType == AuthenticationTypes.Anonymous)
             {
-                contextOptions |= ContextOptions.SimpleBind;
+                contextOptions = 0;
+            }
+            else if (ldapConnection.AuthenticationType == AuthenticationTypes.Secure)
+            {
+                contextOptions |= ContextOptions.Negotiate;
             }
             else
             {
-                if ((ldapConnection.AuthenticationType & AuthenticationTypes.Sealing) == AuthenticationTypes.Sealing) { contextOptions |= ContextOptions.Sealing; }
-                if (
-                    (ldapConnection.AuthenticationType & AuthenticationTypes.Encryption) == AuthenticationTypes.Encryption ||
-                    (ldapConnection.AuthenticationType & AuthenticationTypes.SecureSocketsLayer) == AuthenticationTypes.SecureSocketsLayer
-                ) { contextOptions |= ContextOptions.SecureSocketLayer; }
-                if ((ldapConnection.AuthenticationType & AuthenticationTypes.ServerBind) == AuthenticationTypes.ServerBind) { contextOptions |= ContextOptions.ServerBind; }
-                if ((ldapConnection.AuthenticationType & AuthenticationTypes.Signing) == AuthenticationTypes.Signing) { contextOptions |= ContextOptions.Signing; }
-                if ((ldapConnection.AuthenticationType & AuthenticationTypes.Secure) == AuthenticationTypes.Secure) { contextOptions |= ContextOptions.Negotiate; }
+                contextOptions |= ContextOptions.SimpleBind;
             }
+
+            // Step 2: set the authentication options
+            if (
+                (ldapConnection.AuthenticationType & AuthenticationTypes.Encryption) == AuthenticationTypes.Encryption ||
+                (ldapConnection.AuthenticationType & AuthenticationTypes.SecureSocketsLayer) == AuthenticationTypes.SecureSocketsLayer
+            ) { contextOptions |= ContextOptions.SecureSocketLayer; }
+            if ((ldapConnection.AuthenticationType & AuthenticationTypes.Sealing) == AuthenticationTypes.Sealing) { contextOptions |= ContextOptions.Sealing; }
+            if ((ldapConnection.AuthenticationType & AuthenticationTypes.ServerBind) == AuthenticationTypes.ServerBind) { contextOptions |= ContextOptions.ServerBind; }
+            if ((ldapConnection.AuthenticationType & AuthenticationTypes.Signing) == AuthenticationTypes.Signing) { contextOptions |= ContextOptions.Signing; }
 
             List<string> groups = new List<string>();
             string logMessageCredentials = ldapConnection.UseDefaultADConnection ? "process identity" : ldapConnection.Username;
