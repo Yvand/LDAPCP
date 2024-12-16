@@ -88,7 +88,7 @@ namespace Yvand.LdapClaimsProvider
             List<string> groups = new List<string>();
             string logMessageCredentials = ldapConnection.UseDefaultADConnection ? "process identity" : ldapConnection.Username;
             string directoryDetails = $"from AD domain \"{ldapConnection.DomainFQDN}\" (authenticate as \"{logMessageCredentials}\" with AuthenticationType \"{contextOptions}\").";
-            Logger.Log($"[{ClaimsProviderName}] Getting AD groups of user \"{currentContext.IncomingEntity.Value}\" {directoryDetails}", TraceSeverity.Verbose, EventSeverity.Information, TraceCategory.Augmentation);
+            Logger.Log($"[{ClaimsProviderName}] Getting AD groups of user \"{currentContext.IncomingEntity.Value}\" {directoryDetails}", TraceSeverity.Verbose, TraceCategory.Augmentation);
             using (new SPMonitoredScope($"[{ClaimsProviderName}] Get AD groups of user \"{currentContext.IncomingEntity.Value}\" {directoryDetails}", 2000))
             {
                 Stopwatch stopWatch = new Stopwatch();
@@ -224,7 +224,7 @@ namespace Yvand.LdapClaimsProvider
 
                     stopWatch.Stop();
                     Logger.Log($"[{ClaimsProviderName}] Got and processed {groups.Count} group(s) for user \"{currentContext.IncomingEntity.Value}\" in {stopWatch.ElapsedMilliseconds.ToString()} ms {directoryDetails}",
-                        TraceSeverity.Medium, EventSeverity.Information, TraceCategory.Augmentation);
+                        TraceSeverity.Medium, TraceCategory.Augmentation);
                 }
             }
             return groups;
@@ -242,7 +242,7 @@ namespace Yvand.LdapClaimsProvider
             string ldapFilter = string.Format("(&(ObjectClass={0}) ({1}={2}){3})", this.Settings.UserIdentifierClaimTypeConfig.DirectoryObjectClass, this.Settings.UserIdentifierClaimTypeConfig.DirectoryObjectAttribute, currentContext.IncomingEntity.Value, this.Settings.UserIdentifierClaimTypeConfig.DirectoryObjectAdditionalFilter);
             string logMessageCredentials = String.IsNullOrWhiteSpace(ldapConnection.LdapEntry.Username) ? "process identity" : ldapConnection.LdapEntry.Username;
             string directoryDetails = $"from LDAP server \"{ldapConnection.LdapEntry.Path}\" with LDAP filter \"{ldapFilter}\" (authenticate as \"{logMessageCredentials}\" with AuthenticationType \"{ldapConnection.LdapEntry.AuthenticationType}\").";
-            Logger.Log($"[{ClaimsProviderName}] Getting LDAP groups of user \"{currentContext.IncomingEntity.Value}\" {directoryDetails}", TraceSeverity.Verbose, EventSeverity.Information, TraceCategory.Augmentation);
+            Logger.Log($"[{ClaimsProviderName}] Getting LDAP groups of user \"{currentContext.IncomingEntity.Value}\" {directoryDetails}", TraceSeverity.Verbose, TraceCategory.Augmentation);
             using (new SPMonitoredScope($"[{ClaimsProviderName}] Get LDAP groups of user \"{currentContext.IncomingEntity.Value}\" {directoryDetails}", 1000))
             {
                 SPSecurity.RunWithElevatedPrivileges(delegate ()
@@ -315,7 +315,7 @@ namespace Yvand.LdapClaimsProvider
                         }
                         stopWatch.Stop();
                         Logger.Log($"[{ClaimsProviderName}] Got {groups.Count} group(s) for user \"{currentContext.IncomingEntity.Value}\" in {stopWatch.ElapsedMilliseconds.ToString()} ms {directoryDetails}",
-                            TraceSeverity.Medium, EventSeverity.Information, TraceCategory.Augmentation);
+                            TraceSeverity.Medium, TraceCategory.Augmentation);
                     }
                 });
             }
@@ -552,13 +552,13 @@ namespace Yvand.LdapClaimsProvider
                         {
                             try
                             {
-                                Logger.Log(loggMessage, TraceSeverity.Verbose, EventSeverity.Information, TraceCategory.Ldap_Request);
+                                Logger.Log(loggMessage, TraceSeverity.Verbose, TraceCategory.Ldap_Request);
                                 Stopwatch stopWatch = new Stopwatch();
                                 stopWatch.Start();
                                 using (SearchResultCollection directoryResults = ds.FindAll())
                                 {
                                     stopWatch.Stop();
-                                    Logger.Log($"[{ClaimsProviderName}] Got {directoryResults.Count} result(s) in {stopWatch.ElapsedMilliseconds} ms from \"{directory.Path}\" with input \"{currentContext.Input}\" and LDAP filter \"{ds.Filter}\"", TraceSeverity.Medium, EventSeverity.Information, TraceCategory.Ldap_Request);
+                                    Logger.Log($"[{ClaimsProviderName}] Got {directoryResults.Count} result(s) in {stopWatch.ElapsedMilliseconds} ms from \"{directory.Path}\" with input \"{currentContext.Input}\" and LDAP filter \"{ds.Filter}\"", TraceSeverity.Medium, TraceCategory.Ldap_Request);
                                     if (directoryResults.Count > 0)
                                     {
                                         lock (lockResults)
@@ -581,7 +581,7 @@ namespace Yvand.LdapClaimsProvider
                                     // - During Validation (Search works fine)
                                     // And despite that, the validation definitely fails, "check permissions" still works normally
                                     // Anyway, record a custom message to recommend to use a custom LDAP connection instead
-                                    Logger.Log($"[{ClaimsProviderName}] A DirectoryServicesCOMException occured while connecting using the default AD connection. It may be resolved by replacing it with a custom LDAP connection with explicit credentials. Error details: \"{ex.ExtendedErrorMessage}\"", TraceSeverity.Unexpected, EventSeverity.Error, TraceCategory.Ldap_Request);
+                                    Logger.Log($"[{ClaimsProviderName}] A DirectoryServicesCOMException occured while connecting using the default AD connection. It may be resolved by replacing it with a custom LDAP connection with explicit credentials. Error details: \"{ex.ExtendedErrorMessage}\"", TraceSeverity.Unexpected, TraceCategory.Ldap_Request);
                                 }
                                 else
                                 {
@@ -597,7 +597,7 @@ namespace Yvand.LdapClaimsProvider
                 }
             });
             globalStopWatch.Stop();
-            Logger.Log(String.Format("[{0}] Got {1} result(s) in {2} ms from all directories with input \"{3}\" and LDAP filter \"{4}\"", ClaimsProviderName, results.Count, globalStopWatch.ElapsedMilliseconds, currentContext.Input, ldapFilter), TraceSeverity.Verbose, EventSeverity.Information, TraceCategory.Ldap_Request);
+            Logger.Log(String.Format("[{0}] Got {1} result(s) in {2} ms from all directories with input \"{3}\" and LDAP filter \"{4}\"", ClaimsProviderName, results.Count, globalStopWatch.ElapsedMilliseconds, currentContext.Input, ldapFilter), TraceSeverity.Verbose, TraceCategory.Ldap_Request);
             return results;
         }
     }

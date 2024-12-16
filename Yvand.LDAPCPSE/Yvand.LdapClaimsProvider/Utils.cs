@@ -33,9 +33,9 @@ namespace Yvand.LdapClaimsProvider.Configuration
 
             if (lp != null && lp.Count() > 1)
             {
-                Logger.Log($"[{claimsProviderName}] Cannot continue because '{claimsProviderName}' is set with multiple SPTrustedIdentityTokenIssuer", TraceSeverity.Unexpected, EventSeverity.Error, TraceCategory.Core);
+                Logger.Log($"[{claimsProviderName}] Cannot continue because '{claimsProviderName}' is set with multiple SPTrustedIdentityTokenIssuer", TraceSeverity.Unexpected, TraceCategory.Core);
             }
-            Logger.Log($"[{claimsProviderName}] Cannot continue because '{claimsProviderName}' is not set with any SPTrustedIdentityTokenIssuer.\r\nVisit {ClaimsProviderConstants.PUBLICSITEURL} for more information.", TraceSeverity.High, EventSeverity.Warning, TraceCategory.Core);
+            Logger.Log($"[{claimsProviderName}] Cannot continue because '{claimsProviderName}' is not set with any SPTrustedIdentityTokenIssuer.\r\nVisit {ClaimsProviderConstants.PUBLICSITEURL} for more information.", TraceSeverity.High, TraceCategory.Core);
             return null;
         }
 

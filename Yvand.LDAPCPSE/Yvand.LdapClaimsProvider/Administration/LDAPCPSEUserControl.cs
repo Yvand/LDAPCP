@@ -210,7 +210,7 @@ namespace Yvand.LdapClaimsProvider.Administration
             if (ConfigurationID == Guid.Empty) { Status |= ConfigStatus.PersistedObjectIDPropNotSet; }
             if (Status != ConfigStatus.AllGood)
             {
-                Logger.Log($"[{ClaimsProviderName}] {MostImportantError}", TraceSeverity.Unexpected, EventSeverity.Error, TraceCategory.Configuration);
+                Logger.Log($"[{ClaimsProviderName}] {MostImportantError}", TraceSeverity.Unexpected, TraceCategory.Configuration);
                 return Status;
             }
 
@@ -228,7 +228,7 @@ namespace Yvand.LdapClaimsProvider.Administration
 
             if (Status != ConfigStatus.AllGood)
             {
-                Logger.Log($"[{ClaimsProviderName}] {MostImportantError}", TraceSeverity.Unexpected, EventSeverity.Error, TraceCategory.Configuration);
+                Logger.Log($"[{ClaimsProviderName}] {MostImportantError}", TraceSeverity.Unexpected, TraceCategory.Configuration);
                 return Status;
             }
 
@@ -256,7 +256,7 @@ namespace Yvand.LdapClaimsProvider.Administration
 
             if (Status != ConfigStatus.AllGood)
             {
-                Logger.Log($"[{ClaimsProviderName}] {MostImportantError}", TraceSeverity.Unexpected, EventSeverity.Error, TraceCategory.Configuration);
+                Logger.Log($"[{ClaimsProviderName}] {MostImportantError}", TraceSeverity.Unexpected, TraceCategory.Configuration);
             }
             return Status;
         }

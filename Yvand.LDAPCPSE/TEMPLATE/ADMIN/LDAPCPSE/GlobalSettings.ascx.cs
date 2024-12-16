@@ -212,7 +212,7 @@ namespace Yvand.LdapClaimsProvider.Administration
             {
                 Settings.LdapConnections.Remove(tenantToRemove);
                 CommitChanges();
-                Logger.Log($"Directory '{tenantToRemove.LdapPath}' was successfully removed from configuration '{ConfigurationName}'", TraceSeverity.Medium, EventSeverity.Information, TraceCategory.Configuration);
+                Logger.Log($"Directory '{tenantToRemove.LdapPath}' was successfully removed from configuration '{ConfigurationName}'", TraceSeverity.Medium, TraceCategory.Configuration);
                 LabelMessage.Text = String.Format(TextSummaryPersistedObjectInformation, Configuration.Name, Configuration.Version, Configuration.Id);
                 PopulateConnectionsGrid();
                 InitializeAugmentation();
@@ -392,7 +392,7 @@ namespace Yvand.LdapClaimsProvider.Administration
             }
 
             CommitChanges();
-            Logger.Log($"LDAP server '{this.TxtLdapConnectionString.Text}' was successfully added to configuration '{ConfigurationName}'", TraceSeverity.Medium, EventSeverity.Information, TraceCategory.Configuration);
+            Logger.Log($"LDAP server '{this.TxtLdapConnectionString.Text}' was successfully added to configuration '{ConfigurationName}'", TraceSeverity.Medium, TraceCategory.Configuration);
             PopulateConnectionsGrid();
             InitializeAugmentation();
             ViewState["LDAPpwd"] = String.Empty;

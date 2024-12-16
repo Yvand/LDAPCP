@@ -393,7 +393,7 @@ namespace Yvand.LdapClaimsProvider.Configuration
                !x.IsAdditionalLdapSearchAttribute);
             if (incomingEntityClaimTypeConfig == null)
             {
-                Logger.Log($"[{LDAPCPSE.ClaimsProviderName}] Unable to validate entity \"{this.IncomingEntity.Value}\" because its claim type \"{this.IncomingEntity.ClaimType}\" was not found in the ClaimTypes list of current configuration.", TraceSeverity.Unexpected, EventSeverity.Error, TraceCategory.Configuration);
+                Logger.Log($"[{LDAPCPSE.ClaimsProviderName}] Unable to validate entity \"{this.IncomingEntity.Value}\" because its claim type \"{this.IncomingEntity.ClaimType}\" was not found in the ClaimTypes list of current configuration.", TraceSeverity.Unexpected, TraceCategory.Configuration);
                 throw new InvalidOperationException($"[{LDAPCPSE.ClaimsProviderName}] Unable validate entity \"{this.IncomingEntity.Value}\" because its claim type \"{this.IncomingEntity.ClaimType}\" was not found in the ClaimTypes list of current configuration.");
             }
             this.CurrentClaimTypeConfigList = new List<ClaimTypeConfig>(1)

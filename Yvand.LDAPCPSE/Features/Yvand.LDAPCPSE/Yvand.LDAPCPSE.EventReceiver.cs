@@ -39,7 +39,7 @@ namespace Yvand.LdapClaimsProvider.Administration
                 try
                 {
                     Logger svc = Logger.Local;
-                    Logger.Log($"[{LDAPCPSE.ClaimsProviderName}] Activating farm-scoped feature for claims provider \"{LDAPCPSE.ClaimsProviderName}\"", TraceSeverity.High, EventSeverity.Information, TraceCategory.Configuration);
+                    Logger.Log($"[{LDAPCPSE.ClaimsProviderName}] Activating farm-scoped feature for claims provider \"{LDAPCPSE.ClaimsProviderName}\"", TraceSeverity.High, TraceCategory.Configuration);
                     //LDAPCPConfig existingConfig = LDAPCPConfig.GetConfiguration(ClaimsProviderConstants.CONFIG_NAME);
                     //if (existingConfig == null)
                     //{
@@ -47,7 +47,7 @@ namespace Yvand.LdapClaimsProvider.Administration
                     //}
                     //else
                     //{
-                    //    Logger.Log($"[{LDAPCPSE.ClaimsProviderName}] Use configuration \"{existingConfig.Name}\" found in the configuration database", TraceSeverity.High, EventSeverity.Information, TraceCategory.Configuration);
+                    //    Logger.Log($"[{LDAPCPSE.ClaimsProviderName}] Use configuration \"{existingConfig.Name}\" found in the configuration database", TraceSeverity.High, TraceCategory.Configuration);
                     //}
                 }
                 catch (Exception ex)
@@ -63,7 +63,7 @@ namespace Yvand.LdapClaimsProvider.Administration
             {
                 try
                 {
-                    Logger.Log($"[{LDAPCPSE.ClaimsProviderName}] Uninstalling farm-scoped feature for claims provider \"{LDAPCPSE.ClaimsProviderName}\": Deleting configuration from the farm", TraceSeverity.High, EventSeverity.Information, TraceCategory.Configuration);
+                    Logger.Log($"[{LDAPCPSE.ClaimsProviderName}] Uninstalling farm-scoped feature for claims provider \"{LDAPCPSE.ClaimsProviderName}\": Deleting configuration from the farm", TraceSeverity.High, TraceCategory.Configuration);
                     //LDAPCPConfig.DeleteConfiguration(ClaimsProviderConstants.CONFIG_NAME);
                     Logger.Unregister();
                 }
@@ -80,7 +80,7 @@ namespace Yvand.LdapClaimsProvider.Administration
             {
                 try
                 {
-                    Logger.Log($"[{LDAPCPSE.ClaimsProviderName}] Deactivating farm-scoped feature for claims provider \"{LDAPCPSE.ClaimsProviderName}\": Removing claims provider from the farm (but not its configuration)", TraceSeverity.High, EventSeverity.Information, TraceCategory.Configuration);
+                    Logger.Log($"[{LDAPCPSE.ClaimsProviderName}] Deactivating farm-scoped feature for claims provider \"{LDAPCPSE.ClaimsProviderName}\": Removing claims provider from the farm (but not its configuration)", TraceSeverity.High, TraceCategory.Configuration);
                     base.RemoveClaimProvider(LDAPCPSE.ClaimsProviderName);
                 }
                 catch (Exception ex)
