@@ -1,5 +1,9 @@
 # Change log for LDAPCP
 
+## LDAPCP Second Edition v21.0 - Published in February 18, 2025
+
+* Update the ldap authentication mapping to allow the use of Encryption / SecureSocketLayer with SimpleBind when getting group membership - https://github.com/Yvand/LDAPCP/pull/234
+
 ## LDAPCP Second Edition v20.0 - Published in November 5, 2024
 
 * Add property CustomFilter to class DirectoryConnection, to allow setting a custom LDAP filter per LDAP connection
