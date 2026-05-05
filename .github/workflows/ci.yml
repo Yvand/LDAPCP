@@ -1,0 +1,24 @@
+name: Build solution
+
+on:
+  workflow_dispatch:
+    inputs:
+      publish_release:
+        description: 'Create a release'
+        type: boolean
+        required: false
+        default: false
+  push:
+    tags:
+      - "v*"
+  pull_request:
+    branches: [ "master" ]
+
+jobs:
+  call-build:
+    uses: Yvand/EntraCP/.github/workflows/reusable-ci.yml@master
+    with:
+      project_name: ${{ vars.PROJECT_NAME }}
+      publish_release: ${{ inputs.publish_release || false }}
+    secrets:
+      base64_encoded_signingkey: ${{ secrets.BASE64_ENCODED_SIGNINGKEY }}

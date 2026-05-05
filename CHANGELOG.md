@@ -1,5 +1,10 @@
 # Change log for LDAPCP
 
+## Unreleased
+
+* Fix again the exception thrown if the claims provider is used in the context of an anonymous user
+* Update GitHub workflows
+
 ## LDAPCP Second Edition v21.0 - Published in February 18, 2025
 
 * Update the ldap authentication mapping to allow the use of Encryption / SecureSocketLayer with SimpleBind when getting group membership - https://github.com/Yvand/LDAPCP/pull/234
