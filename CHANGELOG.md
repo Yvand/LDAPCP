@@ -3,6 +3,7 @@
 ## Unreleased
 
 * Fix again the exception thrown if the claims provider is used in the context of an anonymous user
+* Update GitHub workflows
 
 ## LDAPCP Second Edition v21.0 - Published in February 18, 2025
 
