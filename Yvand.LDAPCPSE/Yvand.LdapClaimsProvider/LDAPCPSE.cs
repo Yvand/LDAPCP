@@ -791,7 +791,16 @@ namespace Yvand.LdapClaimsProvider
                     }
 
                     ClaimsProviderEntity uniqueLdapResult = new ClaimsProviderEntity(ldapResult, ctConfig, directoryObjectPropertyValue, permissionClaimValue);
-                    spEntities.Add(CreatePickerEntityHelper(currentContext, uniqueLdapResult));
+                    PickerEntity pe = CreatePickerEntityHelper(currentContext, uniqueLdapResult);
+                    // This ultimate check during validation is necessary when a token domain is present, since the token value is removed in currentContext.Input, and restored only in pe.Claim.Value
+                    // It prevents adding 1+ results in validation, with same LDAP value but a different domain
+                    if (currentContext.OperationType == OperationType.Validation &&
+                        dynamicDomainTokenSet &&
+                        !String.Equals(pe.Claim.Value, currentContext.IncomingEntity.Value, StringComparison.InvariantCultureIgnoreCase))
+                    {
+                        continue;
+                    }
+                    spEntities.Add(pe);
                     uniqueDirectoryResults.Add(uniqueLdapResult);
                 }
             }
