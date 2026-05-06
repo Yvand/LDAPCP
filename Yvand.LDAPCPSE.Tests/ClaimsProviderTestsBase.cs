@@ -1,13 +1,10 @@
-﻿using Microsoft.Office.Audit.Schema;
-using Microsoft.SharePoint.Administration.Claims;
-using Microsoft.SharePoint.BusinessData.Administration;
+﻿using Microsoft.SharePoint.Administration.Claims;
 using Microsoft.SharePoint.WebControls;
 using Newtonsoft.Json;
 using NUnit.Framework;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Diagnostics.Eventing.Reader;
 using System.IO;
 using System.Linq;
 using System.Security.Claims;
