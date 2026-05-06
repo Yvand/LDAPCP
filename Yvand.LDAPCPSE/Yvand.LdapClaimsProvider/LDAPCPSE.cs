@@ -792,10 +792,11 @@ namespace Yvand.LdapClaimsProvider
 
                     ClaimsProviderEntity uniqueLdapResult = new ClaimsProviderEntity(ldapResult, ctConfig, directoryObjectPropertyValue, permissionClaimValue);
                     PickerEntity pe = CreatePickerEntityHelper(currentContext, uniqueLdapResult);
-                    // This ultimate check during validation is necessary when a token domain is present, since the token value is removed in currentContext.Input, and restored only in pe.Claim.Value
-                    // It prevents adding 1+ results in validation, with same LDAP value but a different domain
-                    if (currentContext.OperationType == OperationType.Validation &&
-                        dynamicDomainTokenSet &&
+                    if (
+                        // https://github.com/Yvand/LDAPCP/issues/249
+                        // If it is a validation and a token domain is present
+                        currentContext.OperationType == OperationType.Validation && dynamicDomainTokenSet &&
+                        // Then the claim's value must be equal to the actual IncomingEntity (cannot compare against currentContext.Input since the domain token is removed for validations)
                         !String.Equals(pe.Claim.Value, currentContext.IncomingEntity.Value, StringComparison.InvariantCultureIgnoreCase))
                     {
                         continue;

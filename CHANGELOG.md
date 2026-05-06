@@ -4,7 +4,7 @@
 
 * Fix again the exception thrown if the claims provider is used in the context of an anonymous user
 * Update GitHub workflows
-* Fix validation with multiple domains, and a dynamic token is set on the claim type
+* Fix validation with multiple domains, and a dynamic token is set on the claim type - https://github.com/Yvand/LDAPCP/issues/249
 
 ## LDAPCP Second Edition v21.0 - Published in February 18, 2025
 
