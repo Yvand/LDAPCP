@@ -45,7 +45,7 @@ namespace Yvand.LdapClaimsProvider.Tests
                 DirectoryObjectClass = "group",
                 DirectoryObjectAttribute = UnitTestsHelper.RandomDirectoryObjectAttribute,
             };
-            Assert.Throws<InvalidOperationException>((Action)(() => base.Settings.ClaimTypes.Add(newGroupClaimTypeConfig)), "ClaimTypes.Add should throw a InvalidOperationException because the configuration is invalid");
+            Assert.Throws<InvalidOperationException>(() => base.Settings.ClaimTypes.Add(newGroupClaimTypeConfig), "ClaimTypes.Add should throw a InvalidOperationException because the configuration is invalid");
         }
     }
 
@@ -66,20 +66,20 @@ namespace Yvand.LdapClaimsProvider.Tests
             ctConfig.ClaimType = UnitTestsHelper.SPTrust.IdentityClaimTypeInformation.MappedClaimType;
             ctConfig.DirectoryObjectClass = UnitTestsHelper.RandomDirectoryObjectClass;
             ctConfig.DirectoryObjectAttribute = UnitTestsHelper.RandomDirectoryObjectAttribute;
-            Assert.Throws<InvalidOperationException>((Action)(() => base.Settings.ClaimTypes.Add(ctConfig)), $"Add a ClaimTypeConfig with a claim type already set should throw exception InvalidOperationException with this message: \"Claim type '{UnitTestsHelper.SPTrust.IdentityClaimTypeInformation.MappedClaimType}' already exists in the collection\"");
+            Assert.Throws<InvalidOperationException>(() => base.Settings.ClaimTypes.Add(ctConfig), $"Add a ClaimTypeConfig with a claim type already set should throw exception InvalidOperationException with this message: \"Claim type '{UnitTestsHelper.SPTrust.IdentityClaimTypeInformation.MappedClaimType}' already exists in the collection\"");
 
             // Add a ClaimTypeConfig with IsAdditionalLdapSearchAttribute = false (default value) and LDAPAttribute / DirectoryObjectClass not set should throw an InvalidOperationException
             ctConfig.ClaimType = UnitTestsHelper.RandomClaimType;
             ctConfig.DirectoryObjectClass = String.Empty;
             ctConfig.DirectoryObjectAttribute = String.Empty;
-            Assert.Throws<InvalidOperationException>((Action)(() => base.Settings.ClaimTypes.Add(ctConfig)), $"Add a ClaimTypeConfig with IsAdditionalLdapSearchAttribute = false (default value) and LDAPAttribute / DirectoryObjectClass not set should throw exception InvalidOperationException with this message: \"Property LDAPAttribute and DirectoryObjectClass are required\"");
+            Assert.Throws<InvalidOperationException>(() => base.Settings.ClaimTypes.Add(ctConfig), $"Add a ClaimTypeConfig with IsAdditionalLdapSearchAttribute = false (default value) and LDAPAttribute / DirectoryObjectClass not set should throw exception InvalidOperationException with this message: \"Property LDAPAttribute and DirectoryObjectClass are required\"");
 
             // Add a ClaimTypeConfig with IsAdditionalLdapSearchAttribute = true and ClaimType set should throw an InvalidOperationException
             ctConfig.ClaimType = UnitTestsHelper.RandomClaimType;
             ctConfig.DirectoryObjectClass = UnitTestsHelper.RandomDirectoryObjectClass;
             ctConfig.DirectoryObjectAttribute = UnitTestsHelper.RandomDirectoryObjectAttribute;
             ctConfig.IsAdditionalLdapSearchAttribute = true;
-            Assert.Throws<InvalidOperationException>((Action)(() => base.Settings.ClaimTypes.Add(ctConfig)), $"Add a ClaimTypeConfig with IsAdditionalLdapSearchAttribute = true and ClaimType set should throw exception InvalidOperationException with this message: \"No claim type should be set if IsAdditionalLdapSearchAttribute is set to true\"");
+            Assert.Throws<InvalidOperationException>(() => base.Settings.ClaimTypes.Add(ctConfig), $"Add a ClaimTypeConfig with IsAdditionalLdapSearchAttribute = true and ClaimType set should throw exception InvalidOperationException with this message: \"No claim type should be set if IsAdditionalLdapSearchAttribute is set to true\"");
 
             // Add a ClaimTypeConfig with EntityType 'Group' should should throw an InvalidOperationException
             ctConfig.ClaimType = UnitTestsHelper.RandomClaimType;
@@ -87,7 +87,7 @@ namespace Yvand.LdapClaimsProvider.Tests
             ctConfig.DirectoryObjectClass = UnitTestsHelper.RandomDirectoryObjectClass;
             ctConfig.DirectoryObjectType = DirectoryObjectType.Group;
             ctConfig.IsAdditionalLdapSearchAttribute = false;
-            Assert.Throws<InvalidOperationException>((Action)(() => base.Settings.ClaimTypes.Add(ctConfig)), "Add a ClaimTypeConfig with EntityType 'Group' should throw an InvalidOperationException");
+            Assert.Throws<InvalidOperationException>(() => base.Settings.ClaimTypes.Add(ctConfig), "Add a ClaimTypeConfig with EntityType 'Group' should throw an InvalidOperationException");
 
             // Add a valid ClaimTypeConfig should succeed
             ctConfig.ClaimType = UnitTestsHelper.RandomClaimType;
@@ -95,10 +95,10 @@ namespace Yvand.LdapClaimsProvider.Tests
             ctConfig.DirectoryObjectClass = UnitTestsHelper.RandomDirectoryObjectClass;
             ctConfig.DirectoryObjectType = DirectoryObjectType.User;
             ctConfig.IsAdditionalLdapSearchAttribute = false;
-            Assert.DoesNotThrow((Action)(() => base.Settings.ClaimTypes.Add(ctConfig)), $"Add a valid ClaimTypeConfig should succeed");
+            Assert.DoesNotThrow(() => base.Settings.ClaimTypes.Add(ctConfig), $"Add a valid ClaimTypeConfig should succeed");
 
             // Add a ClaimTypeConfig twice should throw an InvalidOperationException
-            Assert.Throws<InvalidOperationException>((Action)(() => base.Settings.ClaimTypes.Add(ctConfig)), $"Add a ClaimTypeConfig with a claim type already set should throw exception InvalidOperationException with this message: \"Claim type '{UnitTestsHelper.RandomClaimType}' already exists in the collection\"");
+            Assert.Throws<InvalidOperationException>(() => base.Settings.ClaimTypes.Add(ctConfig), $"Add a ClaimTypeConfig with a claim type already set should throw exception InvalidOperationException with this message: \"Claim type '{UnitTestsHelper.RandomClaimType}' already exists in the collection\"");
 
             // Delete the ClaimTypeConfig by calling method ClaimTypeConfigCollection.Remove(ClaimTypeConfig) should succeed
             Assert.That(base.Settings.ClaimTypes.Remove(ctConfig), Is.True, $"Delete the ClaimTypeConfig by calling method ClaimTypeConfigCollection.Remove(ClaimTypeConfig) should succeed");

@@ -62,11 +62,11 @@ namespace Yvand.LdapClaimsProvider.Tests
             UnitTestsHelper.PersistedConfiguration.ApplySettings(Settings, false);
             if (ConfigurationShouldBeValid)
             {
-                Assert.DoesNotThrow((Action)(() => UnitTestsHelper.PersistedConfiguration.ValidateConfiguration()), "ValidateLocalConfiguration should NOT throw a InvalidOperationException because the configuration is valid");
+                Assert.DoesNotThrow(() => UnitTestsHelper.PersistedConfiguration.ValidateConfiguration(), "ValidateLocalConfiguration should NOT throw a InvalidOperationException because the configuration is valid");
             }
             else
             {
-                Assert.Throws<InvalidOperationException>((Action)(() => UnitTestsHelper.PersistedConfiguration.ValidateConfiguration()), "ValidateLocalConfiguration should throw a InvalidOperationException because the configuration is invalid");
+                Assert.Throws<InvalidOperationException>(() => UnitTestsHelper.PersistedConfiguration.ValidateConfiguration(), "ValidateLocalConfiguration should throw a InvalidOperationException because the configuration is invalid");
                 Trace.TraceInformation($"{DateTime.Now:s} [{this.GetType().Name}] Invalid configuration: {JsonConvert.SerializeObject(Settings, Formatting.None)}");
             }
         }
