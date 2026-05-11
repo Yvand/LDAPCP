@@ -16,7 +16,7 @@ on:
     branches: [ "master" ]
 
 jobs:
-  call-build:
+  call-ci-workflow:
     uses: Yvand/EntraCP/.github/workflows/reusable-ci.yml@master
     with:
       project_name: ${{ vars.PROJECT_NAME }}
