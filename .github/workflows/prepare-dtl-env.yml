@@ -1,4 +1,5 @@
 name: Prepare test environment
+permissions: {}
 on:
   repository_dispatch:
     types:
