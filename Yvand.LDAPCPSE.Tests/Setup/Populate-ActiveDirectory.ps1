@@ -10,14 +10,18 @@
     https://github.com/Yvand/LDAPCP/
 #>
 
-
 $domainFqdn = (Get-ADDomain -Current LocalComputer).DNSRoot
 $domainDN = (Get-ADDomain -Current LocalComputer).DistinguishedName
 $ouName = "ldapcp"
 $ouDN = "OU=$($ouName),$($domainDN)"
+$outDir = "C:\YvanData\dev"
 
-$exportedUsersFullFilePath = "C:\YvanData\dev\LDAPCP_Tests_Users.csv"
-$exportedGroupsFullFilePath = "C:\YvanData\dev\LDAPCP_Tests_Groups.csv"
+if (-not (Test-Path -Path $outDir)) {
+    Write-Warning "Output directory $outDir does not exist"
+    return
+}
+$exportedUsersFullFilePath = Join-Path -Path $outDir -ChildPath "LDAPCP_Tests_Users.csv"
+$exportedGroupsFullFilePath = Join-Path -Path $outDir -ChildPath "LDAPCP_Tests_Groups.csv"
 
 try {
     Get-ADOrganizationalUnit -Identity $ouDN | Out-Null
