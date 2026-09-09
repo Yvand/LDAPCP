@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+* Fix bug where LDAP results are not returned to the people picker, when LDAPCP property AddWildcardAsPrefixOfInput is set to true
+
 ## LDAPCP Second Edition v22.0 - Published in May 13, 2026
 
 * Fix again the exception thrown if the claims provider is used in the context of an anonymous user
