@@ -127,6 +127,12 @@ namespace Yvand.LdapClaimsProvider.Tests
                 claimValue = inputValue;
             }
 
+            if (Settings.AddWildcardAsPrefixOfInput && !string.IsNullOrWhiteSpace(inputValue))
+            {
+                // If AddWildcardAsPrefixOfInput, always test with an input that does not include the first characters
+                inputValue = inputValue.Substring(inputValue.Length / 2);
+            }
+
             TestSearchOperation(inputValue, expectedCount, claimValue);
             TestValidationOperation(UserIdentifierClaimType, claimValue, shouldValidate);
         }
