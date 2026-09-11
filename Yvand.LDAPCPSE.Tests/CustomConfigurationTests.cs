@@ -1,4 +1,5 @@
 ﻿using NUnit.Framework;
+using System.Text.RegularExpressions;
 
 namespace Yvand.LdapClaimsProvider.Tests
 {
@@ -10,6 +11,7 @@ namespace Yvand.LdapClaimsProvider.Tests
         {
             base.InitializeSettings();
             Settings.AddWildcardAsPrefixOfInput = true;
+            Settings.ClaimTypes.GroupIdentifierConfig.ClaimValueLeadingToken = string.Empty; // It makes TestSearchGroupInputDoesNotStartWithResult() easier
             base.ApplySettings();
         }
 
@@ -39,14 +41,21 @@ namespace Yvand.LdapClaimsProvider.Tests
             base.TestAugmentationOfGoldUsersAgainstRandomGroups();
         }
 
-#if DEBUG
-        [Test, TestCaseSource(typeof(TestEntitySourceManager), nameof(TestEntitySourceManager.AllSearchEntities), null)]
-        [Repeat(UnitTestsHelper.TestRepeatCount)]
-        public void TestSearch(SearchEntityScenario registrationData)
+        [Test, TestCaseSource(typeof(TestEntitySourceManager), nameof(TestEntitySourceManager.GetSomeUsers), new object[] { TestEntitySourceManager.MaxNumberOfUsersToTest })]
+        public void TestSearchUserInputDoesNotStartWithResult(TestUser user)
         {
-            base.TestSearchOperation(registrationData.Input, registrationData.SearchResultCount, registrationData.SearchResultSingleEntityClaimValue);
+            base.TestSearchOperation(user.SamAccountName.Substring(6), 1, user.UserPrincipalName);
+            base.TestSearchOperation(user.UserPrincipalName.Substring(6), 1, user.UserPrincipalName);
         }
 
+        [Test, TestCaseSource(typeof(TestEntitySourceManager), nameof(TestEntitySourceManager.GetSomeGroups), new object[] { TestEntitySourceManager.MaxNumberOfGroupsToTest })]
+        public void TestSearchGroupInputDoesNotStartWithResult(TestGroup group)
+        {
+            base.TestSearchOperation(group.SamAccountName.Substring(6), 1, group.SamAccountName);
+        }
+
+
+#if DEBUG
         [Test, TestCaseSource(typeof(TestEntitySourceManager), nameof(TestEntitySourceManager.AllValidationEntities), null)]
         [MaxTime(UnitTestsHelper.MaxTime)]
         [Repeat(UnitTestsHelper.TestRepeatCount)]
@@ -55,14 +64,11 @@ namespace Yvand.LdapClaimsProvider.Tests
             base.TestValidationOperation(registrationData);
         }
 
-        [TestCase("testLdapcpUser_014")]
+        [TestCase("testLdapcpUser_007")]
         public void DebugTestUser(string upnPrefix)
         {
             TestUser user = TestEntitySourceManager.FindUser(upnPrefix);
-            base.TestSearchAndValidateForTestUser(user);
-
-            TestGroup group = TestEntitySourceManager.FindGroup("testLdapcpGroup_005");
-            base.TestAugmentationAgainstGroup(user, group);
+            base.TestSearchOperation(upnPrefix.Substring(6), 1, user.UserPrincipalName);
         }
 #endif
     }
