@@ -716,7 +716,7 @@ namespace Yvand.LdapClaimsProvider
                     {
                         if (this.Settings.AddWildcardAsPrefixOfInput)
                         {
-                            if (directoryObjectPropertyValue.IndexOf(currentContext.Input, StringComparison.InvariantCultureIgnoreCase) != -1)
+                            if (directoryObjectPropertyValue.IndexOf(currentContext.Input, StringComparison.InvariantCultureIgnoreCase) == -1)
                             {
                                 continue;
                             }
