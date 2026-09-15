@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## LDAPCP Second Edition v23.0-preview.1 - Published in September 15, 2026
+
 * Fix bug where LDAP results are not returned to the people picker, when LDAPCP property AddWildcardAsPrefixOfInput is set to true
 
 ## LDAPCP Second Edition v22.0 - Published in May 13, 2026
