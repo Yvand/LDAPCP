@@ -17,7 +17,7 @@ on:
 
 jobs:
   call-ci-workflow:
-    uses: Yvand/EntraCP/.github/workflows/reusable-ci.yml@master
+    uses: Yvand/EntraCP/.github/workflows/reusable-ci.yml@copilot/review-reusable-github-workflows
     with:
       project_name: ${{ vars.PROJECT_NAME }}
       publish_release: ${{ inputs.publish_release || false }}
