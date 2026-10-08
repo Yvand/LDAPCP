@@ -1,8 +1,15 @@
 name: Run Visual Studio tests
-on: workflow_dispatch
+on: 
+  workflow_dispatch:
+    inputs:
+      runner_environment:
+        description: 'Custom label assigned to the Windows x64 runner for this test environment'
+        required: true
+        type: string
 permissions: {}
 jobs:
   call-workflow-run-tests:
-    uses: Yvand/EntraCP/.github/workflows/reusaable-run-tests-on-runner.yml@master
+    uses: Yvand/EntraCP/.github/workflows/reusable-run-tests-on-runner.yml@master
     with:
-      test_project_folder_name: 'Yvand.LDAPCP-unit-tests'
+      test_project_folder_name: 'Yvand.LDAPCPSE-unit-tests'
+      runner_environment: ${{ github.event.inputs.runner_environment }}
