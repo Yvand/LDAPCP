@@ -9,7 +9,7 @@ on:
 permissions: {}
 jobs:
   call-workflow-run-tests:
-    uses: Yvand/EntraCP/.github/workflows/reusaable-run-tests-on-runner.yml@copilot/review-reusable-github-workflows
+    uses: Yvand/EntraCP/.github/workflows/reusable-run-tests-on-runner.yml@copilot/review-reusable-github-workflows
     with:
       test_project_folder_name: 'Yvand.LDAPCP-unit-tests'
       runner_environment: ${{ github.event.inputs.runner_environment }}
