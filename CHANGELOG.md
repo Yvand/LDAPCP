@@ -2,10 +2,13 @@
 
 ## Unreleased
 
+## LDAPCP Second Edition v23.0-preview.2 - Published in October 08, 2026
+
+* Update GitHub workflow which runs tests - https://github.com/Yvand/LDAPCP/pull/258
+
 ## LDAPCP Second Edition v23.0-preview.1 - Published in September 15, 2026
 
-* Fix bug where LDAP results are not returned to the people picker, when LDAPCP property AddWildcardAsPrefixOfInput is set to true
-* Update GitHub workflow which runs tests
+* Fix bug where LDAP results are not returned to the people picker, when LDAPCP property AddWildcardAsPrefixOfInput is set to true - https://github.com/Yvand/LDAPCP/pull/256
 
 ## LDAPCP Second Edition v22.0 - Published in May 13, 2026
 
