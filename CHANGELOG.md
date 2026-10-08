@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-## LDAPCP Second Edition v23.0-preview.2 - Published in October 08, 2026
+## LDAPCP Second Edition v23.0 - Published in October 08, 2026
 
 * Update GitHub workflow which runs tests - https://github.com/Yvand/LDAPCP/pull/258
 
